@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import sys
 from pathlib import Path
 
@@ -11,6 +12,14 @@ APP_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(APP_ROOT))
 
 from app_helpers import data  # noqa: E402
+
+
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def test_public_plot_files_have_expected_rows_and_no_identifiers() -> None:
@@ -156,3 +165,87 @@ def test_mdc_table_matches_modules_and_directional_fdr() -> None:
     assert manifest["rows"]["mdc_rows"] == 154
     assert manifest["mdc"]["sample_permutations"] == 200
     assert manifest["mdc"]["gene_permutations"] == 200
+
+
+def test_control_derived_bundle_is_isolated_complete_and_private() -> None:
+    module_set = "control_derived"
+    annotations = data.load_module_annotations(module_set)
+    details = data.load_module_details(module_set=module_set)
+    mdc = data.load_mdc_summary(module_set)
+    assert len(annotations) == annotations["module"].nunique() == 186
+    assert len(details) == details["module"].nunique() == 186
+    assert len(mdc) == mdc["module"].nunique() == 186
+    assert set(annotations["module"].astype(int)) == set(details["module"].astype(int))
+    assert set(annotations["module"].astype(int)) == set(mdc["module"].astype(int))
+
+    aggregate_path = data.module_set_path("aggregate_plot_data.parquet", module_set)
+    resolved_path = data.module_set_path("resolved_plot_data.parquet", module_set)
+    aggregate_file = pq.ParquetFile(aggregate_path)
+    resolved_file = pq.ParquetFile(resolved_path)
+    assert aggregate_file.metadata.num_rows == 450 * 186 * 6
+    assert resolved_file.metadata.num_rows == 450 * 186 * 6 * 6
+    for parquet in (aggregate_file, resolved_file):
+        assert {"donor", "projid"}.isdisjoint(parquet.schema_arrow.names)
+    assert aggregate_path.stat().st_size < 100 * 1024 * 1024
+    assert resolved_path.stat().st_size < 100 * 1024 * 1024
+
+    aggregate = data.load_aggregate(
+        "control_anchored", 935, "connectivity", module_set=module_set
+    )
+    resolved = data.load_resolved(
+        "control_anchored", 935, "connectivity", module_set=module_set
+    )
+    assert len(aggregate) == aggregate["sample_id"].nunique() == 450
+    assert set(aggregate["lioness_method"].astype(str)) == {"control_anchored"}
+    assert len(resolved) == 450 * 6
+    assert resolved["component"].nunique() == 6
+    assert set(aggregate["sample_id"]) == set(
+        data.load_aggregate("control_anchored", 935, "connectivity")["sample_id"]
+    )
+
+    # M935 exists in both definitions but represents different gene memberships.
+    full_m935 = data.load_module_details(935).iloc[0]
+    control_m935 = data.load_module_details(935, module_set=module_set).iloc[0]
+    assert int(full_m935["module_size"]) == 58
+    assert int(control_m935["module_size"]) == 527
+
+    unavailable_ct = mdc.loc[mdc["n_ct_edges"].eq(0), "module"].astype(int).tolist()
+    assert unavailable_ct == [356]
+    assert mdc.loc[mdc["module"].eq(356), "mdc_ct"].isna().all()
+
+    manifest = data.load_data_manifest()["module_sets"][module_set]
+    assert manifest["methods"] == ["control_anchored"]
+    assert manifest["rows"]["aggregate_rows"] == 502_200
+    assert manifest["rows"]["resolved_rows"] == 3_013_200
+    assert manifest["rows"]["aggregate_stat_rows"] == 16_740
+    assert manifest["rows"]["resolved_stat_rows"] == 100_440
+    assert manifest["ct_unavailable_modules"] == [356]
+    assert manifest["ts_labeled_modules"] == [355, 356, 867]
+    assert manifest["kegg"]["input_modules"] == 186
+    assert manifest["kegg"]["admitted_modules"] == 186
+    assert manifest["formula_validation"]["groups"] == ["AD", "Control", "MCI"]
+    assert manifest["formula_validation"]["max_relative_error"] < 1e-8
+
+
+def test_control_derived_kegg_keeps_ts_modules_and_unavailable_annotations() -> None:
+    module_set = "control_derived"
+    annotations = data.load_module_annotations(module_set)
+    reported = data.load_kegg(module_set=module_set)
+    assert {355, 356, 867}.issubset(set(reported["cluster_id"].astype(int)))
+    unavailable = annotations.loc[
+        ~annotations["annotation_available"].fillna(False).astype(bool), "module"
+    ]
+    manifest = data.load_data_manifest()["module_sets"][module_set]
+    assert sorted(unavailable.astype(int)) == manifest["kegg"][
+        "modules_without_reported_pathways"
+    ]
+
+
+def test_manifest_file_hashes_and_github_size_limit() -> None:
+    manifest = data.load_data_manifest()
+    for relative_path, expected in manifest["files"].items():
+        path = data.DATA_DIR / relative_path
+        assert path.exists()
+        assert path.stat().st_size == expected["bytes"]
+        assert path.stat().st_size < 100 * 1024 * 1024
+        assert file_sha256(path) == expected["sha256"]

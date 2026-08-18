@@ -24,8 +24,9 @@ from app_helpers.data import (
     DIAGNOSIS_ORDER,
     FEATURE_LABELS,
     HOVER_LABELS,
-    KEGG_TSV,
     METHOD_LABELS,
+    MODULE_SET_LABELS,
+    MODULE_SET_METHODS,
     NUMERIC_OUTCOMES,
     OUTCOME_LABELS,
     PHENOTYPE_LABELS,
@@ -46,6 +47,7 @@ from app_helpers.data import (
     load_sample_metadata,
     load_tissue_mapping,
     module_label,
+    module_set_path,
     require_data_files,
     selected_annotation,
 )
@@ -72,23 +74,27 @@ st.markdown(
 
 
 @st.cache_data(show_spinner=False)
-def cached_annotations() -> pd.DataFrame:
-    return load_module_annotations()
+def cached_annotations(module_set: str) -> pd.DataFrame:
+    return load_module_annotations(module_set)
 
 
 @st.cache_data(show_spinner=False)
-def cached_module_details() -> pd.DataFrame:
-    return load_module_details()
+def cached_module_details(module_set: str) -> pd.DataFrame:
+    return load_module_details(module_set=module_set)
 
 
 @st.cache_data(show_spinner=False, max_entries=48)
-def cached_aggregate(method: str, module: int, feature: str) -> pd.DataFrame:
-    return load_aggregate(method, module, feature)
+def cached_aggregate(
+    module_set: str, method: str, module: int, feature: str
+) -> pd.DataFrame:
+    return load_aggregate(method, module, feature, module_set=module_set)
 
 
 @st.cache_data(show_spinner=False, max_entries=48)
-def cached_resolved(method: str, module: int, feature: str) -> pd.DataFrame:
-    return load_resolved(method, module, feature)
+def cached_resolved(
+    module_set: str, method: str, module: int, feature: str
+) -> pd.DataFrame:
+    return load_resolved(method, module, feature, module_set=module_set)
 
 
 @st.cache_data(show_spinner=False)
@@ -97,8 +103,8 @@ def cached_sample_metadata() -> pd.DataFrame:
 
 
 @st.cache_data(show_spinner=False)
-def cached_mdc_summary() -> pd.DataFrame:
-    return load_mdc_summary()
+def cached_mdc_summary(module_set: str) -> pd.DataFrame:
+    return load_mdc_summary(module_set)
 
 
 @st.cache_data(show_spinner=False)
@@ -108,29 +114,34 @@ def cached_data_manifest() -> dict[str, object]:
 
 @st.cache_data(show_spinner=False, max_entries=96)
 def cached_aggregate_stats(
+    module_set: str,
     method: str,
     module: int | None,
     phenotype: str | None,
     feature: str | None,
 ) -> pd.DataFrame:
-    return load_aggregate_statistics(method, module, phenotype, feature)
+    return load_aggregate_statistics(
+        method, module, phenotype, feature, module_set=module_set
+    )
 
 
 @st.cache_data(show_spinner=False, max_entries=48)
 def cached_resolved_stats(
-    method: str, module: int, phenotype: str, feature: str
+    module_set: str, method: str, module: int, phenotype: str, feature: str
 ) -> pd.DataFrame:
-    return load_resolved_statistics(method, module, phenotype, feature)
+    return load_resolved_statistics(
+        method, module, phenotype, feature, module_set=module_set
+    )
 
 
 @st.cache_data(show_spinner=False, max_entries=48)
-def cached_kegg(module: int | None) -> pd.DataFrame:
-    return load_kegg(module)
+def cached_kegg(module_set: str, module: int | None) -> pd.DataFrame:
+    return load_kegg(module, module_set=module_set)
 
 
 @st.cache_data(show_spinner=False)
-def cached_kegg_tsv() -> bytes:
-    return KEGG_TSV.read_bytes()
+def cached_kegg_tsv(module_set: str) -> bytes:
+    return module_set_path("kegg_tissue_expanded_full.tsv", module_set).read_bytes()
 
 
 @st.cache_data(show_spinner=False)
@@ -160,12 +171,14 @@ def add_correlation_labels(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 @st.cache_data(show_spinner="Calculating the selected module correlation matrix…", max_entries=24)
-def cached_module_correlations(method: str, module: int, resolved: bool) -> pd.DataFrame:
+def cached_module_correlations(
+    module_set: str, method: str, module: int, resolved: bool
+) -> pd.DataFrame:
     if resolved:
-        source = load_resolved_scope(method, module=module)
+        source = load_resolved_scope(method, module=module, module_set=module_set)
         long = resolved_to_long(source, "rint")
     else:
-        source = load_aggregate_scope(method, module=module)
+        source = load_aggregate_scope(method, module=module, module_set=module_set)
         long = aggregate_to_long(source, "rint")
     long = attach_metadata(long)
     all_donors = long.copy()
@@ -185,8 +198,9 @@ def cached_module_correlations(method: str, module: int, resolved: bool) -> pd.D
     return add_correlation_labels(summary)
 
 
-@st.cache_data(show_spinner="Calculating correlations across all 154 modules…", max_entries=24)
+@st.cache_data(show_spinner="Calculating correlations across all modules…", max_entries=24)
 def cached_all_module_correlations(
+    module_set: str,
     method: str,
     resolved: bool,
     feature: str,
@@ -198,10 +212,13 @@ def cached_all_module_correlations(
             method,
             metric_family=feature,
             component=component,
+            module_set=module_set,
         )
         long = resolved_to_long(source, "rint")
     else:
-        source = load_aggregate_scope(method, metric_family=feature)
+        source = load_aggregate_scope(
+            method, metric_family=feature, module_set=module_set
+        )
         long = aggregate_to_long(source, "rint")
         long = long.loc[long["component"].eq(component)]
     long = attach_metadata(long)
@@ -230,14 +247,34 @@ def readable_method(method: str) -> str:
     return METHOD_LABELS.get(method, method)
 
 
-def fdr_text() -> str:
+def fdr_text(module_manifest: dict[str, object], module_count: int) -> str:
+    stored = module_manifest.get("fdr_test_families", {})
+    aggregate_global = int(
+        stored.get(
+            "aggregate_global",
+            module_count * len(PHENOTYPE_LABELS) * len(FEATURE_LABELS) * 3,
+        )
+    )
+    aggregate_within = int(
+        stored.get(
+            "aggregate_within_phenotype",
+            module_count * len(FEATURE_LABELS) * 3,
+        )
+    )
+    resolved_global = int(
+        stored.get("resolved_global", aggregate_global * len(COMPONENT_ORDER))
+    )
+    resolved_within = int(
+        stored.get("resolved_within_phenotype", aggregate_within * len(COMPONENT_ORDER))
+    )
     return (
         "Stored LIONESS FDR values use Benjamini–Hochberg correction separately within each "
         "network method. For aggregate Pearson/RINT results, CT and TS correlation FDRs each cover "
-        "13,860 tests; the global CT-vs-TS FDR covers 13,860 dependent-correlation "
-        "tests, and the within-phenotype CT-vs-TS FDR covers 2,772 tests. Tissue-resolved "
-        "Pearson/RINT and Spearman global FDRs each cover 83,160 component tests; the "
-        "tissue-resolved Pearson/RINT within-phenotype FDR covers 16,632 tests. Aggregate "
+        f"{aggregate_global:,} tests; the global CT-vs-TS FDR covers {aggregate_global:,} "
+        f"dependent-correlation tests, and the within-phenotype CT-vs-TS FDR covers "
+        f"{aggregate_within:,} tests. Tissue-resolved Pearson/RINT and Spearman global "
+        f"FDRs each cover {resolved_global:,} component tests; the tissue-resolved "
+        f"Pearson/RINT within-phenotype FDR covers {resolved_within:,} tests. Aggregate "
         "Spearman FDR was not stored by the source analysis and is not calculated by the app. "
         "KEGG FDR is independent and comes directly from the supplied tissue-expanded "
         "enrichment analysis."
@@ -250,10 +287,6 @@ except FileNotFoundError as error:
     st.error(str(error))
     st.stop()
 
-annotations = cached_annotations()
-modules = sorted(annotations["module"].astype(int).unique().tolist())
-module_details = cached_module_details()
-mdc_summary = cached_mdc_summary()
 data_manifest = cached_data_manifest()
 
 st.title("ROSMAP LIONESS Network Explorer")
@@ -264,11 +297,39 @@ st.markdown(
 
 with st.sidebar:
     st.header("Plot controls")
+    module_set = st.selectbox(
+        "Module definition",
+        options=list(MODULE_SET_LABELS),
+        format_func=lambda value: MODULE_SET_LABELS[value],
+        index=0,
+        help=(
+            "Identically numbered modules in the two definitions have different gene "
+            "memberships and are always loaded from separate data bundles."
+        ),
+    )
+    module_set_label = MODULE_SET_LABELS[module_set]
+    module_manifest = data_manifest.get("module_sets", {}).get(module_set, {})
+    annotations = cached_annotations(module_set)
+    modules = sorted(annotations["module"].astype(int).unique().tolist())
+    module_count = int(module_manifest.get("modules", len(modules)))
+    if module_count != len(modules):
+        st.error(
+            f"The {module_set_label} manifest declares {module_count} modules, but its "
+            f"annotation table contains {len(modules)}."
+        )
+        st.stop()
+    module_details = cached_module_details(module_set)
+    mdc_summary = cached_mdc_summary(module_set)
+    allowed_methods = list(
+        module_manifest.get("methods", MODULE_SET_METHODS[module_set])
+    )
     method = st.radio(
         "Network method",
-        options=list(METHOD_LABELS),
+        options=allowed_methods,
         format_func=readable_method,
-        index=1,
+        index=allowed_methods.index("control_anchored")
+        if "control_anchored" in allowed_methods
+        else 0,
     )
     default_module = modules.index(935) if 935 in modules else 0
     module = st.selectbox(
@@ -314,20 +375,27 @@ with st.sidebar:
         format_func=lambda value: COLOR_LABELS[value],
     )
 
+st.caption(f"Module definition: **{module_set_label}**")
+download_prefix = f"{module_set}__"
+
 if not diagnoses:
     st.warning("Select at least one diagnosis group in the sidebar.")
     st.stop()
 
 with st.spinner("Loading the selected module…"):
     if resolution == "Aggregate CT / TS":
-        plot_data = cached_aggregate(method, module, feature)
+        plot_data = cached_aggregate(module_set, method, module, feature)
         plot_data = aggregate_to_long(plot_data, scale)
-        statistics = cached_aggregate_stats(method, module, phenotype, feature)
+        statistics = cached_aggregate_stats(
+            module_set, method, module, phenotype, feature
+        )
         resolved = False
     else:
-        plot_data = cached_resolved(method, module, feature)
+        plot_data = cached_resolved(module_set, method, module, feature)
         plot_data = resolved_to_long(plot_data, scale)
-        statistics = cached_resolved_stats(method, module, phenotype, feature)
+        statistics = cached_resolved_stats(
+            module_set, method, module, phenotype, feature
+        )
         resolved = True
 
 plot_data = attach_metadata(plot_data)
@@ -381,7 +449,10 @@ annotation = selected_annotation(annotations, module)
 if annotation:
     st.markdown(f'<div class="kegg-note">{annotation}</div>', unsafe_allow_html=True)
 else:
-    st.caption(f"No KEGG enrichment row is available for {module_label(module)}.")
+    st.markdown(
+        '<div class="kegg-note">KEGG enrichment: unavailable</div>',
+        unsafe_allow_html=True,
+    )
 
 summary_cols = st.columns(5)
 summary_cols[0].metric("Method", "Control-referenced" if method == "control_anchored" else "Standard")
@@ -488,6 +559,7 @@ with association_tab:
         color_label=COLOR_LABELS[color_by],
         hover_fields=HOVER_LABELS,
         correlation_method=correlation_method.lower(),
+        module_definition=module_set_label,
     )
     st.plotly_chart(
         figure,
@@ -497,7 +569,7 @@ with association_tab:
             "toImageButtonOptions": {
                 "format": "png",
                 "filename": (
-                    f"M{module}_{phenotype}_{feature}_{method}_"
+                    f"{download_prefix}M{module}_{phenotype}_{feature}_{method}_"
                     f"{correlation_method.lower()}"
                 ),
                 "scale": 3,
@@ -519,10 +591,14 @@ with association_tab:
     public_plot_data = plot_data[public_columns].rename(
         columns={"metric_value": f"feature_{scale}"}
     )
+    public_plot_data.insert(0, "module_definition", module_set_label)
     st.download_button(
         "Download displayed plot data (TSV)",
         data=dataframe_to_tsv_bytes(public_plot_data),
-        file_name=f"M{module}_{phenotype}_{feature}_{method}_{resolution.replace(' ', '_')}.tsv",
+        file_name=(
+            f"{download_prefix}M{module}_{phenotype}_{feature}_{method}_"
+            f"{resolution.replace(' ', '_')}.tsv"
+        ),
         mime="text/tab-separated-values",
     )
 
@@ -537,7 +613,10 @@ with correlation_tab:
     )
     heatmap_mode = st.radio(
         "Heatmap scope",
-        ["Selected module: all feature scores", "All 154 modules: selected score"],
+        [
+            "Selected module: all feature scores",
+            f"All {module_count} modules: selected score",
+        ],
         horizontal=True,
     )
     st.caption(f"Correlation method: **{correlation_method}** (controlled in the sidebar).")
@@ -567,7 +646,9 @@ with correlation_tab:
         fdr_column = "spearman_fdr_displayed_family"
 
     if heatmap_mode.startswith("Selected module"):
-        correlation_table = cached_module_correlations(method, module, resolved)
+        correlation_table = cached_module_correlations(
+            module_set, method, module, resolved
+        )
         heatmap_data = correlation_table.loc[
             correlation_table["diagnosis_group"].eq(heatmap_diagnosis)
         ].copy()
@@ -584,7 +665,8 @@ with correlation_tab:
         )
         row_order = row_order_frame["heatmap_row"].tolist()
         heatmap_title = (
-            f"Module M{module}: all LIONESS feature scores vs outcomes · {heatmap_diagnosis}"
+            f"{module_set_label} · Module M{module}: all LIONESS feature scores vs "
+            f"outcomes · {heatmap_diagnosis}"
         )
         fdr_scope = (
             "Displayed-family FDR is Benjamini–Hochberg correction across every feature, "
@@ -611,6 +693,7 @@ with correlation_tab:
                 format_func=lambda value: f"{value} aggregate",
             )
         correlation_table = cached_all_module_correlations(
+            module_set,
             method,
             resolved,
             all_feature,
@@ -621,13 +704,17 @@ with correlation_tab:
         module_order = sorted(heatmap_data["module"].astype(int).unique())
         row_order = [f"M{value}" for value in module_order]
         heatmap_title = (
-            f"All modules: {FEATURE_LABELS[all_feature]} · "
+            f"{module_set_label}: {FEATURE_LABELS[all_feature]} · "
             f"{heatmap_data['component_label'].iloc[0]} · {heatmap_diagnosis}"
         )
         fdr_scope = (
-            "Displayed-family FDR is Benjamini–Hochberg correction across all 154 modules "
+            f"Displayed-family FDR is Benjamini–Hochberg correction across all "
+            f"{module_count} modules "
             "and all numeric outcomes in this selected feature/component/diagnosis map."
         )
+
+    correlation_table = correlation_table.copy()
+    correlation_table.insert(0, "module_definition", module_set_label)
 
     correlation_heatmap = correlation_heatmap_figure(
         heatmap_data,
@@ -647,7 +734,8 @@ with correlation_tab:
             "toImageButtonOptions": {
                 "format": "png",
                 "filename": (
-                    f"{method}_{heatmap_diagnosis}_{correlation_method.lower()}_"
+                    f"{download_prefix}{method}_{heatmap_diagnosis}_"
+                    f"{correlation_method.lower()}_"
                     "correlation_heatmap"
                 ),
                 "scale": 3,
@@ -662,6 +750,7 @@ with correlation_tab:
         )
     st.caption(fdr_scope)
     correlation_columns = [
+        "module_definition",
         "module",
         "metric_family",
         "component",
@@ -686,7 +775,10 @@ with correlation_tab:
         st.download_button(
             "Download complete correlation table (TSV)",
             data=dataframe_to_tsv_bytes(correlation_table[correlation_columns]),
-            file_name=f"{method}_{heatmap_diagnosis}_lioness_outcome_correlations.tsv",
+            file_name=(
+                f"{download_prefix}{method}_{heatmap_diagnosis}_"
+                "lioness_outcome_correlations.tsv"
+            ),
             mime="text/tab-separated-values",
         )
 with distribution_tab:
@@ -707,6 +799,7 @@ with distribution_tab:
         module=module,
         chart_type=chart_type,
         bins=bins,
+        module_definition=module_set_label,
     )
     st.plotly_chart(
         distribution,
@@ -715,25 +808,31 @@ with distribution_tab:
             "displaylogo": False,
             "toImageButtonOptions": {
                 "format": "png",
-                "filename": f"M{module}_{feature}_{method}_distribution",
+                "filename": (
+                    f"{download_prefix}M{module}_{feature}_{method}_distribution"
+                ),
                 "scale": 3,
             },
         },
     )
     summary = distribution_summary(plot_data)
+    summary.insert(0, "module_definition", module_set_label)
     with st.expander("Distribution summary table", expanded=False):
         st.dataframe(summary, width="stretch", hide_index=True)
         st.download_button(
             "Download distribution summary (TSV)",
             data=dataframe_to_tsv_bytes(summary),
-            file_name=f"M{module}_{feature}_{method}_distribution_summary.tsv",
+            file_name=(
+                f"{download_prefix}M{module}_{feature}_{method}_distribution_summary.tsv"
+            ),
             mime="text/tab-separated-values",
         )
 
 with screen_tab:
     st.subheader("Descriptive CT–TS pattern screen")
     st.caption(
-        "Ranks all 154 modules for the selected phenotype, feature, diagnosis, and method by "
+        f"Ranks all {module_count} modules for the selected phenotype, feature, diagnosis, "
+        "and method by "
         f"the absolute difference between CT and TS {correlation_method} correlations. "
         "This is an exploratory screen, not an independent validation ranking."
     )
@@ -743,7 +842,7 @@ with screen_tab:
         index=diagnoses.index("AD") if "AD" in diagnoses else 0,
         key="screen_diagnosis",
     )
-    screen = cached_aggregate_stats(method, None, phenotype, feature)
+    screen = cached_aggregate_stats(module_set, method, None, phenotype, feature)
     screen = screen.loc[screen["diagnosis_group"].eq(screen_diagnosis)].copy()
     if correlation_method == "Spearman":
         screen["correlation_CT"] = screen["rho_CT"]
@@ -801,9 +900,11 @@ with screen_tab:
         na_position="last",
     )
     screen.insert(0, "screen_rank", np.arange(1, len(screen) + 1))
-    n_screen = st.slider("Rows to show", 10, 154, 30, 10)
+    screen.insert(1, "module_definition", module_set_label)
+    n_screen = st.slider("Rows to show", 10, module_count, min(30, module_count), 10)
     screen_columns = [
         "screen_rank",
+        "module_definition",
         "module",
         "correlation_method",
         "correlation_CT",
@@ -821,8 +922,10 @@ with screen_tab:
         "displayed_fdr",
     ]
     if correlation_method == "Pearson":
-        screen_columns[5:5] = ["fdr_CT_global"]
-        screen_columns[8:8] = ["fdr_TS_global"]
+        ct_p_index = screen_columns.index("p_CT") + 1
+        screen_columns[ct_p_index:ct_p_index] = ["fdr_CT_global"]
+        ts_p_index = screen_columns.index("p_TS") + 1
+        screen_columns[ts_p_index:ts_p_index] = ["fdr_TS_global"]
         ct_ts_p_index = screen_columns.index("p_CT_vs_TS") + 1
         screen_columns[ct_ts_p_index:ct_ts_p_index] = [
             "fdr_CT_vs_TS_within_phenotype",
@@ -835,10 +938,10 @@ with screen_tab:
         column_config={"module": st.column_config.NumberColumn(format="M%d")},
     )
     st.download_button(
-        "Download complete 154-module screen (TSV)",
+        f"Download complete {module_count}-module screen (TSV)",
         data=dataframe_to_tsv_bytes(screen[screen_columns]),
         file_name=(
-            f"{method}_{screen_diagnosis}_{phenotype}_{feature}_"
+            f"{download_prefix}{method}_{screen_diagnosis}_{phenotype}_{feature}_"
             f"{correlation_method.lower()}_CT_TS_screen.tsv"
         ),
         mime="text/tab-separated-values",
@@ -850,7 +953,7 @@ with screen_tab:
             "Spearman FDR columns were not produced by the source analysis, so the app does "
             "not substitute Pearson FDR values or calculate new ones."
         )
-    st.info(fdr_text())
+    st.info(fdr_text(module_manifest, module_count))
 
 with mdc_tab:
     st.subheader("Module differential connectivity (MDC)")
@@ -860,7 +963,7 @@ with mdc_tab:
         "higher connectivity in Control. Total uses all edges, TS uses same-tissue edges, "
         "and CT uses cross-tissue edges."
     )
-    mdc_metadata = data_manifest.get("mdc", {})
+    mdc_metadata = module_manifest.get("mdc", data_manifest.get("mdc", {}))
     st.warning(
         "Cohort scope differs from the donor-complete LIONESS analysis. The MDC source "
         f"assembled {mdc_metadata.get('reference_assembled_donors', 517)} AD and "
@@ -878,6 +981,7 @@ with mdc_tab:
     )
 
     mdc_view = mdc_summary.copy()
+    mdc_view.insert(0, "module_definition", module_set_label)
     for scope in ["total", "ts", "ct"]:
         mdc_view[f"significant_{scope}"] = mdc_view[
             f"directional_fdr_{scope}"
@@ -927,7 +1031,9 @@ with mdc_tab:
                     f"{direction} · directional FDR={fdr_value_text} · {significance_text}"
                 )
 
-        selected_mdc_chart = mdc_module_figure(selected_mdc_row, mdc_threshold)
+        selected_mdc_chart = mdc_module_figure(
+            selected_mdc_row, mdc_threshold, module_definition=module_set_label
+        )
         st.plotly_chart(
             selected_mdc_chart,
             width="stretch",
@@ -935,7 +1041,7 @@ with mdc_tab:
                 "displaylogo": False,
                 "toImageButtonOptions": {
                     "format": "png",
-                    "filename": f"M{module}_AD_Control_MDC",
+                    "filename": f"{download_prefix}M{module}_AD_Control_MDC",
                     "scale": 3,
                 },
             },
@@ -966,7 +1072,12 @@ with mdc_tab:
         "No significant MDC": ~mdc_view["any_significant"],
     }
     displayed_mdc = mdc_view.loc[filter_masks[significance_filter]].copy()
-    mdc_overview = mdc_overview_figure(displayed_mdc, module, mdc_threshold)
+    mdc_overview = mdc_overview_figure(
+        displayed_mdc,
+        module,
+        mdc_threshold,
+        module_definition=module_set_label,
+    )
     st.plotly_chart(
         mdc_overview,
         width="stretch",
@@ -974,15 +1085,26 @@ with mdc_tab:
             "displaylogo": False,
             "toImageButtonOptions": {
                 "format": "png",
-                "filename": "AD_Control_TS_CT_MDC_overview",
+                "filename": f"{download_prefix}AD_Control_TS_CT_MDC_overview",
                 "scale": 3,
             },
         },
     )
+    ct_unavailable_count = len(
+        module_manifest.get(
+            "ct_unavailable_modules",
+            mdc_summary.loc[
+                pd.to_numeric(mdc_summary["n_ct_edges"], errors="coerce")
+                .fillna(0)
+                .eq(0),
+                "module",
+            ].astype(int).tolist(),
+        )
+    )
     st.caption(
         "Dashed zero lines separate AD-higher from Control-higher MDC. The dotted diagonal "
-        "marks equal TS and CT effects. Six single-tissue modules have no CT edges and therefore "
-        "no CT MDC point."
+        f"marks equal TS and CT effects. {ct_unavailable_count} module(s) have no CT edges "
+        "and therefore no CT MDC point."
     )
 
     displayed_mdc["minimum_directional_fdr"] = displayed_mdc[
@@ -997,6 +1119,7 @@ with mdc_tab:
         na_position="last",
     )
     mdc_columns = [
+        "module_definition",
         "module",
         "module_size_mapped",
         "mdc_total",
@@ -1033,12 +1156,15 @@ with mdc_tab:
     st.download_button(
         "Download displayed MDC table (TSV)",
         data=dataframe_to_tsv_bytes(displayed_mdc[mdc_columns]),
-        file_name=f"AD_Control_MDC_{significance_filter.replace(' ', '_')}.tsv",
+        file_name=(
+            f"{download_prefix}AD_Control_MDC_"
+            f"{significance_filter.replace(' ', '_')}.tsv"
+        ),
         mime="text/tab-separated-values",
     )
     st.info(
         "For each scope and direction, sample-permutation and gene-permutation p-values were "
-        "Benjamini–Hochberg adjusted separately across the 154 modules. The displayed "
+        f"Benjamini–Hochberg adjusted separately across the {module_count} modules. The "
         "directional FDR is the larger of those two adjusted values for the observed MDC "
         "direction, making significance require support from both null models. The latest "
         "source used 200 sample permutations and 200 gene permutations."
@@ -1101,20 +1227,27 @@ with statistics_tab:
             "q_component_rint_within_phenotype",
             "q_component_rint_global",
         ]
+    statistics = statistics.copy()
+    statistics.insert(0, "module_definition", module_set_label)
     st.dataframe(
         statistics[display_columns], width="stretch", hide_index=True
     )
     st.download_button(
         "Download all selected robust-statistics columns (TSV)",
         data=dataframe_to_tsv_bytes(statistics),
-        file_name=f"M{module}_{phenotype}_{feature}_{method}_robust_statistics.tsv",
+        file_name=(
+            f"{download_prefix}M{module}_{phenotype}_{feature}_{method}_"
+            "robust_statistics.tsv"
+        ),
         mime="text/tab-separated-values",
     )
-    st.info(fdr_text())
+    st.info(fdr_text(module_manifest, module_count))
 
 with kegg_tab:
     st.subheader(f"Full tissue-expanded KEGG table for {module_label(module)}")
-    kegg = cached_kegg(module)
+    kegg = cached_kegg(module_set, module)
+    if not kegg.empty:
+        kegg.insert(0, "module_definition", module_set_label)
     if kegg.empty:
         st.info(
             "This module has no row in the supplied tissue-expanded KEGG table. "
@@ -1150,13 +1283,13 @@ with kegg_tab:
         st.download_button(
             f"Download all KEGG rows for {module_label(module)} (TSV)",
             data=dataframe_to_tsv_bytes(kegg.sort_values(["fdr", "p"])),
-            file_name=f"M{module}_tissue_expanded_KEGG.tsv",
+            file_name=f"{download_prefix}M{module}_tissue_expanded_KEGG.tsv",
             mime="text/tab-separated-values",
         )
     st.download_button(
         "Download the complete tissue-expanded KEGG table (all modules)",
-        data=cached_kegg_tsv(),
-        file_name="method4_tissue_expanded_kegg_annotated.tsv",
+        data=cached_kegg_tsv(module_set),
+        file_name=f"{download_prefix}method4_tissue_expanded_kegg_annotated.tsv",
         mime="text/tab-separated-values",
     )
     st.caption(
@@ -1171,6 +1304,7 @@ with module_details_tab:
         "the level-4 SE2 module-details file. Tissue proportions use module size as the denominator."
     )
     detail_columns = [
+        "module_definition",
         "module",
         "module_size",
         "cluster_type",
@@ -1184,6 +1318,8 @@ with module_details_tab:
         "n_genes_pcg",
         "proportion_pcg",
     ]
+    module_details = module_details.copy()
+    module_details.insert(0, "module_definition", module_set_label)
     st.markdown(f"#### Selected module: {module_label(module)}")
     st.dataframe(
         module_details.loc[module_details["module"].astype(int).eq(int(module)), detail_columns],
@@ -1206,7 +1342,7 @@ with module_details_tab:
             "proportion_pcg": st.column_config.NumberColumn("PCG proportion", format="percent"),
         },
     )
-    st.markdown("#### All 154 modules")
+    st.markdown(f"#### All {module_count} modules")
     st.dataframe(
         module_details[detail_columns],
         width="stretch",
@@ -1232,7 +1368,7 @@ with module_details_tab:
     st.download_button(
         "Download complete module-details table (TSV)",
         data=dataframe_to_tsv_bytes(module_details[detail_columns]),
-        file_name="se2_level4_module_details.tsv",
+        file_name=f"{download_prefix}se2_level4_module_details.tsv",
         mime="text/tab-separated-values",
     )
     st.info(
@@ -1242,6 +1378,11 @@ with module_details_tab:
 
 with about_tab:
     st.subheader("Analysis methods and deploy data")
+    st.markdown(
+        f"**Selected module definition:** {module_set_label}. Module IDs are scoped to "
+        "this definition; the same number in the other definition can contain a different "
+        "set of tissue-gene members."
+    )
     st.markdown(
         "**Standard LIONESS** scores each donor relative to the complete 450-donor "
         "reference network. **Control-referenced LIONESS** uses the 164 Controls as the "

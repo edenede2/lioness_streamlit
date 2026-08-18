@@ -14,6 +14,19 @@ import pyarrow.parquet as pq
 APP_ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = APP_ROOT / "data"
 
+MODULE_SET_LABELS = {
+    "full_cohort": "Full-cohort L4 modules (154)",
+    "control_derived": "Control-derived L4 modules (186)",
+}
+MODULE_SET_DIRS = {
+    "full_cohort": DATA_DIR,
+    "control_derived": DATA_DIR / "control_derived",
+}
+MODULE_SET_METHODS = {
+    "full_cohort": ("standard", "control_anchored"),
+    "control_derived": ("control_anchored",),
+}
+
 AGGREGATE_DATA = DATA_DIR / "aggregate_plot_data.parquet"
 RESOLVED_DATA = DATA_DIR / "resolved_plot_data.parquet"
 AGGREGATE_STATS = DATA_DIR / "aggregate_statistics.parquet"
@@ -27,6 +40,18 @@ TISSUE_MAPPING = DATA_DIR / "tissue_mapping.tsv"
 SAMPLE_METADATA = DATA_DIR / "sample_metadata.parquet"
 MDC_SUMMARY = DATA_DIR / "mdc_ad_vs_control_summary.tsv"
 DATA_MANIFEST = DATA_DIR / "data_manifest.json"
+
+MODULE_SET_FILENAMES = (
+    "aggregate_plot_data.parquet",
+    "resolved_plot_data.parquet",
+    "aggregate_statistics.parquet",
+    "resolved_statistics.parquet",
+    "kegg_tissue_expanded_full.parquet",
+    "kegg_tissue_expanded_full.tsv",
+    "module_kegg_annotations.tsv",
+    "module_details.tsv",
+    "mdc_ad_vs_control_summary.tsv",
+)
 
 METHOD_LABELS = {
     "standard": "Standard LIONESS (all-donor reference)",
@@ -88,23 +113,32 @@ COMPONENT_ORDER = [
 ]
 
 
+def module_set_data_dir(module_set: str = "full_cohort") -> Path:
+    """Return the isolated deploy directory for a module definition."""
+    if module_set not in MODULE_SET_DIRS:
+        raise ValueError(
+            f"Unknown module definition {module_set!r}; expected one of "
+            f"{sorted(MODULE_SET_DIRS)}"
+        )
+    return MODULE_SET_DIRS[module_set]
+
+
+def module_set_path(filename: str, module_set: str = "full_cohort") -> Path:
+    return module_set_data_dir(module_set) / filename
+
+
 def require_data_files() -> None:
     """Raise a useful error if the GitHub data bundle was not built."""
     required = [
-        AGGREGATE_DATA,
-        RESOLVED_DATA,
-        AGGREGATE_STATS,
-        RESOLVED_STATS,
-        KEGG_PARQUET,
-        KEGG_TSV,
-        MODULE_ANNOTATIONS,
-        MODULE_DETAILS,
         FEATURE_DEFINITIONS,
         TISSUE_MAPPING,
         SAMPLE_METADATA,
-        MDC_SUMMARY,
         DATA_MANIFEST,
     ]
+    for module_set in MODULE_SET_DIRS:
+        required.extend(
+            module_set_path(filename, module_set) for filename in MODULE_SET_FILENAMES
+        )
     missing = [str(path.relative_to(APP_ROOT)) for path in required if not path.exists()]
     if missing:
         raise FileNotFoundError(
@@ -131,6 +165,7 @@ def load_aggregate(
     method: str,
     module: int,
     metric_family: str,
+    module_set: str = "full_cohort",
 ) -> pd.DataFrame:
     columns = [
         "sample_id",
@@ -147,7 +182,7 @@ def load_aggregate(
         "lioness_method",
     ]
     return _read_filtered(
-        AGGREGATE_DATA,
+        module_set_path("aggregate_plot_data.parquet", module_set),
         [
             ("lioness_method", "=", method),
             ("module", "=", int(module)),
@@ -161,6 +196,7 @@ def load_aggregate_scope(
     method: str,
     module: int | None = None,
     metric_family: str | None = None,
+    module_set: str = "full_cohort",
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
@@ -177,13 +213,16 @@ def load_aggregate_scope(
         *PHENOTYPE_LABELS,
         "lioness_method",
     ]
-    return _read_filtered(AGGREGATE_DATA, filters, columns)
+    return _read_filtered(
+        module_set_path("aggregate_plot_data.parquet", module_set), filters, columns
+    )
 
 
 def load_resolved(
     method: str,
     module: int,
     metric_family: str,
+    module_set: str = "full_cohort",
 ) -> pd.DataFrame:
     columns = [
         "sample_id",
@@ -200,7 +239,7 @@ def load_resolved(
         "lioness_method",
     ]
     return _read_filtered(
-        RESOLVED_DATA,
+        module_set_path("resolved_plot_data.parquet", module_set),
         [
             ("lioness_method", "=", method),
             ("module", "=", int(module)),
@@ -215,6 +254,7 @@ def load_resolved_scope(
     module: int | None = None,
     metric_family: str | None = None,
     component: str | None = None,
+    module_set: str = "full_cohort",
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
@@ -235,7 +275,9 @@ def load_resolved_scope(
         *PHENOTYPE_LABELS,
         "lioness_method",
     ]
-    return _read_filtered(RESOLVED_DATA, filters, columns)
+    return _read_filtered(
+        module_set_path("resolved_plot_data.parquet", module_set), filters, columns
+    )
 
 
 def load_aggregate_statistics(
@@ -243,6 +285,7 @@ def load_aggregate_statistics(
     module: int | None = None,
     phenotype: str | None = None,
     metric_family: str | None = None,
+    module_set: str = "full_cohort",
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
@@ -251,7 +294,9 @@ def load_aggregate_statistics(
         filters.append(("phenotype", "=", phenotype))
     if metric_family is not None:
         filters.append(("metric_family", "=", metric_family))
-    return _read_filtered(AGGREGATE_STATS, filters)
+    return _read_filtered(
+        module_set_path("aggregate_statistics.parquet", module_set), filters
+    )
 
 
 def load_resolved_statistics(
@@ -259,6 +304,7 @@ def load_resolved_statistics(
     module: int | None = None,
     phenotype: str | None = None,
     metric_family: str | None = None,
+    module_set: str = "full_cohort",
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
@@ -267,15 +313,19 @@ def load_resolved_statistics(
         filters.append(("phenotype", "=", phenotype))
     if metric_family is not None:
         filters.append(("metric_family", "=", metric_family))
-    return _read_filtered(RESOLVED_STATS, filters)
+    return _read_filtered(
+        module_set_path("resolved_statistics.parquet", module_set), filters
+    )
 
 
-def load_module_annotations() -> pd.DataFrame:
-    return pd.read_csv(MODULE_ANNOTATIONS, sep="\t")
+def load_module_annotations(module_set: str = "full_cohort") -> pd.DataFrame:
+    return pd.read_csv(module_set_path("module_kegg_annotations.tsv", module_set), sep="\t")
 
 
-def load_module_details(module: int | None = None) -> pd.DataFrame:
-    details = pd.read_csv(MODULE_DETAILS, sep="\t")
+def load_module_details(
+    module: int | None = None, module_set: str = "full_cohort"
+) -> pd.DataFrame:
+    details = pd.read_csv(module_set_path("module_details.tsv", module_set), sep="\t")
     if module is not None:
         details = details.loc[details["module"].astype(int).eq(int(module))]
     return details.reset_index(drop=True)
@@ -293,17 +343,23 @@ def load_sample_metadata() -> pd.DataFrame:
     return pd.read_parquet(SAMPLE_METADATA)
 
 
-def load_mdc_summary() -> pd.DataFrame:
-    return pd.read_csv(MDC_SUMMARY, sep="\t")
+def load_mdc_summary(module_set: str = "full_cohort") -> pd.DataFrame:
+    return pd.read_csv(
+        module_set_path("mdc_ad_vs_control_summary.tsv", module_set), sep="\t"
+    )
 
 
 def load_data_manifest() -> dict[str, object]:
     return json.loads(DATA_MANIFEST.read_text(encoding="utf-8"))
 
 
-def load_kegg(module: int | None = None) -> pd.DataFrame:
+def load_kegg(
+    module: int | None = None, module_set: str = "full_cohort"
+) -> pd.DataFrame:
     filters = [("cluster_id", "=", int(module))] if module is not None else []
-    return _read_filtered(KEGG_PARQUET, filters)
+    return _read_filtered(
+        module_set_path("kegg_tissue_expanded_full.parquet", module_set), filters
+    )
 
 
 def module_label(module: int | str) -> str:

@@ -3,10 +3,12 @@
 A GitHub-ready Streamlit app for exploring the completed standard and
 Control-referenced ROSMAP LIONESS analyses.
 
-The app includes:
+The app includes two explicitly separated module definitions:
 
-- All 154 level-4 modules, including M1918.
-- Standard and Control-referenced LIONESS results.
+- **Full-cohort L4 modules (154)**, including M1918, with Standard and
+  Control-referenced LIONESS results.
+- **Control-derived L4 modules (186)** with Control-referenced LIONESS results.
+  Identically numbered modules in the two sets are not interchangeable.
 - Five cognitive and motor phenotypes.
 - Six module feature families.
 - Aggregate cross-tissue (CT) and tissue-specific (TS) views.
@@ -19,7 +21,7 @@ The app includes:
 - Expanded hover details for cognition, motor function, age, education, APOE,
   CogDx, Braak, CERAD, ADNC, and Parkinsonism.
 - Feature-only histograms and violin distributions.
-- Selected-module and all-154-module correlation heatmaps, with downloadable
+- Selected-module and all-module correlation heatmaps, with downloadable
   Pearson, Spearman, p-value, and displayed-family FDR tables.
 - Optional average-linkage clustering of heatmap rows, columns, or both.
 - Module differential connectivity (MDC) for total, tissue-specific (TS), and
@@ -95,8 +97,9 @@ If this directory remains inside the larger analysis repository instead, use
 
 ## Rebuild the public data bundle
 
-The checked-in deploy data were generated from the completed analysis outputs. To
-rebuild after the analysis changes, run this from the app directory:
+The checked-in deploy data were generated from both completed analysis outputs.
+The default rebuild creates both bundles together and gives each donor one new
+pseudonymous label shared consistently between module definitions:
 
 ```bash
 python scripts/build_public_data.py
@@ -107,9 +110,15 @@ Optional source paths can be supplied explicitly:
 ```bash
 python scripts/build_public_data.py \
   --analysis-root /path/to/20260817_standard_control_anchored_allmodules_5phenotypes_6features \
+  --control-derived-analysis-root /path/to/20260818_control_anchored_control_derived_l4_5phenotypes_6features \
   --kegg /path/to/method4_tissue_expanded_kegg_annotated.tsv \
+  --control-derived-kegg /path/to/control_derived_method4_tissue_expanded_kegg_annotated.tsv \
   --mdc /path/to/AD_vs_Control_MDC_Preservation.tsv \
-  --module-details /path/to/se2_details_filtered_4.csv
+  --control-derived-mdc /path/to/AD_vs_Control_control_derived_l4_MDC_only.tsv \
+  --module-details /path/to/se2_details_filtered_4.csv \
+  --control-derived-module-details /path/to/speakeasy_clusters_details_level_4_filtered.csv \
+  --full-assignments /path/to/se2_table_filtered_4.csv \
+  --control-derived-assignments /path/to/speakeasy_clusters_table_level_4_filtered.csv
 ```
 
 To refresh only the compact MDC table without rebuilding the donor-level files or
@@ -137,12 +146,16 @@ python scripts/build_public_data.py --statistics-only
 ```
 
 The build is intentionally one-way: donor/projid columns and the pseudonym salt are
-not written. `data/data_manifest.json` records row counts, hashes, and package size.
+not written. `data/data_manifest.json` records separate module-set row counts,
+source hashes, correction-family sizes, unavailable CT modules, and deploy-file hashes.
 
 ## Data organization
 
-- `data/aggregate_plot_data.parquet`: CT/TS raw, asinh, and Z-score features.
-- `data/resolved_plot_data.parquet`: DLPFC/AC/PCG tissue and tissue-pair features.
+- `data/`: the existing 154-module full-cohort bundle.
+- `data/control_derived/`: the isolated 186-module Control-derived bundle. It has
+  its own plot data, statistics, KEGG, MDC, annotations, and module-details files.
+- `aggregate_plot_data.parquet`: CT/TS raw, asinh, and Z-score features.
+- `resolved_plot_data.parquet`: DLPFC/AC/PCG tissue and tissue-pair features.
 - `data/aggregate_statistics.parquet`: complete aggregate robust statistics.
 - `data/resolved_statistics.parquet`: complete tissue-resolved robust statistics.
 - `data/sample_metadata.parquet`: 450 pseudonymous rows with the hover/color outcomes.
@@ -150,20 +163,19 @@ not written. `data/data_manifest.json` records row counts, hashes, and package s
 - `data/kegg_tissue_expanded_full.parquet`: query-efficient KEGG copy.
 - `data/module_kegg_annotations.tsv`: one displayed KEGG annotation per module.
 - `data/module_details.tsv`: validated level-4 module sizes, represented tissues,
-  per-tissue gene counts, and tissue proportions, with MF/BA9/46 displayed as DLPFC.
-- `data/mdc_ad_vs_control_summary.tsv`: total, TS, and CT MDC ratios with
-  directional FDR values for all 154 modules.
+  per-tissue gene counts, and tissue proportions, using the DLPFC label.
+- `mdc_ad_vs_control_summary.tsv`: total, TS, and CT MDC ratios with directional
+  FDR values for the selected module definition.
 - `data/feature_definitions.tsv`: feature calculation definitions.
 - `data/tissue_mapping.tsv`: public tissue display names.
 
 ## FDR scope
 
 Benjamini-Hochberg FDR correction was performed separately within each LIONESS
-method. Aggregate global CT and TS correlation FDRs each cover 13,860 tests;
-aggregate global CT-vs-TS FDR covers 13,860 dependent-correlation tests, while its
-within-phenotype version covers 2,772. Tissue-resolved global correction covers
-83,160 component tests for both Pearson/RINT and Spearman, while the stored
-within-phenotype correction covers 16,632 Pearson/RINT tests. Aggregate Spearman
+method and module definition. For the 154-module set, aggregate global families
+contain 13,860 tests and within-phenotype families contain 2,772; the corresponding
+tissue-resolved families contain 83,160 and 16,632 tests. For the 186-module set,
+the counts are 16,740, 3,348, 100,440, and 20,088. Aggregate Spearman
 FDR was not produced by the source analysis, so the app shows its stored nominal
 p-values without substituting Pearson FDR or calculating a new correction. KEGG
 FDRs come directly from the supplied tissue-expanded enrichment table and are not
@@ -182,10 +194,10 @@ therefore indicate higher connectivity in AD, and values below 1 indicate higher
 connectivity in Control. The same calculation is supplied for all edges, TS edges,
 and CT edges. Adjacencies use signedAlt with beta 3 for TS and beta 2 for CT.
 
-The latest complete source contains the same 154 level-4 modules as the LIONESS app
-and used 200 sample permutations plus 200 gene permutations. For each edge scope and
-direction, permutation p-values were Benjamini-Hochberg adjusted across the 154
-modules. The displayed directional FDR is the maximum of the sample-permutation and
+Each module definition has its matching MDC source and uses 200 sample permutations
+plus 200 gene permutations. For each edge scope and direction, permutation p-values
+were Benjamini-Hochberg adjusted across the modules in that definition (154 or 186).
+The displayed directional FDR is the maximum of the sample-permutation and
 gene-permutation q-values for the observed direction.
 
 The MDC and LIONESS cohorts are related but not identical. MDC assembled every donor

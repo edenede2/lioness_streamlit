@@ -166,6 +166,7 @@ def association_figure(
     color_label: str,
     hover_fields: dict[str, str],
     correlation_method: str = "spearman",
+    module_definition: str | None = None,
 ) -> go.Figure:
     """Build faceted scatter plots with selected correlation annotations and OLS lines."""
     diagnoses = list(diagnoses)
@@ -302,9 +303,12 @@ def association_figure(
 
     fig.update_xaxes(title_text=f"{feature_label} ({scale_label})", zeroline=True)
     fig.update_yaxes(title_text=phenotype_label, zeroline=True)
+    title_text = f"Module M{int(module)}: {phenotype_label} vs {feature_label}"
+    if module_definition:
+        title_text += f"<br><sup>{module_definition}</sup>"
     fig.update_layout(
         title={
-            "text": f"Module M{int(module)}: {phenotype_label} vs {feature_label}",
+            "text": title_text,
             "x": 0.01,
             "xanchor": "left",
         },
@@ -345,6 +349,7 @@ def distribution_figure(
     module: int,
     chart_type: str,
     bins: int = 30,
+    module_definition: str | None = None,
 ) -> go.Figure:
     """Build diagnosis-colored feature distributions without a phenotype axis."""
     diagnoses = list(diagnoses)
@@ -416,8 +421,11 @@ def distribution_figure(
     fig.update_xaxes(title_text=f"{feature_label} ({scale_label})")
     if chart_type == "Histogram":
         fig.update_yaxes(title_text="Probability density")
+    title_text = f"Module M{int(module)}: {feature_label} distributions"
+    if module_definition:
+        title_text += f"<br><sup>{module_definition}</sup>"
     fig.update_layout(
-        title={"text": f"Module M{int(module)}: {feature_label} distributions", "x": 0.01},
+        title={"text": title_text, "x": 0.01},
         template="plotly_white",
         barmode="overlay",
         violinmode="overlay",
@@ -459,6 +467,7 @@ def distribution_summary(frame: pd.DataFrame) -> pd.DataFrame:
 def mdc_module_figure(
     row: pd.Series,
     threshold: float,
+    module_definition: str | None = None,
 ) -> go.Figure:
     """Compare total, TS, and CT MDC for the selected module on a centered log2 scale."""
     scopes = [("total", "Total"), ("ts", "Tissue-specific (TS)"), ("ct", "Cross-tissue (CT)")]
@@ -507,9 +516,12 @@ def mdc_module_figure(
     finite = np.asarray([value for value in log_ratios if pd.notna(value)], dtype=float)
     extent = max(0.35, float(np.max(np.abs(finite))) * 1.32) if finite.size else 0.35
     figure.add_hline(y=0, line_dash="dash", line_color="#657584", line_width=1)
+    title_text = f"Module M{int(row['module'])}: MDC by edge scope"
+    if module_definition:
+        title_text += f"<br><sup>{module_definition}</sup>"
     figure.update_layout(
         title={
-            "text": f"Module M{int(row['module'])}: MDC by edge scope",
+            "text": title_text,
             "x": 0.01,
             "xanchor": "left",
         },
@@ -530,6 +542,7 @@ def mdc_overview_figure(
     frame: pd.DataFrame,
     selected_module: int,
     threshold: float,
+    module_definition: str | None = None,
 ) -> go.Figure:
     """Show tissue-specific versus cross-tissue MDC across modules."""
     data = frame.dropna(subset=["log2_mdc_ts", "log2_mdc_ct"]).copy()
@@ -631,8 +644,11 @@ def mdc_overview_figure(
     )
     figure.add_vline(x=0, line_dash="dash", line_color="#657584", line_width=1)
     figure.add_hline(y=0, line_dash="dash", line_color="#657584", line_width=1)
+    title_text = "TS versus CT MDC across modules"
+    if module_definition:
+        title_text += f"<br><sup>{module_definition}</sup>"
     figure.update_layout(
-        title={"text": "TS versus CT MDC across modules", "x": 0.01, "xanchor": "left"},
+        title={"text": title_text, "x": 0.01, "xanchor": "left"},
         template="plotly_white",
         height=610,
         margin={"l": 70, "r": 30, "t": 90, "b": 65},

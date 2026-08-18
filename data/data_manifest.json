@@ -1,5 +1,5 @@
 {
-  "created_utc": "2026-08-18T09:02:57.865204+00:00",
+  "created_utc": "2026-08-18T16:17:10.935816+00:00",
   "diagnosis_counts_per_method": {
     "AD": 167,
     "Control": 164,
@@ -9,12 +9,48 @@
   "feature_families": 6,
   "files": {
     "aggregate_plot_data.parquet": {
-      "bytes": 34129776,
-      "sha256": "7845416c757ff16d68b088f38a16b584ec88c2080d419e432ceea35bc97651ee"
+      "bytes": 34129546,
+      "sha256": "9f00b8e259846f0f8054bd98ca47cdb5e6b3c055669ac3177e5834674101997b"
     },
     "aggregate_statistics.parquet": {
       "bytes": 11354780,
       "sha256": "c9f3ebce3dbf204184a23abece18f5558443ed56a58301150ca81c06a0438014"
+    },
+    "control_derived/aggregate_plot_data.parquet": {
+      "bytes": 20973764,
+      "sha256": "5014b068485dcc326c5ea3ee862058cba61ed4701c3c86053c3604cddd8fb659"
+    },
+    "control_derived/aggregate_statistics.parquet": {
+      "bytes": 7095415,
+      "sha256": "7ffebfb7f31fed2b4d557ab9ff371b06179ca260f94e9a079160b4857209be8f"
+    },
+    "control_derived/kegg_tissue_expanded_full.parquet": {
+      "bytes": 672605,
+      "sha256": "f4059f40f43149703908fe54ab2db0c63b55b27357cd31a42b93d472c764931f"
+    },
+    "control_derived/kegg_tissue_expanded_full.tsv": {
+      "bytes": 4004226,
+      "sha256": "a9573c7aa310ec781b8f587743fe64f2bf000d2c6d55b1fec40aec113c8aabb8"
+    },
+    "control_derived/mdc_ad_vs_control_summary.tsv": {
+      "bytes": 45642,
+      "sha256": "6c2302d09fc94c65904e92b39f9d9dfc0e1a1d2f6df081e86f8c13b96af47abb"
+    },
+    "control_derived/module_details.tsv": {
+      "bytes": 14894,
+      "sha256": "e492da5c2c4f540f986c8310790c9d7aad51630074fa76eddc7bcbc63fb4a3ea"
+    },
+    "control_derived/module_kegg_annotations.tsv": {
+      "bytes": 73864,
+      "sha256": "3c24818bd0eb17d075273bd9fc08cbb0a749a188431da006df63984a0cde023c"
+    },
+    "control_derived/resolved_plot_data.parquet": {
+      "bytes": 62702099,
+      "sha256": "969e9e4968355fbd517559d2c676d485367fb615a9e3923810dadafbfbe116f7"
+    },
+    "control_derived/resolved_statistics.parquet": {
+      "bytes": 18682900,
+      "sha256": "71c99e0871ef7b90385c0eb355ba44c736930269d24ac40942ad469f2dba3d9a"
     },
     "feature_definitions.tsv": {
       "bytes": 1313,
@@ -41,16 +77,16 @@
       "sha256": "9d5acfd53747bc20050359aad64904a3031d8cc0d14057a74a8630da12b4ea1d"
     },
     "resolved_plot_data.parquet": {
-      "bytes": 97602905,
-      "sha256": "d717b9b8813d25db384562791feaf5224ed772d72911e9c8d2ddd90dbfe9a22a"
+      "bytes": 97599249,
+      "sha256": "2a33f855a8b867611778cd9f03999e57251f91e03e5211ffc18f825a4c2d838d"
     },
     "resolved_statistics.parquet": {
       "bytes": 28466875,
       "sha256": "51f505d84e791aef8bd8d839b2feb553027cc2cfb13d186a862d96ab85b2a17a"
     },
     "sample_metadata.parquet": {
-      "bytes": 33866,
-      "sha256": "2f6ad51927b99d2f175269292e4e4c07dcd1b5f2594951562586e92b514fc042"
+      "bytes": 33883,
+      "sha256": "0858b498b439f1ff8eba1def997d04b1921e543515c03c1d96a6c28c923780fd"
     },
     "tissue_mapping.tsv": {
       "bytes": 66,
@@ -82,10 +118,347 @@
     "control_anchored"
   ],
   "module_details": {
-    "definition": "Level-4 module size and tissue composition. MFBA9BA46 is displayed as DLPFC and PCGBA23 is displayed as PCG. Tissue proportions use module size as the denominator.",
+    "definition": "Level-4 module size and tissue composition using the public labels AC, DLPFC, and PCG. Tissue proportions use module size as the denominator.",
     "source_last_modified_utc": "2025-12-23T07:17:07.690992+00:00",
     "source_output": "proccessed/se2_filtered/se2_rosmap_full_signed_alt/se2_details_filtered_4.csv",
     "source_sha256": "64ab938f960cd1b6174858418987675ae26e56e0619940a046b18a1bc8f92942"
+  },
+  "module_sets": {
+    "control_derived": {
+      "assignments": {
+        "rows": 49392,
+        "source_sha256": "00b71cc7bcc122c59b708cddd0a516865f50f12e23e9aa94f8d25db69cc21280"
+      },
+      "ct_unavailable_modules": [
+        356
+      ],
+      "diagnosis_counts_per_method": {
+        "AD": 167,
+        "Control": 164,
+        "MCI": 119
+      },
+      "donors_per_method": 450,
+      "fdr_test_families": {
+        "aggregate_global": 16740,
+        "aggregate_within_phenotype": 3348,
+        "resolved_global": 100440,
+        "resolved_within_phenotype": 20088
+      },
+      "feature_families": 6,
+      "files": {
+        "aggregate_plot_data.parquet": {
+          "bytes": 20973764,
+          "sha256": "5014b068485dcc326c5ea3ee862058cba61ed4701c3c86053c3604cddd8fb659"
+        },
+        "aggregate_statistics.parquet": {
+          "bytes": 7095415,
+          "sha256": "7ffebfb7f31fed2b4d557ab9ff371b06179ca260f94e9a079160b4857209be8f"
+        },
+        "kegg_tissue_expanded_full.parquet": {
+          "bytes": 672605,
+          "sha256": "f4059f40f43149703908fe54ab2db0c63b55b27357cd31a42b93d472c764931f"
+        },
+        "kegg_tissue_expanded_full.tsv": {
+          "bytes": 4004226,
+          "sha256": "a9573c7aa310ec781b8f587743fe64f2bf000d2c6d55b1fec40aec113c8aabb8"
+        },
+        "mdc_ad_vs_control_summary.tsv": {
+          "bytes": 45642,
+          "sha256": "6c2302d09fc94c65904e92b39f9d9dfc0e1a1d2f6df081e86f8c13b96af47abb"
+        },
+        "module_details.tsv": {
+          "bytes": 14894,
+          "sha256": "e492da5c2c4f540f986c8310790c9d7aad51630074fa76eddc7bcbc63fb4a3ea"
+        },
+        "module_kegg_annotations.tsv": {
+          "bytes": 73864,
+          "sha256": "3c24818bd0eb17d075273bd9fc08cbb0a749a188431da006df63984a0cde023c"
+        },
+        "resolved_plot_data.parquet": {
+          "bytes": 62702099,
+          "sha256": "969e9e4968355fbd517559d2c676d485367fb615a9e3923810dadafbfbe116f7"
+        },
+        "resolved_statistics.parquet": {
+          "bytes": 18682900,
+          "sha256": "71c99e0871ef7b90385c0eb355ba44c736930269d24ac40942ad469f2dba3d9a"
+        }
+      },
+      "formula_validation": {
+        "groups": [
+          "AD",
+          "Control",
+          "MCI"
+        ],
+        "max_absolute_error": 8.526512829121199e-13,
+        "max_relative_error": 8.526512829121199e-13,
+        "module": 10,
+        "source_sha256": "e391828c337e93575fa3b084647b244009d8c56fde6932481ac61ab39d7d9d85",
+        "tolerance": 1e-08
+      },
+      "kegg": {
+        "admitted_modules": 186,
+        "fdr_definition": "Benjamini-Hochberg correction separately within each module across tested pathways.",
+        "input_modules": 186,
+        "modules_with_reported_pathways": 180,
+        "modules_without_reported_pathways": [
+          436,
+          799,
+          809,
+          1086,
+          1096,
+          1129
+        ],
+        "rows": 10945,
+        "source_sha256": "05ac9880f75de516f8f67f3f16500d5d7b90a3471235aa7db82550b39d3a43db"
+      },
+      "key": "control_derived",
+      "label": "Control-derived L4 modules (186)",
+      "mdc": {
+        "adjacency": "signedAlt",
+        "beta_ct": 2,
+        "beta_ts": 3,
+        "cohort_note": "The MDC assembled cohort is the tissue union and contains every complete-tissue AD/Control donor used by LIONESS plus donors with partial tissue availability.",
+        "comparison": "AD reference / Control target",
+        "fdr_definition": "Directional FDR is the maximum of the Benjamini-Hochberg-adjusted sample-permutation and gene-permutation p-values for the observed direction.",
+        "gene_permutations": 200,
+        "mci_included": false,
+        "reference_assembled_donors": 517,
+        "reference_complete_three_tissue_donors": 167,
+        "reference_group": "AD",
+        "sample_permutations": 200,
+        "source_last_modified_utc": "2026-08-18T16:16:31.584617+00:00",
+        "source_output": "mdc_control_derived_l4_rosmap/20260818_ad_reference_control_target_200perms/AD_vs_Control_control_derived_l4_MDC_only.tsv",
+        "source_sha256": "5d2254362057632ab79c7769a2afe881ffd8a1653a77c103859b5d3fda18e1e5",
+        "target_assembled_donors": 408,
+        "target_complete_three_tissue_donors": 164,
+        "target_group": "Control"
+      },
+      "methods": [
+        "control_anchored"
+      ],
+      "module_details": {
+        "definition": "Level-4 module size and tissue composition using the public labels AC, DLPFC, and PCG. Tissue proportions use module size as the denominator.",
+        "source_last_modified_utc": "2026-03-17T09:48:20.158377+00:00",
+        "source_output": "proccessed/se2_signed_alt_control_filtered/se2_rosmap_control_signed-alt/speakeasy_clusters_details_level_4_filtered.csv",
+        "source_sha256": "3c7e20bc0a34be502431ace724defe0dfd04caad185c2be90123b3e08a0127fa"
+      },
+      "modules": 186,
+      "phenotypes": [
+        "cogn_global",
+        "cogng_demog_slope",
+        "cogng_path_slope",
+        "motor10_demog_slope",
+        "sqrt_parksc_demog_slope"
+      ],
+      "relative_data_dir": "control_derived",
+      "resolved_components": 6,
+      "rows": {
+        "aggregate_rows": 502200,
+        "aggregate_stat_rows": 16740,
+        "assignment_rows": 49392,
+        "mdc_rows": 186,
+        "module_details_rows": 186,
+        "resolved_rows": 3013200,
+        "resolved_stat_rows": 100440
+      },
+      "sentinel_module": 10,
+      "source_run": "20260818_control_anchored_control_derived_l4_5phenotypes_6features",
+      "ts_labeled_modules": [
+        355,
+        356,
+        867
+      ]
+    },
+    "full_cohort": {
+      "assignments": {
+        "rows": 46898,
+        "source_sha256": "cbb2e9878bd65ec0d1325ba4eae1e02345785ee6a898b93a4b111126684e8492"
+      },
+      "ct_unavailable_modules": [
+        190,
+        933,
+        1024,
+        1046,
+        1508,
+        1581
+      ],
+      "diagnosis_counts_per_method": {
+        "AD": 167,
+        "Control": 164,
+        "MCI": 119
+      },
+      "donors_per_method": 450,
+      "fdr_test_families": {
+        "aggregate_global": 13860,
+        "aggregate_within_phenotype": 2772,
+        "resolved_global": 83160,
+        "resolved_within_phenotype": 16632
+      },
+      "feature_families": 6,
+      "files": {
+        "aggregate_plot_data.parquet": {
+          "bytes": 34129546,
+          "sha256": "9f00b8e259846f0f8054bd98ca47cdb5e6b3c055669ac3177e5834674101997b"
+        },
+        "aggregate_statistics.parquet": {
+          "bytes": 11354780,
+          "sha256": "c9f3ebce3dbf204184a23abece18f5558443ed56a58301150ca81c06a0438014"
+        },
+        "kegg_tissue_expanded_full.parquet": {
+          "bytes": 557809,
+          "sha256": "853e6812099b593443ca10cf8fb01f5d00d0b62a1c4ac0601886ebd7faad0d58"
+        },
+        "kegg_tissue_expanded_full.tsv": {
+          "bytes": 3366878,
+          "sha256": "d83c7d6696b8197925a021821618a56af2bff4fc19ef00aad2ed4f6c0d1a84e9"
+        },
+        "mdc_ad_vs_control_summary.tsv": {
+          "bytes": 36615,
+          "sha256": "56250cfdfb1fa9098ca4cc9d192004f96dfe436e850aa2cd79c7665f22371b6e"
+        },
+        "module_details.tsv": {
+          "bytes": 12076,
+          "sha256": "98d4a6ba87e7a2b6583c71fdf874543be1951360360fe378e5ceda7008131351"
+        },
+        "module_kegg_annotations.tsv": {
+          "bytes": 54181,
+          "sha256": "9d5acfd53747bc20050359aad64904a3031d8cc0d14057a74a8630da12b4ea1d"
+        },
+        "resolved_plot_data.parquet": {
+          "bytes": 97599249,
+          "sha256": "2a33f855a8b867611778cd9f03999e57251f91e03e5211ffc18f825a4c2d838d"
+        },
+        "resolved_statistics.parquet": {
+          "bytes": 28466875,
+          "sha256": "51f505d84e791aef8bd8d839b2feb553027cc2cfb13d186a862d96ab85b2a17a"
+        }
+      },
+      "formula_validation": null,
+      "kegg": {
+        "admitted_modules": 126,
+        "fdr_definition": "Benjamini-Hochberg correction separately within each module across tested pathways.",
+        "input_modules": 154,
+        "modules_with_reported_pathways": 123,
+        "modules_without_reported_pathways": [
+          92,
+          144,
+          190,
+          228,
+          229,
+          933,
+          936,
+          1012,
+          1014,
+          1024,
+          1046,
+          1115,
+          1144,
+          1158,
+          1175,
+          1196,
+          1206,
+          1263,
+          1267,
+          1269,
+          1396,
+          1403,
+          1405,
+          1460,
+          1464,
+          1508,
+          1563,
+          1581,
+          1582,
+          1996,
+          2394
+        ],
+        "rows": 8866,
+        "source_sha256": "c1a376f8c11707a98898a5019455392df11e3d535fd3704ea0f13db3c9c5b768"
+      },
+      "key": "full_cohort",
+      "label": "Full-cohort L4 modules (154)",
+      "mdc": {
+        "adjacency": "signedAlt",
+        "beta_ct": 2,
+        "beta_ts": 3,
+        "cohort_note": "The MDC assembled cohort is the tissue union and contains every complete-tissue AD/Control donor used by LIONESS plus donors with partial tissue availability.",
+        "comparison": "AD reference / Control target",
+        "fdr_definition": "Directional FDR is the maximum of the Benjamini-Hochberg-adjusted sample-permutation and gene-permutation p-values for the observed direction.",
+        "gene_permutations": 200,
+        "mci_included": false,
+        "reference_assembled_donors": 517,
+        "reference_complete_three_tissue_donors": 167,
+        "reference_group": "AD",
+        "sample_permutations": 200,
+        "source_last_modified_utc": "2026-03-24T12:29:27.574204+00:00",
+        "source_output": "MDC_Preservation_signedAlt_AD_Control_reverse2/AD_vs_Control/AD_vs_Control_MDC_Preservation.tsv",
+        "source_sha256": "78a6705da633231d09427bbc5f697bd9ee2107ad729184212fbef47ee4cd9b12",
+        "target_assembled_donors": 408,
+        "target_complete_three_tissue_donors": 164,
+        "target_group": "Control"
+      },
+      "methods": [
+        "standard",
+        "control_anchored"
+      ],
+      "module_details": {
+        "definition": "Level-4 module size and tissue composition using the public labels AC, DLPFC, and PCG. Tissue proportions use module size as the denominator.",
+        "source_last_modified_utc": "2025-12-23T07:17:07.690992+00:00",
+        "source_output": "proccessed/se2_filtered/se2_rosmap_full_signed_alt/se2_details_filtered_4.csv",
+        "source_sha256": "64ab938f960cd1b6174858418987675ae26e56e0619940a046b18a1bc8f92942"
+      },
+      "modules": 154,
+      "phenotypes": [
+        "cogn_global",
+        "cogng_demog_slope",
+        "cogng_path_slope",
+        "motor10_demog_slope",
+        "sqrt_parksc_demog_slope"
+      ],
+      "relative_data_dir": ".",
+      "resolved_components": 6,
+      "rows": {
+        "aggregate_rows": 831600,
+        "aggregate_stat_rows": 27720,
+        "assignment_rows": 46898,
+        "mdc_rows": 154,
+        "module_details_rows": 154,
+        "resolved_rows": 4989600,
+        "resolved_stat_rows": 166320
+      },
+      "sentinel_module": 1918,
+      "source_run": "20260817_standard_control_anchored_allmodules_5phenotypes_6features",
+      "ts_labeled_modules": [
+        92,
+        144,
+        190,
+        228,
+        229,
+        933,
+        936,
+        1012,
+        1014,
+        1024,
+        1046,
+        1115,
+        1144,
+        1158,
+        1175,
+        1206,
+        1263,
+        1267,
+        1269,
+        1396,
+        1403,
+        1405,
+        1460,
+        1464,
+        1508,
+        1581,
+        1582,
+        2394
+      ]
+    }
   },
   "modules": 154,
   "phenotypes": [
@@ -99,6 +472,7 @@
   "rows": {
     "aggregate_rows": 831600,
     "aggregate_stat_rows": 27720,
+    "assignment_rows": 46898,
     "mdc_rows": 154,
     "metadata_rows": 450,
     "module_details_rows": 154,

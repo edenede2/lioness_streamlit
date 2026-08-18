@@ -13,16 +13,21 @@ import hashlib
 import hmac
 import json
 import secrets
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pyarrow as pa
+import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
 
 RUN_NAME = "20260817_standard_control_anchored_allmodules_5phenotypes_6features"
+CONTROL_DERIVED_RUN_NAME = (
+    "20260818_control_anchored_control_derived_l4_5phenotypes_6features"
+)
 METHODS = ("standard", "control_anchored")
 PHENOTYPES = (
     "cogn_global",
@@ -74,6 +79,21 @@ MDC_SOURCE_METADATA = {
 }
 
 
+@dataclass(frozen=True)
+class DatasetConfig:
+    key: str
+    label: str
+    analysis_root: Path
+    methods: tuple[str, ...]
+    module_count: int
+    sentinel_module: int
+    kegg: Path
+    mdc: Path
+    module_details: Path
+    assignments: Path
+    output: Path
+
+
 def parse_args() -> argparse.Namespace:
     repo_root = Path(__file__).resolve().parents[3]
     parser = argparse.ArgumentParser(description=__doc__)
@@ -82,6 +102,15 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=repo_root / "out" / "lioness_reference_comparison_rosmap" / RUN_NAME,
         help="Completed standard/control-referenced analysis directory.",
+    )
+    parser.add_argument(
+        "--control-derived-analysis-root",
+        type=Path,
+        default=repo_root
+        / "out"
+        / "lioness_reference_comparison_rosmap"
+        / CONTROL_DERIVED_RUN_NAME,
+        help="Completed Control-derived, Control-referenced app-data analysis directory.",
     )
     parser.add_argument(
         "--kegg",
@@ -93,6 +122,15 @@ def parse_args() -> argparse.Namespace:
         help="Full annotated tissue-expanded KEGG table.",
     )
     parser.add_argument(
+        "--control-derived-kegg",
+        type=Path,
+        default=repo_root
+        / "out"
+        / "kegg_enrichment_brain_control_derived_se2_l4_method4_20260818"
+        / "method4_tissue_expanded_kegg_annotated.tsv",
+        help="Control-derived tissue-expanded KEGG table.",
+    )
+    parser.add_argument(
         "--mdc",
         type=Path,
         default=repo_root
@@ -100,6 +138,16 @@ def parse_args() -> argparse.Namespace:
         / "AD_vs_Control"
         / "AD_vs_Control_MDC_Preservation.tsv",
         help="Latest completed AD-reference versus Control-target MDC table.",
+    )
+    parser.add_argument(
+        "--control-derived-mdc",
+        type=Path,
+        default=repo_root
+        / "out"
+        / "mdc_control_derived_l4_rosmap"
+        / "20260818_ad_reference_control_target_200perms"
+        / "AD_vs_Control_control_derived_l4_MDC_only.tsv",
+        help="Control-derived AD-reference versus Control-target MDC table.",
     )
     parser.add_argument(
         "--module-details",
@@ -111,6 +159,39 @@ def parse_args() -> argparse.Namespace:
         / "se2_rosmap_full_signed_alt"
         / "se2_details_filtered_4.csv",
         help="Level-4 SE2 module details table.",
+    )
+    parser.add_argument(
+        "--full-assignments",
+        type=Path,
+        default=repo_root
+        / "data"
+        / "proccessed"
+        / "se2_filtered"
+        / "se2_rosmap_full_signed_alt"
+        / "se2_table_filtered_4.csv",
+        help="Full-cohort level-4 tissue-gene assignments.",
+    )
+    parser.add_argument(
+        "--control-derived-module-details",
+        type=Path,
+        default=repo_root
+        / "data"
+        / "proccessed"
+        / "se2_signed_alt_control_filtered"
+        / "se2_rosmap_control_signed-alt"
+        / "speakeasy_clusters_details_level_4_filtered.csv",
+        help="Control-derived level-4 module details.",
+    )
+    parser.add_argument(
+        "--control-derived-assignments",
+        type=Path,
+        default=repo_root
+        / "data"
+        / "proccessed"
+        / "se2_signed_alt_control_filtered"
+        / "se2_rosmap_control_signed-alt"
+        / "speakeasy_clusters_table_level_4_filtered.csv",
+        help="Control-derived level-4 tissue-gene assignments.",
     )
     parser.add_argument(
         "--output",
@@ -536,10 +617,422 @@ def module_details_manifest(source: Path) -> dict[str, object]:
         ).isoformat(),
         "source_sha256": sha256(source),
         "definition": (
-            "Level-4 module size and tissue composition. MFBA9BA46 is displayed as "
-            "DLPFC and PCGBA23 is displayed as PCG. Tissue proportions use module size "
-            "as the denominator."
+            "Level-4 module size and tissue composition using the public labels AC, "
+            "DLPFC, and PCG. Tissue proportions use module size as the denominator."
         ),
+    }
+
+
+def validate_assignment_details(
+    assignment_source: Path,
+    details_output: Path,
+    expected_modules: set[int],
+) -> int:
+    """Verify exact tissue-gene counts against the public module-details table."""
+    assignments = pd.read_csv(assignment_source)
+    required = {"Cluster ID", "Tissue", "Gene ID"}
+    missing = required.difference(assignments.columns)
+    if missing:
+        raise ValueError(f"Assignment source is missing columns: {sorted(missing)}")
+    assignments["Cluster ID"] = pd.to_numeric(
+        assignments["Cluster ID"], errors="raise"
+    ).astype("int32")
+    # Preserve source row multiplicity. The legacy full-cohort assignment file
+    # intentionally contains repeated tissue-gene rows and its module-details
+    # counts include those rows; the Control-derived source has no repeats.
+    observed_modules = set(assignments["Cluster ID"].astype(int))
+    if observed_modules != expected_modules:
+        raise ValueError(
+            "Assignment modules do not match analysis modules: "
+            f"missing={sorted(expected_modules - observed_modules)}, "
+            f"extra={sorted(observed_modules - expected_modules)}"
+        )
+
+    details = pd.read_csv(details_output, sep="\t").set_index("module")
+    counts = (
+        assignments.groupby(["Cluster ID", "Tissue"], observed=True)
+        .size()
+        .unstack(fill_value=0)
+    )
+    expected_tissues = {
+        "AC": "n_genes_ac",
+        "MFBA9BA46": "n_genes_dlpfc",
+        "PCGBA23": "n_genes_pcg",
+    }
+    unknown_tissues = set(counts.columns).difference(expected_tissues)
+    if unknown_tissues:
+        raise ValueError(f"Unexpected tissues in assignments: {sorted(unknown_tissues)}")
+    counts = counts.reindex(index=details.index, fill_value=0)
+    for tissue, public_column in expected_tissues.items():
+        observed = counts[tissue] if tissue in counts else pd.Series(0, index=details.index)
+        if not observed.astype(int).eq(details[public_column].astype(int)).all():
+            raise ValueError(
+                f"Assignment counts for {tissue} disagree with module details"
+            )
+    if len(assignments) != int(details["module_size"].sum()):
+        raise ValueError("Assignment row count does not equal summed module sizes")
+    return len(assignments)
+
+
+def donor_set(source: Path) -> set[str]:
+    return {
+        str(value)
+        for value in pq.read_table(source, columns=["donor"]).column("donor").to_pylist()
+    }
+
+
+def dataset_file_manifest(output: Path) -> dict[str, dict[str, object]]:
+    module_set_filenames = {
+        "aggregate_plot_data.parquet",
+        "resolved_plot_data.parquet",
+        "aggregate_statistics.parquet",
+        "resolved_statistics.parquet",
+        "kegg_tissue_expanded_full.parquet",
+        "kegg_tissue_expanded_full.tsv",
+        "module_kegg_annotations.tsv",
+        MODULE_DETAILS_OUTPUT_NAME,
+        MDC_OUTPUT_NAME,
+    }
+    files = sorted(
+        path
+        for path in output.iterdir()
+        if path.is_file() and path.name in module_set_filenames
+    )
+    result = {
+        path.name: {"bytes": path.stat().st_size, "sha256": sha256(path)}
+        for path in files
+    }
+    too_large = {
+        name: values["bytes"]
+        for name, values in result.items()
+        if int(values["bytes"]) >= 100 * 1024 * 1024
+    }
+    if too_large:
+        raise ValueError(f"Deploy files exceed GitHub's 100-MiB limit: {too_large}")
+    return result
+
+
+def validate_public_module_set(output: Path, expected_sample_ids: set[str]) -> None:
+    """Reject identifiers or internal tissue labels in a deploy module bundle."""
+    forbidden_columns = {"donor", "projid"}
+    internal_labels = ("MFBA9BA46", "MFBA9/BA46")
+    parquet_paths = sorted(output.glob("*.parquet"))
+    for path in parquet_paths:
+        parquet = pq.ParquetFile(path)
+        names = set(parquet.schema_arrow.names)
+        if forbidden_columns.intersection(names):
+            raise ValueError(f"Private identifiers remain in {path}")
+        for field in parquet.schema_arrow:
+            if not (
+                pa.types.is_string(field.type)
+                or pa.types.is_large_string(field.type)
+                or pa.types.is_dictionary(field.type)
+            ):
+                continue
+            values = pc.unique(
+                pq.read_table(path, columns=[field.name])[field.name].cast(pa.string())
+            )
+            for internal_label in internal_labels:
+                found = pc.any(pc.match_substring(values, internal_label)).as_py()
+                if bool(found):
+                    raise ValueError(
+                        f"Internal tissue label {internal_label} remains in {path}"
+                    )
+        if "sample_id" in names:
+            sample_ids = set(
+                pc.unique(
+                    pq.read_table(path, columns=["sample_id"])["sample_id"]
+                ).to_pylist()
+            )
+            if sample_ids != expected_sample_ids:
+                raise ValueError(f"Public sample labels are inconsistent in {path}")
+    for path in output.glob("*.tsv"):
+        contents = path.read_text(encoding="utf-8")
+        header = contents.splitlines()[0].split("\t") if contents else []
+        if forbidden_columns.intersection(header):
+            raise ValueError(f"Private identifier columns remain in {path}")
+        if any(label in contents for label in internal_labels):
+            raise ValueError(f"An internal tissue label remains in {path}")
+
+
+def build_module_set(
+    config: DatasetConfig,
+    sample_map: dict[str, str],
+) -> dict[str, object]:
+    """Build one isolated module-definition bundle with shared sample pseudonyms."""
+    config.output.mkdir(parents=True, exist_ok=True)
+    analysis_inputs_path = config.analysis_root / "analysis_inputs.tsv"
+    analysis_inputs = pd.read_csv(analysis_inputs_path, sep="\t")
+    assignment_inputs = analysis_inputs.loc[
+        analysis_inputs["input_role"].eq("module_assignments"), "path"
+    ]
+    if len(assignment_inputs) != 1 or Path(assignment_inputs.iloc[0]).resolve() != config.assignments:
+        raise ValueError(
+            f"{config.key}: LIONESS analysis input does not match the supplied assignments"
+        )
+    mdc_inputs_path = config.mdc.parent / "analysis_inputs.tsv"
+    if config.key == "control_derived":
+        mdc_inputs = pd.read_csv(mdc_inputs_path, sep="\t")
+        mdc_assignment_inputs = mdc_inputs.loc[
+            mdc_inputs["input_role"].eq("module_assignments"), "path"
+        ]
+        if (
+            len(mdc_assignment_inputs) != 1
+            or Path(mdc_assignment_inputs.iloc[0]).resolve() != config.assignments
+        ):
+            raise ValueError(
+                "Control-derived MDC input does not match the supplied assignments"
+            )
+    aggregate_sources = [
+        source_file(config.analysis_root, method, "_transformed_component_data.parquet")
+        for method in config.methods
+    ]
+    resolved_sources = [
+        source_file(
+            config.analysis_root, method, "_tissue_resolved_component_data.parquet"
+        )
+        for method in config.methods
+    ]
+    aggregate_stat_sources = [
+        source_file(
+            config.analysis_root,
+            method,
+            "_robust_statistics.parquet",
+            exclude_text="tissue_resolved",
+        )
+        for method in config.methods
+    ]
+    resolved_stat_sources = [
+        source_file(
+            config.analysis_root,
+            method,
+            "_tissue_resolved_robust_statistics.parquet",
+        )
+        for method in config.methods
+    ]
+
+    expected_donors = set(sample_map)
+    for source in aggregate_sources:
+        observed_donors = donor_set(source)
+        if observed_donors != expected_donors:
+            raise ValueError(
+                f"{config.key} donor set differs from the shared 450-donor mapping"
+            )
+
+    aggregate_rows = write_sanitized_plot_data(
+        aggregate_sources,
+        config.output / "aggregate_plot_data.parquet",
+        sample_map,
+        resolved=False,
+    )
+    resolved_rows = write_sanitized_plot_data(
+        resolved_sources,
+        config.output / "resolved_plot_data.parquet",
+        sample_map,
+        resolved=True,
+    )
+    aggregate_stat_rows = write_combined_statistics(
+        aggregate_stat_sources,
+        config.output / "aggregate_statistics.parquet",
+        resolved=False,
+    )
+    resolved_stat_rows = write_combined_statistics(
+        resolved_stat_sources,
+        config.output / "resolved_statistics.parquet",
+        resolved=True,
+    )
+
+    kegg = pd.read_csv(config.kegg, sep="\t")
+    kegg["cluster_id"] = pd.to_numeric(
+        kegg["cluster_id"], errors="raise"
+    ).astype("int32")
+    kegg = kegg.rename(columns={"overlap_MFBA9BA46": "overlap_DLPFC"})
+    if "overlap_genes" in kegg:
+        kegg["overlap_genes"] = kegg["overlap_genes"].astype("string").str.replace(
+            "(MFBA9BA46)", "(DLPFC)", regex=False
+        )
+    kegg.to_parquet(
+        config.output / "kegg_tissue_expanded_full.parquet",
+        index=False,
+        compression="zstd",
+    )
+    kegg.to_csv(
+        config.output / "kegg_tissue_expanded_full.tsv", sep="\t", index=False
+    )
+
+    annotation_source = table_file(
+        config.analysis_root, config.methods[0], "_module_kegg_annotations.tsv"
+    )
+    annotations = pd.read_csv(annotation_source, sep="\t")
+    annotations["module"] = pd.to_numeric(
+        annotations["module"], errors="raise"
+    ).astype("int32")
+    expected_modules = set(annotations["module"].astype(int))
+    if len(expected_modules) != config.module_count:
+        raise ValueError(
+            f"{config.key}: expected {config.module_count} modules, found "
+            f"{len(expected_modules)}"
+        )
+    if config.sentinel_module not in expected_modules:
+        raise ValueError(
+            f"{config.key}: sentinel M{config.sentinel_module} is absent"
+        )
+    annotations.to_csv(
+        config.output / "module_kegg_annotations.tsv", sep="\t", index=False
+    )
+    reported_kegg_modules = set(kegg["cluster_id"].astype(int))
+    if not reported_kegg_modules.issubset(expected_modules):
+        raise ValueError(f"{config.key}: KEGG contains modules outside the analysis set")
+    kegg_gene_lists = config.kegg.parent / "cluster_gene_lists"
+    admitted_kegg_modules = {
+        int(path.name.split("_", 2)[1])
+        for path in kegg_gene_lists.glob("cluster_*_UNION_ensembl.txt")
+    }
+    if config.key == "control_derived" and admitted_kegg_modules != expected_modules:
+        raise ValueError(
+            "Control-derived KEGG did not admit all 186 modules: "
+            f"missing={sorted(expected_modules - admitted_kegg_modules)}, "
+            f"extra={sorted(admitted_kegg_modules - expected_modules)}"
+        )
+
+    mdc_rows = write_mdc_summary(
+        config.mdc,
+        config.output / MDC_OUTPUT_NAME,
+        expected_modules,
+    )
+    module_details_rows = write_module_details(
+        config.module_details,
+        config.output / MODULE_DETAILS_OUTPUT_NAME,
+        expected_modules,
+    )
+    assignment_rows = validate_assignment_details(
+        config.assignments,
+        config.output / MODULE_DETAILS_OUTPUT_NAME,
+        expected_modules,
+    )
+    public_details = pd.read_csv(config.output / MODULE_DETAILS_OUTPUT_NAME, sep="\t")
+    ts_labeled_modules = sorted(
+        public_details.loc[
+            public_details["cluster_type"].astype(str).str.upper().eq("TS"), "module"
+        ].astype(int)
+    )
+    if config.key == "control_derived" and ts_labeled_modules != [355, 356, 867]:
+        raise ValueError(
+            "Control-derived TS module labels must be M355, M356, and M867; found "
+            f"{ts_labeled_modules}"
+        )
+
+    method_count = len(config.methods)
+    expected_rows = {
+        "aggregate_rows": method_count * 450 * config.module_count * 6,
+        "resolved_rows": method_count * 450 * config.module_count * 6 * 6,
+        "aggregate_stat_rows": method_count * config.module_count * 5 * 6 * 3,
+        "resolved_stat_rows": method_count * config.module_count * 5 * 6 * 6 * 3,
+        "mdc_rows": config.module_count,
+        "module_details_rows": config.module_count,
+        "assignment_rows": assignment_rows,
+    }
+    observed_rows = {
+        "aggregate_rows": aggregate_rows,
+        "resolved_rows": resolved_rows,
+        "aggregate_stat_rows": aggregate_stat_rows,
+        "resolved_stat_rows": resolved_stat_rows,
+        "mdc_rows": mdc_rows,
+        "module_details_rows": module_details_rows,
+        "assignment_rows": assignment_rows,
+    }
+    if observed_rows != expected_rows:
+        raise ValueError(
+            f"{config.key} row-count validation failed: "
+            f"observed={observed_rows}, expected={expected_rows}"
+        )
+
+    mdc_public = pd.read_csv(config.output / MDC_OUTPUT_NAME, sep="\t")
+    ct_unavailable_modules = sorted(
+        mdc_public.loc[
+            pd.to_numeric(mdc_public["n_ct_edges"], errors="coerce").fillna(0).eq(0),
+            "module",
+        ].astype(int)
+    )
+    if config.key == "control_derived" and ct_unavailable_modules != [356]:
+        raise ValueError(
+            "Control-derived MDC must have CT unavailable only for M356; found "
+            f"{ct_unavailable_modules}"
+        )
+
+    formula_validation_path = (
+        config.analysis_root / "control_reference_formula_validation.tsv"
+    )
+    formula_validation: dict[str, object] | None = None
+    if formula_validation_path.exists():
+        formula_frame = pd.read_csv(formula_validation_path, sep="\t")
+        required_formula_groups = {"Control", "MCI", "AD"}
+        if set(formula_frame["diagnosis_group"].astype(str)) != required_formula_groups:
+            raise ValueError(
+                f"{config.key}: formula validation does not contain Control/MCI/AD"
+            )
+        if not formula_frame["passed"].fillna(False).astype(bool).all():
+            raise ValueError(f"{config.key}: a direct formula validation failed")
+        formula_validation = {
+            "module": int(formula_frame["module"].iloc[0]),
+            "groups": sorted(required_formula_groups),
+            "max_absolute_error": float(formula_frame["max_absolute_error"].max()),
+            "max_relative_error": float(formula_frame["max_relative_error"].max()),
+            "tolerance": float(formula_frame["tolerance"].max()),
+            "source_sha256": sha256(formula_validation_path),
+        }
+    elif config.key == "control_derived":
+        raise FileNotFoundError(
+            "Control-derived analysis is missing control_reference_formula_validation.tsv"
+        )
+
+    files = dataset_file_manifest(config.output)
+    aggregate_global = config.module_count * 5 * 6 * 3
+    aggregate_within = config.module_count * 6 * 3
+    return {
+        "key": config.key,
+        "label": config.label,
+        "relative_data_dir": "." if config.key == "full_cohort" else config.key,
+        "source_run": config.analysis_root.name,
+        "methods": list(config.methods),
+        "donors_per_method": 450,
+        "diagnosis_counts_per_method": {"Control": 164, "MCI": 119, "AD": 167},
+        "modules": config.module_count,
+        "sentinel_module": config.sentinel_module,
+        "phenotypes": list(PHENOTYPES),
+        "feature_families": 6,
+        "resolved_components": 6,
+        "ct_unavailable_modules": ct_unavailable_modules,
+        "ts_labeled_modules": ts_labeled_modules,
+        "fdr_test_families": {
+            "aggregate_global": aggregate_global,
+            "aggregate_within_phenotype": aggregate_within,
+            "resolved_global": aggregate_global * 6,
+            "resolved_within_phenotype": aggregate_within * 6,
+        },
+        "rows": observed_rows,
+        "kegg": {
+            "input_modules": config.module_count,
+            "admitted_modules": len(admitted_kegg_modules),
+            "modules_with_reported_pathways": len(reported_kegg_modules),
+            "modules_without_reported_pathways": sorted(
+                expected_modules - reported_kegg_modules
+            ),
+            "rows": len(kegg),
+            "fdr_definition": (
+                "Benjamini-Hochberg correction separately within each module across "
+                "tested pathways."
+            ),
+            "source_sha256": sha256(config.kegg),
+        },
+        "mdc": mdc_manifest(config.mdc),
+        "module_details": module_details_manifest(config.module_details),
+        "assignments": {
+            "rows": assignment_rows,
+            "source_sha256": sha256(config.assignments),
+        },
+        "formula_validation": formula_validation,
+        "files": files,
     }
 
 
@@ -554,10 +1047,16 @@ def refresh_existing_mdc_bundle(source: Path, output: Path) -> dict[str, object]
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest.setdefault("rows", {})["mdc_rows"] = mdc_rows
     manifest["mdc"] = mdc_manifest(source)
-    manifest["files"][summary_path.name] = {
+    file_entry = {
         "bytes": summary_path.stat().st_size,
         "sha256": sha256(summary_path),
     }
+    manifest["files"][summary_path.name] = file_entry
+    if "module_sets" in manifest:
+        full = manifest["module_sets"]["full_cohort"]
+        full["rows"]["mdc_rows"] = mdc_rows
+        full["mdc"] = manifest["mdc"]
+        full["files"][summary_path.name] = file_entry
     manifest_path.write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
@@ -577,10 +1076,16 @@ def refresh_existing_module_details_bundle(
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest.setdefault("rows", {})["module_details_rows"] = details_rows
     manifest["module_details"] = module_details_manifest(source)
-    manifest["files"][details_path.name] = {
+    file_entry = {
         "bytes": details_path.stat().st_size,
         "sha256": sha256(details_path),
     }
+    manifest["files"][details_path.name] = file_entry
+    if "module_sets" in manifest:
+        full = manifest["module_sets"]["full_cohort"]
+        full["rows"]["module_details_rows"] = details_rows
+        full["module_details"] = manifest["module_details"]
+        full["files"][details_path.name] = file_entry
     manifest_path.write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
@@ -629,10 +1134,15 @@ def refresh_existing_statistics_bundle(
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest.setdefault("rows", {}).update(observed)
     for path in (aggregate_path, resolved_path):
-        manifest["files"][path.name] = {
+        file_entry = {
             "bytes": path.stat().st_size,
             "sha256": sha256(path),
         }
+        manifest["files"][path.name] = file_entry
+        if "module_sets" in manifest:
+            manifest["module_sets"]["full_cohort"]["files"][path.name] = file_entry
+    if "module_sets" in manifest:
+        manifest["module_sets"]["full_cohort"]["rows"].update(observed)
     manifest_path.write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
@@ -641,11 +1151,8 @@ def refresh_existing_statistics_bundle(
 
 def main() -> None:
     args = parse_args()
-    analysis_root = args.analysis_root.resolve()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
-    mdc_source = args.mdc.resolve()
-    module_details_source = args.module_details.resolve()
 
     refresh_flags = [args.mdc_only, args.module_details_only, args.statistics_only]
     if sum(refresh_flags) > 1:
@@ -654,15 +1161,19 @@ def main() -> None:
         )
 
     if args.mdc_only:
-        manifest = refresh_existing_mdc_bundle(mdc_source, output)
+        manifest = refresh_existing_mdc_bundle(args.mdc.resolve(), output)
         print(json.dumps(manifest["mdc"], indent=2))
         return
     if args.module_details_only:
-        manifest = refresh_existing_module_details_bundle(module_details_source, output)
+        manifest = refresh_existing_module_details_bundle(
+            args.module_details.resolve(), output
+        )
         print(json.dumps(manifest["module_details"], indent=2))
         return
     if args.statistics_only:
-        manifest = refresh_existing_statistics_bundle(analysis_root, output)
+        manifest = refresh_existing_statistics_bundle(
+            args.analysis_root.resolve(), output
+        )
         print(
             json.dumps(
                 {
@@ -674,87 +1185,97 @@ def main() -> None:
         )
         return
 
-    aggregate_sources = [
-        source_file(analysis_root, method, "_transformed_component_data.parquet")
-        for method in METHODS
-    ]
-    resolved_sources = [
-        source_file(analysis_root, method, "_tissue_resolved_component_data.parquet")
-        for method in METHODS
-    ]
-    aggregate_stat_sources = [
-        source_file(
-            analysis_root,
-            method,
-            "_robust_statistics.parquet",
-            exclude_text="tissue_resolved",
-        )
-        for method in METHODS
-    ]
-    resolved_stat_sources = [
-        source_file(analysis_root, method, "_tissue_resolved_robust_statistics.parquet")
-        for method in METHODS
-    ]
+    configs = (
+        DatasetConfig(
+            key="full_cohort",
+            label="Full-cohort L4 modules (154)",
+            analysis_root=args.analysis_root.resolve(),
+            methods=("standard", "control_anchored"),
+            module_count=154,
+            sentinel_module=1918,
+            kegg=args.kegg.resolve(),
+            mdc=args.mdc.resolve(),
+            module_details=args.module_details.resolve(),
+            assignments=args.full_assignments.resolve(),
+            output=output,
+        ),
+        DatasetConfig(
+            key="control_derived",
+            label="Control-derived L4 modules (186)",
+            analysis_root=args.control_derived_analysis_root.resolve(),
+            methods=("control_anchored",),
+            module_count=186,
+            sentinel_module=10,
+            kegg=args.control_derived_kegg.resolve(),
+            mdc=args.control_derived_mdc.resolve(),
+            module_details=args.control_derived_module_details.resolve(),
+            assignments=args.control_derived_assignments.resolve(),
+            output=output / "control_derived",
+        ),
+    )
 
-    sample_map = create_sample_map(aggregate_sources[0])
+    # Preflight every input before replacing any deploy data.
+    for config in configs:
+        mandatory = [
+            config.kegg,
+            config.mdc,
+            config.module_details,
+            config.assignments,
+        ]
+        if config.key == "control_derived":
+            mandatory.append(
+                config.analysis_root / "control_reference_formula_validation.tsv"
+            )
+        missing = [str(path) for path in mandatory if not path.exists()]
+        if missing:
+            raise FileNotFoundError(
+                f"{config.key} source bundle is incomplete: {', '.join(missing)}"
+            )
+        for method in config.methods:
+            source_file(
+                config.analysis_root, method, "_transformed_component_data.parquet"
+            )
+            source_file(
+                config.analysis_root,
+                method,
+                "_tissue_resolved_component_data.parquet",
+            )
+            source_file(
+                config.analysis_root,
+                method,
+                "_robust_statistics.parquet",
+                exclude_text="tissue_resolved",
+            )
+            source_file(
+                config.analysis_root,
+                method,
+                "_tissue_resolved_robust_statistics.parquet",
+            )
+            table_file(
+                config.analysis_root, method, "_module_kegg_annotations.tsv"
+            )
+
+    full_aggregate_source = source_file(
+        configs[0].analysis_root,
+        "standard",
+        "_transformed_component_data.parquet",
+    )
+    sample_map = create_sample_map(full_aggregate_source)
     metadata_rows = write_sample_metadata(
-        analysis_root / "standard" / "data" / "phenotypes.parquet",
+        configs[0].analysis_root / "standard" / "data" / "phenotypes.parquet",
         output / "sample_metadata.parquet",
         sample_map,
     )
-    aggregate_rows = write_sanitized_plot_data(
-        aggregate_sources,
-        output / "aggregate_plot_data.parquet",
-        sample_map,
-        resolved=False,
-    )
-    resolved_rows = write_sanitized_plot_data(
-        resolved_sources,
-        output / "resolved_plot_data.parquet",
-        sample_map,
-        resolved=True,
-    )
-    aggregate_stat_rows = write_combined_statistics(
-        aggregate_stat_sources,
-        output / "aggregate_statistics.parquet",
-        resolved=False,
-    )
-    resolved_stat_rows = write_combined_statistics(
-        resolved_stat_sources,
-        output / "resolved_statistics.parquet",
-        resolved=True,
-    )
+    module_set_manifests = {
+        config.key: build_module_set(config, sample_map) for config in configs
+    }
 
-    kegg = pd.read_csv(args.kegg, sep="\t")
-    kegg["cluster_id"] = pd.to_numeric(kegg["cluster_id"], errors="raise").astype("int32")
-    kegg = kegg.rename(columns={"overlap_MFBA9BA46": "overlap_DLPFC"})
-    if "overlap_genes" in kegg:
-        kegg["overlap_genes"] = kegg["overlap_genes"].astype("string").str.replace(
-            "(MFBA9BA46)", "(DLPFC)", regex=False
-        )
-    kegg.to_parquet(output / "kegg_tissue_expanded_full.parquet", index=False, compression="zstd")
-    kegg.to_csv(output / "kegg_tissue_expanded_full.tsv", sep="\t", index=False)
-
-    annotation_source = table_file(
-        analysis_root, "standard", "_module_kegg_annotations.tsv"
+    features = pd.read_csv(
+        configs[0].analysis_root / "feature_definitions.tsv", sep="\t"
     )
-    annotations = pd.read_csv(annotation_source, sep="\t")
-    annotations.to_csv(output / "module_kegg_annotations.tsv", sep="\t", index=False)
-    mdc_rows = write_mdc_summary(
-        mdc_source,
-        output / MDC_OUTPUT_NAME,
-        set(annotations["module"].astype(int)),
-    )
-    module_details_rows = write_module_details(
-        module_details_source,
-        output / MODULE_DETAILS_OUTPUT_NAME,
-        set(annotations["module"].astype(int)),
-    )
-
-    features = pd.read_csv(analysis_root / "feature_definitions.tsv", sep="\t")
     features = features.replace("MFBA9BA46", "DLPFC", regex=True)
     features.to_csv(output / "feature_definitions.tsv", sep="\t", index=False)
-    tissues = pd.read_csv(analysis_root / "tissue_mapping.tsv", sep="\t")
+    tissues = pd.read_csv(configs[0].analysis_root / "tissue_mapping.tsv", sep="\t")
     tissues["internal_tissue"] = tissues["internal_tissue"].replace(
         {"MFBA9BA46": "DLPFC"}
     )
@@ -765,34 +1286,38 @@ def main() -> None:
         output / "tissue_mapping.tsv", sep="\t", index=False
     )
 
-    expected = {
-        "aggregate_rows": 2 * 450 * 154 * 6,
-        "resolved_rows": 2 * 450 * 154 * 6 * 6,
-        "aggregate_stat_rows": 2 * 154 * 5 * 6 * 3,
-        "resolved_stat_rows": 2 * 154 * 5 * 6 * 6 * 3,
-        "mdc_rows": 154,
-        "module_details_rows": 154,
-    }
-    observed = {
-        "metadata_rows": metadata_rows,
-        "aggregate_rows": aggregate_rows,
-        "resolved_rows": resolved_rows,
-        "aggregate_stat_rows": aggregate_stat_rows,
-        "resolved_stat_rows": resolved_stat_rows,
-        "mdc_rows": mdc_rows,
-        "module_details_rows": module_details_rows,
-    }
-    expected["metadata_rows"] = 450
-    if observed != expected:
-        raise ValueError(f"Row-count validation failed: observed={observed}, expected={expected}")
-    if 1918 not in set(annotations["module"].astype(int)):
-        raise ValueError("M1918 is absent from the module annotation table")
+    expected_sample_ids = set(sample_map.values())
+    for config in configs:
+        validate_public_module_set(config.output, expected_sample_ids)
 
-    deploy_files = sorted(path for path in output.iterdir() if path.is_file())
+    if metadata_rows != 450:
+        raise ValueError(f"Expected 450 metadata rows, found {metadata_rows}")
+    diagnosis_counts = (
+        pd.read_parquet(output / "sample_metadata.parquet")["diagnosis_group"]
+        .value_counts()
+        .to_dict()
+    )
+    if diagnosis_counts != {"AD": 167, "Control": 164, "MCI": 119}:
+        raise ValueError(f"Unexpected diagnosis counts: {diagnosis_counts}")
+
+    deploy_files = sorted(
+        path
+        for path in output.rglob("*")
+        if path.is_file() and path.name != "data_manifest.json"
+    )
+    too_large = {
+        str(path.relative_to(output)): path.stat().st_size
+        for path in deploy_files
+        if path.stat().st_size >= 100 * 1024 * 1024
+    }
+    if too_large:
+        raise ValueError(f"Deploy files exceed GitHub's 100-MiB limit: {too_large}")
+
+    full_manifest = module_set_manifests["full_cohort"]
     manifest = {
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "source_run": RUN_NAME,
-        "methods": list(METHODS),
+        "methods": full_manifest["methods"],
         "donors_per_method": 450,
         "diagnosis_counts_per_method": {"Control": 164, "MCI": 119, "AD": 167},
         "modules": 154,
@@ -803,13 +1328,16 @@ def main() -> None:
             "whose salt and source mapping were discarded. Selected deidentified clinical "
             "and neuropathology fields are included for color, hover, and correlation views."
         ),
-        "mdc": mdc_manifest(mdc_source),
-        "module_details": module_details_manifest(module_details_source),
-        "rows": observed,
+        "mdc": full_manifest["mdc"],
+        "module_details": full_manifest["module_details"],
+        "rows": {"metadata_rows": metadata_rows, **full_manifest["rows"]},
+        "module_sets": module_set_manifests,
         "files": {
-            path.name: {"bytes": path.stat().st_size, "sha256": sha256(path)}
+            str(path.relative_to(output)): {
+                "bytes": path.stat().st_size,
+                "sha256": sha256(path),
+            }
             for path in deploy_files
-            if path.name != "data_manifest.json"
         },
     }
     (output / "data_manifest.json").write_text(
