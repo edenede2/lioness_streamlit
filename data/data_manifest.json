@@ -1,5 +1,5 @@
 {
-  "created_utc": "2026-08-18T08:51:21.820716+00:00",
+  "created_utc": "2026-08-18T09:02:57.865204+00:00",
   "diagnosis_counts_per_method": {
     "AD": 167,
     "Control": 164,
@@ -9,8 +9,8 @@
   "feature_families": 6,
   "files": {
     "aggregate_plot_data.parquet": {
-      "bytes": 34129330,
-      "sha256": "dd506996af7080f22b7356d2f25d940ce14b0a6d0edbfc9f2c0277ecb14a7dd2"
+      "bytes": 34129776,
+      "sha256": "7845416c757ff16d68b088f38a16b584ec88c2080d419e432ceea35bc97651ee"
     },
     "aggregate_statistics.parquet": {
       "bytes": 11354780,
@@ -33,12 +33,16 @@
       "sha256": "9d5acfd53747bc20050359aad64904a3031d8cc0d14057a74a8630da12b4ea1d"
     },
     "resolved_plot_data.parquet": {
-      "bytes": 97600351,
-      "sha256": "d92a759dd2c35248353c5fc8617c0f2244a636bfa31b52a7f6bb03b3144814f4"
+      "bytes": 97602905,
+      "sha256": "d717b9b8813d25db384562791feaf5224ed772d72911e9c8d2ddd90dbfe9a22a"
     },
     "resolved_statistics.parquet": {
       "bytes": 28466922,
       "sha256": "3e8a14929510aebc30cfd06687c31ec76096f171c380b4d732c42e6cd64d15d7"
+    },
+    "sample_metadata.parquet": {
+      "bytes": 33866,
+      "sha256": "2f6ad51927b99d2f175269292e4e4c07dcd1b5f2594951562586e92b514fc042"
     },
     "tissue_mapping.tsv": {
       "bytes": 66,
@@ -57,10 +61,11 @@
     "motor10_demog_slope",
     "sqrt_parksc_demog_slope"
   ],
-  "privacy": "donor and projid were removed; sample_id is a random-salted HMAC label whose salt and source mapping were discarded",
+  "privacy": "donor and projid were removed; sample_id is a random-salted HMAC label whose salt and source mapping were discarded. Selected deidentified clinical and neuropathology fields are included for color, hover, and correlation views.",
   "rows": {
     "aggregate_rows": 831600,
     "aggregate_stat_rows": 27720,
+    "metadata_rows": 450,
     "resolved_rows": 4989600,
     "resolved_stat_rows": 166320
   },

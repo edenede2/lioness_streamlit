@@ -9,27 +9,36 @@ import streamlit as st
 from app_helpers.charts import (
     aggregate_to_long,
     association_figure,
+    correlation_heatmap_figure,
     distribution_figure,
     distribution_summary,
     resolved_to_long,
 )
+from app_helpers.correlations import calculate_correlations
 from app_helpers.data import (
+    COLOR_LABELS,
     COMPONENT_ORDER,
     DATA_DIR,
     DIAGNOSIS_ORDER,
     FEATURE_LABELS,
+    HOVER_LABELS,
     KEGG_TSV,
     METHOD_LABELS,
+    NUMERIC_OUTCOMES,
+    OUTCOME_LABELS,
     PHENOTYPE_LABELS,
     SCALE_LABELS,
     dataframe_to_tsv_bytes,
     load_aggregate,
+    load_aggregate_scope,
     load_aggregate_statistics,
     load_feature_definitions,
     load_kegg,
     load_module_annotations,
     load_resolved,
+    load_resolved_scope,
     load_resolved_statistics,
+    load_sample_metadata,
     load_tissue_mapping,
     module_label,
     require_data_files,
@@ -72,6 +81,11 @@ def cached_resolved(method: str, module: int, feature: str) -> pd.DataFrame:
     return load_resolved(method, module, feature)
 
 
+@st.cache_data(show_spinner=False)
+def cached_sample_metadata() -> pd.DataFrame:
+    return load_sample_metadata()
+
+
 @st.cache_data(show_spinner=False, max_entries=96)
 def cached_aggregate_stats(
     method: str,
@@ -107,6 +121,89 @@ def cached_feature_definitions() -> pd.DataFrame:
 @st.cache_data(show_spinner=False)
 def cached_tissue_mapping() -> pd.DataFrame:
     return load_tissue_mapping()
+
+
+def attach_metadata(frame: pd.DataFrame) -> pd.DataFrame:
+    metadata = cached_sample_metadata()
+    additional = [
+        column for column in metadata.columns if column == "sample_id" or column not in frame.columns
+    ]
+    return frame.merge(metadata[additional], on="sample_id", how="left", validate="many_to_one")
+
+
+def add_correlation_labels(frame: pd.DataFrame) -> pd.DataFrame:
+    result = frame.copy()
+    result["outcome_label"] = result["outcome"].map(OUTCOME_LABELS)
+    result["feature_label"] = result["metric_family"].map(FEATURE_LABELS)
+    result["heatmap_row"] = result["feature_label"] + " · " + result["component_label"]
+    return result
+
+
+@st.cache_data(show_spinner="Calculating the selected module correlation matrix…", max_entries=24)
+def cached_module_correlations(method: str, module: int, resolved: bool) -> pd.DataFrame:
+    if resolved:
+        source = load_resolved_scope(method, module=module)
+        long = resolved_to_long(source, "rint")
+    else:
+        source = load_aggregate_scope(method, module=module)
+        long = aggregate_to_long(source, "rint")
+    long = attach_metadata(long)
+    all_donors = long.copy()
+    all_donors["diagnosis_group"] = "All donors"
+    long = pd.concat([long, all_donors], ignore_index=True)
+    summary = calculate_correlations(
+        long,
+        group_columns=[
+            "module",
+            "metric_family",
+            "component",
+            "component_label",
+            "diagnosis_group",
+        ],
+        outcomes=NUMERIC_OUTCOMES,
+    )
+    return add_correlation_labels(summary)
+
+
+@st.cache_data(show_spinner="Calculating correlations across all 154 modules…", max_entries=24)
+def cached_all_module_correlations(
+    method: str,
+    resolved: bool,
+    feature: str,
+    component: str,
+    diagnosis: str,
+) -> pd.DataFrame:
+    if resolved:
+        source = load_resolved_scope(
+            method,
+            metric_family=feature,
+            component=component,
+        )
+        long = resolved_to_long(source, "rint")
+    else:
+        source = load_aggregate_scope(method, metric_family=feature)
+        long = aggregate_to_long(source, "rint")
+        long = long.loc[long["component"].eq(component)]
+    long = attach_metadata(long)
+    if diagnosis != "All donors":
+        long = long.loc[long["diagnosis_group"].eq(diagnosis)]
+    else:
+        long = long.copy()
+        long["diagnosis_group"] = "All donors"
+    summary = calculate_correlations(
+        long,
+        group_columns=[
+            "module",
+            "metric_family",
+            "component",
+            "component_label",
+            "diagnosis_group",
+        ],
+        outcomes=NUMERIC_OUTCOMES,
+    )
+    summary = add_correlation_labels(summary)
+    summary["heatmap_row"] = summary["module"].map(lambda value: f"M{int(value)}")
+    return summary
 
 
 def readable_method(method: str) -> str:
@@ -177,6 +274,11 @@ with st.sidebar:
         options=DIAGNOSIS_ORDER,
         default=DIAGNOSIS_ORDER,
     )
+    color_by = st.selectbox(
+        "Color points by",
+        options=list(COLOR_LABELS),
+        format_func=lambda value: COLOR_LABELS[value],
+    )
 
 if not diagnoses:
     st.warning("Select at least one diagnosis group in the sidebar.")
@@ -193,6 +295,8 @@ with st.spinner("Loading the selected module…"):
         plot_data = resolved_to_long(plot_data, scale)
         statistics = cached_resolved_stats(method, module, phenotype, feature)
         resolved = True
+
+plot_data = attach_metadata(plot_data)
 
 available_components = (
     plot_data[["component", "component_label"]]
@@ -243,10 +347,19 @@ summary_cols[1].metric("Module", module_label(module))
 summary_cols[2].metric("Samples shown", plot_data["sample_id"].nunique())
 summary_cols[3].metric("Components", plot_data["component"].nunique())
 
-association_tab, distribution_tab, screen_tab, statistics_tab, kegg_tab, about_tab = st.tabs(
+(
+    association_tab,
+    distribution_tab,
+    correlation_tab,
+    screen_tab,
+    statistics_tab,
+    kegg_tab,
+    about_tab,
+) = st.tabs(
     [
         "Associations",
         "Feature distributions",
+        "Correlation heatmaps",
         "CT–TS screen",
         "Statistics",
         "KEGG enrichment",
@@ -258,7 +371,9 @@ with association_tab:
     st.subheader("Phenotype association")
     st.caption(
         "Diagnosis-specific points and ordinary least-squares trends. Click a diagnosis "
-        "in the legend to hide or show its points and trend together."
+        "in the legend to hide or show its points and trend together. Point shape identifies "
+        "diagnosis; point color follows the selected color variable. Gray points have a missing "
+        "value for a continuous color variable."
     )
     figure = association_figure(
         plot_data,
@@ -271,6 +386,9 @@ with association_tab:
         diagnoses=diagnoses,
         module=module,
         resolved=resolved,
+        color_by=color_by,
+        color_label=COLOR_LABELS[color_by],
+        hover_fields=HOVER_LABELS,
     )
     st.plotly_chart(
         figure,
@@ -284,19 +402,21 @@ with association_tab:
             },
         },
     )
-    public_plot_data = plot_data[
-        [
-            "sample_id",
-            "diagnosis_group",
-            "module",
-            "metric_family",
-            "component",
-            "component_label",
-            "metric_value",
-            phenotype,
-            "lioness_method",
-        ]
-    ].rename(columns={"metric_value": f"feature_{scale}"})
+    public_columns = [
+        "sample_id",
+        "diagnosis_group",
+        "module",
+        "metric_family",
+        "component",
+        "component_label",
+        "metric_value",
+        phenotype,
+        "lioness_method",
+        *[column for column in HOVER_LABELS if column != phenotype],
+    ]
+    public_plot_data = plot_data[public_columns].rename(
+        columns={"metric_value": f"feature_{scale}"}
+    )
     st.download_button(
         "Download displayed plot data (TSV)",
         data=dataframe_to_tsv_bytes(public_plot_data),
@@ -304,6 +424,152 @@ with association_tab:
         mime="text/tab-separated-values",
     )
 
+with correlation_tab:
+    st.subheader("LIONESS score correlations across phenotypes and outcomes")
+    st.caption(
+        "Heatmaps use donor-level Z-scored LIONESS features. Nominal fields such as sex code "
+        "and APOE genotype remain available in hover but are excluded from Pearson/Spearman "
+        "heatmaps because numeric correlation is not appropriate for unordered categories. "
+        "CogDx, Braak, CERAD, ADNC, and Parkinsonism are source-coded ordinal/binary outcomes; "
+        "Spearman is generally the more appropriate descriptive coefficient for the ordinal fields."
+    )
+    heatmap_mode = st.radio(
+        "Heatmap scope",
+        ["Selected module: all feature scores", "All 154 modules: selected score"],
+        horizontal=True,
+    )
+    coefficient = st.radio(
+        "Correlation",
+        ["Pearson", "Spearman"],
+        horizontal=True,
+    )
+    heatmap_diagnosis = st.selectbox(
+        "Diagnosis in heatmap",
+        options=["All donors", *DIAGNOSIS_ORDER],
+        index=3,
+        key="heatmap_diagnosis",
+    )
+    if coefficient == "Pearson":
+        value_column = "pearson_r"
+        p_column = "pearson_p"
+        fdr_column = "pearson_fdr_displayed_family"
+    else:
+        value_column = "spearman_rho"
+        p_column = "spearman_p"
+        fdr_column = "spearman_fdr_displayed_family"
+
+    if heatmap_mode.startswith("Selected module"):
+        correlation_table = cached_module_correlations(method, module, resolved)
+        heatmap_data = correlation_table.loc[
+            correlation_table["diagnosis_group"].eq(heatmap_diagnosis)
+        ].copy()
+        component_rank = {value: index for index, value in enumerate(COMPONENT_ORDER)}
+        feature_rank = {value: index for index, value in enumerate(FEATURE_LABELS)}
+        row_order_frame = (
+            heatmap_data[["metric_family", "component", "heatmap_row"]]
+            .drop_duplicates()
+            .assign(
+                feature_rank=lambda frame: frame["metric_family"].map(feature_rank),
+                component_rank=lambda frame: frame["component"].map(component_rank),
+            )
+            .sort_values(["feature_rank", "component_rank", "component"])
+        )
+        row_order = row_order_frame["heatmap_row"].tolist()
+        heatmap_title = (
+            f"Module M{module}: all LIONESS feature scores vs outcomes · {heatmap_diagnosis}"
+        )
+        fdr_scope = (
+            "Displayed-family FDR is Benjamini–Hochberg correction across every feature, "
+            "component, outcome, and diagnosis correlation calculated for this module."
+        )
+    else:
+        all_feature = st.selectbox(
+            "Feature for all-module heatmap",
+            options=list(FEATURE_LABELS),
+            format_func=lambda value: FEATURE_LABELS[value],
+            index=list(FEATURE_LABELS).index(feature),
+        )
+        if resolved:
+            component_options = available_components["component"].tolist()
+            all_component = st.selectbox(
+                "Component for all-module heatmap",
+                options=component_options,
+                format_func=lambda value: component_labels[value],
+            )
+        else:
+            all_component = st.selectbox(
+                "Component for all-module heatmap",
+                options=["CT", "TS"],
+                format_func=lambda value: f"{value} aggregate",
+            )
+        correlation_table = cached_all_module_correlations(
+            method,
+            resolved,
+            all_feature,
+            all_component,
+            heatmap_diagnosis,
+        )
+        heatmap_data = correlation_table.copy()
+        module_order = sorted(heatmap_data["module"].astype(int).unique())
+        row_order = [f"M{value}" for value in module_order]
+        heatmap_title = (
+            f"All modules: {FEATURE_LABELS[all_feature]} · "
+            f"{heatmap_data['component_label'].iloc[0]} · {heatmap_diagnosis}"
+        )
+        fdr_scope = (
+            "Displayed-family FDR is Benjamini–Hochberg correction across all 154 modules "
+            "and all numeric outcomes in this selected feature/component/diagnosis map."
+        )
+
+    correlation_heatmap = correlation_heatmap_figure(
+        heatmap_data,
+        value_column=value_column,
+        p_column=p_column,
+        fdr_column=fdr_column,
+        title=heatmap_title,
+        row_order=row_order,
+    )
+    st.plotly_chart(
+        correlation_heatmap,
+        use_container_width=True,
+        config={
+            "displaylogo": False,
+            "toImageButtonOptions": {
+                "format": "png",
+                "filename": f"{method}_{heatmap_diagnosis}_correlation_heatmap",
+                "scale": 3,
+            },
+        },
+    )
+    st.caption(fdr_scope)
+    correlation_columns = [
+        "module",
+        "metric_family",
+        "component",
+        "component_label",
+        "diagnosis_group",
+        "outcome",
+        "outcome_label",
+        "n",
+        "pearson_r",
+        "pearson_p",
+        "pearson_fdr_displayed_family",
+        "spearman_rho",
+        "spearman_p",
+        "spearman_fdr_displayed_family",
+    ]
+    with st.expander("Complete correlation table", expanded=False):
+        st.dataframe(
+            correlation_table[correlation_columns],
+            use_container_width=True,
+            hide_index=True,
+        )
+        st.download_button(
+            "Download complete correlation table (TSV)",
+            data=dataframe_to_tsv_bytes(correlation_table[correlation_columns]),
+            file_name=f"{method}_{heatmap_diagnosis}_lioness_outcome_correlations.tsv",
+            mime="text/tab-separated-values",
+        )
 with distribution_tab:
     st.subheader("Donor-level feature distributions")
     st.caption(
@@ -541,11 +807,16 @@ with about_tab:
     st.markdown("#### Public deploy safeguards")
     st.markdown(
         "The deploy Parquet files do not contain `projid`, the source donor identifier, "
-        "or detailed clinical metadata. Each point has a random-salted pseudonymous sample "
-        "label that is stable within this bundle only. Diagnosis and the five plotted "
-        "phenotypes remain because they are required for the figures. Public release still "
+        "or a donor-to-pseudonym key. Each point has a random-salted pseudonymous sample "
+        "label that is stable within this bundle only. Diagnosis, the five primary phenotypes, "
+        "and selected age, education, APOE, cognitive diagnosis, neuropathology, and Parkinsonism "
+        "fields are included for color, hover, and correlation views. Public release still "
         "requires confirmation that the governing ROSMAP data-use agreement permits sharing "
-        "these donor-level derived values."
+        "these donor-level derived and metadata values."
+    )
+    st.caption(
+        "Sex is displayed as source Code 0/1 because this deploy bundle does not infer a label "
+        "without an accompanying reviewed data dictionary. Age at death is rounded to one decimal."
     )
     manifest_path = DATA_DIR / "data_manifest.json"
     if manifest_path.exists():

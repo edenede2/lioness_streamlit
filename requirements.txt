@@ -3,4 +3,4 @@ pandas>=2.2,<3
 numpy>=1.26,<3
 pyarrow>=19,<22
 plotly>=6,<7
-
+scipy>=1.12,<2

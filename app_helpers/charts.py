@@ -46,6 +46,26 @@ def _clean_xy(frame: pd.DataFrame, x: str, y: str) -> pd.DataFrame:
     return clean.loc[np.isfinite(clean[x]) & np.isfinite(clean[y])]
 
 
+def _hover_payload(
+    frame: pd.DataFrame,
+    hover_fields: dict[str, str],
+) -> tuple[np.ndarray, str]:
+    values: list[np.ndarray] = [
+        frame["sample_id"].astype(str).to_numpy(),
+        frame["diagnosis_group"].astype(str).to_numpy(),
+    ]
+    template = "Sample: %{customdata[0]}<br>Diagnosis: %{customdata[1]}<br>"
+    for index, (field, label) in enumerate(hover_fields.items(), start=2):
+        series = frame[field] if field in frame else pd.Series(pd.NA, index=frame.index)
+        if pd.api.types.is_numeric_dtype(series):
+            displayed = series.map(lambda value: "NA" if pd.isna(value) else f"{value:.4g}")
+        else:
+            displayed = series.astype("string").fillna("NA")
+        values.append(displayed.astype(str).to_numpy())
+        template += f"{label}: %{{customdata[{index}]}}<br>"
+    return np.stack(values, axis=-1), template
+
+
 def _format_number(value: float | int | None, digits: int = 2) -> str:
     if value is None or pd.isna(value):
         return "NA"
@@ -109,6 +129,9 @@ def association_figure(
     diagnoses: Iterable[str],
     module: int,
     resolved: bool,
+    color_by: str,
+    color_label: str,
+    hover_fields: dict[str, str],
 ) -> go.Figure:
     """Build faceted scatter plots with diagnosis-specific OLS lines."""
     diagnoses = list(diagnoses)
@@ -128,6 +151,18 @@ def association_figure(
         vertical_spacing=0.16 if nrows > 1 else 0.08,
     )
 
+    continuous_color = color_by != "diagnosis_group"
+    color_min = color_max = None
+    if continuous_color:
+        color_values = pd.to_numeric(frame[color_by], errors="coerce")
+        finite_colors = color_values.loc[np.isfinite(color_values)]
+        if not finite_colors.empty:
+            color_min = float(finite_colors.min())
+            color_max = float(finite_colors.max())
+            if color_min == color_max:
+                color_min -= 0.5
+                color_max += 0.5
+
     for index, (component, component_label) in enumerate(component_pairs):
         row = index // ncols + 1
         col = index % ncols + 1
@@ -141,36 +176,53 @@ def association_figure(
             )
             if group.empty:
                 continue
-            customdata = np.stack(
-                [group["sample_id"].astype(str), group["diagnosis_group"].astype(str)],
-                axis=-1,
-            )
-            fig.add_trace(
-                go.Scatter(
-                    x=group["metric_value"],
-                    y=group[phenotype],
-                    mode="markers",
-                    name=diagnosis,
-                    legendgroup=diagnosis,
-                    showlegend=index == 0,
-                    marker={
-                        "color": DIAGNOSIS_COLORS[diagnosis],
-                        "symbol": DIAGNOSIS_SYMBOLS[diagnosis],
-                        "size": 8,
-                        "opacity": 0.72,
-                        "line": {"width": 0.5, "color": "white"},
-                    },
-                    customdata=customdata,
-                    hovertemplate=(
-                        "Sample: %{customdata[0]}<br>"
-                        "Diagnosis: %{customdata[1]}<br>"
-                        f"{feature_label}: %{{x:.3f}}<br>"
-                        f"{phenotype_label}: %{{y:.3f}}<extra></extra>"
+            if continuous_color:
+                valid_color = pd.to_numeric(group[color_by], errors="coerce").notna()
+                point_subsets = [(group.loc[valid_color], True), (group.loc[~valid_color], False)]
+            else:
+                point_subsets = [(group, True)]
+            legend_added = False
+            for point_group, has_color_value in point_subsets:
+                if point_group.empty:
+                    continue
+                customdata, hover_template = _hover_payload(point_group, hover_fields)
+                marker: dict[str, object] = {
+                    "symbol": DIAGNOSIS_SYMBOLS[diagnosis],
+                    "size": 8,
+                    "opacity": 0.74,
+                    "line": {"width": 0.5, "color": "white"},
+                }
+                if continuous_color and has_color_value:
+                    marker.update(
+                        {
+                            "color": pd.to_numeric(point_group[color_by], errors="coerce"),
+                            "coloraxis": "coloraxis",
+                        }
+                    )
+                elif continuous_color:
+                    marker["color"] = "#A9B1BA"
+                else:
+                    marker["color"] = DIAGNOSIS_COLORS[diagnosis]
+                fig.add_trace(
+                    go.Scatter(
+                        x=point_group["metric_value"],
+                        y=point_group[phenotype],
+                        mode="markers",
+                        name=diagnosis,
+                        legendgroup=diagnosis,
+                        showlegend=index == 0 and not legend_added,
+                        marker=marker,
+                        customdata=customdata,
+                        hovertemplate=(
+                            hover_template
+                            + f"{feature_label}: %{{x:.3f}}<br>"
+                            + f"{phenotype_label}: %{{y:.3f}}<extra></extra>"
+                        ),
                     ),
-                ),
-                row=row,
-                col=col,
-            )
+                    row=row,
+                    col=col,
+                )
+                legend_added = True
             if len(group) >= 3 and group["metric_value"].nunique() > 1:
                 slope, intercept = np.polyfit(group["metric_value"], group[phenotype], 1)
                 x_line = np.array([group["metric_value"].min(), group["metric_value"].max()])
@@ -232,6 +284,19 @@ def association_figure(
         },
         hoverlabel={"font_size": 13},
     )
+    if continuous_color and color_min is not None and color_max is not None:
+        fig.update_layout(
+            coloraxis={
+                "cmin": color_min,
+                "cmax": color_max,
+                "colorscale": [
+                    [0.0, "#2C7FB8"],
+                    [0.5, "#F4F4F2"],
+                    [1.0, "#E66101"],
+                ],
+                "colorbar": {"title": {"text": color_label}, "thickness": 16},
+            }
+        )
     return fig
 
 
@@ -353,3 +418,72 @@ def distribution_summary(frame: pd.DataFrame) -> pd.DataFrame:
     summary[numeric] = summary[numeric].round(4)
     return summary
 
+
+def correlation_heatmap_figure(
+    frame: pd.DataFrame,
+    value_column: str,
+    p_column: str,
+    fdr_column: str,
+    title: str,
+    row_order: list[str] | None = None,
+) -> go.Figure:
+    """Render a correlation matrix with n, p, and displayed-family FDR in hover."""
+    if frame.empty:
+        return go.Figure()
+    outcomes = frame[["outcome", "outcome_label"]].drop_duplicates()
+    outcome_order = outcomes["outcome"].tolist()
+    outcome_labels = outcomes.set_index("outcome")["outcome_label"].to_dict()
+    if row_order is None:
+        row_order = frame["heatmap_row"].drop_duplicates().tolist()
+
+    def pivot(column: str) -> pd.DataFrame:
+        return (
+            frame.pivot_table(
+                index="heatmap_row",
+                columns="outcome",
+                values=column,
+                aggfunc="first",
+            )
+            .reindex(index=row_order, columns=outcome_order)
+        )
+
+    values = pivot(value_column)
+    n_values = pivot("n")
+    p_values = pivot(p_column)
+    fdr_values = pivot(fdr_column)
+    customdata = np.dstack([n_values.to_numpy(), p_values.to_numpy(), fdr_values.to_numpy()])
+    coefficient_label = "Pearson r" if value_column == "pearson_r" else "Spearman ρ"
+    figure = go.Figure(
+        data=go.Heatmap(
+            z=values.to_numpy(),
+            x=[outcome_labels[outcome] for outcome in outcome_order],
+            y=row_order,
+            zmin=-1,
+            zmax=1,
+            zmid=0,
+            colorscale=[
+                [0.0, "#2C7FB8"],
+                [0.5, "#F7F7F7"],
+                [1.0, "#E66101"],
+            ],
+            colorbar={"title": coefficient_label, "thickness": 16},
+            customdata=customdata,
+            hovertemplate=(
+                "LIONESS score: %{y}<br>Outcome: %{x}<br>"
+                + f"{coefficient_label}: %{{z:.3f}}<br>"
+                + "n: %{customdata[0]:.0f}<br>"
+                + "p: %{customdata[1]:.3g}<br>"
+                + "FDR: %{customdata[2]:.3g}<extra></extra>"
+            ),
+            hoverongaps=False,
+        )
+    )
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"},
+        template="plotly_white",
+        height=max(560, min(2400, 180 + 12 * len(row_order))),
+        margin={"l": 235, "r": 35, "t": 80, "b": 165},
+        xaxis={"tickangle": -42, "side": "bottom"},
+        yaxis={"autorange": "reversed", "tickfont": {"size": 10}},
+    )
+    return figure

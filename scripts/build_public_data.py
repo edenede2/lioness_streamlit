@@ -40,6 +40,16 @@ AGGREGATE_VALUE_COLUMNS = (
 )
 RESOLVED_VALUE_COLUMNS = ("metric_raw", "metric_asinh", "metric_rint")
 
+METADATA_RENAME = {
+    "msex.x": "sex_code",
+    "age_death.x": "age_at_death",
+    "educ.x": "education_years",
+    "cogdx.y": "cogdx",
+    "braaksc": "braak_stage",
+    "ceradsc": "cerad_score",
+    "parkinsonism_yn_lv": "parkinsonism",
+}
+
 
 def parse_args() -> argparse.Namespace:
     repo_root = Path(__file__).resolve().parents[3]
@@ -100,6 +110,57 @@ def create_sample_map(aggregate_source: Path) -> dict[str, str]:
         donor: "S-" + hmac.new(salt, donor.encode("utf-8"), hashlib.sha256).hexdigest()[:12]
         for donor in donors
     }
+
+
+def format_apoe_genotype(value: object) -> object:
+    if pd.isna(value):
+        return pd.NA
+    code = str(int(float(value)))
+    if len(code) != 2:
+        return f"Code {code}"
+    return f"ε{code[0]}/ε{code[1]}"
+
+
+def write_sample_metadata(
+    phenotype_source: Path,
+    output: Path,
+    sample_map: dict[str, str],
+) -> int:
+    source_columns = [
+        "donor",
+        "diagnosis_group",
+        *PHENOTYPES,
+        *METADATA_RENAME,
+        "apoe_genotype",
+        "adnc",
+    ]
+    frame = pd.read_parquet(phenotype_source, columns=source_columns)
+    frame.insert(0, "sample_id", frame.pop("donor").astype(str).map(sample_map))
+    if frame["sample_id"].isna().any() or frame["sample_id"].nunique() != 450:
+        raise ValueError("Sample metadata did not map cleanly to all 450 pseudonyms")
+    frame = frame.rename(columns=METADATA_RENAME)
+    frame["sex_code"] = frame["sex_code"].map({0: "Code 0", 1: "Code 1"}).astype("string")
+    frame["apoe_genotype"] = frame["apoe_genotype"].map(format_apoe_genotype).astype("string")
+    frame["parkinsonism_label"] = frame["parkinsonism"].map(
+        {0.0: "No", 1.0: "Yes"}
+    ).astype("string")
+    frame["age_at_death"] = pd.to_numeric(frame["age_at_death"], errors="coerce").round(1)
+    numeric_columns = [
+        *PHENOTYPES,
+        "age_at_death",
+        "education_years",
+        "cogdx",
+        "braak_stage",
+        "cerad_score",
+        "adnc",
+        "parkinsonism",
+    ]
+    for column in numeric_columns:
+        frame[column] = pd.to_numeric(frame[column], errors="coerce").astype("float64")
+    frame["sample_id"] = frame["sample_id"].astype("string")
+    frame["diagnosis_group"] = frame["diagnosis_group"].astype("string")
+    frame.to_parquet(output, index=False, compression="zstd")
+    return len(frame)
 
 
 def normalize_batch(
@@ -212,6 +273,11 @@ def main() -> None:
     ]
 
     sample_map = create_sample_map(aggregate_sources[0])
+    metadata_rows = write_sample_metadata(
+        analysis_root / "standard" / "data" / "phenotypes.parquet",
+        output / "sample_metadata.parquet",
+        sample_map,
+    )
     aggregate_rows = write_sanitized_plot_data(
         aggregate_sources,
         output / "aggregate_plot_data.parquet",
@@ -268,11 +334,13 @@ def main() -> None:
         "resolved_stat_rows": 2 * 154 * 5 * 6 * 6 * 3,
     }
     observed = {
+        "metadata_rows": metadata_rows,
         "aggregate_rows": aggregate_rows,
         "resolved_rows": resolved_rows,
         "aggregate_stat_rows": aggregate_stat_rows,
         "resolved_stat_rows": resolved_stat_rows,
     }
+    expected["metadata_rows"] = 450
     if observed != expected:
         raise ValueError(f"Row-count validation failed: observed={observed}, expected={expected}")
     if 1918 not in set(annotations["module"].astype(int)):
@@ -290,7 +358,8 @@ def main() -> None:
         "feature_families": 6,
         "privacy": (
             "donor and projid were removed; sample_id is a random-salted HMAC label "
-            "whose salt and source mapping were discarded"
+            "whose salt and source mapping were discarded. Selected deidentified clinical "
+            "and neuropathology fields are included for color, hover, and correlation views."
         ),
         "rows": observed,
         "files": {

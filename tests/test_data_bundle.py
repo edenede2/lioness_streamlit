@@ -37,6 +37,20 @@ def test_public_plot_files_have_expected_rows_and_no_identifiers() -> None:
         assert forbidden.isdisjoint(parquet.schema_arrow.names)
         assert "sample_id" in parquet.schema_arrow.names
 
+    metadata_columns = set(pq.ParquetFile(data.SAMPLE_METADATA).schema_arrow.names)
+    assert {"donor", "projid"}.isdisjoint(metadata_columns)
+    assert {
+        "sample_id",
+        "age_at_death",
+        "apoe_genotype",
+        "cogdx",
+        "braak_stage",
+        "cerad_score",
+        "adnc",
+        "parkinsonism",
+    }.issubset(metadata_columns)
+    assert pq.ParquetFile(data.SAMPLE_METADATA).metadata.num_rows == 450
+
 
 def test_all_modules_and_m1918_are_packaged() -> None:
     annotations = data.load_module_annotations()
@@ -62,4 +76,3 @@ def test_kegg_table_is_complete_and_module_filter_works() -> None:
     source = pd.read_csv(data.KEGG_TSV, sep="\t")
     assert len(full) == len(source) == 8866
     assert len(data.load_kegg(1918)) == 156
-

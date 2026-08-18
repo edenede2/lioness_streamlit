@@ -12,7 +12,12 @@ The app includes:
 - Aggregate cross-tissue (CT) and tissue-specific (TS) views.
 - Tissue-resolved CT pair and TS tissue views using the label **DLPFC**.
 - Diagnosis-specific scatter plots and OLS trends for Control, MCI, and AD.
+- Point coloring by diagnosis or any numeric phenotype/outcome.
+- Expanded hover details for cognition, motor function, age, education, APOE,
+  CogDx, Braak, CERAD, ADNC, and Parkinsonism.
 - Feature-only histograms and violin distributions.
+- Selected-module and all-154-module correlation heatmaps, with downloadable
+  Pearson, Spearman, p-value, and displayed-family FDR tables.
 - Full raw, robust, RINT, leave-one-out, CT-vs-TS, and FDR statistics.
 - A descriptive CT-vs-TS screen across all modules.
 - Every row and column of the tissue-expanded KEGG enrichment table, filterable
@@ -20,10 +25,10 @@ The app includes:
 
 ## Important public-release check
 
-The deploy bundle removes `projid`, the source donor identifier, and detailed
-clinical metadata. Plot points use random-salted pseudonymous labels whose source
-mapping and salt are discarded. Diagnosis and the five phenotype values remain
-because they are necessary for the figures.
+The deploy bundle removes `projid` and the source donor identifier. Plot points use
+random-salted pseudonymous labels whose source mapping and salt are discarded.
+Diagnosis, the five primary phenotypes, and selected clinical/neuropathology fields
+remain for color, hover, and correlation views.
 
 Pseudonymization is not the same as permission to redistribute donor-level derived
 data. Before making the GitHub repository public, confirm that the ROSMAP data-use
@@ -89,6 +94,7 @@ not written. `data/data_manifest.json` records row counts, hashes, and package s
 - `data/resolved_plot_data.parquet`: DLPFC/AC/PCG tissue and tissue-pair features.
 - `data/aggregate_statistics.parquet`: complete aggregate robust statistics.
 - `data/resolved_statistics.parquet`: complete tissue-resolved robust statistics.
+- `data/sample_metadata.parquet`: 450 pseudonymous rows with the hover/color outcomes.
 - `data/kegg_tissue_expanded_full.tsv`: full readable KEGG source table.
 - `data/kegg_tissue_expanded_full.parquet`: query-efficient KEGG copy.
 - `data/module_kegg_annotations.tsv`: one displayed KEGG annotation per module.
@@ -105,3 +111,7 @@ within-phenotype version covers 2,772. Tissue-resolved global correction covers
 come directly from the supplied tissue-expanded enrichment table and are not
 recalculated by the app.
 
+The additional heatmap tables calculate Pearson and Spearman correlations on demand.
+Their `*_fdr_displayed_family` columns use Benjamini-Hochberg correction over the
+complete correlation family used by that displayed module or all-module heatmap; the
+scope is stated directly below each heatmap.
