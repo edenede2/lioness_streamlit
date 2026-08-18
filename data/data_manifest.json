@@ -45,8 +45,8 @@
       "sha256": "d717b9b8813d25db384562791feaf5224ed772d72911e9c8d2ddd90dbfe9a22a"
     },
     "resolved_statistics.parquet": {
-      "bytes": 28466922,
-      "sha256": "3e8a14929510aebc30cfd06687c31ec76096f171c380b4d732c42e6cd64d15d7"
+      "bytes": 28466875,
+      "sha256": "51f505d84e791aef8bd8d839b2feb553027cc2cfb13d186a862d96ab85b2a17a"
     },
     "sample_metadata.parquet": {
       "bytes": 33866,

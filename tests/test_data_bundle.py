@@ -90,11 +90,38 @@ def test_module_details_match_level4_modules_and_tissue_counts() -> None:
 
 def test_dlpfc_public_label_replaces_internal_mf_code() -> None:
     resolved = data.load_resolved("control_anchored", 935, "connectivity")
+    resolved_stats = data.load_resolved_statistics(
+        "control_anchored", 935, "cogn_global", "connectivity"
+    )
     assert resolved["component"].str.contains("DLPFC").any()
     assert not resolved.astype(str).apply(lambda col: col.str.contains("MFBA9", regex=False)).any().any()
+    assert not resolved_stats.astype(str).apply(
+        lambda col: col.str.contains("MFBA9", regex=False)
+    ).any().any()
+    assert set(resolved["component"].astype(str)) == set(
+        resolved_stats["component"].astype(str)
+    )
     kegg_columns = pq.ParquetFile(data.KEGG_PARQUET).schema_arrow.names
     assert "overlap_DLPFC" in kegg_columns
     assert "overlap_MFBA9BA46" not in kegg_columns
+
+
+def test_m263_dlpfc_statistics_match_the_scatter_component() -> None:
+    plot_data = data.load_resolved("control_anchored", 263, "negative_density")
+    statistics = data.load_resolved_statistics(
+        "control_anchored", 263, "cogn_global", "negative_density"
+    )
+    component = "CT_AC__DLPFC"
+    assert component in set(plot_data["component"].astype(str))
+    selected = statistics.loc[
+        statistics["component"].astype(str).eq(component)
+        & statistics["diagnosis_group"].eq("AD")
+    ]
+    assert len(selected) == 1
+    row = selected.iloc[0]
+    assert int(row["n"]) == 124
+    assert round(float(row["r_rint"]), 6) == 0.076391
+    assert round(float(row["p_rint"]), 6) == 0.399079
 
 
 def test_kegg_table_is_complete_and_module_filter_works() -> None:

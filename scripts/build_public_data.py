@@ -128,6 +128,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Refresh only the module details table and existing data manifest.",
     )
+    parser.add_argument(
+        "--statistics-only",
+        action="store_true",
+        help="Refresh only aggregate and tissue-resolved statistics and the data manifest.",
+    )
     return parser.parse_args()
 
 
@@ -234,15 +239,27 @@ def normalize_batch(
     for column in string_columns:
         frame[column] = frame[column].astype("string")
     if resolved:
-        frame["component"] = frame["component"].str.replace(
-            "MFBA9BA46", "DLPFC", regex=False
-        )
-        frame["component_label"] = frame["component_label"].str.replace(
-            "MFBA9/BA46", "DLPFC", regex=False
-        )
+        frame = normalize_resolved_component_labels(frame)
     for column in (*value_columns, *PHENOTYPES):
         frame[column] = pd.to_numeric(frame[column], errors="coerce").astype("float64")
     return frame
+
+
+def normalize_resolved_component_labels(frame: pd.DataFrame) -> pd.DataFrame:
+    """Apply the public DLPFC name to resolved component keys and labels."""
+    result = frame.copy()
+    if "component" in result:
+        result["component"] = result["component"].astype("string").str.replace(
+            "MFBA9BA46", "DLPFC", regex=False
+        )
+    if "component_label" in result:
+        result["component_label"] = (
+            result["component_label"]
+            .astype("string")
+            .str.replace("DLPFC (MFBA9/BA46)", "DLPFC", regex=False)
+            .str.replace("MFBA9/BA46", "DLPFC", regex=False)
+        )
+    return result
 
 
 def write_sanitized_plot_data(
@@ -281,10 +298,14 @@ def write_sanitized_plot_data(
     return rows
 
 
-def write_combined_statistics(sources: list[Path], output: Path) -> int:
+def write_combined_statistics(
+    sources: list[Path], output: Path, resolved: bool = False
+) -> int:
     frames = [pd.read_parquet(path) for path in sources]
     frame = pd.concat(frames, ignore_index=True)
     frame["module"] = pd.to_numeric(frame["module"], errors="raise").astype("int32")
+    if resolved:
+        frame = normalize_resolved_component_labels(frame)
     frame.to_parquet(output, index=False, compression="zstd")
     return len(frame)
 
@@ -566,6 +587,58 @@ def refresh_existing_module_details_bundle(
     return manifest
 
 
+def refresh_existing_statistics_bundle(
+    analysis_root: Path, output: Path
+) -> dict[str, object]:
+    """Refresh statistics and their manifest entries without changing donor labels."""
+    aggregate_sources = [
+        source_file(
+            analysis_root,
+            method,
+            "_robust_statistics.parquet",
+            exclude_text="tissue_resolved",
+        )
+        for method in METHODS
+    ]
+    resolved_sources = [
+        source_file(analysis_root, method, "_tissue_resolved_robust_statistics.parquet")
+        for method in METHODS
+    ]
+    aggregate_path = output / "aggregate_statistics.parquet"
+    resolved_path = output / "resolved_statistics.parquet"
+    aggregate_rows = write_combined_statistics(
+        aggregate_sources, aggregate_path, resolved=False
+    )
+    resolved_rows = write_combined_statistics(
+        resolved_sources, resolved_path, resolved=True
+    )
+    expected = {
+        "aggregate_stat_rows": 2 * 154 * 5 * 6 * 3,
+        "resolved_stat_rows": 2 * 154 * 5 * 6 * 6 * 3,
+    }
+    observed = {
+        "aggregate_stat_rows": aggregate_rows,
+        "resolved_stat_rows": resolved_rows,
+    }
+    if observed != expected:
+        raise ValueError(
+            f"Statistics row-count validation failed: observed={observed}, expected={expected}"
+        )
+
+    manifest_path = output / "data_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest.setdefault("rows", {}).update(observed)
+    for path in (aggregate_path, resolved_path):
+        manifest["files"][path.name] = {
+            "bytes": path.stat().st_size,
+            "sha256": sha256(path),
+        }
+    manifest_path.write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    return manifest
+
+
 def main() -> None:
     args = parse_args()
     analysis_root = args.analysis_root.resolve()
@@ -574,8 +647,11 @@ def main() -> None:
     mdc_source = args.mdc.resolve()
     module_details_source = args.module_details.resolve()
 
-    if args.mdc_only and args.module_details_only:
-        raise ValueError("Use only one of --mdc-only or --module-details-only")
+    refresh_flags = [args.mdc_only, args.module_details_only, args.statistics_only]
+    if sum(refresh_flags) > 1:
+        raise ValueError(
+            "Use only one of --mdc-only, --module-details-only, or --statistics-only"
+        )
 
     if args.mdc_only:
         manifest = refresh_existing_mdc_bundle(mdc_source, output)
@@ -584,6 +660,18 @@ def main() -> None:
     if args.module_details_only:
         manifest = refresh_existing_module_details_bundle(module_details_source, output)
         print(json.dumps(manifest["module_details"], indent=2))
+        return
+    if args.statistics_only:
+        manifest = refresh_existing_statistics_bundle(analysis_root, output)
+        print(
+            json.dumps(
+                {
+                    "aggregate_stat_rows": manifest["rows"]["aggregate_stat_rows"],
+                    "resolved_stat_rows": manifest["rows"]["resolved_stat_rows"],
+                },
+                indent=2,
+            )
+        )
         return
 
     aggregate_sources = [
@@ -627,10 +715,14 @@ def main() -> None:
         resolved=True,
     )
     aggregate_stat_rows = write_combined_statistics(
-        aggregate_stat_sources, output / "aggregate_statistics.parquet"
+        aggregate_stat_sources,
+        output / "aggregate_statistics.parquet",
+        resolved=False,
     )
     resolved_stat_rows = write_combined_statistics(
-        resolved_stat_sources, output / "resolved_statistics.parquet"
+        resolved_stat_sources,
+        output / "resolved_statistics.parquet",
+        resolved=True,
     )
 
     kegg = pd.read_csv(args.kegg, sep="\t")

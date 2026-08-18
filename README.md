@@ -126,6 +126,13 @@ python scripts/build_public_data.py \
   --module-details /path/to/se2_details_filtered_4.csv
 ```
 
+To refresh the aggregate and tissue-resolved statistics without changing donor
+pseudonyms or rebuilding plot data:
+
+```bash
+python scripts/build_public_data.py --statistics-only
+```
+
 The build is intentionally one-way: donor/projid columns and the pseudonym salt are
 not written. `data/data_manifest.json` records row counts, hashes, and package size.
 
