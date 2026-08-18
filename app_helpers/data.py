@@ -22,6 +22,7 @@ KEGG_TSV = DATA_DIR / "kegg_tissue_expanded_full.tsv"
 MODULE_ANNOTATIONS = DATA_DIR / "module_kegg_annotations.tsv"
 FEATURE_DEFINITIONS = DATA_DIR / "feature_definitions.tsv"
 TISSUE_MAPPING = DATA_DIR / "tissue_mapping.tsv"
+SAMPLE_METADATA = DATA_DIR / "sample_metadata.parquet"
 
 METHOD_LABELS = {
     "standard": "Standard LIONESS (all-donor reference)",
@@ -35,6 +36,27 @@ PHENOTYPE_LABELS = {
     "motor10_demog_slope": "Demographic-adjusted motor slope",
     "sqrt_parksc_demog_slope": "Demographic-adjusted Parkinsonian score",
 }
+
+OUTCOME_LABELS = {
+    **PHENOTYPE_LABELS,
+    "age_at_death": "Age at death",
+    "education_years": "Years of education",
+    "cogdx": "Final cognitive diagnosis code (CogDx)",
+    "braak_stage": "Braak stage",
+    "cerad_score": "CERAD score",
+    "adnc": "AD neuropathologic change (ADNC)",
+    "parkinsonism": "Parkinsonism",
+}
+
+HOVER_LABELS = {
+    **OUTCOME_LABELS,
+    "sex_code": "Sex code",
+    "apoe_genotype": "APOE genotype",
+    "parkinsonism_label": "Parkinsonism status",
+}
+
+NUMERIC_OUTCOMES = list(OUTCOME_LABELS)
+COLOR_LABELS = {"diagnosis_group": "Diagnosis group", **OUTCOME_LABELS}
 
 FEATURE_LABELS = {
     "connectivity": "Connectivity",
@@ -74,6 +96,7 @@ def require_data_files() -> None:
         MODULE_ANNOTATIONS,
         FEATURE_DEFINITIONS,
         TISSUE_MAPPING,
+        SAMPLE_METADATA,
     ]
     missing = [str(path.relative_to(APP_ROOT)) for path in required if not path.exists()]
     if missing:
@@ -127,6 +150,29 @@ def load_aggregate(
     )
 
 
+def load_aggregate_scope(
+    method: str,
+    module: int | None = None,
+    metric_family: str | None = None,
+) -> pd.DataFrame:
+    filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
+    if module is not None:
+        filters.append(("module", "=", int(module)))
+    if metric_family is not None:
+        filters.append(("metric_family", "=", metric_family))
+    columns = [
+        "sample_id",
+        "module",
+        "metric_family",
+        "CT_rint",
+        "TS_rint",
+        "diagnosis_group",
+        *PHENOTYPE_LABELS,
+        "lioness_method",
+    ]
+    return _read_filtered(AGGREGATE_DATA, filters, columns)
+
+
 def load_resolved(
     method: str,
     module: int,
@@ -157,6 +203,34 @@ def load_resolved(
     )
 
 
+def load_resolved_scope(
+    method: str,
+    module: int | None = None,
+    metric_family: str | None = None,
+    component: str | None = None,
+) -> pd.DataFrame:
+    filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
+    if module is not None:
+        filters.append(("module", "=", int(module)))
+    if metric_family is not None:
+        filters.append(("metric_family", "=", metric_family))
+    if component is not None:
+        filters.append(("component", "=", component))
+    columns = [
+        "sample_id",
+        "module",
+        "metric_family",
+        "component",
+        "component_class",
+        "component_label",
+        "metric_rint",
+        "diagnosis_group",
+        *PHENOTYPE_LABELS,
+        "lioness_method",
+    ]
+    return _read_filtered(RESOLVED_DATA, filters, columns)
+
+
 def load_aggregate_statistics(
     method: str,
     module: int | None = None,
@@ -175,19 +249,18 @@ def load_aggregate_statistics(
 
 def load_resolved_statistics(
     method: str,
-    module: int,
-    phenotype: str,
-    metric_family: str,
+    module: int | None = None,
+    phenotype: str | None = None,
+    metric_family: str | None = None,
 ) -> pd.DataFrame:
-    return _read_filtered(
-        RESOLVED_STATS,
-        [
-            ("lioness_method", "=", method),
-            ("module", "=", int(module)),
-            ("phenotype", "=", phenotype),
-            ("metric_family", "=", metric_family),
-        ],
-    )
+    filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
+    if module is not None:
+        filters.append(("module", "=", int(module)))
+    if phenotype is not None:
+        filters.append(("phenotype", "=", phenotype))
+    if metric_family is not None:
+        filters.append(("metric_family", "=", metric_family))
+    return _read_filtered(RESOLVED_STATS, filters)
 
 
 def load_module_annotations() -> pd.DataFrame:
@@ -200,6 +273,10 @@ def load_feature_definitions() -> pd.DataFrame:
 
 def load_tissue_mapping() -> pd.DataFrame:
     return pd.read_csv(TISSUE_MAPPING, sep="\t")
+
+
+def load_sample_metadata() -> pd.DataFrame:
+    return pd.read_parquet(SAMPLE_METADATA)
 
 
 def load_kegg(module: int | None = None) -> pd.DataFrame:
