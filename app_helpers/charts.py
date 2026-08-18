@@ -9,6 +9,8 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from scipy.cluster.hierarchy import leaves_list, linkage
+from scipy.spatial.distance import pdist
 
 
 DIAGNOSIS_COLORS = {
@@ -419,6 +421,26 @@ def distribution_summary(frame: pd.DataFrame) -> pd.DataFrame:
     return summary
 
 
+def _hierarchical_order(matrix: pd.DataFrame, axis: str) -> list[str]:
+    """Order one heatmap axis by average-linkage clustering of correlation profiles."""
+    if axis not in {"rows", "columns"}:
+        raise ValueError("axis must be 'rows' or 'columns'")
+    labels = matrix.index.tolist() if axis == "rows" else matrix.columns.tolist()
+    if len(labels) <= 1:
+        return labels
+
+    profiles = matrix.to_numpy(dtype=float)
+    if axis == "columns":
+        profiles = profiles.T
+    # Missing correlations are neutral only for calculating the display order.
+    profiles = np.nan_to_num(profiles, nan=0.0, posinf=0.0, neginf=0.0)
+    distances = pdist(profiles, metric="euclidean")
+    if distances.size == 0 or np.allclose(distances, 0):
+        return labels
+    hierarchy = linkage(distances, method="average", optimal_ordering=True)
+    return [labels[index] for index in leaves_list(hierarchy)]
+
+
 def correlation_heatmap_figure(
     frame: pd.DataFrame,
     value_column: str,
@@ -426,8 +448,10 @@ def correlation_heatmap_figure(
     fdr_column: str,
     title: str,
     row_order: list[str] | None = None,
+    cluster_rows: bool = False,
+    cluster_columns: bool = False,
 ) -> go.Figure:
-    """Render a correlation matrix with n, p, and displayed-family FDR in hover."""
+    """Render a correlation matrix, optionally clustering its display order."""
     if frame.empty:
         return go.Figure()
     outcomes = frame[["outcome", "outcome_label"]].drop_duplicates()
@@ -436,7 +460,7 @@ def correlation_heatmap_figure(
     if row_order is None:
         row_order = frame["heatmap_row"].drop_duplicates().tolist()
 
-    def pivot(column: str) -> pd.DataFrame:
+    def pivot(column: str, rows: list[str], columns: list[str]) -> pd.DataFrame:
         return (
             frame.pivot_table(
                 index="heatmap_row",
@@ -444,13 +468,20 @@ def correlation_heatmap_figure(
                 values=column,
                 aggfunc="first",
             )
-            .reindex(index=row_order, columns=outcome_order)
+            .reindex(index=rows, columns=columns)
         )
 
-    values = pivot(value_column)
-    n_values = pivot("n")
-    p_values = pivot(p_column)
-    fdr_values = pivot(fdr_column)
+    values = pivot(value_column, row_order, outcome_order)
+    if cluster_rows:
+        row_order = _hierarchical_order(values, "rows")
+        values = values.reindex(index=row_order)
+    if cluster_columns:
+        outcome_order = _hierarchical_order(values, "columns")
+        values = values.reindex(columns=outcome_order)
+
+    n_values = pivot("n", row_order, outcome_order)
+    p_values = pivot(p_column, row_order, outcome_order)
+    fdr_values = pivot(fdr_column, row_order, outcome_order)
     customdata = np.dstack([n_values.to_numpy(), p_values.to_numpy(), fdr_values.to_numpy()])
     coefficient_label = "Pearson r" if value_column == "pearson_r" else "Spearman ρ"
     figure = go.Figure(

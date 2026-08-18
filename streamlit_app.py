@@ -449,6 +449,16 @@ with correlation_tab:
         index=3,
         key="heatmap_diagnosis",
     )
+    heatmap_clustering = st.selectbox(
+        "Heatmap clustering",
+        options=["None", "Rows", "Columns", "Rows and columns"],
+        help=(
+            "Reorders the selected axes using average-linkage hierarchical clustering "
+            "of Euclidean distances between correlation profiles."
+        ),
+    )
+    cluster_rows = heatmap_clustering in {"Rows", "Rows and columns"}
+    cluster_columns = heatmap_clustering in {"Columns", "Rows and columns"}
     if coefficient == "Pearson":
         value_column = "pearson_r"
         p_column = "pearson_p"
@@ -528,6 +538,8 @@ with correlation_tab:
         fdr_column=fdr_column,
         title=heatmap_title,
         row_order=row_order,
+        cluster_rows=cluster_rows,
+        cluster_columns=cluster_columns,
     )
     st.plotly_chart(
         correlation_heatmap,
@@ -541,6 +553,12 @@ with correlation_tab:
             },
         },
     )
+    if heatmap_clustering != "None":
+        st.caption(
+            "Display order uses average-linkage hierarchical clustering with Euclidean "
+            "distance. Missing coefficients are treated as zero only when determining "
+            "the order; displayed correlations, p-values, FDRs, and downloads are unchanged."
+        )
     st.caption(fdr_scope)
     correlation_columns = [
         "module",

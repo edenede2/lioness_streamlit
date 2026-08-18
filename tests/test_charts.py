@@ -3,6 +3,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pandas as pd
+
 
 APP_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(APP_ROOT))
@@ -113,3 +115,47 @@ def test_continuous_color_and_correlation_heatmap() -> None:
     assert len(heatmap.data) == 1
     assert heatmap.data[0].zmin == -1
     assert heatmap.data[0].zmax == 1
+
+
+def test_correlation_heatmap_can_cluster_rows_and_columns() -> None:
+    rows = ["A", "B", "C", "D"]
+    outcomes = ["outcome_1", "outcome_3", "outcome_2"]
+    coefficients = {
+        "A": [1.0, -1.0, 0.9],
+        "B": [-1.0, 1.0, -0.9],
+        "C": [0.9, -0.8, 1.0],
+        "D": [-0.9, 0.8, -1.0],
+    }
+    records = []
+    for row in rows:
+        for outcome, coefficient in zip(outcomes, coefficients[row], strict=True):
+            records.append(
+                {
+                    "heatmap_row": row,
+                    "outcome": outcome,
+                    "outcome_label": outcome,
+                    "pearson_r": coefficient,
+                    "pearson_p": 0.01,
+                    "pearson_fdr_displayed_family": 0.02,
+                    "n": 100,
+                }
+            )
+
+    figure = correlation_heatmap_figure(
+        pd.DataFrame.from_records(records),
+        value_column="pearson_r",
+        p_column="pearson_p",
+        fdr_column="pearson_fdr_displayed_family",
+        title="Clustered correlations",
+        row_order=rows,
+        cluster_rows=True,
+        cluster_columns=True,
+    )
+    clustered_rows = list(figure.data[0].y)
+    clustered_columns = list(figure.data[0].x)
+
+    assert set(clustered_rows) == set(rows)
+    assert set(clustered_columns) == set(outcomes)
+    assert abs(clustered_rows.index("A") - clustered_rows.index("C")) == 1
+    assert abs(clustered_rows.index("B") - clustered_rows.index("D")) == 1
+    assert abs(clustered_columns.index("outcome_1") - clustered_columns.index("outcome_2")) == 1

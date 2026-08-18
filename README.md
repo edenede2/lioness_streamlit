@@ -18,6 +18,7 @@ The app includes:
 - Feature-only histograms and violin distributions.
 - Selected-module and all-154-module correlation heatmaps, with downloadable
   Pearson, Spearman, p-value, and displayed-family FDR tables.
+- Optional average-linkage clustering of heatmap rows, columns, or both.
 - Full raw, robust, RINT, leave-one-out, CT-vs-TS, and FDR statistics.
 - A descriptive CT-vs-TS screen across all modules.
 - Every row and column of the tissue-expanded KEGG enrichment table, filterable
