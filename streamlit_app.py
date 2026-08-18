@@ -392,7 +392,7 @@ with association_tab:
     )
     st.plotly_chart(
         figure,
-        use_container_width=True,
+        width="stretch",
         config={
             "displaylogo": False,
             "toImageButtonOptions": {
@@ -531,7 +531,7 @@ with correlation_tab:
     )
     st.plotly_chart(
         correlation_heatmap,
-        use_container_width=True,
+        width="stretch",
         config={
             "displaylogo": False,
             "toImageButtonOptions": {
@@ -561,7 +561,7 @@ with correlation_tab:
     with st.expander("Complete correlation table", expanded=False):
         st.dataframe(
             correlation_table[correlation_columns],
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
         st.download_button(
@@ -591,7 +591,7 @@ with distribution_tab:
     )
     st.plotly_chart(
         distribution,
-        use_container_width=True,
+        width="stretch",
         config={
             "displaylogo": False,
             "toImageButtonOptions": {
@@ -603,7 +603,7 @@ with distribution_tab:
     )
     summary = distribution_summary(plot_data)
     with st.expander("Distribution summary table", expanded=False):
-        st.dataframe(summary, use_container_width=True, hide_index=True)
+        st.dataframe(summary, width="stretch", hide_index=True)
         st.download_button(
             "Download distribution summary (TSV)",
             data=dataframe_to_tsv_bytes(summary),
@@ -667,7 +667,7 @@ with screen_tab:
     ]
     st.dataframe(
         screen[screen_columns].head(n_screen),
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         column_config={"module": st.column_config.NumberColumn(format="M%d")},
     )
@@ -716,7 +716,7 @@ with statistics_tab:
             "q_component_rint_global",
         ]
     st.dataframe(
-        statistics[display_columns], use_container_width=True, hide_index=True
+        statistics[display_columns], width="stretch", hide_index=True
     )
     st.download_button(
         "Download all selected robust-statistics columns (TSV)",
@@ -754,7 +754,7 @@ with kegg_tab:
             shown_kegg = kegg.loc[mask]
         st.dataframe(
             shown_kegg.sort_values(["fdr", "p"], na_position="last"),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
             column_config={
                 "p": st.column_config.NumberColumn(format="%.3e"),
@@ -801,9 +801,9 @@ with about_tab:
         )
 
     st.markdown("#### Module feature definitions")
-    st.dataframe(cached_feature_definitions(), use_container_width=True, hide_index=True)
+    st.dataframe(cached_feature_definitions(), width="stretch", hide_index=True)
     st.markdown("#### Tissue labels")
-    st.dataframe(cached_tissue_mapping(), use_container_width=True, hide_index=True)
+    st.dataframe(cached_tissue_mapping(), width="stretch", hide_index=True)
     st.markdown("#### Public deploy safeguards")
     st.markdown(
         "The deploy Parquet files do not contain `projid`, the source donor identifier, "

@@ -62,8 +62,24 @@ streamlit run streamlit_app.py
 2. Commit and push the repository. Every packaged file is below GitHub's 100 MB
    per-file limit, so Git LFS is not required for this build.
 3. In Streamlit Community Cloud, choose **Create app**, select the repository and
-   branch, and set the entrypoint to `streamlit_app.py`.
+   branch, set the entrypoint to `streamlit_app.py`, and select **Python 3.12** in
+   Advanced settings.
 4. Deploy. No secrets are required.
+
+`requirements.txt` pins the exact direct dependency versions validated with a clean
+resolver install, `pip check`, the complete test suite, and a Streamlit app execution.
+
+### Required Python version
+
+Select **Python 3.12** in Streamlit Community Cloud's Advanced settings. Do not use
+Python 3.14 with this dependency set: PyArrow 21 does not publish a CPython 3.14
+wheel, so the platform attempts an unsupported source build and reports
+`Failed to build pyarrow`.
+
+If the app was already created with Python 3.14, changing `requirements.txt` is not
+enough. Delete the Community Cloud app and deploy it again from the same repository,
+selecting Python 3.12 in Advanced settings. Deleting the cloud app does not delete
+the GitHub repository.
 
 If this directory remains inside the larger analysis repository instead, use
 `apps/lioness_streamlit/streamlit_app.py` as the entrypoint.
