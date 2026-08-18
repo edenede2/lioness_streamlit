@@ -52,6 +52,7 @@ METADATA_RENAME = {
 }
 
 MDC_OUTPUT_NAME = "mdc_ad_vs_control_summary.tsv"
+MODULE_DETAILS_OUTPUT_NAME = "module_details.tsv"
 MDC_SOURCE_METADATA = {
     "comparison": "AD reference / Control target",
     "reference_group": "AD",
@@ -101,6 +102,17 @@ def parse_args() -> argparse.Namespace:
         help="Latest completed AD-reference versus Control-target MDC table.",
     )
     parser.add_argument(
+        "--module-details",
+        type=Path,
+        default=repo_root
+        / "data"
+        / "proccessed"
+        / "se2_filtered"
+        / "se2_rosmap_full_signed_alt"
+        / "se2_details_filtered_4.csv",
+        help="Level-4 SE2 module details table.",
+    )
+    parser.add_argument(
         "--output",
         type=Path,
         default=Path(__file__).resolve().parents[1] / "data",
@@ -110,6 +122,11 @@ def parse_args() -> argparse.Namespace:
         "--mdc-only",
         action="store_true",
         help="Refresh only the module-level MDC summary and existing data manifest.",
+    )
+    parser.add_argument(
+        "--module-details-only",
+        action="store_true",
+        help="Refresh only the module details table and existing data manifest.",
     )
     return parser.parse_args()
 
@@ -272,6 +289,107 @@ def write_combined_statistics(sources: list[Path], output: Path) -> int:
     return len(frame)
 
 
+def write_module_details(
+    source: Path,
+    output: Path,
+    expected_modules: set[int],
+) -> int:
+    """Create a validated, public-facing level-4 module composition table."""
+    frame = pd.read_csv(source)
+    required = {
+        "Cluster ID",
+        "Cluster Size",
+        "Cluster Type",
+        "Cluster Tissues",
+        "AC",
+        "PCGBA23",
+        "MFBA9BA46",
+        "Dominant Tissue",
+    }
+    missing = required.difference(frame.columns)
+    if missing:
+        raise ValueError(f"Module details source is missing columns: {sorted(missing)}")
+
+    module = pd.to_numeric(frame["Cluster ID"], errors="raise").astype("int32")
+    if module.duplicated().any():
+        raise ValueError("Module details source contains duplicate module rows")
+    observed_modules = set(module.astype(int))
+    if observed_modules != expected_modules:
+        raise ValueError(
+            "Module details do not match the app modules: "
+            f"missing={sorted(expected_modules - observed_modules)}, "
+            f"extra={sorted(observed_modules - expected_modules)}"
+        )
+
+    module_size = pd.to_numeric(frame["Cluster Size"], errors="raise").astype("int32")
+    if module_size.le(0).any():
+        raise ValueError("Module details contain a non-positive module size")
+
+    source_count_columns = {
+        "n_genes_ac": "AC",
+        "n_genes_dlpfc": "MFBA9BA46",
+        "n_genes_pcg": "PCGBA23",
+    }
+    counts = pd.DataFrame(index=frame.index)
+    for public_column, source_column in source_count_columns.items():
+        values = pd.to_numeric(frame[source_column], errors="coerce").fillna(0)
+        if values.lt(0).any() or not np.allclose(values, values.round()):
+            raise ValueError(f"{source_column} contains an invalid gene count")
+        counts[public_column] = values.astype("int32")
+    if not counts.sum(axis=1).eq(module_size).all():
+        raise ValueError("Per-tissue gene counts do not sum to Cluster Size")
+
+    tissue_order = [
+        ("AC", "n_genes_ac"),
+        ("DLPFC", "n_genes_dlpfc"),
+        ("PCG", "n_genes_pcg"),
+    ]
+    tissue_labels = []
+    for row in counts.itertuples(index=False):
+        row_counts = dict(zip(counts.columns, row))
+        tissue_labels.append(
+            ", ".join(label for label, column in tissue_order if row_counts[column] > 0)
+        )
+
+    source_tissues = (
+        frame["Cluster Tissues"]
+        .astype("string")
+        .str.replace("MFBA9BA46", "DLPFC", regex=False)
+        .str.replace("PCGBA23", "PCG", regex=False)
+        .str.replace(",", ", ", regex=False)
+        .str.replace(r"\s+", " ", regex=True)
+    )
+    if not source_tissues.eq(pd.Series(tissue_labels, index=frame.index, dtype="string")).all():
+        raise ValueError("Cluster Tissues disagrees with the per-tissue gene counts")
+
+    dominant_tissue = (
+        frame["Dominant Tissue"]
+        .astype("string")
+        .replace({"MFBA9BA46": "DLPFC", "PCGBA23": "PCG"})
+    )
+    result = pd.DataFrame(
+        {
+            "module": module,
+            "module_size": module_size,
+            "cluster_type": frame["Cluster Type"].astype("string"),
+            "tissues": pd.Series(tissue_labels, dtype="string"),
+            "n_tissues": counts.gt(0).sum(axis=1).astype("int8"),
+            "dominant_tissue": dominant_tissue,
+            **{column: counts[column] for column in counts.columns},
+        }
+    )
+    result["proportion_ac"] = result["n_genes_ac"] / result["module_size"]
+    result["proportion_dlpfc"] = result["n_genes_dlpfc"] / result["module_size"]
+    result["proportion_pcg"] = result["n_genes_pcg"] / result["module_size"]
+    proportions = result[["proportion_ac", "proportion_dlpfc", "proportion_pcg"]]
+    if not np.allclose(proportions.sum(axis=1), 1.0):
+        raise ValueError("Per-tissue proportions do not sum to one")
+
+    result = result.sort_values("module").reset_index(drop=True)
+    result.to_csv(output, sep="\t", index=False, float_format="%.10g")
+    return len(result)
+
+
 def write_mdc_summary(
     source: Path,
     output: Path,
@@ -389,6 +507,21 @@ def mdc_manifest(source: Path) -> dict[str, object]:
     return metadata
 
 
+def module_details_manifest(source: Path) -> dict[str, object]:
+    return {
+        "source_output": "/".join(source.parts[-4:]),
+        "source_last_modified_utc": datetime.fromtimestamp(
+            source.stat().st_mtime, timezone.utc
+        ).isoformat(),
+        "source_sha256": sha256(source),
+        "definition": (
+            "Level-4 module size and tissue composition. MFBA9BA46 is displayed as "
+            "DLPFC and PCGBA23 is displayed as PCG. Tissue proportions use module size "
+            "as the denominator."
+        ),
+    }
+
+
 def refresh_existing_mdc_bundle(source: Path, output: Path) -> dict[str, object]:
     """Refresh MDC context without rebuilding donor pseudonyms or large Parquet files."""
     annotations = pd.read_csv(output / "module_kegg_annotations.tsv", sep="\t")
@@ -410,16 +543,47 @@ def refresh_existing_mdc_bundle(source: Path, output: Path) -> dict[str, object]
     return manifest
 
 
+def refresh_existing_module_details_bundle(
+    source: Path, output: Path
+) -> dict[str, object]:
+    """Refresh module composition without rebuilding donor-level deploy data."""
+    annotations = pd.read_csv(output / "module_kegg_annotations.tsv", sep="\t")
+    expected_modules = set(annotations["module"].astype(int))
+    details_path = output / MODULE_DETAILS_OUTPUT_NAME
+    details_rows = write_module_details(source, details_path, expected_modules)
+
+    manifest_path = output / "data_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest.setdefault("rows", {})["module_details_rows"] = details_rows
+    manifest["module_details"] = module_details_manifest(source)
+    manifest["files"][details_path.name] = {
+        "bytes": details_path.stat().st_size,
+        "sha256": sha256(details_path),
+    }
+    manifest_path.write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    return manifest
+
+
 def main() -> None:
     args = parse_args()
     analysis_root = args.analysis_root.resolve()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     mdc_source = args.mdc.resolve()
+    module_details_source = args.module_details.resolve()
+
+    if args.mdc_only and args.module_details_only:
+        raise ValueError("Use only one of --mdc-only or --module-details-only")
 
     if args.mdc_only:
         manifest = refresh_existing_mdc_bundle(mdc_source, output)
         print(json.dumps(manifest["mdc"], indent=2))
+        return
+    if args.module_details_only:
+        manifest = refresh_existing_module_details_bundle(module_details_source, output)
+        print(json.dumps(manifest["module_details"], indent=2))
         return
 
     aggregate_sources = [
@@ -489,6 +653,11 @@ def main() -> None:
         output / MDC_OUTPUT_NAME,
         set(annotations["module"].astype(int)),
     )
+    module_details_rows = write_module_details(
+        module_details_source,
+        output / MODULE_DETAILS_OUTPUT_NAME,
+        set(annotations["module"].astype(int)),
+    )
 
     features = pd.read_csv(analysis_root / "feature_definitions.tsv", sep="\t")
     features = features.replace("MFBA9BA46", "DLPFC", regex=True)
@@ -510,6 +679,7 @@ def main() -> None:
         "aggregate_stat_rows": 2 * 154 * 5 * 6 * 3,
         "resolved_stat_rows": 2 * 154 * 5 * 6 * 6 * 3,
         "mdc_rows": 154,
+        "module_details_rows": 154,
     }
     observed = {
         "metadata_rows": metadata_rows,
@@ -518,6 +688,7 @@ def main() -> None:
         "aggregate_stat_rows": aggregate_stat_rows,
         "resolved_stat_rows": resolved_stat_rows,
         "mdc_rows": mdc_rows,
+        "module_details_rows": module_details_rows,
     }
     expected["metadata_rows"] = 450
     if observed != expected:
@@ -541,6 +712,7 @@ def main() -> None:
             "and neuropathology fields are included for color, hover, and correlation views."
         ),
         "mdc": mdc_manifest(mdc_source),
+        "module_details": module_details_manifest(module_details_source),
         "rows": observed,
         "files": {
             path.name: {"bytes": path.stat().st_size, "sha256": sha256(path)}

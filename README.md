@@ -26,6 +26,8 @@ The app includes:
 - A descriptive CT-vs-TS screen across all modules.
 - Every row and column of the tissue-expanded KEGG enrichment table, filterable
   and downloadable per module or for all modules.
+- Level-4 module composition from the SE2 details file: total module size,
+  represented tissues, dominant tissue, per-tissue gene counts, and proportions.
 
 ## Important public-release check
 
@@ -103,7 +105,8 @@ Optional source paths can be supplied explicitly:
 python scripts/build_public_data.py \
   --analysis-root /path/to/20260817_standard_control_anchored_allmodules_5phenotypes_6features \
   --kegg /path/to/method4_tissue_expanded_kegg_annotated.tsv \
-  --mdc /path/to/AD_vs_Control_MDC_Preservation.tsv
+  --mdc /path/to/AD_vs_Control_MDC_Preservation.tsv \
+  --module-details /path/to/se2_details_filtered_4.csv
 ```
 
 To refresh only the compact MDC table without rebuilding the donor-level files or
@@ -113,6 +116,14 @@ changing pseudonymous sample labels:
 python scripts/build_public_data.py \
   --mdc-only \
   --mdc /path/to/AD_vs_Control_MDC_Preservation.tsv
+```
+
+To refresh only the module composition table without rebuilding donor-level files:
+
+```bash
+python scripts/build_public_data.py \
+  --module-details-only \
+  --module-details /path/to/se2_details_filtered_4.csv
 ```
 
 The build is intentionally one-way: donor/projid columns and the pseudonym salt are
@@ -128,6 +139,8 @@ not written. `data/data_manifest.json` records row counts, hashes, and package s
 - `data/kegg_tissue_expanded_full.tsv`: full readable KEGG source table.
 - `data/kegg_tissue_expanded_full.parquet`: query-efficient KEGG copy.
 - `data/module_kegg_annotations.tsv`: one displayed KEGG annotation per module.
+- `data/module_details.tsv`: validated level-4 module sizes, represented tissues,
+  per-tissue gene counts, and tissue proportions, with MF/BA9/46 displayed as DLPFC.
 - `data/mdc_ad_vs_control_summary.tsv`: total, TS, and CT MDC ratios with
   directional FDR values for all 154 modules.
 - `data/feature_definitions.tsv`: feature calculation definitions.

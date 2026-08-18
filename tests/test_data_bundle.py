@@ -62,6 +62,32 @@ def test_all_modules_and_m1918_are_packaged() -> None:
         assert selected["sample_id"].nunique() == 450
 
 
+def test_module_details_match_level4_modules_and_tissue_counts() -> None:
+    details = data.load_module_details()
+    annotations = data.load_module_annotations()
+    assert len(details) == details["module"].nunique() == 154
+    assert set(details["module"].astype(int)) == set(annotations["module"].astype(int))
+    assert details[["n_genes_ac", "n_genes_dlpfc", "n_genes_pcg"]].sum(axis=1).eq(
+        details["module_size"]
+    ).all()
+    proportions = details[["proportion_ac", "proportion_dlpfc", "proportion_pcg"]]
+    assert (proportions.sum(axis=1) - 1.0).abs().max() < 1e-8
+    assert not details.astype(str).apply(
+        lambda column: column.str.contains("MFBA9", regex=False)
+    ).any().any()
+
+    m1012 = data.load_module_details(1012).iloc[0]
+    assert int(m1012["module_size"]) == 152
+    assert int(m1012["n_genes_ac"]) == 151
+    assert int(m1012["n_genes_dlpfc"]) == 0
+    assert int(m1012["n_genes_pcg"]) == 1
+    assert m1012["tissues"] == "AC, PCG"
+
+    manifest = data.load_data_manifest()
+    assert manifest["rows"]["module_details_rows"] == 154
+    assert "module_details.tsv" in manifest["files"]
+
+
 def test_dlpfc_public_label_replaces_internal_mf_code() -> None:
     resolved = data.load_resolved("control_anchored", 935, "connectivity")
     assert resolved["component"].str.contains("DLPFC").any()

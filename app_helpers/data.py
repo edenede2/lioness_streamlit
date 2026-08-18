@@ -21,6 +21,7 @@ RESOLVED_STATS = DATA_DIR / "resolved_statistics.parquet"
 KEGG_PARQUET = DATA_DIR / "kegg_tissue_expanded_full.parquet"
 KEGG_TSV = DATA_DIR / "kegg_tissue_expanded_full.tsv"
 MODULE_ANNOTATIONS = DATA_DIR / "module_kegg_annotations.tsv"
+MODULE_DETAILS = DATA_DIR / "module_details.tsv"
 FEATURE_DEFINITIONS = DATA_DIR / "feature_definitions.tsv"
 TISSUE_MAPPING = DATA_DIR / "tissue_mapping.tsv"
 SAMPLE_METADATA = DATA_DIR / "sample_metadata.parquet"
@@ -97,6 +98,7 @@ def require_data_files() -> None:
         KEGG_PARQUET,
         KEGG_TSV,
         MODULE_ANNOTATIONS,
+        MODULE_DETAILS,
         FEATURE_DEFINITIONS,
         TISSUE_MAPPING,
         SAMPLE_METADATA,
@@ -270,6 +272,13 @@ def load_resolved_statistics(
 
 def load_module_annotations() -> pd.DataFrame:
     return pd.read_csv(MODULE_ANNOTATIONS, sep="\t")
+
+
+def load_module_details(module: int | None = None) -> pd.DataFrame:
+    details = pd.read_csv(MODULE_DETAILS, sep="\t")
+    if module is not None:
+        details = details.loc[details["module"].astype(int).eq(int(module))]
+    return details.reset_index(drop=True)
 
 
 def load_feature_definitions() -> pd.DataFrame:

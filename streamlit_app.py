@@ -39,6 +39,7 @@ from app_helpers.data import (
     load_kegg,
     load_mdc_summary,
     load_module_annotations,
+    load_module_details,
     load_resolved,
     load_resolved_scope,
     load_resolved_statistics,
@@ -73,6 +74,11 @@ st.markdown(
 @st.cache_data(show_spinner=False)
 def cached_annotations() -> pd.DataFrame:
     return load_module_annotations()
+
+
+@st.cache_data(show_spinner=False)
+def cached_module_details() -> pd.DataFrame:
+    return load_module_details()
 
 
 @st.cache_data(show_spinner=False, max_entries=48)
@@ -244,6 +250,7 @@ except FileNotFoundError as error:
 
 annotations = cached_annotations()
 modules = sorted(annotations["module"].astype(int).unique().tolist())
+module_details = cached_module_details()
 mdc_summary = cached_mdc_summary()
 data_manifest = cached_data_manifest()
 
@@ -351,17 +358,75 @@ if plot_data.empty or not selected_components:
     st.warning("No data remain for the current filters.")
     st.stop()
 
+selected_details = module_details.loc[
+    module_details["module"].astype(int).eq(int(module))
+]
+if len(selected_details) != 1:
+    st.error(f"Expected exactly one module-details row for {module_label(module)}.")
+    st.stop()
+selected_details = selected_details.iloc[0]
+
 annotation = selected_annotation(annotations, module)
 if annotation:
     st.markdown(f'<div class="kegg-note">{annotation}</div>', unsafe_allow_html=True)
 else:
     st.caption(f"No KEGG enrichment row is available for {module_label(module)}.")
 
-summary_cols = st.columns(4)
+summary_cols = st.columns(5)
 summary_cols[0].metric("Method", "Control-referenced" if method == "control_anchored" else "Standard")
 summary_cols[1].metric("Module", module_label(module))
-summary_cols[2].metric("Samples shown", plot_data["sample_id"].nunique())
-summary_cols[3].metric("Components", plot_data["component"].nunique())
+summary_cols[2].metric("Module genes", int(selected_details["module_size"]))
+summary_cols[3].metric("Samples shown", plot_data["sample_id"].nunique())
+summary_cols[4].metric("Components", plot_data["component"].nunique())
+
+tissue_composition = pd.DataFrame(
+    [
+        {
+            "Tissue": tissue,
+            "Genes": int(selected_details[count_column]),
+            "Module proportion": float(selected_details[proportion_column]),
+        }
+        for tissue, count_column, proportion_column in [
+            ("AC", "n_genes_ac", "proportion_ac"),
+            ("DLPFC", "n_genes_dlpfc", "proportion_dlpfc"),
+            ("PCG", "n_genes_pcg", "proportion_pcg"),
+        ]
+    ]
+)
+tissue_composition["Possible TS edges"] = tissue_composition["Genes"].map(
+    lambda count: count * (count - 1) // 2
+)
+tissue_composition["TS feature"] = tissue_composition["Genes"].map(
+    lambda count: "Available" if count >= 2 else "Unavailable (<2 genes)"
+)
+
+with st.expander(
+    f"{module_label(module)} module composition · {int(selected_details['module_size'])} genes · "
+    f"{selected_details['tissues']}",
+    expanded=True,
+):
+    detail_cols = st.columns(4)
+    detail_cols[0].metric("Module size", f"{int(selected_details['module_size']):,} genes")
+    detail_cols[1].metric("Tissues represented", f"{int(selected_details['n_tissues'])} of 3")
+    detail_cols[2].metric("Module type", str(selected_details["cluster_type"]))
+    detail_cols[3].metric("Dominant tissue", str(selected_details["dominant_tissue"]))
+    st.dataframe(
+        tissue_composition,
+        width="stretch",
+        hide_index=True,
+        column_config={
+            "Genes": st.column_config.NumberColumn(format="%d"),
+            "Module proportion": st.column_config.ProgressColumn(
+                format="percent", min_value=0.0, max_value=1.0
+            ),
+            "Possible TS edges": st.column_config.NumberColumn(format="%d"),
+        },
+    )
+    st.caption(
+        "Tissue proportions use total module genes as the denominator. A tissue needs at "
+        "least two module genes for a within-tissue (TS) edge; one gene can still participate "
+        "in cross-tissue (CT) edges."
+    )
 
 (
     association_tab,
@@ -371,6 +436,7 @@ summary_cols[3].metric("Components", plot_data["component"].nunique())
     mdc_tab,
     statistics_tab,
     kegg_tab,
+    module_details_tab,
     about_tab,
 ) = st.tabs(
     [
@@ -381,6 +447,7 @@ summary_cols[3].metric("Components", plot_data["component"].nunique())
         "MDC",
         "Statistics",
         "KEGG enrichment",
+        "Module details",
         "Methods & data",
     ]
 )
@@ -1004,6 +1071,82 @@ with kegg_tab:
     st.caption(
         "KEGG tissue labels: AC, DLPFC, and PCG/BA23. The KEGG FDR column "
         "was supplied by the enrichment analysis and is not recalculated by this app."
+    )
+
+with module_details_tab:
+    st.subheader("Level-4 module composition")
+    st.caption(
+        "Module size, represented tissues, per-tissue gene counts, and proportions from "
+        "the level-4 SE2 module-details file. Tissue proportions use module size as the denominator."
+    )
+    detail_columns = [
+        "module",
+        "module_size",
+        "cluster_type",
+        "tissues",
+        "n_tissues",
+        "dominant_tissue",
+        "n_genes_ac",
+        "proportion_ac",
+        "n_genes_dlpfc",
+        "proportion_dlpfc",
+        "n_genes_pcg",
+        "proportion_pcg",
+    ]
+    st.markdown(f"#### Selected module: {module_label(module)}")
+    st.dataframe(
+        module_details.loc[module_details["module"].astype(int).eq(int(module)), detail_columns],
+        width="stretch",
+        hide_index=True,
+        column_config={
+            "module": st.column_config.NumberColumn("Module", format="M%d"),
+            "module_size": st.column_config.NumberColumn("Module genes", format="%d"),
+            "cluster_type": "Module type",
+            "tissues": "Tissues",
+            "n_tissues": st.column_config.NumberColumn("N tissues", format="%d"),
+            "dominant_tissue": "Dominant tissue",
+            "n_genes_ac": st.column_config.NumberColumn("AC genes", format="%d"),
+            "proportion_ac": st.column_config.NumberColumn("AC proportion", format="percent"),
+            "n_genes_dlpfc": st.column_config.NumberColumn("DLPFC genes", format="%d"),
+            "proportion_dlpfc": st.column_config.NumberColumn(
+                "DLPFC proportion", format="percent"
+            ),
+            "n_genes_pcg": st.column_config.NumberColumn("PCG genes", format="%d"),
+            "proportion_pcg": st.column_config.NumberColumn("PCG proportion", format="percent"),
+        },
+    )
+    st.markdown("#### All 154 modules")
+    st.dataframe(
+        module_details[detail_columns],
+        width="stretch",
+        hide_index=True,
+        height=520,
+        column_config={
+            "module": st.column_config.NumberColumn("Module", format="M%d"),
+            "module_size": st.column_config.NumberColumn("Module genes", format="%d"),
+            "cluster_type": "Module type",
+            "tissues": "Tissues",
+            "n_tissues": st.column_config.NumberColumn("N tissues", format="%d"),
+            "dominant_tissue": "Dominant tissue",
+            "n_genes_ac": st.column_config.NumberColumn("AC genes", format="%d"),
+            "proportion_ac": st.column_config.NumberColumn("AC proportion", format="percent"),
+            "n_genes_dlpfc": st.column_config.NumberColumn("DLPFC genes", format="%d"),
+            "proportion_dlpfc": st.column_config.NumberColumn(
+                "DLPFC proportion", format="percent"
+            ),
+            "n_genes_pcg": st.column_config.NumberColumn("PCG genes", format="%d"),
+            "proportion_pcg": st.column_config.NumberColumn("PCG proportion", format="percent"),
+        },
+    )
+    st.download_button(
+        "Download complete module-details table (TSV)",
+        data=dataframe_to_tsv_bytes(module_details[detail_columns]),
+        file_name="se2_level4_module_details.tsv",
+        mime="text/tab-separated-values",
+    )
+    st.info(
+        "A tissue with one module gene can contribute CT edges but has no within-tissue "
+        "gene pair, so its tissue-specific LIONESS feature is unavailable."
     )
 
 with about_tab:

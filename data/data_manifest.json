@@ -32,6 +32,10 @@
       "bytes": 36615,
       "sha256": "56250cfdfb1fa9098ca4cc9d192004f96dfe436e850aa2cd79c7665f22371b6e"
     },
+    "module_details.tsv": {
+      "bytes": 12076,
+      "sha256": "98d4a6ba87e7a2b6583c71fdf874543be1951360360fe378e5ceda7008131351"
+    },
     "module_kegg_annotations.tsv": {
       "bytes": 54181,
       "sha256": "9d5acfd53747bc20050359aad64904a3031d8cc0d14057a74a8630da12b4ea1d"
@@ -77,6 +81,12 @@
     "standard",
     "control_anchored"
   ],
+  "module_details": {
+    "definition": "Level-4 module size and tissue composition. MFBA9BA46 is displayed as DLPFC and PCGBA23 is displayed as PCG. Tissue proportions use module size as the denominator.",
+    "source_last_modified_utc": "2025-12-23T07:17:07.690992+00:00",
+    "source_output": "proccessed/se2_filtered/se2_rosmap_full_signed_alt/se2_details_filtered_4.csv",
+    "source_sha256": "64ab938f960cd1b6174858418987675ae26e56e0619940a046b18a1bc8f92942"
+  },
   "modules": 154,
   "phenotypes": [
     "cogn_global",
@@ -91,6 +101,7 @@
     "aggregate_stat_rows": 27720,
     "mdc_rows": 154,
     "metadata_rows": 450,
+    "module_details_rows": 154,
     "resolved_rows": 4989600,
     "resolved_stat_rows": 166320
   },
