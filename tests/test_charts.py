@@ -14,9 +14,15 @@ from app_helpers.charts import (  # noqa: E402
     association_figure,
     correlation_heatmap_figure,
     distribution_figure,
+    mdc_module_figure,
+    mdc_overview_figure,
 )
 from app_helpers.correlations import calculate_correlations  # noqa: E402
-from app_helpers.data import load_aggregate, load_aggregate_statistics  # noqa: E402
+from app_helpers.data import (  # noqa: E402
+    load_aggregate,
+    load_aggregate_statistics,
+    load_mdc_summary,
+)
 
 
 def test_scatter_and_distribution_chart_paths() -> None:
@@ -159,3 +165,22 @@ def test_correlation_heatmap_can_cluster_rows_and_columns() -> None:
     assert abs(clustered_rows.index("A") - clustered_rows.index("C")) == 1
     assert abs(clustered_rows.index("B") - clustered_rows.index("D")) == 1
     assert abs(clustered_columns.index("outcome_1") - clustered_columns.index("outcome_2")) == 1
+
+
+def test_mdc_selected_module_and_overview_charts() -> None:
+    mdc = load_mdc_summary()
+    selected = mdc.loc[mdc["module"].eq(1918)].iloc[0]
+
+    module_figure = mdc_module_figure(selected, threshold=0.05)
+    assert len(module_figure.data) == 1
+    assert list(module_figure.data[0].x) == [
+        "Total",
+        "Tissue-specific (TS)",
+        "Cross-tissue (CT)",
+    ]
+    assert "M1918" in module_figure.layout.title.text
+
+    overview = mdc_overview_figure(mdc, selected_module=1918, threshold=0.05)
+    assert len(overview.data) >= 2
+    assert any(trace.name == "Selected M1918" for trace in overview.data)
+    assert overview.layout.xaxis.title.text == "TS log2 MDC (AD / Control)"

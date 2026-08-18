@@ -16,6 +16,7 @@ import secrets
 from datetime import datetime, timezone
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -50,6 +51,27 @@ METADATA_RENAME = {
     "parkinsonism_yn_lv": "parkinsonism",
 }
 
+MDC_OUTPUT_NAME = "mdc_ad_vs_control_summary.tsv"
+MDC_SOURCE_METADATA = {
+    "comparison": "AD reference / Control target",
+    "reference_group": "AD",
+    "target_group": "Control",
+    "reference_assembled_donors": 517,
+    "target_assembled_donors": 408,
+    "reference_complete_three_tissue_donors": 167,
+    "target_complete_three_tissue_donors": 164,
+    "mci_included": False,
+    "sample_permutations": 200,
+    "gene_permutations": 200,
+    "beta_ts": 3,
+    "beta_ct": 2,
+    "adjacency": "signedAlt",
+    "fdr_definition": (
+        "Directional FDR is the maximum of the Benjamini-Hochberg-adjusted "
+        "sample-permutation and gene-permutation p-values for the observed direction."
+    ),
+}
+
 
 def parse_args() -> argparse.Namespace:
     repo_root = Path(__file__).resolve().parents[3]
@@ -70,10 +92,24 @@ def parse_args() -> argparse.Namespace:
         help="Full annotated tissue-expanded KEGG table.",
     )
     parser.add_argument(
+        "--mdc",
+        type=Path,
+        default=repo_root
+        / "MDC_Preservation_signedAlt_AD_Control_reverse2"
+        / "AD_vs_Control"
+        / "AD_vs_Control_MDC_Preservation.tsv",
+        help="Latest completed AD-reference versus Control-target MDC table.",
+    )
+    parser.add_argument(
         "--output",
         type=Path,
         default=Path(__file__).resolve().parents[1] / "data",
         help="Streamlit deploy data directory.",
+    )
+    parser.add_argument(
+        "--mdc-only",
+        action="store_true",
+        help="Refresh only the module-level MDC summary and existing data manifest.",
     )
     return parser.parse_args()
 
@@ -236,6 +272,97 @@ def write_combined_statistics(sources: list[Path], output: Path) -> int:
     return len(frame)
 
 
+def write_mdc_summary(
+    source: Path,
+    output: Path,
+    expected_modules: set[int],
+) -> int:
+    """Create the compact module-level MDC table used by the public app."""
+    frame = pd.read_csv(source, sep="\t")
+    required = {
+        "module",
+        "size",
+        "MDC",
+        "MDC_TS",
+        "MDC_CT",
+        "q_loss_max",
+        "q_gain_max",
+        "q_loss_max_TS",
+        "q_gain_max_TS",
+        "q_loss_max_CT",
+        "q_gain_max_CT",
+        "n_TS_edges",
+        "n_CT_edges",
+    }
+    missing = required.difference(frame.columns)
+    if missing:
+        raise ValueError(f"MDC source is missing columns: {sorted(missing)}")
+
+    frame["module"] = pd.to_numeric(frame["module"], errors="raise").astype("int32")
+    if frame["module"].duplicated().any():
+        raise ValueError("MDC source contains duplicate module rows")
+    observed_modules = set(frame["module"].astype(int))
+    if observed_modules != expected_modules:
+        raise ValueError(
+            "MDC modules do not match the app modules: "
+            f"missing={sorted(expected_modules - observed_modules)}, "
+            f"extra={sorted(observed_modules - expected_modules)}"
+        )
+
+    result = pd.DataFrame(
+        {
+            "module": frame["module"],
+            "module_size_mapped": pd.to_numeric(frame["size"], errors="raise").astype("int32"),
+            "n_ts_edges": pd.to_numeric(frame["n_TS_edges"], errors="coerce").astype("Int64"),
+            "n_ct_edges": pd.to_numeric(frame["n_CT_edges"], errors="coerce").astype("Int64"),
+        }
+    )
+    scope_columns = {
+        "total": ("MDC", "q_loss_max", "q_gain_max"),
+        "ts": ("MDC_TS", "q_loss_max_TS", "q_gain_max_TS"),
+        "ct": ("MDC_CT", "q_loss_max_CT", "q_gain_max_CT"),
+    }
+    for scope, (mdc_column, loss_column, gain_column) in scope_columns.items():
+        mdc = pd.to_numeric(frame[mdc_column], errors="coerce").astype("float64")
+        if mdc.dropna().le(0).any():
+            raise ValueError(f"{mdc_column} contains a non-positive ratio")
+        loss_q = pd.to_numeric(frame[loss_column], errors="coerce").astype("float64")
+        gain_q = pd.to_numeric(frame[gain_column], errors="coerce").astype("float64")
+        directional_fdr = loss_q.where(mdc.ge(1), gain_q).where(mdc.notna())
+        direction = pd.Series("Not available", index=frame.index, dtype="string")
+        direction = direction.mask(mdc.gt(1), "Higher in AD")
+        direction = direction.mask(mdc.lt(1), "Higher in Control")
+        direction = direction.mask(mdc.eq(1), "Equal")
+
+        result[f"mdc_{scope}"] = mdc
+        result[f"log2_mdc_{scope}"] = np.log2(mdc)
+        result[f"direction_{scope}"] = direction
+        result[f"directional_fdr_{scope}"] = directional_fdr
+        result[f"significant_{scope}_fdr05"] = directional_fdr.lt(0.05)
+        result[f"significant_{scope}_fdr10"] = directional_fdr.lt(0.10)
+
+    result["ts_minus_ct_log2_mdc"] = (
+        result["log2_mdc_ts"] - result["log2_mdc_ct"]
+    )
+    result["any_significant_fdr05"] = result[
+        [
+            "significant_total_fdr05",
+            "significant_ts_fdr05",
+            "significant_ct_fdr05",
+        ]
+    ].any(axis=1)
+    result["any_significant_fdr10"] = result[
+        [
+            "significant_total_fdr10",
+            "significant_ts_fdr10",
+            "significant_ct_fdr10",
+        ]
+    ].any(axis=1)
+    result = result.sort_values("module").reset_index(drop=True)
+    result.to_csv(output, sep="\t", index=False)
+    return len(result)
+
+
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -244,11 +371,56 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def mdc_manifest(source: Path) -> dict[str, object]:
+    metadata = dict(MDC_SOURCE_METADATA)
+    metadata.update(
+        {
+            "source_output": "/".join(source.parts[-3:]),
+            "source_last_modified_utc": datetime.fromtimestamp(
+                source.stat().st_mtime, timezone.utc
+            ).isoformat(),
+            "source_sha256": sha256(source),
+            "cohort_note": (
+                "The MDC assembled cohort is the tissue union and contains every complete-tissue "
+                "AD/Control donor used by LIONESS plus donors with partial tissue availability."
+            ),
+        }
+    )
+    return metadata
+
+
+def refresh_existing_mdc_bundle(source: Path, output: Path) -> dict[str, object]:
+    """Refresh MDC context without rebuilding donor pseudonyms or large Parquet files."""
+    annotations = pd.read_csv(output / "module_kegg_annotations.tsv", sep="\t")
+    expected_modules = set(annotations["module"].astype(int))
+    summary_path = output / MDC_OUTPUT_NAME
+    mdc_rows = write_mdc_summary(source, summary_path, expected_modules)
+
+    manifest_path = output / "data_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest.setdefault("rows", {})["mdc_rows"] = mdc_rows
+    manifest["mdc"] = mdc_manifest(source)
+    manifest["files"][summary_path.name] = {
+        "bytes": summary_path.stat().st_size,
+        "sha256": sha256(summary_path),
+    }
+    manifest_path.write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    return manifest
+
+
 def main() -> None:
     args = parse_args()
     analysis_root = args.analysis_root.resolve()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
+    mdc_source = args.mdc.resolve()
+
+    if args.mdc_only:
+        manifest = refresh_existing_mdc_bundle(mdc_source, output)
+        print(json.dumps(manifest["mdc"], indent=2))
+        return
 
     aggregate_sources = [
         source_file(analysis_root, method, "_transformed_component_data.parquet")
@@ -312,6 +484,11 @@ def main() -> None:
     )
     annotations = pd.read_csv(annotation_source, sep="\t")
     annotations.to_csv(output / "module_kegg_annotations.tsv", sep="\t", index=False)
+    mdc_rows = write_mdc_summary(
+        mdc_source,
+        output / MDC_OUTPUT_NAME,
+        set(annotations["module"].astype(int)),
+    )
 
     features = pd.read_csv(analysis_root / "feature_definitions.tsv", sep="\t")
     features = features.replace("MFBA9BA46", "DLPFC", regex=True)
@@ -332,6 +509,7 @@ def main() -> None:
         "resolved_rows": 2 * 450 * 154 * 6 * 6,
         "aggregate_stat_rows": 2 * 154 * 5 * 6 * 3,
         "resolved_stat_rows": 2 * 154 * 5 * 6 * 6 * 3,
+        "mdc_rows": 154,
     }
     observed = {
         "metadata_rows": metadata_rows,
@@ -339,6 +517,7 @@ def main() -> None:
         "resolved_rows": resolved_rows,
         "aggregate_stat_rows": aggregate_stat_rows,
         "resolved_stat_rows": resolved_stat_rows,
+        "mdc_rows": mdc_rows,
     }
     expected["metadata_rows"] = 450
     if observed != expected:
@@ -361,6 +540,7 @@ def main() -> None:
             "whose salt and source mapping were discarded. Selected deidentified clinical "
             "and neuropathology fields are included for color, hover, and correlation views."
         ),
+        "mdc": mdc_manifest(mdc_source),
         "rows": observed,
         "files": {
             path.name: {"bytes": path.stat().st_size, "sha256": sha256(path)}

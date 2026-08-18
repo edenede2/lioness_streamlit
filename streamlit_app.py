@@ -12,6 +12,8 @@ from app_helpers.charts import (
     correlation_heatmap_figure,
     distribution_figure,
     distribution_summary,
+    mdc_module_figure,
+    mdc_overview_figure,
     resolved_to_long,
 )
 from app_helpers.correlations import calculate_correlations
@@ -32,8 +34,10 @@ from app_helpers.data import (
     load_aggregate,
     load_aggregate_scope,
     load_aggregate_statistics,
+    load_data_manifest,
     load_feature_definitions,
     load_kegg,
+    load_mdc_summary,
     load_module_annotations,
     load_resolved,
     load_resolved_scope,
@@ -84,6 +88,16 @@ def cached_resolved(method: str, module: int, feature: str) -> pd.DataFrame:
 @st.cache_data(show_spinner=False)
 def cached_sample_metadata() -> pd.DataFrame:
     return load_sample_metadata()
+
+
+@st.cache_data(show_spinner=False)
+def cached_mdc_summary() -> pd.DataFrame:
+    return load_mdc_summary()
+
+
+@st.cache_data(show_spinner=False)
+def cached_data_manifest() -> dict[str, object]:
+    return load_data_manifest()
 
 
 @st.cache_data(show_spinner=False, max_entries=96)
@@ -230,6 +244,8 @@ except FileNotFoundError as error:
 
 annotations = cached_annotations()
 modules = sorted(annotations["module"].astype(int).unique().tolist())
+mdc_summary = cached_mdc_summary()
+data_manifest = cached_data_manifest()
 
 st.title("ROSMAP LIONESS Network Explorer")
 st.markdown(
@@ -352,6 +368,7 @@ summary_cols[3].metric("Components", plot_data["component"].nunique())
     distribution_tab,
     correlation_tab,
     screen_tab,
+    mdc_tab,
     statistics_tab,
     kegg_tab,
     about_tab,
@@ -361,6 +378,7 @@ summary_cols[3].metric("Components", plot_data["component"].nunique())
         "Feature distributions",
         "Correlation heatmaps",
         "CT–TS screen",
+        "MDC",
         "Statistics",
         "KEGG enrichment",
         "Methods & data",
@@ -697,6 +715,198 @@ with screen_tab:
     )
     st.info(fdr_text())
 
+with mdc_tab:
+    st.subheader("Module differential connectivity (MDC)")
+    st.caption(
+        "MDC compares the mean absolute signedAlt adjacency in AD with Control. "
+        "Values above 1 indicate higher connectivity in AD; values below 1 indicate "
+        "higher connectivity in Control. Total uses all edges, TS uses same-tissue edges, "
+        "and CT uses cross-tissue edges."
+    )
+    mdc_metadata = data_manifest.get("mdc", {})
+    st.warning(
+        "Cohort scope differs from the donor-complete LIONESS analysis. The MDC source "
+        f"assembled {mdc_metadata.get('reference_assembled_donors', 517)} AD and "
+        f"{mdc_metadata.get('target_assembled_donors', 408)} Control donors across the "
+        "tissue union, including the 167 AD and 164 Control complete-three-tissue donors "
+        "used here plus donors with partial tissue availability. MCI was not included. "
+        "MDC is module-level context and does not change with the LIONESS method selector."
+    )
+    mdc_threshold = st.radio(
+        "MDC significance threshold",
+        options=[0.05, 0.10],
+        format_func=lambda value: f"FDR < {value:.2f}",
+        horizontal=True,
+        key="mdc_threshold",
+    )
+
+    mdc_view = mdc_summary.copy()
+    for scope in ["total", "ts", "ct"]:
+        mdc_view[f"significant_{scope}"] = mdc_view[
+            f"directional_fdr_{scope}"
+        ].lt(mdc_threshold)
+    mdc_view["any_significant"] = mdc_view[
+        ["significant_total", "significant_ts", "significant_ct"]
+    ].any(axis=1)
+
+    count_columns = st.columns(4)
+    count_columns[0].metric(
+        "Total significant", int(mdc_view["significant_total"].sum())
+    )
+    count_columns[1].metric("TS significant", int(mdc_view["significant_ts"].sum()))
+    count_columns[2].metric("CT significant", int(mdc_view["significant_ct"].sum()))
+    count_columns[3].metric("Any MDC significant", int(mdc_view["any_significant"].sum()))
+
+    selected_mdc = mdc_view.loc[mdc_view["module"].astype(int).eq(int(module))]
+    if selected_mdc.empty:
+        st.error(f"No MDC row is available for {module_label(module)}.")
+    else:
+        selected_mdc_row = selected_mdc.iloc[0]
+        st.markdown(f"#### Selected module: {module_label(module)}")
+        selected_columns = st.columns(3)
+        for container, scope, label in zip(
+            selected_columns,
+            ["total", "ts", "ct"],
+            ["Total MDC", "TS MDC", "CT MDC"],
+            strict=True,
+        ):
+            ratio = selected_mdc_row[f"mdc_{scope}"]
+            directional_fdr = selected_mdc_row[f"directional_fdr_{scope}"]
+            direction = selected_mdc_row[f"direction_{scope}"]
+            ratio_text = "NA" if pd.isna(ratio) else f"{float(ratio):.3f}"
+            fdr_value_text = (
+                "NA" if pd.isna(directional_fdr) else f"{float(directional_fdr):.3g}"
+            )
+            significance_text = (
+                "Significant"
+                if pd.notna(directional_fdr) and directional_fdr < mdc_threshold
+                else "Not significant"
+            )
+            if pd.isna(ratio):
+                significance_text = "Not available"
+            with container:
+                st.metric(label, ratio_text)
+                st.caption(
+                    f"{direction} · directional FDR={fdr_value_text} · {significance_text}"
+                )
+
+        selected_mdc_chart = mdc_module_figure(selected_mdc_row, mdc_threshold)
+        st.plotly_chart(
+            selected_mdc_chart,
+            width="stretch",
+            config={
+                "displaylogo": False,
+                "toImageButtonOptions": {
+                    "format": "png",
+                    "filename": f"M{module}_AD_Control_MDC",
+                    "scale": 3,
+                },
+            },
+        )
+        st.caption(
+            "Bars use log2 MDC so equal AD/Control connectivity is centered at zero. "
+            "Orange indicates higher connectivity in AD, blue indicates higher connectivity "
+            "in Control, and ★ marks significance at the selected threshold."
+        )
+
+    significance_filter = st.selectbox(
+        "Modules to show in the MDC overview",
+        options=[
+            "All modules",
+            "Any significant",
+            "Total significant",
+            "TS significant",
+            "CT significant",
+            "No significant MDC",
+        ],
+    )
+    filter_masks = {
+        "All modules": pd.Series(True, index=mdc_view.index),
+        "Any significant": mdc_view["any_significant"],
+        "Total significant": mdc_view["significant_total"],
+        "TS significant": mdc_view["significant_ts"],
+        "CT significant": mdc_view["significant_ct"],
+        "No significant MDC": ~mdc_view["any_significant"],
+    }
+    displayed_mdc = mdc_view.loc[filter_masks[significance_filter]].copy()
+    mdc_overview = mdc_overview_figure(displayed_mdc, module, mdc_threshold)
+    st.plotly_chart(
+        mdc_overview,
+        width="stretch",
+        config={
+            "displaylogo": False,
+            "toImageButtonOptions": {
+                "format": "png",
+                "filename": "AD_Control_TS_CT_MDC_overview",
+                "scale": 3,
+            },
+        },
+    )
+    st.caption(
+        "Dashed zero lines separate AD-higher from Control-higher MDC. The dotted diagonal "
+        "marks equal TS and CT effects. Six single-tissue modules have no CT edges and therefore "
+        "no CT MDC point."
+    )
+
+    displayed_mdc["minimum_directional_fdr"] = displayed_mdc[
+        ["directional_fdr_total", "directional_fdr_ts", "directional_fdr_ct"]
+    ].min(axis=1, skipna=True)
+    displayed_mdc["maximum_abs_log2_mdc"] = displayed_mdc[
+        ["log2_mdc_total", "log2_mdc_ts", "log2_mdc_ct"]
+    ].abs().max(axis=1, skipna=True)
+    displayed_mdc = displayed_mdc.sort_values(
+        ["minimum_directional_fdr", "maximum_abs_log2_mdc"],
+        ascending=[True, False],
+        na_position="last",
+    )
+    mdc_columns = [
+        "module",
+        "module_size_mapped",
+        "mdc_total",
+        "direction_total",
+        "directional_fdr_total",
+        "significant_total",
+        "mdc_ts",
+        "direction_ts",
+        "directional_fdr_ts",
+        "significant_ts",
+        "mdc_ct",
+        "direction_ct",
+        "directional_fdr_ct",
+        "significant_ct",
+        "ts_minus_ct_log2_mdc",
+        "n_ts_edges",
+        "n_ct_edges",
+    ]
+    st.dataframe(
+        displayed_mdc[mdc_columns],
+        width="stretch",
+        hide_index=True,
+        column_config={
+            "module": st.column_config.NumberColumn(format="M%d"),
+            "mdc_total": st.column_config.NumberColumn(format="%.3f"),
+            "mdc_ts": st.column_config.NumberColumn(format="%.3f"),
+            "mdc_ct": st.column_config.NumberColumn(format="%.3f"),
+            "directional_fdr_total": st.column_config.NumberColumn(format="%.3g"),
+            "directional_fdr_ts": st.column_config.NumberColumn(format="%.3g"),
+            "directional_fdr_ct": st.column_config.NumberColumn(format="%.3g"),
+            "ts_minus_ct_log2_mdc": st.column_config.NumberColumn(format="%.3f"),
+        },
+    )
+    st.download_button(
+        "Download displayed MDC table (TSV)",
+        data=dataframe_to_tsv_bytes(displayed_mdc[mdc_columns]),
+        file_name=f"AD_Control_MDC_{significance_filter.replace(' ', '_')}.tsv",
+        mime="text/tab-separated-values",
+    )
+    st.info(
+        "For each scope and direction, sample-permutation and gene-permutation p-values were "
+        "Benjamini–Hochberg adjusted separately across the 154 modules. The displayed "
+        "directional FDR is the larger of those two adjusted values for the observed MDC "
+        "direction, making significance require support from both null models. The latest "
+        "source used 200 sample permutations and 200 gene permutations."
+    )
+
 with statistics_tab:
     st.subheader("Robust association statistics")
     st.caption(
@@ -817,6 +1027,15 @@ with about_tab:
             "β=2 for cross-tissue edges. Each undirected edge is counted once and the "
             "diagonal is excluded."
         )
+
+    st.markdown("#### Module differential connectivity")
+    st.markdown(
+        "MDC is an independent group-network comparison supplied as module-level context: "
+        "mean absolute AD adjacency divided by mean absolute Control adjacency. The app "
+        "shows total, same-tissue (TS), and cross-tissue (CT) ratios and their conservative "
+        "directional permutation FDR. Its broader tissue-union AD/Control cohort and absence "
+        "of MCI are stated in the MDC tab."
+    )
 
     st.markdown("#### Module feature definitions")
     st.dataframe(cached_feature_definitions(), width="stretch", hide_index=True)

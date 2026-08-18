@@ -76,3 +76,30 @@ def test_kegg_table_is_complete_and_module_filter_works() -> None:
     source = pd.read_csv(data.KEGG_TSV, sep="\t")
     assert len(full) == len(source) == 8866
     assert len(data.load_kegg(1918)) == 156
+
+
+def test_mdc_table_matches_modules_and_directional_fdr() -> None:
+    mdc = data.load_mdc_summary()
+    annotations = data.load_module_annotations()
+    assert len(mdc) == mdc["module"].nunique() == 154
+    assert set(mdc["module"].astype(int)) == set(annotations["module"].astype(int))
+    assert mdc[["mdc_total", "mdc_ts"]].gt(0).all().all()
+
+    m1918 = mdc.loc[mdc["module"].eq(1918)].iloc[0]
+    assert round(float(m1918["mdc_total"]), 6) == 1.246025
+    assert round(float(m1918["mdc_ts"]), 6) == 1.099733
+    assert round(float(m1918["mdc_ct"]), 6) == 1.285022
+    assert m1918["direction_total"] == "Higher in AD"
+    assert round(float(m1918["directional_fdr_total"]), 5) == 0.01666
+    assert bool(m1918["significant_total_fdr05"])
+    assert not bool(m1918["significant_ts_fdr05"])
+    assert bool(m1918["significant_ct_fdr05"])
+
+    missing_ct = mdc.loc[mdc["mdc_ct"].isna()]
+    assert len(missing_ct) == 6
+    assert missing_ct["n_ct_edges"].eq(0).all()
+
+    manifest = data.load_data_manifest()
+    assert manifest["rows"]["mdc_rows"] == 154
+    assert manifest["mdc"]["sample_permutations"] == 200
+    assert manifest["mdc"]["gene_permutations"] == 200

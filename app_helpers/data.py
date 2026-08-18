@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from io import StringIO
 from pathlib import Path
 from typing import Iterable
@@ -23,6 +24,8 @@ MODULE_ANNOTATIONS = DATA_DIR / "module_kegg_annotations.tsv"
 FEATURE_DEFINITIONS = DATA_DIR / "feature_definitions.tsv"
 TISSUE_MAPPING = DATA_DIR / "tissue_mapping.tsv"
 SAMPLE_METADATA = DATA_DIR / "sample_metadata.parquet"
+MDC_SUMMARY = DATA_DIR / "mdc_ad_vs_control_summary.tsv"
+DATA_MANIFEST = DATA_DIR / "data_manifest.json"
 
 METHOD_LABELS = {
     "standard": "Standard LIONESS (all-donor reference)",
@@ -97,6 +100,8 @@ def require_data_files() -> None:
         FEATURE_DEFINITIONS,
         TISSUE_MAPPING,
         SAMPLE_METADATA,
+        MDC_SUMMARY,
+        DATA_MANIFEST,
     ]
     missing = [str(path.relative_to(APP_ROOT)) for path in required if not path.exists()]
     if missing:
@@ -277,6 +282,14 @@ def load_tissue_mapping() -> pd.DataFrame:
 
 def load_sample_metadata() -> pd.DataFrame:
     return pd.read_parquet(SAMPLE_METADATA)
+
+
+def load_mdc_summary() -> pd.DataFrame:
+    return pd.read_csv(MDC_SUMMARY, sep="\t")
+
+
+def load_data_manifest() -> dict[str, object]:
+    return json.loads(DATA_MANIFEST.read_text(encoding="utf-8"))
 
 
 def load_kegg(module: int | None = None) -> pd.DataFrame:

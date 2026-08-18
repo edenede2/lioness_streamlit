@@ -28,6 +28,10 @@
       "bytes": 3366878,
       "sha256": "d83c7d6696b8197925a021821618a56af2bff4fc19ef00aad2ed4f6c0d1a84e9"
     },
+    "mdc_ad_vs_control_summary.tsv": {
+      "bytes": 36615,
+      "sha256": "56250cfdfb1fa9098ca4cc9d192004f96dfe436e850aa2cd79c7665f22371b6e"
+    },
     "module_kegg_annotations.tsv": {
       "bytes": 54181,
       "sha256": "9d5acfd53747bc20050359aad64904a3031d8cc0d14057a74a8630da12b4ea1d"
@@ -49,6 +53,26 @@
       "sha256": "d1fe73ceba7828e5a25af7485d3356c1b2570d32d1f4b6b3d2cc1645eaa5ce50"
     }
   },
+  "mdc": {
+    "adjacency": "signedAlt",
+    "beta_ct": 2,
+    "beta_ts": 3,
+    "cohort_note": "The MDC assembled cohort is the tissue union and contains every complete-tissue AD/Control donor used by LIONESS plus donors with partial tissue availability.",
+    "comparison": "AD reference / Control target",
+    "fdr_definition": "Directional FDR is the maximum of the Benjamini-Hochberg-adjusted sample-permutation and gene-permutation p-values for the observed direction.",
+    "gene_permutations": 200,
+    "mci_included": false,
+    "reference_assembled_donors": 517,
+    "reference_complete_three_tissue_donors": 167,
+    "reference_group": "AD",
+    "sample_permutations": 200,
+    "source_last_modified_utc": "2026-03-24T12:29:27.574204+00:00",
+    "source_output": "MDC_Preservation_signedAlt_AD_Control_reverse2/AD_vs_Control/AD_vs_Control_MDC_Preservation.tsv",
+    "source_sha256": "78a6705da633231d09427bbc5f697bd9ee2107ad729184212fbef47ee4cd9b12",
+    "target_assembled_donors": 408,
+    "target_complete_three_tissue_donors": 164,
+    "target_group": "Control"
+  },
   "methods": [
     "standard",
     "control_anchored"
@@ -65,6 +89,7 @@
   "rows": {
     "aggregate_rows": 831600,
     "aggregate_stat_rows": 27720,
+    "mdc_rows": 154,
     "metadata_rows": 450,
     "resolved_rows": 4989600,
     "resolved_stat_rows": 166320

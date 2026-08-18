@@ -19,6 +19,12 @@ DIAGNOSIS_COLORS = {
     "AD": "#E66101",
 }
 DIAGNOSIS_SYMBOLS = {"Control": "circle", "MCI": "diamond", "AD": "square"}
+MDC_DIRECTION_COLORS = {
+    "Higher in AD": "#E66101",
+    "Higher in Control": "#2C7FB8",
+    "Equal": "#7A8793",
+    "Not available": "#C6CCD2",
+}
 
 
 def aggregate_to_long(frame: pd.DataFrame, scale: str) -> pd.DataFrame:
@@ -419,6 +425,199 @@ def distribution_summary(frame: pd.DataFrame) -> pd.DataFrame:
     numeric = summary.select_dtypes(include="number").columns.difference(["n"])
     summary[numeric] = summary[numeric].round(4)
     return summary
+
+
+def mdc_module_figure(
+    row: pd.Series,
+    threshold: float,
+) -> go.Figure:
+    """Compare total, TS, and CT MDC for the selected module on a centered log2 scale."""
+    scopes = [("total", "Total"), ("ts", "Tissue-specific (TS)"), ("ct", "Cross-tissue (CT)")]
+    ratios = [row.get(f"mdc_{scope}") for scope, _ in scopes]
+    log_ratios = [row.get(f"log2_mdc_{scope}") for scope, _ in scopes]
+    fdrs = [row.get(f"directional_fdr_{scope}") for scope, _ in scopes]
+    directions = [str(row.get(f"direction_{scope}", "Not available")) for scope, _ in scopes]
+    significant = [pd.notna(fdr) and float(fdr) < threshold for fdr in fdrs]
+    labels = [label for _, label in scopes]
+    colors = [MDC_DIRECTION_COLORS.get(direction, "#7A8793") for direction in directions]
+    text = [
+        (
+            "NA"
+            if pd.isna(ratio)
+            else f"MDC={float(ratio):.3f}<br>FDR={_format_number(fdr, 3)}"
+            + (" ★" if is_significant else "")
+        )
+        for ratio, fdr, is_significant in zip(ratios, fdrs, significant, strict=True)
+    ]
+    customdata = np.column_stack(
+        [
+            ["NA" if pd.isna(value) else f"{float(value):.4f}" for value in ratios],
+            ["NA" if pd.isna(value) else f"{float(value):.4g}" for value in fdrs],
+            directions,
+            ["Yes" if value else "No" for value in significant],
+        ]
+    )
+    figure = go.Figure(
+        go.Bar(
+            x=labels,
+            y=log_ratios,
+            marker={"color": colors},
+            text=text,
+            textposition="outside",
+            cliponaxis=False,
+            customdata=customdata,
+            hovertemplate=(
+                "Component: %{x}<br>MDC (AD / Control): %{customdata[0]}<br>"
+                "log2 MDC: %{y:.3f}<br>Direction: %{customdata[2]}<br>"
+                "Directional FDR: %{customdata[1]}<br>"
+                f"Significant at FDR &lt; {threshold:.2f}: %{{customdata[3]}}"
+                "<extra></extra>"
+            ),
+        )
+    )
+    finite = np.asarray([value for value in log_ratios if pd.notna(value)], dtype=float)
+    extent = max(0.35, float(np.max(np.abs(finite))) * 1.32) if finite.size else 0.35
+    figure.add_hline(y=0, line_dash="dash", line_color="#657584", line_width=1)
+    figure.update_layout(
+        title={
+            "text": f"Module M{int(row['module'])}: MDC by edge scope",
+            "x": 0.01,
+            "xanchor": "left",
+        },
+        template="plotly_white",
+        height=430,
+        margin={"l": 65, "r": 30, "t": 75, "b": 75},
+        yaxis={
+            "title": "log2 MDC (AD / Control)",
+            "range": [-extent, extent],
+            "zeroline": False,
+        },
+        showlegend=False,
+    )
+    return figure
+
+
+def mdc_overview_figure(
+    frame: pd.DataFrame,
+    selected_module: int,
+    threshold: float,
+) -> go.Figure:
+    """Show tissue-specific versus cross-tissue MDC across modules."""
+    data = frame.dropna(subset=["log2_mdc_ts", "log2_mdc_ct"]).copy()
+    data["ts_significant"] = data["directional_fdr_ts"].lt(threshold)
+    data["ct_significant"] = data["directional_fdr_ct"].lt(threshold)
+    data["significance"] = np.select(
+        [
+            data["ts_significant"] & data["ct_significant"],
+            data["ts_significant"],
+            data["ct_significant"],
+        ],
+        ["TS and CT", "TS only", "CT only"],
+        default="Neither",
+    )
+    category_colors = {
+        "TS and CT": "#6A3D9A",
+        "TS only": "#2C7FB8",
+        "CT only": "#E66101",
+        "Neither": "#A8B0B8",
+    }
+    figure = go.Figure()
+    for category in ["Neither", "TS only", "CT only", "TS and CT"]:
+        group = data.loc[data["significance"].eq(category)]
+        if group.empty:
+            continue
+        customdata = [
+            [
+                f"M{int(row.module)}",
+                row.mdc_total,
+                row.directional_fdr_total,
+                row.mdc_ts,
+                row.directional_fdr_ts,
+                row.mdc_ct,
+                row.directional_fdr_ct,
+            ]
+            for row in group.itertuples(index=False)
+        ]
+        figure.add_trace(
+            go.Scatter(
+                x=group["log2_mdc_ts"],
+                y=group["log2_mdc_ct"],
+                mode="markers",
+                name=category,
+                marker={
+                    "color": category_colors[category],
+                    "size": 8,
+                    "opacity": 0.76,
+                    "line": {"color": "white", "width": 0.5},
+                },
+                customdata=customdata,
+                hovertemplate=(
+                    "Module: %{customdata[0]}<br>"
+                    "Total MDC: %{customdata[1]:.3f} · FDR=%{customdata[2]:.3g}<br>"
+                    "TS MDC: %{customdata[3]:.3f} · FDR=%{customdata[4]:.3g}<br>"
+                    "CT MDC: %{customdata[5]:.3f} · FDR=%{customdata[6]:.3g}<br>"
+                    "TS significance: "
+                    + ("yes" if category in {"TS only", "TS and CT"} else "no")
+                    + "<br>CT significance: "
+                    + ("yes" if category in {"CT only", "TS and CT"} else "no")
+                    + "<extra></extra>"
+                ),
+            )
+        )
+
+    selected = data.loc[data["module"].astype(int).eq(int(selected_module))]
+    if not selected.empty:
+        row = selected.iloc[0]
+        figure.add_trace(
+            go.Scatter(
+                x=[row["log2_mdc_ts"]],
+                y=[row["log2_mdc_ct"]],
+                mode="markers+text",
+                name=f"Selected M{int(selected_module)}",
+                text=[f"M{int(selected_module)}"],
+                textposition="top center",
+                marker={
+                    "symbol": "star",
+                    "size": 17,
+                    "color": "#FFD92F",
+                    "line": {"color": "#202124", "width": 1.5},
+                },
+                hovertemplate=(
+                    f"Selected module: M{int(selected_module)}<br>"
+                    "TS log2 MDC: %{x:.3f}<br>CT log2 MDC: %{y:.3f}<extra></extra>"
+                ),
+            )
+        )
+
+    finite = data[["log2_mdc_ts", "log2_mdc_ct"]].to_numpy(dtype=float).ravel()
+    extent = max(0.5, float(np.max(np.abs(finite))) * 1.08) if finite.size else 0.5
+    figure.add_shape(
+        type="line",
+        x0=-extent,
+        y0=-extent,
+        x1=extent,
+        y1=extent,
+        line={"color": "#AAB2BA", "dash": "dot", "width": 1},
+        layer="below",
+    )
+    figure.add_vline(x=0, line_dash="dash", line_color="#657584", line_width=1)
+    figure.add_hline(y=0, line_dash="dash", line_color="#657584", line_width=1)
+    figure.update_layout(
+        title={"text": "TS versus CT MDC across modules", "x": 0.01, "xanchor": "left"},
+        template="plotly_white",
+        height=610,
+        margin={"l": 70, "r": 30, "t": 90, "b": 65},
+        xaxis={"title": "TS log2 MDC (AD / Control)", "range": [-extent, extent]},
+        yaxis={"title": "CT log2 MDC (AD / Control)", "range": [-extent, extent]},
+        legend={
+            "orientation": "h",
+            "yanchor": "bottom",
+            "y": 1.03,
+            "xanchor": "right",
+            "x": 1,
+        },
+    )
+    return figure
 
 
 def _hierarchical_order(matrix: pd.DataFrame, axis: str) -> list[str]:
