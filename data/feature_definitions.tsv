@@ -1,0 +1,7 @@
+feature_family	definition	aggregate_components	resolved_components
+connectivity	Mean signed node strength attributable to the selected edge block; equivalently 2*sum(edge weight)/module gene count	CT (all tissue pairs); TS (all tissues)	CT_AC__DLPFC,CT_AC__PCGBA23,CT_DLPFC__PCGBA23,TS_AC,TS_DLPFC,TS_PCGBA23
+positive_density	Mean LIONESS edge weight among positive edges in the selected edge block	CT (all tissue pairs); TS (all tissues)	CT_AC__DLPFC,CT_AC__PCGBA23,CT_DLPFC__PCGBA23,TS_AC,TS_DLPFC,TS_PCGBA23
+negative_density	Mean LIONESS edge weight among negative edges in the selected edge block	CT (all tissue pairs); TS (all tissues)	CT_AC__DLPFC,CT_AC__PCGBA23,CT_DLPFC__PCGBA23,TS_AC,TS_DLPFC,TS_PCGBA23
+abs_sum	Sum of absolute LIONESS edge weights; each undirected edge counted once	CT (all tissue pairs); TS (all tissues)	CT_AC__DLPFC,CT_AC__PCGBA23,CT_DLPFC__PCGBA23,TS_AC,TS_DLPFC,TS_PCGBA23
+positive_abs_sum	Sum of absolute weights for positive LIONESS edges; each edge counted once	CT (all tissue pairs); TS (all tissues)	CT_AC__DLPFC,CT_AC__PCGBA23,CT_DLPFC__PCGBA23,TS_AC,TS_DLPFC,TS_PCGBA23
+negative_abs_sum	Sum of absolute weights for negative LIONESS edges; each edge counted once	CT (all tissue pairs); TS (all tissues)	CT_AC__DLPFC,CT_AC__PCGBA23,CT_DLPFC__PCGBA23,TS_AC,TS_DLPFC,TS_PCGBA23
