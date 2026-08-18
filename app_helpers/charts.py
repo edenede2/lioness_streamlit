@@ -83,25 +83,50 @@ def _format_number(value: float | int | None, digits: int = 2) -> str:
     return f"{value:.{digits}f}"
 
 
-def _stat_text(row: pd.Series | None, scale: str, resolved: bool) -> str:
+def _stat_text(
+    row: pd.Series | None,
+    scale: str,
+    resolved: bool,
+    correlation_method: str,
+) -> str:
     if row is None:
         return "statistics unavailable"
+    correlation_method = correlation_method.lower()
+    if correlation_method not in {"pearson", "spearman"}:
+        raise ValueError(f"Unsupported correlation method: {correlation_method}")
+    q_available = False
     if resolved:
-        r = row.get(f"r_{scale}")
-        p = row.get(f"p_{scale}")
-        rho = row.get("rho")
-        q = row.get("q_rint_within_phenotype") if scale == "rint" else np.nan
+        if correlation_method == "spearman":
+            coefficient = row.get("rho")
+            p = row.get("p_spearman")
+            q = row.get("q_spearman_global")
+            q_available = "q_spearman_global" in row.index
+            coefficient_label = "ρ"
+        else:
+            coefficient = row.get(f"r_{scale}")
+            p = row.get(f"p_{scale}")
+            q = row.get("q_rint_within_phenotype") if scale == "rint" else np.nan
+            q_available = scale == "rint"
+            coefficient_label = "r"
     else:
         component = str(row.get("_display_component", "CT"))
-        r = row.get(f"r_{scale}_{component}")
-        p = row.get(f"p_{scale}_{component}")
-        rho = row.get(f"rho_{component}")
-        q = row.get(f"q_rint_{component}_global") if scale == "rint" else np.nan
+        if correlation_method == "spearman":
+            coefficient = row.get(f"rho_{component}")
+            p = row.get(f"p_spearman_{component}")
+            q = np.nan
+            coefficient_label = "ρ"
+        else:
+            coefficient = row.get(f"r_{scale}_{component}")
+            p = row.get(f"p_{scale}_{component}")
+            q = row.get(f"q_rint_{component}_global") if scale == "rint" else np.nan
+            q_available = scale == "rint"
+            coefficient_label = "r"
     text = (
-        f"n={int(row.get('n', 0))}; r={_format_number(r)}; "
-        f"p={_format_number(p)}; ρ={_format_number(rho)}"
+        f"n={int(row.get('n', 0))}; "
+        f"{coefficient_label}={_format_number(coefficient)}; "
+        f"p={_format_number(p)}"
     )
-    if scale == "rint":
+    if q_available:
         text += f"; FDR={_format_number(q)}"
     return text
 
@@ -140,8 +165,9 @@ def association_figure(
     color_by: str,
     color_label: str,
     hover_fields: dict[str, str],
+    correlation_method: str = "spearman",
 ) -> go.Figure:
-    """Build faceted scatter plots with diagnosis-specific OLS lines."""
+    """Build faceted scatter plots with selected correlation annotations and OLS lines."""
     diagnoses = list(diagnoses)
     components = (
         frame[["component", "component_label"]]
@@ -250,7 +276,10 @@ def association_figure(
                     col=col,
                 )
             stat_row = _statistics_lookup(statistics, component, diagnosis, resolved)
-            stat_lines.append(f"<b>{diagnosis}</b>: {_stat_text(stat_row, scale, resolved)}")
+            stat_lines.append(
+                f"<b>{diagnosis}</b>: "
+                f"{_stat_text(stat_row, scale, resolved, correlation_method)}"
+            )
 
         axis_number = index + 1
         xref = "x domain" if axis_number == 1 else f"x{axis_number} domain"

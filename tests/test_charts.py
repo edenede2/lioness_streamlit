@@ -16,12 +16,15 @@ from app_helpers.charts import (  # noqa: E402
     distribution_figure,
     mdc_module_figure,
     mdc_overview_figure,
+    resolved_to_long,
 )
 from app_helpers.correlations import calculate_correlations  # noqa: E402
 from app_helpers.data import (  # noqa: E402
     load_aggregate,
     load_aggregate_statistics,
     load_mdc_summary,
+    load_resolved,
+    load_resolved_statistics,
 )
 
 
@@ -49,6 +52,13 @@ def test_scatter_and_distribution_chart_paths() -> None:
     assert len(scatter.data) >= 6
     assert "Module M935" in scatter.layout.title.text
     assert all("projid" not in str(trace.hovertemplate) for trace in scatter.data)
+    statistic_annotations = [
+        str(annotation.text)
+        for annotation in scatter.layout.annotations
+        if "<b>Control</b>" in str(annotation.text)
+    ]
+    assert statistic_annotations
+    assert all("ρ=" in text and "; r=" not in text for text in statistic_annotations)
 
     histogram = distribution_figure(
         long,
@@ -61,6 +71,49 @@ def test_scatter_and_distribution_chart_paths() -> None:
     )
     assert len(histogram.data) == 6
     assert all(trace.histnorm == "probability density" for trace in histogram.data)
+
+
+def test_association_scatter_can_switch_from_default_spearman_to_pearson() -> None:
+    resolved = load_resolved("control_anchored", 263, "negative_density")
+    long = resolved_to_long(resolved, "rint")
+    statistics = load_resolved_statistics(
+        "control_anchored", 263, "cogn_global", "negative_density"
+    )
+    common = {
+        "frame": long,
+        "statistics": statistics,
+        "phenotype": "cogn_global",
+        "phenotype_label": "Global cognition",
+        "feature_label": "Negative density",
+        "scale": "rint",
+        "scale_label": "Z-score",
+        "diagnoses": ["Control", "MCI", "AD"],
+        "module": 263,
+        "resolved": True,
+        "color_by": "diagnosis_group",
+        "color_label": "Diagnosis group",
+        "hover_fields": {},
+    }
+    spearman = association_figure(**common)
+    spearman_text = next(
+        str(annotation.text)
+        for annotation in spearman.layout.annotations
+        if "<b>Control</b>" in str(annotation.text)
+    )
+    assert "ρ=0.04" in spearman_text
+    assert "p=0.59" in spearman_text
+    assert "FDR=" in spearman_text
+    assert "; r=" not in spearman_text
+
+    pearson = association_figure(**common, correlation_method="pearson")
+    pearson_text = next(
+        str(annotation.text)
+        for annotation in pearson.layout.annotations
+        if "<b>Control</b>" in str(annotation.text)
+    )
+    assert "r=0.05" in pearson_text
+    assert "p=0.54" in pearson_text
+    assert "ρ=" not in pearson_text
 
 
 def test_continuous_color_and_correlation_heatmap() -> None:

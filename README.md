@@ -12,6 +12,9 @@ The app includes:
 - Aggregate cross-tissue (CT) and tissue-specific (TS) views.
 - Tissue-resolved CT pair and TS tissue views using the label **DLPFC**.
 - Diagnosis-specific scatter plots and OLS trends for Control, MCI, and AD.
+- A global association-correlation selector, defaulting to Spearman with Pearson
+  available from the sidebar; it controls scatter annotations, heatmaps, the
+  CT-vs-TS screen, and the primary statistics table.
 - Point coloring by diagnosis or any numeric phenotype/outcome.
 - Expanded hover details for cognition, motor function, age, education, APOE,
   CogDx, Braak, CERAD, ADNC, and Parkinsonism.
@@ -159,8 +162,11 @@ Benjamini-Hochberg FDR correction was performed separately within each LIONESS
 method. Aggregate global CT and TS correlation FDRs each cover 13,860 tests;
 aggregate global CT-vs-TS FDR covers 13,860 dependent-correlation tests, while its
 within-phenotype version covers 2,772. Tissue-resolved global correction covers
-83,160 component tests and within-phenotype correction covers 16,632. KEGG FDRs
-come directly from the supplied tissue-expanded enrichment table and are not
+83,160 component tests for both Pearson/RINT and Spearman, while the stored
+within-phenotype correction covers 16,632 Pearson/RINT tests. Aggregate Spearman
+FDR was not produced by the source analysis, so the app shows its stored nominal
+p-values without substituting Pearson FDR or calculating a new correction. KEGG
+FDRs come directly from the supplied tissue-expanded enrichment table and are not
 recalculated by the app.
 
 The additional heatmap tables calculate Pearson and Spearman correlations on demand.

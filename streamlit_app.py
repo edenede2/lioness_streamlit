@@ -232,11 +232,13 @@ def readable_method(method: str) -> str:
 
 def fdr_text() -> str:
     return (
-        "LIONESS FDR values use Benjamini–Hochberg correction separately within each "
-        "network method. For aggregate results, CT and TS correlation FDRs each cover "
+        "Stored LIONESS FDR values use Benjamini–Hochberg correction separately within each "
+        "network method. For aggregate Pearson/RINT results, CT and TS correlation FDRs each cover "
         "13,860 tests; the global CT-vs-TS FDR covers 13,860 dependent-correlation "
         "tests, and the within-phenotype CT-vs-TS FDR covers 2,772 tests. Tissue-resolved "
-        "global FDRs cover 83,160 component tests and within-phenotype FDRs cover 16,632. "
+        "Pearson/RINT and Spearman global FDRs each cover 83,160 component tests; the "
+        "tissue-resolved Pearson/RINT within-phenotype FDR covers 16,632 tests. Aggregate "
+        "Spearman FDR was not stored by the source analysis and is not calculated by the app. "
         "KEGG FDR is independent and comes directly from the supplied tissue-expanded "
         "enrichment analysis."
     )
@@ -291,6 +293,15 @@ with st.sidebar:
         options=list(SCALE_LABELS),
         format_func=lambda value: SCALE_LABELS[value],
         index=0,
+    )
+    correlation_method = st.radio(
+        "Association correlation",
+        options=["Spearman", "Pearson"],
+        index=0,
+        help=(
+            "Controls association scatter annotations, correlation heatmaps, the CT–TS "
+            "screen, and the primary statistics table. Spearman is the default."
+        ),
     )
     diagnoses = st.multiselect(
         "Diagnosis groups",
@@ -455,10 +466,12 @@ with st.expander(
 with association_tab:
     st.subheader("Phenotype association")
     st.caption(
-        "Diagnosis-specific points and ordinary least-squares trends. Click a diagnosis "
+        f"Diagnosis-specific points with {correlation_method} correlation annotations and "
+        "ordinary least-squares trend lines. Click a diagnosis "
         "in the legend to hide or show its points and trend together. Point shape identifies "
         "diagnosis; point color follows the selected color variable. Gray points have a missing "
-        "value for a continuous color variable."
+        "value for a continuous color variable. The OLS lines are visual guides and do not "
+        "change when Spearman is selected."
     )
     figure = association_figure(
         plot_data,
@@ -474,6 +487,7 @@ with association_tab:
         color_by=color_by,
         color_label=COLOR_LABELS[color_by],
         hover_fields=HOVER_LABELS,
+        correlation_method=correlation_method.lower(),
     )
     st.plotly_chart(
         figure,
@@ -482,7 +496,10 @@ with association_tab:
             "displaylogo": False,
             "toImageButtonOptions": {
                 "format": "png",
-                "filename": f"M{module}_{phenotype}_{feature}_{method}",
+                "filename": (
+                    f"M{module}_{phenotype}_{feature}_{method}_"
+                    f"{correlation_method.lower()}"
+                ),
                 "scale": 3,
             },
         },
@@ -523,11 +540,7 @@ with correlation_tab:
         ["Selected module: all feature scores", "All 154 modules: selected score"],
         horizontal=True,
     )
-    coefficient = st.radio(
-        "Correlation",
-        ["Pearson", "Spearman"],
-        horizontal=True,
-    )
+    st.caption(f"Correlation method: **{correlation_method}** (controlled in the sidebar).")
     heatmap_diagnosis = st.selectbox(
         "Diagnosis in heatmap",
         options=["All donors", *DIAGNOSIS_ORDER],
@@ -544,7 +557,7 @@ with correlation_tab:
     )
     cluster_rows = heatmap_clustering in {"Rows", "Rows and columns"}
     cluster_columns = heatmap_clustering in {"Columns", "Rows and columns"}
-    if coefficient == "Pearson":
+    if correlation_method == "Pearson":
         value_column = "pearson_r"
         p_column = "pearson_p"
         fdr_column = "pearson_fdr_displayed_family"
@@ -633,7 +646,10 @@ with correlation_tab:
             "displaylogo": False,
             "toImageButtonOptions": {
                 "format": "png",
-                "filename": f"{method}_{heatmap_diagnosis}_correlation_heatmap",
+                "filename": (
+                    f"{method}_{heatmap_diagnosis}_{correlation_method.lower()}_"
+                    "correlation_heatmap"
+                ),
                 "scale": 3,
             },
         },
@@ -718,8 +734,8 @@ with screen_tab:
     st.subheader("Descriptive CT–TS pattern screen")
     st.caption(
         "Ranks all 154 modules for the selected phenotype, feature, diagnosis, and method by "
-        "the absolute difference between CT and TS RINT correlations. This is an exploratory "
-        "screen, not an independent validation ranking."
+        f"the absolute difference between CT and TS {correlation_method} correlations. "
+        "This is an exploratory screen, not an independent validation ranking."
     )
     screen_diagnosis = st.selectbox(
         "Diagnosis for screen",
@@ -729,10 +745,46 @@ with screen_tab:
     )
     screen = cached_aggregate_stats(method, None, phenotype, feature)
     screen = screen.loc[screen["diagnosis_group"].eq(screen_diagnosis)].copy()
-    screen["delta_r_CT_minus_TS"] = screen["r_rint_CT"] - screen["r_rint_TS"]
-    screen["abs_delta_r"] = screen["delta_r_CT_minus_TS"].abs()
-    screen["opposite_CT_TS_sign"] = np.sign(screen["r_rint_CT"]) != np.sign(screen["r_rint_TS"])
-    screen["max_abs_r"] = screen[["r_rint_CT", "r_rint_TS"]].abs().max(axis=1)
+    if correlation_method == "Spearman":
+        screen["correlation_CT"] = screen["rho_CT"]
+        screen["p_CT"] = screen["p_spearman_CT"]
+        screen["correlation_TS"] = screen["rho_TS"]
+        screen["p_TS"] = screen["p_spearman_TS"]
+        screen["ct_ts_test_statistic"] = screen["component_t_rank"]
+        screen["p_CT_vs_TS"] = screen["p_component_rank"]
+    else:
+        screen["correlation_CT"] = screen["r_rint_CT"]
+        screen["p_CT"] = screen["p_rint_CT"]
+        screen["fdr_CT_global"] = screen["q_rint_CT_global"]
+        screen["correlation_TS"] = screen["r_rint_TS"]
+        screen["p_TS"] = screen["p_rint_TS"]
+        screen["fdr_TS_global"] = screen["q_rint_TS_global"]
+        screen["ct_ts_test_statistic"] = screen["component_t_rint"]
+        screen["p_CT_vs_TS"] = screen["p_component_rint"]
+        screen["fdr_CT_vs_TS_within_phenotype"] = screen[
+            "q_component_rint_within_phenotype"
+        ]
+        screen["fdr_CT_vs_TS_global"] = screen["q_component_rint_global"]
+    screen["correlation_method"] = correlation_method
+    screen["delta_correlation_CT_minus_TS"] = (
+        screen["correlation_CT"] - screen["correlation_TS"]
+    )
+    screen["abs_delta_correlation"] = screen[
+        "delta_correlation_CT_minus_TS"
+    ].abs()
+    paired_correlations = screen["correlation_CT"].notna() & screen[
+        "correlation_TS"
+    ].notna()
+    screen["opposite_CT_TS_sign"] = pd.Series(
+        pd.NA, index=screen.index, dtype="boolean"
+    )
+    screen.loc[paired_correlations, "opposite_CT_TS_sign"] = (
+        np.sign(screen.loc[paired_correlations, "correlation_CT"])
+        != np.sign(screen.loc[paired_correlations, "correlation_TS"])
+    )
+    screen["max_abs_correlation"] = screen[
+        ["correlation_CT", "correlation_TS"]
+    ].abs().max(axis=1)
     annotation_columns = annotations[
         [
             "module",
@@ -744,30 +796,38 @@ with screen_tab:
     ].copy()
     screen = screen.merge(annotation_columns, on="module", how="left")
     screen = screen.sort_values(
-        ["abs_delta_r", "max_abs_r"], ascending=[False, False], na_position="last"
+        ["abs_delta_correlation", "max_abs_correlation"],
+        ascending=[False, False],
+        na_position="last",
     )
     screen.insert(0, "screen_rank", np.arange(1, len(screen) + 1))
     n_screen = st.slider("Rows to show", 10, 154, 30, 10)
     screen_columns = [
         "screen_rank",
         "module",
-        "r_rint_CT",
-        "p_rint_CT",
-        "q_rint_CT_global",
-        "r_rint_TS",
-        "p_rint_TS",
-        "q_rint_TS_global",
-        "delta_r_CT_minus_TS",
-        "abs_delta_r",
+        "correlation_method",
+        "correlation_CT",
+        "p_CT",
+        "correlation_TS",
+        "p_TS",
+        "delta_correlation_CT_minus_TS",
+        "abs_delta_correlation",
         "opposite_CT_TS_sign",
-        "p_component_rint",
-        "q_component_rint_within_phenotype",
-        "q_component_rint_global",
+        "ct_ts_test_statistic",
+        "p_CT_vs_TS",
         "displayed_category",
         "displayed_subcategory",
         "displayed_pathway",
         "displayed_fdr",
     ]
+    if correlation_method == "Pearson":
+        screen_columns[5:5] = ["fdr_CT_global"]
+        screen_columns[8:8] = ["fdr_TS_global"]
+        ct_ts_p_index = screen_columns.index("p_CT_vs_TS") + 1
+        screen_columns[ct_ts_p_index:ct_ts_p_index] = [
+            "fdr_CT_vs_TS_within_phenotype",
+            "fdr_CT_vs_TS_global",
+        ]
     st.dataframe(
         screen[screen_columns].head(n_screen),
         width="stretch",
@@ -777,9 +837,19 @@ with screen_tab:
     st.download_button(
         "Download complete 154-module screen (TSV)",
         data=dataframe_to_tsv_bytes(screen[screen_columns]),
-        file_name=f"{method}_{screen_diagnosis}_{phenotype}_{feature}_CT_TS_screen.tsv",
+        file_name=(
+            f"{method}_{screen_diagnosis}_{phenotype}_{feature}_"
+            f"{correlation_method.lower()}_CT_TS_screen.tsv"
+        ),
         mime="text/tab-separated-values",
     )
+    if correlation_method == "Spearman":
+        st.caption(
+            "Aggregate Spearman coefficients, nominal p-values, and the existing rank-based "
+            "CT-vs-TS comparison are used directly from the stored statistics. Aggregate "
+            "Spearman FDR columns were not produced by the source analysis, so the app does "
+            "not substitute Pearson FDR values or calculate new ones."
+        )
     st.info(fdr_text())
 
 with mdc_tab:
@@ -977,10 +1047,20 @@ with mdc_tab:
 with statistics_tab:
     st.subheader("Robust association statistics")
     st.caption(
-        "The downloadable table retains raw, asinh, Winsorized, Spearman, RINT, "
-        "leave-one-out sensitivity, dependent CT-vs-TS tests, and FDR fields."
+        f"The primary table follows the sidebar selection: {correlation_method}. The "
+        "download retains raw, asinh, Winsorized, Spearman, RINT, leave-one-out "
+        "sensitivity, dependent CT-vs-TS tests, and all stored FDR fields."
     )
-    if resolved:
+    if resolved and correlation_method == "Spearman":
+        display_columns = [
+            "component_label",
+            "diagnosis_group",
+            "n",
+            "rho",
+            "p_spearman",
+            "q_spearman_global",
+        ]
+    elif resolved:
         display_columns = [
             "component_label",
             "diagnosis_group",
@@ -993,6 +1073,17 @@ with statistics_tab:
             "p_spearman",
             "loo_rint_max_delta",
             "loo_rint_sign_flip",
+        ]
+    elif correlation_method == "Spearman":
+        display_columns = [
+            "diagnosis_group",
+            "n",
+            "rho_CT",
+            "p_spearman_CT",
+            "rho_TS",
+            "p_spearman_TS",
+            "component_t_rank",
+            "p_component_rank",
         ]
     else:
         display_columns = [
