@@ -25,6 +25,15 @@ MDC_DIRECTION_COLORS = {
     "Equal": "#7A8793",
     "Not available": "#C6CCD2",
 }
+MODULE_TYPE_COLORS = {
+    "CT": "#2C7FB8",
+    "TS": "#E66101",
+}
+REGION_COLORS = {
+    "AC": "#2C7FB8",
+    "DLPFC": "#D8A500",
+    "PCG": "#E66101",
+}
 
 
 def aggregate_to_long(frame: pd.DataFrame, scale: str) -> pd.DataFrame:
@@ -462,6 +471,189 @@ def distribution_summary(frame: pd.DataFrame) -> pd.DataFrame:
     numeric = summary.select_dtypes(include="number").columns.difference(["n"])
     summary[numeric] = summary[numeric].round(4)
     return summary
+
+
+def module_size_distribution_figure(
+    frame: pd.DataFrame,
+    module_definition: str | None = None,
+) -> go.Figure:
+    """Show the module-size distribution for the selected SE2 module types."""
+    data = frame.copy()
+    data["cluster_type"] = data["cluster_type"].astype(str).str.upper()
+    data["module_size"] = pd.to_numeric(data["module_size"], errors="coerce")
+    data = data.dropna(subset=["module_size"])
+    if data.empty:
+        return go.Figure()
+
+    minimum = float(data["module_size"].min())
+    maximum = float(data["module_size"].max())
+    n_bins = max(3, min(30, int(math.ceil(math.sqrt(len(data))))))
+    bin_width = max(1.0, math.ceil((maximum - minimum + 1.0) / n_bins))
+    bin_start = math.floor(minimum / bin_width) * bin_width
+    bin_end = math.ceil((maximum + 1.0) / bin_width) * bin_width
+
+    figure = go.Figure()
+    ordered_types = [
+        module_type
+        for module_type in ["CT", "TS"]
+        if module_type in set(data["cluster_type"])
+    ]
+    ordered_types.extend(
+        sorted(set(data["cluster_type"]).difference(ordered_types))
+    )
+    for module_type in ordered_types:
+        group = data.loc[data["cluster_type"].eq(module_type)]
+        figure.add_trace(
+            go.Histogram(
+                x=group["module_size"],
+                name=f"{module_type} modules (n={len(group)})",
+                marker={
+                    "color": MODULE_TYPE_COLORS.get(module_type, "#7A8793"),
+                    "line": {"color": "white", "width": 0.6},
+                },
+                opacity=0.66,
+                xbins={"start": bin_start, "end": bin_end, "size": bin_width},
+                hovertemplate=(
+                    f"Module type: {module_type}<br>"
+                    "Size interval: %{x}<br>Modules: %{y}<extra></extra>"
+                ),
+            )
+        )
+
+    title_text = "Module-size distribution"
+    if module_definition:
+        title_text += f"<br><sup>{module_definition} · {len(data)} modules shown</sup>"
+    figure.update_layout(
+        title={"text": title_text, "x": 0.01, "xanchor": "left"},
+        template="plotly_white",
+        barmode="overlay",
+        bargap=0.06,
+        height=470,
+        margin={"l": 65, "r": 25, "t": 90, "b": 60},
+        xaxis={"title": "Module size (genes)", "rangemode": "tozero"},
+        yaxis={"title": "Number of modules", "rangemode": "tozero"},
+        legend={
+            "orientation": "h",
+            "yanchor": "bottom",
+            "y": 1.03,
+            "xanchor": "right",
+            "x": 1,
+        },
+        hovermode="x unified",
+    )
+    return figure
+
+
+def module_region_composition_figure(
+    frame: pd.DataFrame,
+    module_definition: str | None = None,
+) -> go.Figure:
+    """Rank modules by size and show their AC, DLPFC, and PCG gene composition."""
+    required = {
+        "module",
+        "module_size",
+        "cluster_type",
+        "n_genes_ac",
+        "n_genes_dlpfc",
+        "n_genes_pcg",
+    }
+    missing = required.difference(frame.columns)
+    if missing:
+        raise ValueError(f"Missing module-composition columns: {sorted(missing)}")
+
+    data = frame.copy()
+    numeric_columns = [
+        "module",
+        "module_size",
+        "n_genes_ac",
+        "n_genes_dlpfc",
+        "n_genes_pcg",
+    ]
+    data[numeric_columns] = data[numeric_columns].apply(
+        pd.to_numeric, errors="coerce"
+    )
+    data = data.dropna(subset=["module", "module_size"])
+    data = data.sort_values(
+        ["module_size", "module"], ascending=[False, True], kind="stable"
+    )
+    if data.empty:
+        return go.Figure()
+
+    module_labels = data["module"].astype(int).map(lambda value: f"M{value}")
+    figure = go.Figure()
+    region_columns = [
+        ("AC", "n_genes_ac"),
+        ("DLPFC", "n_genes_dlpfc"),
+        ("PCG", "n_genes_pcg"),
+    ]
+    for region, count_column in region_columns:
+        counts = data[count_column].fillna(0).astype(int)
+        proportions = np.divide(
+            counts.to_numpy(dtype=float),
+            data["module_size"].to_numpy(dtype=float),
+            out=np.zeros(len(data), dtype=float),
+            where=data["module_size"].to_numpy(dtype=float) > 0,
+        )
+        customdata = np.column_stack(
+            [
+                data["module_size"].astype(int).astype(str),
+                data["cluster_type"].astype(str),
+                np.char.mod("%.1f%%", proportions * 100.0),
+            ]
+        )
+        figure.add_trace(
+            go.Bar(
+                x=counts,
+                y=module_labels,
+                orientation="h",
+                name=region,
+                marker={
+                    "color": REGION_COLORS[region],
+                    "line": {"color": "white", "width": 0.35},
+                },
+                customdata=customdata,
+                hovertemplate=(
+                    "Module: %{y}<br>"
+                    f"Region: {region}<br>"
+                    "Region genes: %{x:,}<br>"
+                    "Region proportion: %{customdata[2]}<br>"
+                    "Total module genes: %{customdata[0]}<br>"
+                    "Module type: %{customdata[1]}<extra></extra>"
+                ),
+            )
+        )
+
+    title_text = "Brain-region composition by module"
+    if module_definition:
+        title_text += (
+            f"<br><sup>{module_definition} · sorted from largest to smallest · "
+            f"{len(data)} modules shown</sup>"
+        )
+    figure.update_layout(
+        title={"text": title_text, "x": 0.01, "xanchor": "left"},
+        template="plotly_white",
+        barmode="stack",
+        height=max(620, min(2600, 230 + 16 * len(data))),
+        margin={"l": 85, "r": 25, "t": 95, "b": 65},
+        xaxis={"title": "Genes in module", "rangemode": "tozero"},
+        yaxis={
+            "title": "Module",
+            "categoryorder": "array",
+            "categoryarray": module_labels.tolist(),
+            "autorange": "reversed",
+            "tickfont": {"size": 10},
+        },
+        legend={
+            "title": {"text": "Brain region"},
+            "orientation": "h",
+            "yanchor": "bottom",
+            "y": 1.02,
+            "xanchor": "right",
+            "x": 1,
+        },
+        hovermode="closest",
+    )
+    return figure
 
 
 def mdc_module_figure(

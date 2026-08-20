@@ -30,9 +30,12 @@ The app includes two explicitly separated module definitions:
 - Full raw, robust, RINT, leave-one-out, CT-vs-TS, and FDR statistics.
 - A descriptive CT-vs-TS screen across all modules.
 - Every row and column of the tissue-expanded KEGG enrichment table, filterable
-  and downloadable per module or for all modules.
+  and downloadable for the selected module or all modules, with module, FDR,
+  significance, category, sub-category, pathway, and gene-search filters.
 - Level-4 module composition from the SE2 details file: total module size,
   represented tissues, dominant tissue, per-tissue gene counts, and proportions.
+- Interactive module-size distributions and size-ranked AC/DLPFC/PCG composition
+  bars, filterable to CT modules, TS modules, or both.
 
 ## Important public-release check
 

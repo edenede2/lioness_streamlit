@@ -14,6 +14,8 @@ from app_helpers.charts import (
     distribution_summary,
     mdc_module_figure,
     mdc_overview_figure,
+    module_region_composition_figure,
+    module_size_distribution_figure,
     resolved_to_long,
 )
 from app_helpers.correlations import calculate_correlations
@@ -32,6 +34,7 @@ from app_helpers.data import (
     PHENOTYPE_LABELS,
     SCALE_LABELS,
     dataframe_to_tsv_bytes,
+    filter_kegg_enrichments,
     load_aggregate,
     load_aggregate_scope,
     load_aggregate_statistics,
@@ -1244,46 +1247,162 @@ with statistics_tab:
     st.info(fdr_text(module_manifest, module_count))
 
 with kegg_tab:
-    st.subheader(f"Full tissue-expanded KEGG table for {module_label(module)}")
-    kegg = cached_kegg(module_set, module)
-    if not kegg.empty:
-        kegg.insert(0, "module_definition", module_set_label)
-    if kegg.empty:
+    st.subheader("Tissue-expanded KEGG enrichments")
+    kegg_scope = st.radio(
+        "Enrichment table scope",
+        options=["Selected module", "All modules"],
+        horizontal=True,
+        key=f"kegg_scope_{module_set}",
+        help=(
+            "Selected module follows the module chosen in the sidebar. All modules "
+            "loads every reported enrichment row for the selected module definition."
+        ),
+    )
+    kegg_module = module if kegg_scope == "Selected module" else None
+    source_kegg = cached_kegg(module_set, kegg_module).copy()
+    if not source_kegg.empty:
+        source_kegg.insert(0, "module_definition", module_set_label)
+
+    if source_kegg.empty:
         st.info(
-            "This module has no row in the supplied tissue-expanded KEGG table. "
-            "The LIONESS module itself is still available in every plot and statistics view."
+            f"{module_label(module)} has no row in the supplied tissue-expanded KEGG "
+            "table. The LIONESS module itself is still available in every plot and "
+            "statistics view. Choose All modules to browse the reported enrichments."
         )
     else:
-        significant_count = int(kegg["significant"].fillna(False).astype(bool).sum())
-        kegg_metrics = st.columns(4)
-        kegg_metrics[0].metric("KEGG pathways", len(kegg))
-        kegg_metrics[1].metric("FDR-significant", significant_count)
-        kegg_metrics[2].metric("Module size", int(kegg["cluster_size_expanded"].iloc[0]))
-        kegg_metrics[3].metric("Tissues represented", int(kegg["n_tissues"].max()))
-        search = st.text_input(
-            "Search this module's KEGG rows",
-            placeholder="pathway, category, gene, tissue…",
-        ).strip()
-        shown_kegg = kegg
-        if search:
-            searchable = kegg.select_dtypes(include=["object", "string"]).fillna("")
-            mask = searchable.astype(str).agg(" ".join, axis=1).str.contains(
-                search, case=False, regex=False
+        st.markdown("#### Filters")
+        filter_row_one = st.columns([1.6, 1.1, 1.0])
+        if kegg_scope == "All modules":
+            selected_kegg_modules = filter_row_one[0].multiselect(
+                "Modules",
+                options=sorted(module_details["module"].astype(int).unique()),
+                default=[],
+                format_func=module_label,
+                placeholder="All modules",
+                key=f"kegg_modules_{module_set}",
+                help="Leave empty to include all modules in this definition.",
             )
-            shown_kegg = kegg.loc[mask]
+        else:
+            selected_kegg_modules = [int(module)]
+            filter_row_one[0].text_input(
+                "Module",
+                value=module_label(module),
+                disabled=True,
+                key=f"kegg_selected_module_{module_set}",
+            )
+        significance_label = filter_row_one[1].selectbox(
+            "Significance",
+            options=["All rows", "FDR-significant only", "Not FDR-significant"],
+            key=f"kegg_significance_{module_set}_{kegg_scope}",
+        )
+        maximum_fdr = filter_row_one[2].number_input(
+            "Maximum FDR",
+            min_value=0.0,
+            max_value=1.0,
+            value=1.0,
+            step=0.01,
+            format="%.3f",
+            key=f"kegg_maximum_fdr_{module_set}_{kegg_scope}",
+        )
+
+        filter_row_two = st.columns([1.1, 1.3, 1.6])
+        category_options = sorted(
+            source_kegg["category_level1"].dropna().astype(str).unique()
+        )
+        selected_categories = filter_row_two[0].multiselect(
+            "KEGG categories",
+            options=category_options,
+            default=[],
+            placeholder="All categories",
+            key=f"kegg_categories_{module_set}_{kegg_scope}",
+        )
+        subcategory_source = source_kegg
+        if selected_categories:
+            subcategory_source = source_kegg.loc[
+                source_kegg["category_level1"].isin(selected_categories)
+            ]
+        subcategory_options = sorted(
+            subcategory_source["category_level2"].dropna().astype(str).unique()
+        )
+        selected_subcategories = filter_row_two[1].multiselect(
+            "KEGG sub-categories",
+            options=subcategory_options,
+            default=[],
+            placeholder="All sub-categories",
+            key=f"kegg_subcategories_{module_set}_{kegg_scope}",
+        )
+        search = filter_row_two[2].text_input(
+            "Search pathways or genes",
+            placeholder="Alzheimer, lipid, infection, APOE…",
+            key=f"kegg_search_{module_set}_{kegg_scope}",
+        )
+
+        significance_value = {
+            "All rows": "all",
+            "FDR-significant only": "significant",
+            "Not FDR-significant": "not_significant",
+        }[significance_label]
+        shown_kegg = filter_kegg_enrichments(
+            source_kegg,
+            modules=selected_kegg_modules if kegg_scope == "All modules" else None,
+            categories=selected_categories,
+            subcategories=selected_subcategories,
+            significance=significance_value,
+            maximum_fdr=maximum_fdr,
+            search=search,
+        )
+
+        significant_count = int(
+            shown_kegg["significant"].fillna(False).astype(bool).sum()
+        )
+        shown_module_count = int(shown_kegg["cluster_id"].nunique())
+        source_module_count = int(source_kegg["cluster_id"].nunique())
+        best_fdr = shown_kegg["fdr"].min() if not shown_kegg.empty else np.nan
+        kegg_metrics = st.columns(4)
+        kegg_metrics[0].metric(
+            "Rows shown", f"{len(shown_kegg):,} / {len(source_kegg):,}"
+        )
+        kegg_metrics[1].metric(
+            "Modules shown",
+            f"{shown_module_count:,} / "
+            f"{module_count if kegg_scope == 'All modules' else 1:,}",
+        )
+        kegg_metrics[2].metric("FDR-significant shown", f"{significant_count:,}")
+        kegg_metrics[3].metric(
+            "Best FDR", "NA" if pd.isna(best_fdr) else f"{best_fdr:.3e}"
+        )
+
+        if kegg_scope == "All modules":
+            st.caption(
+                f"The supplied KEGG table contains reported rows for "
+                f"{source_module_count} of {module_count} modules in this definition. "
+                "Modules without a pathway meeting the enrichment input thresholds have no "
+                "table row."
+            )
+        if shown_kegg.empty:
+            st.info("No KEGG enrichment rows match the current filters.")
         st.dataframe(
-            shown_kegg.sort_values(["fdr", "p"], na_position="last"),
+            shown_kegg,
             width="stretch",
             hide_index=True,
+            height=650,
             column_config={
+                "cluster_id": st.column_config.NumberColumn("Module", format="M%d"),
                 "p": st.column_config.NumberColumn(format="%.3e"),
                 "fdr": st.column_config.NumberColumn(format="%.3e"),
             },
         )
         st.download_button(
-            f"Download all KEGG rows for {module_label(module)} (TSV)",
-            data=dataframe_to_tsv_bytes(kegg.sort_values(["fdr", "p"])),
-            file_name=f"{download_prefix}M{module}_tissue_expanded_KEGG.tsv",
+            "Download currently shown KEGG rows (TSV)",
+            data=dataframe_to_tsv_bytes(shown_kegg),
+            file_name=(
+                f"{download_prefix}"
+                + (
+                    f"M{module}_filtered_tissue_expanded_KEGG.tsv"
+                    if kegg_scope == "Selected module"
+                    else "allmodules_filtered_tissue_expanded_KEGG.tsv"
+                )
+            ),
             mime="text/tab-separated-values",
         )
     st.download_button(
@@ -1303,6 +1422,70 @@ with module_details_tab:
         "Module size, represented tissues, per-tissue gene counts, and proportions from "
         "the level-4 SE2 module-details file. Tissue proportions use module size as the denominator."
     )
+    st.markdown("#### Module landscape")
+    module_type_scope = st.radio(
+        "Module types to show",
+        options=["Both", "CT only", "TS only"],
+        horizontal=True,
+        key=f"module_details_scope_{module_set}",
+        help=(
+            "This filter uses the CT/TS module classification in the selected level-4 "
+            "SE2 module-details file and controls both charts below."
+        ),
+    )
+    if module_type_scope == "Both":
+        chart_module_details = module_details.copy()
+    else:
+        selected_module_type = module_type_scope.split()[0]
+        chart_module_details = module_details.loc[
+            module_details["cluster_type"].astype(str).str.upper().eq(selected_module_type)
+        ].copy()
+
+    if chart_module_details.empty:
+        st.warning(f"No {module_type_scope} modules are available in this definition.")
+    else:
+        landscape_metrics = st.columns(4)
+        landscape_metrics[0].metric("Modules shown", f"{len(chart_module_details):,}")
+        landscape_metrics[1].metric(
+            "Median size", f"{chart_module_details['module_size'].median():,.0f} genes"
+        )
+        largest_module = chart_module_details.sort_values(
+            ["module_size", "module"], ascending=[False, True]
+        ).iloc[0]
+        landscape_metrics[2].metric(
+            "Largest module", f"M{int(largest_module['module'])}"
+        )
+        landscape_metrics[3].metric(
+            "Largest size", f"{int(largest_module['module_size']):,} genes"
+        )
+        st.plotly_chart(
+            module_size_distribution_figure(
+                chart_module_details,
+                module_definition=module_set_label,
+            ),
+            width="stretch",
+            config={"displaylogo": False, "responsive": True},
+            key=f"module_size_distribution_{module_set}_{module_type_scope}",
+        )
+        st.plotly_chart(
+            module_region_composition_figure(
+                chart_module_details,
+                module_definition=module_set_label,
+            ),
+            width="stretch",
+            config={
+                "displaylogo": False,
+                "responsive": True,
+                "scrollZoom": True,
+            },
+            key=f"module_region_composition_{module_set}_{module_type_scope}",
+        )
+        st.caption(
+            "Total bar width is module size; colored segments are AC, DLPFC, and PCG "
+            "gene counts. Modules are ordered largest to smallest. Hover for exact "
+            "counts and proportions; drag or scroll to zoom."
+        )
+
     detail_columns = [
         "module_definition",
         "module",

@@ -362,6 +362,77 @@ def load_kegg(
     )
 
 
+def filter_kegg_enrichments(
+    frame: pd.DataFrame,
+    modules: Iterable[int] | None = None,
+    categories: Iterable[str] | None = None,
+    subcategories: Iterable[str] | None = None,
+    significance: str = "all",
+    maximum_fdr: float | None = None,
+    search: str = "",
+) -> pd.DataFrame:
+    """Filter and consistently order selected- or all-module KEGG rows."""
+    if significance not in {"all", "significant", "not_significant"}:
+        raise ValueError(
+            "significance must be 'all', 'significant', or 'not_significant'"
+        )
+
+    result = frame.copy()
+    selected_modules = [int(value) for value in modules or []]
+    if selected_modules:
+        result = result.loc[
+            pd.to_numeric(result["cluster_id"], errors="coerce").isin(selected_modules)
+        ]
+
+    selected_categories = [str(value) for value in categories or []]
+    if selected_categories:
+        result = result.loc[result["category_level1"].isin(selected_categories)]
+
+    selected_subcategories = [str(value) for value in subcategories or []]
+    if selected_subcategories:
+        result = result.loc[result["category_level2"].isin(selected_subcategories)]
+
+    significant = result["significant"].fillna(False).astype(bool)
+    if significance == "significant":
+        result = result.loc[significant]
+    elif significance == "not_significant":
+        result = result.loc[~significant]
+
+    if maximum_fdr is not None:
+        maximum_fdr = float(maximum_fdr)
+        if not 0.0 <= maximum_fdr <= 1.0:
+            raise ValueError("maximum_fdr must be between 0 and 1")
+        result = result.loc[
+            pd.to_numeric(result["fdr"], errors="coerce").le(maximum_fdr)
+        ]
+
+    search = search.strip()
+    if search:
+        search_columns = [
+            column
+            for column in [
+                "cluster_id",
+                "term",
+                "pathway_id",
+                "pathway_name",
+                "category_level1",
+                "category_level2",
+                "overlap_genes",
+            ]
+            if column in result.columns
+        ]
+        searchable = result[search_columns].fillna("").astype(str)
+        mask = searchable.agg(" ".join, axis=1).str.contains(
+            search, case=False, regex=False
+        )
+        result = result.loc[mask]
+
+    sort_columns = [
+        column for column in ["fdr", "p", "cluster_id", "pathway_name"] if column in result
+    ]
+    return result.sort_values(sort_columns, na_position="last").reset_index(drop=True)
+
+
 def module_label(module: int | str) -> str:
     return f"M{int(module)}"
 

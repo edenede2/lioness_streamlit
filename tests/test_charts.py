@@ -16,6 +16,8 @@ from app_helpers.charts import (  # noqa: E402
     distribution_figure,
     mdc_module_figure,
     mdc_overview_figure,
+    module_region_composition_figure,
+    module_size_distribution_figure,
     resolved_to_long,
 )
 from app_helpers.correlations import calculate_correlations  # noqa: E402
@@ -23,6 +25,7 @@ from app_helpers.data import (  # noqa: E402
     load_aggregate,
     load_aggregate_statistics,
     load_mdc_summary,
+    load_module_details,
     load_resolved,
     load_resolved_statistics,
 )
@@ -237,3 +240,43 @@ def test_mdc_selected_module_and_overview_charts() -> None:
     assert len(overview.data) >= 2
     assert any(trace.name == "Selected M1918" for trace in overview.data)
     assert overview.layout.xaxis.title.text == "TS log2 MDC (AD / Control)"
+
+
+def test_module_size_and_region_composition_charts_filter_and_sort() -> None:
+    details = load_module_details()
+    ct_only = details.loc[details["cluster_type"].eq("CT")].copy()
+    ts_only = details.loc[details["cluster_type"].eq("TS")].copy()
+
+    distribution = module_size_distribution_figure(
+        details, module_definition="Full-cohort L4 modules (154)"
+    )
+    assert len(distribution.data) == 2
+    assert {trace.name.split()[0] for trace in distribution.data} == {"CT", "TS"}
+    assert sum(len(trace.x) for trace in distribution.data) == len(details)
+    assert "154 modules shown" in distribution.layout.title.text
+
+    ct_composition = module_region_composition_figure(ct_only)
+    assert len(ct_composition.data) == 3
+    assert [trace.name for trace in ct_composition.data] == ["AC", "DLPFC", "PCG"]
+    expected_order = (
+        ct_only.sort_values(
+            ["module_size", "module"], ascending=[False, True], kind="stable"
+        )["module"]
+        .astype(int)
+        .map(lambda value: f"M{value}")
+        .tolist()
+    )
+    assert list(ct_composition.layout.yaxis.categoryarray) == expected_order
+    stacked_totals = sum(pd.Series(trace.x, dtype="int64") for trace in ct_composition.data)
+    expected_sizes = (
+        ct_only.sort_values(
+            ["module_size", "module"], ascending=[False, True], kind="stable"
+        )["module_size"]
+        .astype(int)
+        .reset_index(drop=True)
+    )
+    assert stacked_totals.reset_index(drop=True).equals(expected_sizes)
+
+    ts_composition = module_region_composition_figure(ts_only)
+    assert len(ts_composition.layout.yaxis.categoryarray) == len(ts_only) == 28
+    assert set(ts_composition.data[0].customdata[:, 1]) == {"TS"}

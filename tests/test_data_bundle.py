@@ -140,6 +140,37 @@ def test_kegg_table_is_complete_and_module_filter_works() -> None:
     assert len(data.load_kegg(1918)) == 156
 
 
+def test_all_module_kegg_filters_cover_modules_categories_fdr_and_search() -> None:
+    full = data.load_kegg()
+    target = full.loc[full["significant"].fillna(False).astype(bool)].iloc[0]
+    filtered = data.filter_kegg_enrichments(
+        full,
+        modules=[int(target["cluster_id"])],
+        categories=[str(target["category_level1"])],
+        subcategories=[str(target["category_level2"])],
+        significance="significant",
+        maximum_fdr=0.05,
+        search=str(target["pathway_name"]),
+    )
+    assert not filtered.empty
+    assert set(filtered["cluster_id"].astype(int)) == {int(target["cluster_id"])}
+    assert set(filtered["category_level1"]) == {str(target["category_level1"])}
+    assert set(filtered["category_level2"]) == {str(target["category_level2"])}
+    assert filtered["significant"].fillna(False).astype(bool).all()
+    assert filtered["fdr"].le(0.05).all()
+    assert filtered["pathway_name"].str.contains(
+        str(target["pathway_name"]), case=False, regex=False
+    ).all()
+    assert filtered["fdr"].is_monotonic_increasing
+
+    all_rows = data.filter_kegg_enrichments(full, modules=[])
+    assert len(all_rows) == len(full)
+    non_significant = data.filter_kegg_enrichments(
+        full, significance="not_significant"
+    )
+    assert not non_significant["significant"].fillna(False).astype(bool).any()
+
+
 def test_mdc_table_matches_modules_and_directional_fdr() -> None:
     mdc = data.load_mdc_summary()
     annotations = data.load_module_annotations()
