@@ -1271,7 +1271,7 @@ with kegg_tab:
         )
     else:
         st.markdown("#### Filters")
-        filter_row_one = st.columns([1.6, 1.1, 1.0])
+        filter_row_one = st.columns([1.5, 1.25, 1.1, 0.9])
         if kegg_scope == "All modules":
             selected_kegg_modules = filter_row_one[0].multiselect(
                 "Modules",
@@ -1290,12 +1290,27 @@ with kegg_tab:
                 disabled=True,
                 key=f"kegg_selected_module_{module_set}",
             )
-        significance_label = filter_row_one[1].selectbox(
+        statistical_scope = filter_row_one[1].selectbox(
+            "Statistical scope",
+            options=[
+                "All regions (expanded)",
+                "Any individual region",
+                "AC",
+                "DLPFC",
+                "PCG",
+            ],
+            key=f"kegg_statistical_scope_{module_set}_{kegg_scope}",
+            help=(
+                "Choose which FDR and significance columns control the significance "
+                "and maximum-FDR filters."
+            ),
+        )
+        significance_label = filter_row_one[2].selectbox(
             "Significance",
             options=["All rows", "FDR-significant only", "Not FDR-significant"],
             key=f"kegg_significance_{module_set}_{kegg_scope}",
         )
-        maximum_fdr = filter_row_one[2].number_input(
+        maximum_fdr = filter_row_one[3].number_input(
             "Maximum FDR",
             min_value=0.0,
             max_value=1.0,
@@ -1342,6 +1357,17 @@ with kegg_tab:
             "FDR-significant only": "significant",
             "Not FDR-significant": "not_significant",
         }[significance_label]
+        statistical_scope_columns = {
+            "All regions (expanded)": (["significant"], ["fdr"]),
+            "Any individual region": (
+                ["significant_AC", "significant_DLPFC", "significant_PCGBA23"],
+                ["fdr_AC", "fdr_DLPFC", "fdr_PCGBA23"],
+            ),
+            "AC": (["significant_AC"], ["fdr_AC"]),
+            "DLPFC": (["significant_DLPFC"], ["fdr_DLPFC"]),
+            "PCG": (["significant_PCGBA23"], ["fdr_PCGBA23"]),
+        }
+        significance_columns, fdr_columns = statistical_scope_columns[statistical_scope]
         shown_kegg = filter_kegg_enrichments(
             source_kegg,
             modules=selected_kegg_modules if kegg_scope == "All modules" else None,
@@ -1350,14 +1376,27 @@ with kegg_tab:
             significance=significance_value,
             maximum_fdr=maximum_fdr,
             search=search,
+            significance_columns=significance_columns,
+            fdr_columns=fdr_columns,
         )
 
         significant_count = int(
-            shown_kegg["significant"].fillna(False).astype(bool).sum()
+            shown_kegg[significance_columns]
+            .fillna(False)
+            .astype(bool)
+            .any(axis=1)
+            .sum()
         )
         shown_module_count = int(shown_kegg["cluster_id"].nunique())
         source_module_count = int(source_kegg["cluster_id"].nunique())
-        best_fdr = shown_kegg["fdr"].min() if not shown_kegg.empty else np.nan
+        best_fdr = (
+            shown_kegg[fdr_columns]
+            .apply(pd.to_numeric, errors="coerce")
+            .min(axis=1)
+            .min()
+            if not shown_kegg.empty
+            else np.nan
+        )
         kegg_metrics = st.columns(4)
         kegg_metrics[0].metric(
             "Rows shown", f"{len(shown_kegg):,} / {len(source_kegg):,}"
@@ -1367,9 +1406,12 @@ with kegg_tab:
             f"{shown_module_count:,} / "
             f"{module_count if kegg_scope == 'All modules' else 1:,}",
         )
-        kegg_metrics[2].metric("FDR-significant shown", f"{significant_count:,}")
+        kegg_metrics[2].metric(
+            f"Significant: {statistical_scope}", f"{significant_count:,}"
+        )
         kegg_metrics[3].metric(
-            "Best FDR", "NA" if pd.isna(best_fdr) else f"{best_fdr:.3e}"
+            f"Best FDR: {statistical_scope}",
+            "NA" if pd.isna(best_fdr) else f"{best_fdr:.3e}",
         )
 
         if kegg_scope == "All modules":
@@ -1381,15 +1423,67 @@ with kegg_tab:
             )
         if shown_kegg.empty:
             st.info("No KEGG enrichment rows match the current filters.")
+        kegg_priority_columns = [
+            "module_definition",
+            "cluster_id",
+            "pathway_name",
+            "category_level1",
+            "category_level2",
+            "p",
+            "fdr",
+            "significant",
+            "p_AC",
+            "fdr_AC",
+            "significant_AC",
+            "p_DLPFC",
+            "fdr_DLPFC",
+            "significant_DLPFC",
+            "p_PCGBA23",
+            "fdr_PCGBA23",
+            "significant_PCGBA23",
+        ]
+        kegg_priority_columns = [
+            column for column in kegg_priority_columns if column in shown_kegg
+        ]
+        displayed_kegg = shown_kegg[
+            kegg_priority_columns
+            + [
+                column
+                for column in shown_kegg.columns
+                if column not in kegg_priority_columns
+            ]
+        ]
         st.dataframe(
-            shown_kegg,
+            displayed_kegg,
             width="stretch",
             hide_index=True,
             height=650,
             column_config={
                 "cluster_id": st.column_config.NumberColumn("Module", format="M%d"),
-                "p": st.column_config.NumberColumn(format="%.3e"),
-                "fdr": st.column_config.NumberColumn(format="%.3e"),
+                "p": st.column_config.NumberColumn(
+                    "All regions p (expanded)", format="%.3e"
+                ),
+                "fdr": st.column_config.NumberColumn(
+                    "All regions FDR (expanded)", format="%.3e"
+                ),
+                "significant": "All regions significant (expanded)",
+                "p_AC": st.column_config.NumberColumn("AC p-value", format="%.3e"),
+                "fdr_AC": st.column_config.NumberColumn("AC FDR", format="%.3e"),
+                "significant_AC": "AC significant",
+                "p_DLPFC": st.column_config.NumberColumn(
+                    "DLPFC p-value", format="%.3e"
+                ),
+                "fdr_DLPFC": st.column_config.NumberColumn(
+                    "DLPFC FDR", format="%.3e"
+                ),
+                "significant_DLPFC": "DLPFC significant",
+                "p_PCGBA23": st.column_config.NumberColumn(
+                    "PCG p-value", format="%.3e"
+                ),
+                "fdr_PCGBA23": st.column_config.NumberColumn(
+                    "PCG FDR", format="%.3e"
+                ),
+                "significant_PCGBA23": "PCG significant",
             },
         )
         st.download_button(
@@ -1412,8 +1506,12 @@ with kegg_tab:
         mime="text/tab-separated-values",
     )
     st.caption(
-        "KEGG tissue labels: AC, DLPFC, and PCG/BA23. The KEGG FDR column "
-        "was supplied by the enrichment analysis and is not recalculated by this app."
+        "All-regions p/FDR uses the tissue-expanded enrichment test. AC, DLPFC, and "
+        "PCG p-values use separate region-specific ORA tests against their corresponding "
+        "expression backgrounds. Each regional FDR is Benjamini-Hochberg adjusted within "
+        "that module and region across 350 KEGG pathways; pathways below the minimum "
+        "overlap receive p=1. Values are supplied by the enrichment analyses and are not "
+        "recalculated by this app."
     )
 
 with module_details_tab:

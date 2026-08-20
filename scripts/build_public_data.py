@@ -88,6 +88,7 @@ class DatasetConfig:
     module_count: int
     sentinel_module: int
     kegg: Path
+    kegg_per_tissue: Path
     mdc: Path
     module_details: Path
     assignments: Path
@@ -129,6 +130,24 @@ def parse_args() -> argparse.Namespace:
         / "kegg_enrichment_brain_control_derived_se2_l4_method4_20260818"
         / "method4_tissue_expanded_kegg_annotated.tsv",
         help="Control-derived tissue-expanded KEGG table.",
+    )
+    parser.add_argument(
+        "--kegg-per-tissue",
+        type=Path,
+        default=repo_root
+        / "out"
+        / "kegg_enrichments_per_se2_level4"
+        / "method2_meta_kegg_annotated.tsv",
+        help="Full-cohort per-tissue KEGG p-value and FDR table.",
+    )
+    parser.add_argument(
+        "--control-derived-kegg-per-tissue",
+        type=Path,
+        default=repo_root
+        / "out"
+        / "kegg_enrichment_brain_control_derived_se2_l4_method4_20260818"
+        / "method2_meta_kegg_annotated.tsv",
+        help="Control-derived per-tissue KEGG p-value and FDR table.",
     )
     parser.add_argument(
         "--mdc",
@@ -213,6 +232,14 @@ def parse_args() -> argparse.Namespace:
         "--statistics-only",
         action="store_true",
         help="Refresh only aggregate and tissue-resolved statistics and the data manifest.",
+    )
+    parser.add_argument(
+        "--kegg-only",
+        action="store_true",
+        help=(
+            "Refresh both public KEGG tables and manifest entries without changing "
+            "donor plot data or pseudonymous sample labels."
+        ),
     )
     return parser.parse_args()
 
@@ -591,6 +618,189 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def prepare_public_kegg(
+    expanded_source: Path,
+    per_tissue_source: Path,
+) -> tuple[pd.DataFrame, dict[str, object]]:
+    """Join whole expanded-tissue KEGG results to per-region ORA statistics."""
+    expanded = pd.read_csv(expanded_source, sep="\t")
+    per_tissue = pd.read_csv(per_tissue_source, sep="\t")
+    keys = ["cluster_id", "term"]
+    expanded_required = {
+        *keys,
+        "p",
+        "fdr",
+        "significant",
+        "overlap_AC",
+        "overlap_MFBA9BA46",
+        "overlap_PCGBA23",
+    }
+    per_tissue_required = {
+        *keys,
+        "p_AC",
+        "fdr_AC",
+        "significant_AC",
+        "overlap_AC",
+        "p_MFBA9BA46",
+        "fdr_MFBA9BA46",
+        "significant_MFBA9BA46",
+        "overlap_MFBA9BA46",
+        "p_PCGBA23",
+        "fdr_PCGBA23",
+        "significant_PCGBA23",
+        "overlap_PCGBA23",
+    }
+    for label, frame, required in [
+        ("expanded", expanded, expanded_required),
+        ("per-tissue", per_tissue, per_tissue_required),
+    ]:
+        missing = required.difference(frame.columns)
+        if missing:
+            raise ValueError(f"{label} KEGG source is missing columns: {sorted(missing)}")
+        frame["cluster_id"] = pd.to_numeric(
+            frame["cluster_id"], errors="raise"
+        ).astype("int32")
+        if frame.duplicated(keys).any():
+            raise ValueError(f"{label} KEGG source has duplicate cluster/pathway keys")
+
+    region_source_columns = keys.copy()
+    for tissue in ("AC", "MFBA9BA46", "PCGBA23"):
+        region_source_columns.extend(
+            [
+                f"p_{tissue}",
+                f"fdr_{tissue}",
+                f"significant_{tissue}",
+                f"overlap_{tissue}",
+            ]
+        )
+    region = per_tissue[region_source_columns].rename(
+        columns={
+            "overlap_AC": "per_tissue_overlap_AC",
+            "overlap_MFBA9BA46": "per_tissue_overlap_MFBA9BA46",
+            "overlap_PCGBA23": "per_tissue_overlap_PCGBA23",
+        }
+    )
+    public = expanded.merge(
+        region,
+        on=keys,
+        how="left",
+        validate="one_to_one",
+        indicator=True,
+    )
+    unmatched = public.loc[public["_merge"].ne("both"), keys]
+    if not unmatched.empty:
+        raise ValueError(
+            "Expanded KEGG rows are missing per-tissue results: "
+            + unmatched.head(10).to_dict(orient="records").__repr__()
+        )
+    public = public.drop(columns="_merge")
+
+    for tissue in ("AC", "MFBA9BA46", "PCGBA23"):
+        region_overlap = f"per_tissue_overlap_{tissue}"
+        if not pd.to_numeric(public[f"overlap_{tissue}"], errors="raise").eq(
+            pd.to_numeric(public[region_overlap], errors="raise")
+        ).all():
+            raise ValueError(
+                f"Expanded and per-tissue KEGG overlap counts disagree for {tissue}"
+            )
+        public = public.drop(columns=region_overlap)
+        for prefix in ("p", "fdr"):
+            values = pd.to_numeric(public[f"{prefix}_{tissue}"], errors="raise")
+            if not values.between(0.0, 1.0, inclusive="both").all():
+                raise ValueError(f"{prefix}_{tissue} contains values outside [0, 1]")
+        expected_significant = public[f"fdr_{tissue}"].le(0.05)
+        if not public[f"significant_{tissue}"].astype(bool).eq(
+            expected_significant
+        ).all():
+            raise ValueError(f"significant_{tissue} does not match FDR <= 0.05")
+
+    public = public.rename(
+        columns={
+            "overlap_MFBA9BA46": "overlap_DLPFC",
+            "p_MFBA9BA46": "p_DLPFC",
+            "fdr_MFBA9BA46": "fdr_DLPFC",
+            "significant_MFBA9BA46": "significant_DLPFC",
+        }
+    )
+    if "overlap_genes" in public:
+        public["overlap_genes"] = (
+            public["overlap_genes"]
+            .astype("string")
+            .str.replace("(MFBA9BA46)", "(DLPFC)", regex=False)
+        )
+
+    priority_columns = [
+        "cluster_id",
+        "cluster_size_expanded",
+        "pathway_id",
+        "pathway_num",
+        "pathway_name",
+        "category_level1",
+        "category_level2",
+        "term",
+        "p",
+        "fdr",
+        "significant",
+        "p_AC",
+        "fdr_AC",
+        "significant_AC",
+        "p_DLPFC",
+        "fdr_DLPFC",
+        "significant_DLPFC",
+        "p_PCGBA23",
+        "fdr_PCGBA23",
+        "significant_PCGBA23",
+    ]
+    priority_columns = [column for column in priority_columns if column in public]
+    public = public[
+        priority_columns
+        + [column for column in public.columns if column not in priority_columns]
+    ]
+
+    pathways_per_module = per_tissue.groupby("cluster_id", observed=True).size()
+    audit = {
+        "source_sha256": sha256(expanded_source),
+        "per_region_source_sha256": sha256(per_tissue_source),
+        "per_region_source_output": "/".join(per_tissue_source.parts[-3:]),
+        "join_keys": keys,
+        "join_coverage": 1.0,
+        "per_region_input_modules": int(per_tissue["cluster_id"].nunique()),
+        "per_region_pathways_per_module_min": int(pathways_per_module.min()),
+        "per_region_pathways_per_module_max": int(pathways_per_module.max()),
+        "whole_expanded_fdr_definition": (
+            "Benjamini-Hochberg correction within each module across pathways with "
+            "at least the configured minimum overlap in the expanded tissue-gene universe."
+        ),
+        "per_region_fdr_definition": (
+            "For each module and region separately, Benjamini-Hochberg correction "
+            "across the stable KEGG pathway term space; pathways below the minimum "
+            "overlap receive p=1 before correction."
+        ),
+        "region_statistics": {
+            "AC": ["p_AC", "fdr_AC", "significant_AC"],
+            "DLPFC": ["p_DLPFC", "fdr_DLPFC", "significant_DLPFC"],
+            "PCG": ["p_PCGBA23", "fdr_PCGBA23", "significant_PCGBA23"],
+        },
+    }
+    return public, audit
+
+
+def write_public_kegg(
+    expanded_source: Path,
+    per_tissue_source: Path,
+    output: Path,
+) -> tuple[pd.DataFrame, dict[str, object]]:
+    public, audit = prepare_public_kegg(expanded_source, per_tissue_source)
+    output.mkdir(parents=True, exist_ok=True)
+    public.to_parquet(
+        output / "kegg_tissue_expanded_full.parquet",
+        index=False,
+        compression="zstd",
+    )
+    public.to_csv(output / "kegg_tissue_expanded_full.tsv", sep="\t", index=False)
+    return public, audit
+
+
 def mdc_manifest(source: Path) -> dict[str, object]:
     metadata = dict(MDC_SOURCE_METADATA)
     metadata.update(
@@ -842,22 +1052,10 @@ def build_module_set(
         resolved=True,
     )
 
-    kegg = pd.read_csv(config.kegg, sep="\t")
-    kegg["cluster_id"] = pd.to_numeric(
-        kegg["cluster_id"], errors="raise"
-    ).astype("int32")
-    kegg = kegg.rename(columns={"overlap_MFBA9BA46": "overlap_DLPFC"})
-    if "overlap_genes" in kegg:
-        kegg["overlap_genes"] = kegg["overlap_genes"].astype("string").str.replace(
-            "(MFBA9BA46)", "(DLPFC)", regex=False
-        )
-    kegg.to_parquet(
-        config.output / "kegg_tissue_expanded_full.parquet",
-        index=False,
-        compression="zstd",
-    )
-    kegg.to_csv(
-        config.output / "kegg_tissue_expanded_full.tsv", sep="\t", index=False
+    kegg, kegg_audit = write_public_kegg(
+        config.kegg,
+        config.kegg_per_tissue,
+        config.output,
     )
 
     annotation_source = table_file(
@@ -1019,11 +1217,8 @@ def build_module_set(
                 expected_modules - reported_kegg_modules
             ),
             "rows": len(kegg),
-            "fdr_definition": (
-                "Benjamini-Hochberg correction separately within each module across "
-                "tested pathways."
-            ),
-            "source_sha256": sha256(config.kegg),
+            "fdr_definition": kegg_audit["whole_expanded_fdr_definition"],
+            **kegg_audit,
         },
         "mdc": mdc_manifest(config.mdc),
         "module_details": module_details_manifest(config.module_details),
@@ -1149,15 +1344,77 @@ def refresh_existing_statistics_bundle(
     return manifest
 
 
+def refresh_existing_kegg_bundles(
+    output: Path,
+    sources: tuple[tuple[str, Path, Path, Path], ...],
+) -> dict[str, object]:
+    """Refresh both KEGG bundles without changing donor-level public data."""
+    manifest_path = output / "data_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    for module_set, expanded_source, per_tissue_source, dataset_output in sources:
+        public, audit = write_public_kegg(
+            expanded_source,
+            per_tissue_source,
+            dataset_output,
+        )
+        details = pd.read_csv(dataset_output / MODULE_DETAILS_OUTPUT_NAME, sep="\t")
+        expected_modules = set(details["module"].astype(int))
+        reported_modules = set(public["cluster_id"].astype(int))
+        if not reported_modules.issubset(expected_modules):
+            raise ValueError(
+                f"{module_set}: KEGG contains modules outside the public module set"
+            )
+
+        module_manifest = manifest["module_sets"][module_set]
+        kegg_manifest = dict(module_manifest["kegg"])
+        kegg_manifest.update(
+            {
+                "input_modules": len(expected_modules),
+                "admitted_modules": int(audit["per_region_input_modules"]),
+                "modules_with_reported_pathways": len(reported_modules),
+                "modules_without_reported_pathways": sorted(
+                    expected_modules - reported_modules
+                ),
+                "rows": len(public),
+                "fdr_definition": audit["whole_expanded_fdr_definition"],
+                **audit,
+            }
+        )
+        module_manifest["kegg"] = kegg_manifest
+
+        for filename in (
+            "kegg_tissue_expanded_full.parquet",
+            "kegg_tissue_expanded_full.tsv",
+        ):
+            path = dataset_output / filename
+            file_entry = {"bytes": path.stat().st_size, "sha256": sha256(path)}
+            if path.stat().st_size >= 100 * 1024 * 1024:
+                raise ValueError(f"Refreshed KEGG file exceeds GitHub limit: {path}")
+            module_manifest["files"][filename] = file_entry
+            manifest["files"][str(path.relative_to(output))] = file_entry
+
+    manifest["created_utc"] = datetime.now(timezone.utc).isoformat()
+    manifest_path.write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    return manifest
+
+
 def main() -> None:
     args = parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
 
-    refresh_flags = [args.mdc_only, args.module_details_only, args.statistics_only]
+    refresh_flags = [
+        args.mdc_only,
+        args.module_details_only,
+        args.statistics_only,
+        args.kegg_only,
+    ]
     if sum(refresh_flags) > 1:
         raise ValueError(
-            "Use only one of --mdc-only, --module-details-only, or --statistics-only"
+            "Use only one of --mdc-only, --module-details-only, --statistics-only, "
+            "or --kegg-only"
         )
 
     if args.mdc_only:
@@ -1184,6 +1441,34 @@ def main() -> None:
             )
         )
         return
+    if args.kegg_only:
+        manifest = refresh_existing_kegg_bundles(
+            output,
+            (
+                (
+                    "full_cohort",
+                    args.kegg.resolve(),
+                    args.kegg_per_tissue.resolve(),
+                    output,
+                ),
+                (
+                    "control_derived",
+                    args.control_derived_kegg.resolve(),
+                    args.control_derived_kegg_per_tissue.resolve(),
+                    output / "control_derived",
+                ),
+            ),
+        )
+        print(
+            json.dumps(
+                {
+                    key: manifest["module_sets"][key]["kegg"]
+                    for key in ("full_cohort", "control_derived")
+                },
+                indent=2,
+            )
+        )
+        return
 
     configs = (
         DatasetConfig(
@@ -1194,6 +1479,7 @@ def main() -> None:
             module_count=154,
             sentinel_module=1918,
             kegg=args.kegg.resolve(),
+            kegg_per_tissue=args.kegg_per_tissue.resolve(),
             mdc=args.mdc.resolve(),
             module_details=args.module_details.resolve(),
             assignments=args.full_assignments.resolve(),
@@ -1207,6 +1493,7 @@ def main() -> None:
             module_count=186,
             sentinel_module=10,
             kegg=args.control_derived_kegg.resolve(),
+            kegg_per_tissue=args.control_derived_kegg_per_tissue.resolve(),
             mdc=args.control_derived_mdc.resolve(),
             module_details=args.control_derived_module_details.resolve(),
             assignments=args.control_derived_assignments.resolve(),
@@ -1218,6 +1505,7 @@ def main() -> None:
     for config in configs:
         mandatory = [
             config.kegg,
+            config.kegg_per_tissue,
             config.mdc,
             config.module_details,
             config.assignments,

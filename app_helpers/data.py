@@ -370,6 +370,8 @@ def filter_kegg_enrichments(
     significance: str = "all",
     maximum_fdr: float | None = None,
     search: str = "",
+    significance_columns: Iterable[str] | None = None,
+    fdr_columns: Iterable[str] | None = None,
 ) -> pd.DataFrame:
     """Filter and consistently order selected- or all-module KEGG rows."""
     if significance not in {"all", "significant", "not_significant"}:
@@ -392,19 +394,33 @@ def filter_kegg_enrichments(
     if selected_subcategories:
         result = result.loc[result["category_level2"].isin(selected_subcategories)]
 
-    significant = result["significant"].fillna(False).astype(bool)
+    selected_significance_columns = list(significance_columns or ["significant"])
+    selected_fdr_columns = list(fdr_columns or ["fdr"])
+    missing_scope_columns = set(
+        selected_significance_columns + selected_fdr_columns
+    ).difference(result.columns)
+    if missing_scope_columns:
+        raise ValueError(
+            "KEGG significance scope columns are missing: "
+            f"{sorted(missing_scope_columns)}"
+        )
+    significant = (
+        result[selected_significance_columns].fillna(False).astype(bool).any(axis=1)
+    )
     if significance == "significant":
         result = result.loc[significant]
     elif significance == "not_significant":
         result = result.loc[~significant]
 
+    scope_fdr = result[selected_fdr_columns].apply(pd.to_numeric, errors="coerce").min(
+        axis=1
+    )
     if maximum_fdr is not None:
         maximum_fdr = float(maximum_fdr)
         if not 0.0 <= maximum_fdr <= 1.0:
             raise ValueError("maximum_fdr must be between 0 and 1")
-        result = result.loc[
-            pd.to_numeric(result["fdr"], errors="coerce").le(maximum_fdr)
-        ]
+        result = result.loc[scope_fdr.le(maximum_fdr)]
+        scope_fdr = scope_fdr.loc[result.index]
 
     search = search.strip()
     if search:
@@ -427,10 +443,15 @@ def filter_kegg_enrichments(
         )
         result = result.loc[mask]
 
-    sort_columns = [
-        column for column in ["fdr", "p", "cluster_id", "pathway_name"] if column in result
+    result = result.assign(_selected_scope_fdr=scope_fdr.reindex(result.index))
+    sort_columns = ["_selected_scope_fdr"] + [
+        column for column in ["p", "cluster_id", "pathway_name"] if column in result
     ]
-    return result.sort_values(sort_columns, na_position="last").reset_index(drop=True)
+    return (
+        result.sort_values(sort_columns, na_position="last")
+        .drop(columns="_selected_scope_fdr")
+        .reset_index(drop=True)
+    )
 
 
 def module_label(module: int | str) -> str:

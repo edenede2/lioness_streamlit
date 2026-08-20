@@ -1,5 +1,5 @@
 {
-  "created_utc": "2026-08-18T16:17:10.935816+00:00",
+  "created_utc": "2026-08-20T07:36:43.589442+00:00",
   "diagnosis_counts_per_method": {
     "AD": 167,
     "Control": 164,
@@ -25,12 +25,12 @@
       "sha256": "7ffebfb7f31fed2b4d557ab9ff371b06179ca260f94e9a079160b4857209be8f"
     },
     "control_derived/kegg_tissue_expanded_full.parquet": {
-      "bytes": 672605,
-      "sha256": "f4059f40f43149703908fe54ab2db0c63b55b27357cd31a42b93d472c764931f"
+      "bytes": 794278,
+      "sha256": "4e37a9ad5730de7b0d8f600fbdd73253d8f15c84b99efe94e722d17bf059f2f8"
     },
     "control_derived/kegg_tissue_expanded_full.tsv": {
-      "bytes": 4004226,
-      "sha256": "a9573c7aa310ec781b8f587743fe64f2bf000d2c6d55b1fec40aec113c8aabb8"
+      "bytes": 4656329,
+      "sha256": "26f5c0eb71472f8439104a33310ee7413d18c6977488ecda5b6cf02dbed4fd7b"
     },
     "control_derived/mdc_ad_vs_control_summary.tsv": {
       "bytes": 45642,
@@ -57,12 +57,12 @@
       "sha256": "83fc59b54e3f511a4f60c4698c694375ff2de2bb28250f5e35117e6ae5639e6d"
     },
     "kegg_tissue_expanded_full.parquet": {
-      "bytes": 557809,
-      "sha256": "853e6812099b593443ca10cf8fb01f5d00d0b62a1c4ac0601886ebd7faad0d58"
+      "bytes": 667709,
+      "sha256": "e5b52c8de2a633f2f873d112ce625c625df552820cd8688264c8e44bb0c90d31"
     },
     "kegg_tissue_expanded_full.tsv": {
-      "bytes": 3366878,
-      "sha256": "d83c7d6696b8197925a021821618a56af2bff4fc19ef00aad2ed4f6c0d1a84e9"
+      "bytes": 3914269,
+      "sha256": "76af09c099eebb6762715cecd355b2eeba89dba67f07d79171f766018bcd33c5"
     },
     "mdc_ad_vs_control_summary.tsv": {
       "bytes": 36615,
@@ -155,12 +155,12 @@
           "sha256": "7ffebfb7f31fed2b4d557ab9ff371b06179ca260f94e9a079160b4857209be8f"
         },
         "kegg_tissue_expanded_full.parquet": {
-          "bytes": 672605,
-          "sha256": "f4059f40f43149703908fe54ab2db0c63b55b27357cd31a42b93d472c764931f"
+          "bytes": 794278,
+          "sha256": "4e37a9ad5730de7b0d8f600fbdd73253d8f15c84b99efe94e722d17bf059f2f8"
         },
         "kegg_tissue_expanded_full.tsv": {
-          "bytes": 4004226,
-          "sha256": "a9573c7aa310ec781b8f587743fe64f2bf000d2c6d55b1fec40aec113c8aabb8"
+          "bytes": 4656329,
+          "sha256": "26f5c0eb71472f8439104a33310ee7413d18c6977488ecda5b6cf02dbed4fd7b"
         },
         "mdc_ad_vs_control_summary.tsv": {
           "bytes": 45642,
@@ -197,8 +197,13 @@
       },
       "kegg": {
         "admitted_modules": 186,
-        "fdr_definition": "Benjamini-Hochberg correction separately within each module across tested pathways.",
+        "fdr_definition": "Benjamini-Hochberg correction within each module across pathways with at least the configured minimum overlap in the expanded tissue-gene universe.",
         "input_modules": 186,
+        "join_coverage": 1.0,
+        "join_keys": [
+          "cluster_id",
+          "term"
+        ],
         "modules_with_reported_pathways": 180,
         "modules_without_reported_pathways": [
           436,
@@ -208,8 +213,32 @@
           1096,
           1129
         ],
+        "per_region_fdr_definition": "For each module and region separately, Benjamini-Hochberg correction across the stable KEGG pathway term space; pathways below the minimum overlap receive p=1 before correction.",
+        "per_region_input_modules": 186,
+        "per_region_pathways_per_module_max": 350,
+        "per_region_pathways_per_module_min": 350,
+        "per_region_source_output": "out/kegg_enrichment_brain_control_derived_se2_l4_method4_20260818/method2_meta_kegg_annotated.tsv",
+        "per_region_source_sha256": "7b0edfa19361720afa878249233784c16ff99f8114fecc91f52c33e56b1ba3f7",
+        "region_statistics": {
+          "AC": [
+            "p_AC",
+            "fdr_AC",
+            "significant_AC"
+          ],
+          "DLPFC": [
+            "p_DLPFC",
+            "fdr_DLPFC",
+            "significant_DLPFC"
+          ],
+          "PCG": [
+            "p_PCGBA23",
+            "fdr_PCGBA23",
+            "significant_PCGBA23"
+          ]
+        },
         "rows": 10945,
-        "source_sha256": "05ac9880f75de516f8f67f3f16500d5d7b90a3471235aa7db82550b39d3a43db"
+        "source_sha256": "05ac9880f75de516f8f67f3f16500d5d7b90a3471235aa7db82550b39d3a43db",
+        "whole_expanded_fdr_definition": "Benjamini-Hochberg correction within each module across pathways with at least the configured minimum overlap in the expanded tissue-gene universe."
       },
       "key": "control_derived",
       "label": "Control-derived L4 modules (186)",
@@ -305,12 +334,12 @@
           "sha256": "c9f3ebce3dbf204184a23abece18f5558443ed56a58301150ca81c06a0438014"
         },
         "kegg_tissue_expanded_full.parquet": {
-          "bytes": 557809,
-          "sha256": "853e6812099b593443ca10cf8fb01f5d00d0b62a1c4ac0601886ebd7faad0d58"
+          "bytes": 667709,
+          "sha256": "e5b52c8de2a633f2f873d112ce625c625df552820cd8688264c8e44bb0c90d31"
         },
         "kegg_tissue_expanded_full.tsv": {
-          "bytes": 3366878,
-          "sha256": "d83c7d6696b8197925a021821618a56af2bff4fc19ef00aad2ed4f6c0d1a84e9"
+          "bytes": 3914269,
+          "sha256": "76af09c099eebb6762715cecd355b2eeba89dba67f07d79171f766018bcd33c5"
         },
         "mdc_ad_vs_control_summary.tsv": {
           "bytes": 36615,
@@ -336,8 +365,13 @@
       "formula_validation": null,
       "kegg": {
         "admitted_modules": 126,
-        "fdr_definition": "Benjamini-Hochberg correction separately within each module across tested pathways.",
+        "fdr_definition": "Benjamini-Hochberg correction within each module across pathways with at least the configured minimum overlap in the expanded tissue-gene universe.",
         "input_modules": 154,
+        "join_coverage": 1.0,
+        "join_keys": [
+          "cluster_id",
+          "term"
+        ],
         "modules_with_reported_pathways": 123,
         "modules_without_reported_pathways": [
           92,
@@ -372,8 +406,32 @@
           1996,
           2394
         ],
+        "per_region_fdr_definition": "For each module and region separately, Benjamini-Hochberg correction across the stable KEGG pathway term space; pathways below the minimum overlap receive p=1 before correction.",
+        "per_region_input_modules": 126,
+        "per_region_pathways_per_module_max": 350,
+        "per_region_pathways_per_module_min": 350,
+        "per_region_source_output": "out/kegg_enrichments_per_se2_level4/method2_meta_kegg_annotated.tsv",
+        "per_region_source_sha256": "04f7293025bf40f73a5b07f53815809293ff3c63bfe2b87cd88167d8bb56cea6",
+        "region_statistics": {
+          "AC": [
+            "p_AC",
+            "fdr_AC",
+            "significant_AC"
+          ],
+          "DLPFC": [
+            "p_DLPFC",
+            "fdr_DLPFC",
+            "significant_DLPFC"
+          ],
+          "PCG": [
+            "p_PCGBA23",
+            "fdr_PCGBA23",
+            "significant_PCGBA23"
+          ]
+        },
         "rows": 8866,
-        "source_sha256": "c1a376f8c11707a98898a5019455392df11e3d535fd3704ea0f13db3c9c5b768"
+        "source_sha256": "c1a376f8c11707a98898a5019455392df11e3d535fd3704ea0f13db3c9c5b768",
+        "whole_expanded_fdr_definition": "Benjamini-Hochberg correction within each module across pathways with at least the configured minimum overlap in the expanded tissue-gene universe."
       },
       "key": "full_cohort",
       "label": "Full-cohort L4 modules (154)",
