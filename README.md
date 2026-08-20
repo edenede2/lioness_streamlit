@@ -31,7 +31,9 @@ The app includes two explicitly separated module definitions:
 - A descriptive CT-vs-TS screen across all modules.
 - Every row and column of the tissue-expanded KEGG enrichment table, filterable
   and downloadable for the selected module or all modules, with module, FDR,
-  significance, category, sub-category, pathway, and gene-search filters.
+  significance, statistical scope, category, sub-category, pathway, and gene-search
+  filters. Each row includes the whole expanded-tissue p/FDR and separate AC,
+  DLPFC, and PCG p/FDR values.
 - Level-4 module composition from the SE2 details file: total module size,
   represented tissues, dominant tissue, per-tissue gene counts, and proportions.
 - Interactive module-size distributions and size-ranked AC/DLPFC/PCG composition
@@ -115,7 +117,9 @@ python scripts/build_public_data.py \
   --analysis-root /path/to/20260817_standard_control_anchored_allmodules_5phenotypes_6features \
   --control-derived-analysis-root /path/to/20260818_control_anchored_control_derived_l4_5phenotypes_6features \
   --kegg /path/to/method4_tissue_expanded_kegg_annotated.tsv \
+  --kegg-per-tissue /path/to/method2_meta_kegg_annotated.tsv \
   --control-derived-kegg /path/to/control_derived_method4_tissue_expanded_kegg_annotated.tsv \
+  --control-derived-kegg-per-tissue /path/to/control_derived_method2_meta_kegg_annotated.tsv \
   --mdc /path/to/AD_vs_Control_MDC_Preservation.tsv \
   --control-derived-mdc /path/to/AD_vs_Control_control_derived_l4_MDC_only.tsv \
   --module-details /path/to/se2_details_filtered_4.csv \
@@ -146,6 +150,13 @@ pseudonyms or rebuilding plot data:
 
 ```bash
 python scripts/build_public_data.py --statistics-only
+```
+
+To refresh only the whole and per-region KEGG tables without changing donor
+pseudonyms or rebuilding plot data:
+
+```bash
+python scripts/build_public_data.py --kegg-only
 ```
 
 The build is intentionally one-way: donor/projid columns and the pseudonym salt are
@@ -180,9 +191,12 @@ contain 13,860 tests and within-phenotype families contain 2,772; the correspond
 tissue-resolved families contain 83,160 and 16,632 tests. For the 186-module set,
 the counts are 16,740, 3,348, 100,440, and 20,088. Aggregate Spearman
 FDR was not produced by the source analysis, so the app shows its stored nominal
-p-values without substituting Pearson FDR or calculating a new correction. KEGG
-FDRs come directly from the supplied tissue-expanded enrichment table and are not
-recalculated by the app.
+p-values without substituting Pearson FDR or calculating a new correction. The
+whole-regions KEGG FDR is corrected within each module across pathways reported by
+the tissue-expanded test. Each AC, DLPFC, and PCG FDR is corrected separately within
+its module and region across the stable set of 350 KEGG pathways; pathways below the
+minimum overlap receive p=1. These values come from the supplied enrichment analyses
+and are not recalculated by the app.
 
 The additional heatmap tables calculate Pearson and Spearman correlations on demand.
 Their `*_fdr_displayed_family` columns use Benjamini-Hochberg correction over the

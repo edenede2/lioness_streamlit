@@ -140,6 +140,34 @@ def test_kegg_table_is_complete_and_module_filter_works() -> None:
     assert len(data.load_kegg(1918)) == 156
 
 
+def test_kegg_contains_valid_whole_and_per_region_statistics() -> None:
+    region_columns = {
+        "AC": ("p_AC", "fdr_AC", "significant_AC"),
+        "DLPFC": ("p_DLPFC", "fdr_DLPFC", "significant_DLPFC"),
+        "PCG": ("p_PCGBA23", "fdr_PCGBA23", "significant_PCGBA23"),
+    }
+    manifest = data.load_data_manifest()
+    for module_set in data.MODULE_SET_LABELS:
+        frame = data.load_kegg(module_set=module_set)
+        assert {"p", "fdr", "significant"}.issubset(frame.columns)
+        assert not any("MFBA9BA46" in column for column in frame.columns)
+        for p_column, fdr_column, significant_column in region_columns.values():
+            assert {p_column, fdr_column, significant_column}.issubset(frame.columns)
+            assert frame[p_column].notna().all()
+            assert frame[fdr_column].notna().all()
+            assert frame[p_column].between(0.0, 1.0).all()
+            assert frame[fdr_column].between(0.0, 1.0).all()
+            assert frame[significant_column].astype(bool).eq(
+                frame[fdr_column].le(0.05)
+            ).all()
+
+        kegg_manifest = manifest["module_sets"][module_set]["kegg"]
+        assert kegg_manifest["join_coverage"] == 1.0
+        assert kegg_manifest["per_region_pathways_per_module_min"] == 350
+        assert kegg_manifest["per_region_pathways_per_module_max"] == 350
+        assert set(kegg_manifest["region_statistics"]) == {"AC", "DLPFC", "PCG"}
+
+
 def test_all_module_kegg_filters_cover_modules_categories_fdr_and_search() -> None:
     full = data.load_kegg()
     target = full.loc[full["significant"].fillna(False).astype(bool)].iloc[0]
@@ -169,6 +197,34 @@ def test_all_module_kegg_filters_cover_modules_categories_fdr_and_search() -> No
         full, significance="not_significant"
     )
     assert not non_significant["significant"].fillna(False).astype(bool).any()
+
+    dlpfc_target = full.loc[full["significant_DLPFC"].astype(bool)].iloc[0]
+    dlpfc = data.filter_kegg_enrichments(
+        full,
+        modules=[int(dlpfc_target["cluster_id"])],
+        significance="significant",
+        maximum_fdr=0.05,
+        significance_columns=["significant_DLPFC"],
+        fdr_columns=["fdr_DLPFC"],
+    )
+    assert not dlpfc.empty
+    assert dlpfc["significant_DLPFC"].astype(bool).all()
+    assert dlpfc["fdr_DLPFC"].le(0.05).all()
+    assert dlpfc["fdr_DLPFC"].is_monotonic_increasing
+
+    any_region = data.filter_kegg_enrichments(
+        full,
+        significance="significant",
+        significance_columns=[
+            "significant_AC",
+            "significant_DLPFC",
+            "significant_PCGBA23",
+        ],
+        fdr_columns=["fdr_AC", "fdr_DLPFC", "fdr_PCGBA23"],
+    )
+    assert any_region[
+        ["significant_AC", "significant_DLPFC", "significant_PCGBA23"]
+    ].astype(bool).any(axis=1).all()
 
 
 def test_mdc_table_matches_modules_and_directional_fdr() -> None:
