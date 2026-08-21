@@ -2,9 +2,19 @@
 
 from __future__ import annotations
 
+import importlib
+
 import numpy as np
 import pandas as pd
 import streamlit as st
+
+# Streamlit Community Cloud may hot-reload this entrypoint while retaining an older
+# app_helpers.charts module in memory. Reload the helper when its current public API
+# is absent so a repository update cannot leave the two modules out of sync.
+from app_helpers import charts as _chart_helpers
+
+if not hasattr(_chart_helpers, "CONTINUOUS_COLOR_SCALES"):
+    _chart_helpers = importlib.reload(_chart_helpers)
 
 from app_helpers.charts import (
     CONTINUOUS_COLOR_SCALES,

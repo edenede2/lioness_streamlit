@@ -4,6 +4,8 @@ from pathlib import Path
 
 from streamlit.testing.v1 import AppTest
 
+import app_helpers.charts as chart_helpers
+
 
 APP = Path(__file__).resolve().parents[1] / "streamlit_app.py"
 
@@ -15,6 +17,13 @@ def widget_with_label(elements, label: str):
 def assert_app_clean(app: AppTest) -> None:
     assert not app.exception
     assert not [error for error in app.error if "Traceback" in str(error.value)]
+
+
+def test_streamlit_hot_reload_recovers_stale_chart_helper(monkeypatch) -> None:
+    monkeypatch.delattr(chart_helpers, "CONTINUOUS_COLOR_SCALES")
+    app = AppTest.from_file(APP, default_timeout=180).run()
+    assert_app_clean(app)
+    assert hasattr(chart_helpers, "CONTINUOUS_COLOR_SCALES")
 
 
 def test_streamlit_smoke_lioness_and_bonobo_module_definitions() -> None:
