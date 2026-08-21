@@ -38,6 +38,24 @@ BONOBO_EDGE_RULE_LABELS = {
     "bh_fdr05": "Within donor-module BH FDR < 0.05",
 }
 
+KEGG_REGION_FDR_COLUMNS = {
+    "AC": "fdr_AC",
+    "DLPFC": "fdr_DLPFC",
+    "PCG": "fdr_PCGBA23",
+}
+KEGG_COMPONENT_REGIONS = {
+    "TS_AC": ("AC",),
+    "TS_DLPFC": ("DLPFC",),
+    "TS_PCGBA23": ("PCG",),
+    "CT_AC__DLPFC": ("AC", "DLPFC"),
+    "CT_AC__PCGBA23": ("AC", "PCG"),
+    "CT_DLPFC__PCGBA23": ("DLPFC", "PCG"),
+}
+KEGG_PRIORITY_PATTERN = (
+    r"lipid|fatty acid|cholesterol|glycerolipid|glycerophospholipid|"
+    r"sphingolipid|metaboli|alzheimer|infection|infectious|viral|virus"
+)
+
 AGGREGATE_DATA = DATA_DIR / "aggregate_plot_data.parquet"
 RESOLVED_DATA = DATA_DIR / "resolved_plot_data.parquet"
 AGGREGATE_STATS = DATA_DIR / "aggregate_statistics.parquet"
@@ -614,6 +632,100 @@ def selected_annotation(annotations: pd.DataFrame, module: int) -> str | None:
         return None
     text = match.iloc[0].get("subtitle_text")
     return str(text) if pd.notna(text) and str(text).strip() else None
+
+
+def _format_kegg_fdr(value: object) -> str:
+    numeric = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
+    return "NA" if pd.isna(numeric) else f"{float(numeric):.3g}"
+
+
+def _select_resolved_kegg_row(
+    enrichments: pd.DataFrame, regions: tuple[str, ...]
+) -> pd.Series | None:
+    fdr_columns = [KEGG_REGION_FDR_COLUMNS[region] for region in regions]
+    if enrichments.empty or any(column not in enrichments for column in fdr_columns):
+        return None
+    candidates = enrichments.copy()
+    regional_fdr = candidates[fdr_columns].apply(pd.to_numeric, errors="coerce")
+    valid = regional_fdr.notna().all(axis=1)
+    if not valid.any():
+        return None
+    candidates = candidates.loc[valid].copy()
+    regional_fdr = regional_fdr.loc[valid]
+    candidates["_joint_regional_score"] = regional_fdr.max(axis=1)
+    searchable = candidates[
+        [
+            column
+            for column in ("category_level1", "category_level2", "pathway_name")
+            if column in candidates
+        ]
+    ].fillna("").astype(str).agg(" ".join, axis=1)
+    priority_significant = searchable.str.contains(
+        KEGG_PRIORITY_PATTERN, case=False, regex=True
+    ) & regional_fdr.le(0.05).all(axis=1)
+    selection = candidates.loc[priority_significant]
+    if selection.empty:
+        selection = candidates
+    sort_columns = ["_joint_regional_score"] + [
+        column for column in ("p", "pathway_name") if column in selection
+    ]
+    return selection.sort_values(sort_columns, na_position="last").iloc[0]
+
+
+def association_kegg_subtitles(
+    enrichments: pd.DataFrame,
+    components: Iterable[str],
+    *,
+    resolved: bool,
+    aggregate_annotation: str | None = None,
+) -> dict[str, str]:
+    """Return one scope-matched KEGG subtitle for every association panel.
+
+    Aggregate CT/TS panels use the existing tissue-expanded annotation. Within-tissue
+    panels use that region's enrichment FDR. Cross-tissue panels select the pathway
+    with the strongest conservative joint regional support and report both regional
+    FDR values; these values are not represented as a separate pair-level test.
+    """
+    component_list = [str(component) for component in components]
+    if not resolved:
+        if aggregate_annotation:
+            subtitle = str(aggregate_annotation).replace(
+                "KEGG enrichment:", "KEGG enrichment (tissue-expanded):", 1
+            )
+        else:
+            subtitle = "KEGG enrichment (tissue-expanded): unavailable"
+        return {component: subtitle for component in component_list}
+
+    subtitles: dict[str, str] = {}
+    for component in component_list:
+        regions = KEGG_COMPONENT_REGIONS.get(component)
+        if not regions:
+            subtitles[component] = "KEGG enrichment: unavailable"
+            continue
+        scope_label = "–".join(regions)
+        row = _select_resolved_kegg_row(enrichments, regions)
+        if row is None:
+            subtitles[component] = f"KEGG enrichment ({scope_label}): unavailable"
+            continue
+        category = str(row.get("category_level1", "Unavailable"))
+        subcategory = str(row.get("category_level2", "Unavailable"))
+        pathway = str(row.get("pathway_name", "Unavailable")).replace(
+            " - Homo sapiens (human)", ""
+        )
+        if len(regions) == 1:
+            region = regions[0]
+            fdr_text = f"FDR={_format_kegg_fdr(row[KEGG_REGION_FDR_COLUMNS[region]])}"
+        else:
+            fdr_text = "; ".join(
+                f"{region} FDR={_format_kegg_fdr(row[KEGG_REGION_FDR_COLUMNS[region]])}"
+                for region in regions
+            )
+            scope_label += " regional support"
+        subtitles[component] = (
+            f"KEGG enrichment ({scope_label}): {category} / {subcategory} / "
+            f"{pathway} | {fdr_text}"
+        )
+    return subtitles
 
 
 def dataframe_to_tsv_bytes(frame: pd.DataFrame) -> bytes:

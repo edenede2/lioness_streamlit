@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import html
 import math
+import textwrap
 from collections.abc import Iterable
 
 import numpy as np
@@ -206,6 +208,7 @@ def association_figure(
     module_definition: str | None = None,
     continuous_colorscale: str = "Blue–white–orange",
     reverse_colorscale: bool = False,
+    kegg_subtitles: dict[str, str] | None = None,
 ) -> go.Figure:
     """Build faceted scatter plots with selected correlation annotations and OLS lines."""
     diagnoses = list(diagnoses)
@@ -217,13 +220,29 @@ def association_figure(
     component_pairs = list(components.itertuples(index=False, name=None))
     ncols = 2 if len(component_pairs) <= 2 else 3
     nrows = math.ceil(len(component_pairs) / ncols)
+    kegg_subtitles = kegg_subtitles or {}
+    subplot_titles = []
+    for component, component_label in component_pairs:
+        subtitle = kegg_subtitles.get(str(component))
+        if not subtitle:
+            subplot_titles.append(html.escape(str(component_label)))
+            continue
+        wrapped = textwrap.wrap(
+            str(subtitle), width=58, break_long_words=False, break_on_hyphens=False
+        )
+        subtitle_html = "<br>".join(html.escape(line) for line in wrapped)
+        subplot_titles.append(
+            f"<b>{html.escape(str(component_label))}</b><br><sup>{subtitle_html}</sup>"
+        )
     fig = make_subplots(
         rows=nrows,
         cols=ncols,
-        subplot_titles=[label for _, label in component_pairs],
+        subplot_titles=subplot_titles,
         horizontal_spacing=0.08,
-        vertical_spacing=0.16 if nrows > 1 else 0.08,
+        vertical_spacing=0.25 if nrows > 1 else 0.08,
     )
+    for annotation in fig.layout.annotations:
+        annotation.update(font={"size": 11, "color": "#27364B"})
 
     continuous_color = color_by != "diagnosis_group"
     color_min = color_max = None
@@ -352,8 +371,8 @@ def association_figure(
             "xanchor": "left",
         },
         template="plotly_white",
-        height=510 if nrows == 1 else 840,
-        margin={"l": 55, "r": 25, "t": 95, "b": 55},
+        height=590 if nrows == 1 else 1040,
+        margin={"l": 55, "r": 25, "t": 175, "b": 55},
         legend={
             "orientation": "h",
             "yanchor": "bottom",
