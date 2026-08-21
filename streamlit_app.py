@@ -536,14 +536,30 @@ if plot_data.empty or not selected_components:
     st.warning("No data remain for the current filters.")
     st.stop()
 
-zero_variance_components = (
-    plot_data.groupby("component", observed=True)["metric_value"]
-    .nunique(dropna=True)
-    .loc[lambda values: values <= 1]
-    .index.tolist()
+component_variation = plot_data.groupby("component", observed=True)["metric_value"].agg(
+    nonmissing="count", distinct=lambda values: values.nunique(dropna=True)
 )
+structurally_unavailable_components = component_variation.loc[
+    component_variation["nonmissing"].eq(0)
+].index.tolist()
+zero_variance_components = component_variation.loc[
+    component_variation["nonmissing"].gt(0)
+    & component_variation["distinct"].le(1)
+].index.tolist()
+if estimator == "bonobo" and structurally_unavailable_components:
+    unavailable_labels = [
+        component_labels.get(value, value)
+        for value in structurally_unavailable_components
+    ]
+    st.warning(
+        "The selected module has no structurally possible edges in: "
+        + ", ".join(unavailable_labels)
+        + ". These scopes remain missing rather than being encoded as zero."
+    )
 if estimator == "bonobo" and zero_variance_components:
-    zero_labels = [component_labels.get(value, value) for value in zero_variance_components]
+    zero_labels = [
+        component_labels.get(value, value) for value in zero_variance_components
+    ]
     st.warning(
         "BONOBO has no donor-to-donor variation for the selected sparse-network score in: "
         + ", ".join(zero_labels)
@@ -707,7 +723,10 @@ with association_tab:
         *[column for column in HOVER_LABELS if column != phenotype],
     ]
     public_plot_data = plot_data[public_columns].rename(
-        columns={"metric_value": f"feature_{scale}"}
+        columns={
+            "metric_value": f"feature_{scale}",
+            "lioness_method": "network_method",
+        }
     )
     public_plot_data.insert(0, "module_definition", module_set_label)
     st.download_button(
@@ -898,7 +917,7 @@ with correlation_tab:
             data=dataframe_to_tsv_bytes(correlation_table[correlation_columns]),
             file_name=(
                 f"{download_prefix}{method}_{heatmap_diagnosis}_"
-                "lioness_outcome_correlations.tsv"
+                "network_outcome_correlations.tsv"
             ),
             mime="text/tab-separated-values",
         )
@@ -1470,7 +1489,9 @@ with statistics_tab:
     st.caption(
         f"The primary table follows the sidebar selection: {correlation_method}. The "
         "download retains raw, asinh, Winsorized, Spearman, RINT, leave-one-out "
-        "sensitivity, dependent CT-vs-TS tests, and all stored FDR fields."
+        "sensitivity, dependent CT-vs-TS tests, and all stored FDR fields. All-12 "
+        "global FDR is the current primary correction; primary-five global FDR is "
+        "retained for backward comparison and is unavailable for the seven added outcomes."
     )
     if resolved and correlation_method == "Spearman":
         display_columns = [
@@ -1480,6 +1501,7 @@ with statistics_tab:
             "rho",
             "p_spearman",
             "q_spearman_all12_global",
+            "q_spearman_primary5_global",
         ]
     elif resolved:
         display_columns = [
@@ -1489,6 +1511,7 @@ with statistics_tab:
             "r_rint",
             "p_rint",
             "q_rint_all12_global",
+            "q_rint_primary5_global",
             "q_rint_within_phenotype",
             "rho",
             "p_spearman",
@@ -1502,13 +1525,16 @@ with statistics_tab:
             "rho_CT",
             "p_spearman_CT",
             "q_spearman_CT_all12_global",
+            "q_spearman_CT_primary5_global",
             "rho_TS",
             "p_spearman_TS",
             "q_spearman_TS_all12_global",
+            "q_spearman_TS_primary5_global",
             "component_t_rank",
             "p_component_rank",
             "q_component_rank_within_phenotype",
             "q_component_rank_all12_global",
+            "q_component_rank_primary5_global",
         ]
     else:
         display_columns = [
@@ -1517,14 +1543,17 @@ with statistics_tab:
             "r_rint_CT",
             "p_rint_CT",
             "q_rint_CT_all12_global",
+            "q_rint_CT_primary5_global",
             "r_rint_TS",
             "p_rint_TS",
             "q_rint_TS_all12_global",
+            "q_rint_TS_primary5_global",
             "rho_CT",
             "rho_TS",
             "p_component_rint",
             "q_component_rint_within_phenotype",
             "q_component_rint_all12_global",
+            "q_component_rint_primary5_global",
         ]
     statistics = statistics.copy()
     statistics.insert(0, "module_definition", module_set_label)
@@ -1827,6 +1856,18 @@ with module_details_tab:
             "SE2 module-details file and controls both charts below."
         ),
     )
+    entropy_range = st.slider(
+        "Normalized tissue-entropy range",
+        min_value=0.0,
+        max_value=1.0,
+        value=(0.0, 1.0),
+        step=0.01,
+        key=f"module_entropy_range_{module_set}",
+        help=(
+            "Zero is a single-tissue module; one is equal AC/DLPFC/PCG "
+            "composition. This filter combines with the CT/TS filter."
+        ),
+    )
     if module_type_scope == "Both":
         chart_module_details = module_details.copy()
     else:
@@ -1834,6 +1875,11 @@ with module_details_tab:
         chart_module_details = module_details.loc[
             module_details["cluster_type"].astype(str).str.upper().eq(selected_module_type)
         ].copy()
+    chart_module_details = chart_module_details.loc[
+        chart_module_details["tissue_entropy_normalized"].between(
+            entropy_range[0], entropy_range[1], inclusive="both"
+        )
+    ].copy()
 
     if chart_module_details.empty:
         st.warning(f"No {module_type_scope} modules are available in this definition.")
@@ -1894,6 +1940,17 @@ with module_details_tab:
             "counts and proportions; drag or scroll to zoom. Entropy is the continuous "
             "tissue-mixing complement to the discrete CT/TS module classification: zero "
             "means one tissue only and one means equal representation of all three tissues."
+        )
+        landscape_download = chart_module_details.copy()
+        landscape_download.insert(0, "module_definition", module_set_label)
+        st.download_button(
+            "Download modules shown in the landscape (TSV)",
+            data=dataframe_to_tsv_bytes(landscape_download),
+            file_name=(
+                f"{download_prefix}module_landscape_"
+                f"{module_type_scope.replace(' ', '_')}_entropy_filtered.tsv"
+            ),
+            mime="text/tab-separated-values",
         )
 
     detail_columns = [
@@ -2017,6 +2074,11 @@ with about_tab:
             "β=2 for cross-tissue edges. Each undirected edge is counted once and the "
             "diagonal is excluded."
         )
+    st.markdown(
+        "For each estimator/method, module, feature, and CT/TS or resolved component, "
+        "the app stores raw values, a robust-scale asinh transformation, and a rank "
+        "inverse-normal Z-score calculated across all 450 donors."
+    )
 
     st.markdown("#### Module differential connectivity")
     st.markdown(

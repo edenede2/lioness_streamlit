@@ -1232,10 +1232,10 @@ def dataset_file_manifest(output: Path) -> dict[str, dict[str, object]]:
     too_large = {
         name: values["bytes"]
         for name, values in result.items()
-        if int(values["bytes"]) >= 100 * 1024 * 1024
+        if int(values["bytes"]) >= 95 * 1024 * 1024
     }
     if too_large:
-        raise ValueError(f"Deploy files exceed GitHub's 100-MiB limit: {too_large}")
+        raise ValueError(f"Deploy files exceed the 95-MiB release cap: {too_large}")
     return result
 
 
@@ -1950,6 +1950,10 @@ def main() -> None:
             (*PHENOTYPES, "age_at_death", "education_years", "cogdx", "braak_stage", "cerad_score", "adnc", "parkinsonism")
         )
         module_manifest["estimators"] = ["lioness", "bonobo"]
+        module_manifest["feature_families_by_estimator"] = {
+            "lioness": 6,
+            "bonobo": 3,
+        }
         module_manifest["bonobo"] = expansion["bonobo"]
         module_manifest["bonobo_analysis"] = bonobo_analysis
         module_manifest["edge_summaries"] = expansion["edge_summaries"]
@@ -2012,6 +2016,45 @@ def main() -> None:
         configs[0].analysis_root / "feature_definitions.tsv", sep="\t"
     )
     features = features.replace("MFBA9BA46", "DLPFC", regex=True)
+    features.insert(0, "estimator", "LIONESS")
+    features["edge_rules"] = "All edges"
+    bonobo_features = pd.DataFrame(
+        [
+            {
+                "estimator": "BONOBO",
+                "feature_family": "connectivity",
+                "definition": (
+                    "Mean signed BONOBO node strength attributable to the selected "
+                    "edge block; equivalently 2*sum(signedAlt edge weight)/module gene count"
+                ),
+            },
+            {
+                "estimator": "BONOBO",
+                "feature_family": "positive_density",
+                "definition": (
+                    "Mean signedAlt BONOBO edge weight among retained positive edges "
+                    "in the selected edge block"
+                ),
+            },
+            {
+                "estimator": "BONOBO",
+                "feature_family": "negative_density",
+                "definition": (
+                    "Mean signedAlt BONOBO edge weight among retained negative edges "
+                    "in the selected edge block"
+                ),
+            },
+        ]
+    )
+    bonobo_features["aggregate_components"] = "CT (all tissue pairs); TS (all tissues)"
+    bonobo_features["resolved_components"] = (
+        "CT_AC__DLPFC,CT_AC__PCGBA23,CT_DLPFC__PCGBA23,"
+        "TS_AC,TS_DLPFC,TS_PCGBA23"
+    )
+    bonobo_features["edge_rules"] = (
+        "All edges; native posterior p<0.05; within-donor/module BH FDR<0.05"
+    )
+    features = pd.concat([features, bonobo_features[features.columns]], ignore_index=True)
     features.to_csv(output / "feature_definitions.tsv", sep="\t", index=False)
     tissues = pd.read_csv(configs[0].analysis_root / "tissue_mapping.tsv", sep="\t")
     tissues["internal_tissue"] = tissues["internal_tissue"].replace(
@@ -2061,6 +2104,7 @@ def main() -> None:
         "modules": 154,
         "phenotypes": list(PHENOTYPES),
         "feature_families": 6,
+        "feature_families_by_estimator": {"lioness": 6, "bonobo": 3},
         "estimators": ["lioness", "bonobo"],
         "outcomes": list(
             (*PHENOTYPES, "age_at_death", "education_years", "cogdx", "braak_stage", "cerad_score", "adnc", "parkinsonism")
@@ -2072,12 +2116,24 @@ def main() -> None:
             ),
         },
         "bonobo_analysis": bonobo_analysis,
+        "transformations": {
+            "raw": "untransformed module/component score",
+            "asinh": (
+                "asinh(raw/robust_scale), with scale chosen from stable median, "
+                "MAD, IQR, or SD fallbacks"
+            ),
+            "rint": (
+                "rank inverse-normal Z-score within module, feature, and component "
+                "across all 450 donors, separately by estimator/method and edge rule"
+            ),
+        },
         "privacy": (
             "donor and projid were removed; sample_id is a random-salted HMAC label "
             "whose salt and source mapping were discarded. Selected deidentified clinical "
             "and neuropathology fields are included for color, hover, and correlation views."
         ),
         "mdc": full_manifest["mdc"],
+        "resolved_mdc": {"components": 6, **resolved_mdc_design},
         "module_details": full_manifest["module_details"],
         "rows": {"metadata_rows": metadata_rows, **full_manifest["rows"]},
         "module_sets": module_set_manifests,

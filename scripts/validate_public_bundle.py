@@ -180,6 +180,10 @@ def validate_module_set(root: Path, key: str, expected_samples: set[str]) -> dic
     resolved_mdc = pd.read_csv(directory / "mdc_resolved_ad_vs_control.tsv", sep="\t")
     if len(resolved_mdc) != modules * 6 or resolved_mdc["component"].nunique() != 6:
         raise ValueError(f"{key}: resolved MDC row/component count mismatch")
+    if not resolved_mdc["mdc"].isna().eq(resolved_mdc["n_edges"].eq(0)).all():
+        raise ValueError(
+            f"{key}: resolved MDC availability does not match structural edge presence"
+        )
     for method in methods:
         validate_edge_file(
             directory / "edge_summaries" / f"lioness__{method}.parquet",

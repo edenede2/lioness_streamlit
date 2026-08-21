@@ -262,6 +262,7 @@ def test_resolved_mdc_has_six_components_and_conservative_fdr() -> None:
         assert len(resolved) == module_count * 6
         assert resolved["module"].nunique() == module_count
         assert resolved["component"].nunique() == 6
+        assert resolved["mdc"].isna().eq(resolved["n_edges"].eq(0)).all()
         assert not resolved.astype(str).apply(
             lambda column: column.str.contains("MFBA9", regex=False)
         ).any().any()
@@ -371,6 +372,21 @@ def test_lioness_statistics_cover_all_twelve_outcomes() -> None:
         )
 
 
+def test_feature_definitions_cover_lioness_and_bonobo_rules() -> None:
+    definitions = data.load_feature_definitions()
+    assert set(definitions["estimator"]) == {"LIONESS", "BONOBO"}
+    assert set(
+        definitions.loc[definitions["estimator"].eq("BONOBO"), "feature_family"]
+    ) == {"connectivity", "positive_density", "negative_density"}
+    bonobo_rules = " ".join(
+        definitions.loc[definitions["estimator"].eq("BONOBO"), "edge_rules"]
+        .astype(str)
+        .tolist()
+    )
+    assert "posterior p<0.05" in bonobo_rules
+    assert "BH FDR<0.05" in bonobo_rules
+
+
 def test_control_derived_kegg_keeps_ts_modules_and_unavailable_annotations() -> None:
     module_set = "control_derived"
     annotations = data.load_module_annotations(module_set)
@@ -443,6 +459,12 @@ def test_bonobo_rules_are_complete_private_and_explicit_about_zero_states() -> N
             estimator="bonobo", edge_rule="bh_fdr05",
         )
         assert len(sparse) == 450
+        if module_set == "full_cohort":
+            m1918 = data.load_aggregate(
+                "bonobo", 1918, "connectivity", module_set=module_set,
+                estimator="bonobo", edge_rule="all",
+            )
+            assert len(m1918) == m1918["sample_id"].nunique() == 450
 
 
 def test_edge_summaries_cover_nine_scopes_and_obey_identities() -> None:
