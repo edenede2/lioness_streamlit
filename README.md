@@ -1,7 +1,7 @@
-# ROSMAP LIONESS Network Explorer
+# ROSMAP Single-Sample Network Explorer
 
-A GitHub-ready Streamlit app for exploring the completed standard and
-Control-referenced ROSMAP LIONESS analyses.
+A GitHub-ready Streamlit app for exploring the completed ROSMAP LIONESS and
+BONOBO analyses.
 
 The app includes two explicitly separated module definitions:
 
@@ -9,24 +9,32 @@ The app includes two explicitly separated module definitions:
   Control-referenced LIONESS results.
 - **Control-derived L4 modules (186)** with Control-referenced LIONESS results.
   Identically numbered modules in the two sets are not interchangeable.
-- Five cognitive and motor phenotypes.
-- Six module feature families.
+- Standard and Control-referenced LIONESS, plus all-donor empirical-Bayes
+  BONOBO for both module definitions.
+- Twelve numeric outcomes: five cognitive/motor phenotypes, age, education,
+  CogDx, Braak, CERAD, ADNC, and Parkinsonism.
+- Six LIONESS feature families and three parallel BONOBO feature families.
+- BONOBO all-edge scores and significant-edge scores based on either native
+  posterior `p < 0.05` or within-donor/module BH `FDR < 0.05`.
 - Aggregate cross-tissue (CT) and tissue-specific (TS) views.
 - Tissue-resolved CT pair and TS tissue views using the label **DLPFC**.
 - Diagnosis-specific scatter plots and OLS trends for Control, MCI, and AD.
 - A global association-correlation selector, defaulting to Spearman with Pearson
   available from the sidebar; it controls scatter annotations, heatmaps, the
   CT-vs-TS screen, and the primary statistics table.
-- Point coloring by diagnosis or any numeric phenotype/outcome.
+- Point coloring by diagnosis or any numeric phenotype/outcome, with selectable
+  continuous color scales and palette reversal.
 - Expanded hover details for cognition, motor function, age, education, APOE,
   CogDx, Braak, CERAD, ADNC, and Parkinsonism.
 - Feature-only histograms and violin distributions.
 - Selected-module and all-module correlation heatmaps, with downloadable
   Pearson, Spearman, p-value, and displayed-family FDR tables.
 - Optional average-linkage clustering of heatmap rows, columns, or both.
-- Module differential connectivity (MDC) for total, tissue-specific (TS), and
-  cross-tissue (CT) edges, including directional FDR significance and an
-  all-module TS-versus-CT overview.
+- Module differential connectivity (MDC) for total, pooled TS, pooled CT, three
+  tissue-specific blocks, and three cross-tissue pairs, including directional
+  FDR significance and an all-module resolved heatmap.
+- Donor-level edge summaries for nine edge scopes, with diagnosis-level summary
+  statistics calculated interactively.
 - Full raw, robust, RINT, leave-one-out, CT-vs-TS, and FDR statistics.
 - A descriptive CT-vs-TS screen across all modules.
 - Every row and column of the tissue-expanded KEGG enrichment table, filterable
@@ -36,6 +44,8 @@ The app includes two explicitly separated module definitions:
   DLPFC, and PCG p/FDR values.
 - Level-4 module composition from the SE2 details file: total module size,
   represented tissues, dominant tissue, per-tissue gene counts, and proportions.
+- Raw and normalized Shannon tissue-mixing entropy as continuous complements to
+  the discrete CT/TS module class.
 - Interactive module-size distributions and size-ranked AC/DLPFC/PCG composition
   bars, filterable to CT modules, TS modules, or both.
 
@@ -75,8 +85,8 @@ streamlit run streamlit_app.py
 1. Create a new GitHub repository and copy the contents of this directory to the
    repository root. Keep the `data/` directory; the app does not use the original
    analysis filesystem.
-2. Commit and push the repository. Every packaged file is below GitHub's 100 MB
-   per-file limit, so Git LFS is not required for this build.
+2. Commit and push the repository. Every packaged file is below 95 MiB (and thus
+   below GitHub's 100 MB per-file limit), so Git LFS is not required for this build.
 3. In Streamlit Community Cloud, choose **Create app**, select the repository and
    branch, set the entrypoint to `streamlit_app.py`, and select **Python 3.12** in
    Advanced settings.
@@ -125,7 +135,12 @@ python scripts/build_public_data.py \
   --module-details /path/to/se2_details_filtered_4.csv \
   --control-derived-module-details /path/to/speakeasy_clusters_details_level_4_filtered.csv \
   --full-assignments /path/to/se2_table_filtered_4.csv \
-  --control-derived-assignments /path/to/speakeasy_clusters_table_level_4_filtered.csv
+  --control-derived-assignments /path/to/speakeasy_clusters_table_level_4_filtered.csv \
+  --bonobo-app-data-root /path/to/bonobo/app_data \
+  --bonobo-network-root /path/to/bonobo/network_outputs \
+  --lioness-expansion-root /path/to/lioness/edge_summaries_entropy \
+  --lioness-all12-stats-root /path/to/lioness/all12_statistics \
+  --resolved-mdc-root /path/to/resolved_mdc
 ```
 
 To refresh only the compact MDC table without rebuilding the donor-level files or
@@ -145,8 +160,8 @@ python scripts/build_public_data.py \
   --module-details /path/to/se2_details_filtered_4.csv
 ```
 
-To refresh the aggregate and tissue-resolved statistics without changing donor
-pseudonyms or rebuilding plot data:
+To refresh the all-12-outcome aggregate and tissue-resolved LIONESS statistics for
+both module definitions without changing donor pseudonyms or rebuilding plot data:
 
 ```bash
 python scripts/build_public_data.py --statistics-only
@@ -168,8 +183,12 @@ source hashes, correction-family sizes, unavailable CT modules, and deploy-file 
 - `data/`: the existing 154-module full-cohort bundle.
 - `data/control_derived/`: the isolated 186-module Control-derived bundle. It has
   its own plot data, statistics, KEGG, MDC, annotations, and module-details files.
-- `aggregate_plot_data.parquet`: CT/TS raw, asinh, and Z-score features.
-- `resolved_plot_data.parquet`: DLPFC/AC/PCG tissue and tissue-pair features.
+- `aggregate_plot_data.parquet`: LIONESS CT/TS raw, asinh, and Z-score features.
+- `resolved_plot_data.parquet`: LIONESS DLPFC/AC/PCG tissue and tissue-pair features.
+- `bonobo/{all,native_p05,bh_fdr05}/`: separately queryable BONOBO plot and
+  statistics Parquets for each edge rule.
+- `edge_summaries/`: donor-level edge counts and signed/positive/negative/absolute
+  weight summaries, sharded by estimator, method, and edge rule.
 - `data/aggregate_statistics.parquet`: complete aggregate robust statistics.
 - `data/resolved_statistics.parquet`: complete tissue-resolved robust statistics.
 - `data/sample_metadata.parquet`: 450 pseudonymous rows with the hover/color outcomes.
@@ -177,21 +196,22 @@ source hashes, correction-family sizes, unavailable CT modules, and deploy-file 
 - `data/kegg_tissue_expanded_full.parquet`: query-efficient KEGG copy.
 - `data/module_kegg_annotations.tsv`: one displayed KEGG annotation per module.
 - `data/module_details.tsv`: validated level-4 module sizes, represented tissues,
-  per-tissue gene counts, and tissue proportions, using the DLPFC label.
+  per-tissue gene counts, tissue proportions, and tissue-mixing entropy, using
+  the DLPFC label.
 - `mdc_ad_vs_control_summary.tsv`: total, TS, and CT MDC ratios with directional
   FDR values for the selected module definition.
+- `mdc_resolved_ad_vs_control.tsv`: AC, DLPFC, PCG, AC-DLPFC, AC-PCG, and
+  DLPFC-PCG MDC ratios and directional permutation FDRs.
 - `data/feature_definitions.tsv`: feature calculation definitions.
 - `data/tissue_mapping.tsv`: public tissue display names.
 
 ## FDR scope
 
-Benjamini-Hochberg FDR correction was performed separately within each LIONESS
-method and module definition. For the 154-module set, aggregate global families
-contain 13,860 tests and within-phenotype families contain 2,772; the corresponding
-tissue-resolved families contain 83,160 and 16,632 tests. For the 186-module set,
-the counts are 16,740, 3,348, 100,440, and 20,088. Aggregate Spearman
-FDR was not produced by the source analysis, so the app shows its stored nominal
-p-values without substituting Pearson FDR or calculating a new correction. The
+Association FDR correction is performed separately by module definition,
+estimator/network method, component family, correlation method, and BONOBO edge
+rule. The expanded global columns apply Benjamini-Hochberg correction over all 12
+numeric outcomes; primary-five global columns are retained for backward comparison,
+and within-outcome columns correct each outcome family. The
 whole-regions KEGG FDR is corrected within each module across pathways reported by
 the tissue-expanded test. Each AC, DLPFC, and PCG FDR is corrected separately within
 its module and region across the stable set of 350 KEGG pathways; pathways below the
@@ -223,3 +243,19 @@ AD and 164 Control complete-three-tissue donors in LIONESS plus donors with part
 tissue availability. MCI was not included in MDC. The app labels MDC as contextual
 module-level evidence and does not imply that it changes with the selected LIONESS
 method.
+
+The six resolved MDC components use the same AD-reference/Control-target design.
+Directional FDR is calculated separately for every component and direction and is
+the larger of the sample-permutation and tissue-count-preserving gene-permutation BH
+values. Structurally absent components remain unavailable rather than being encoded
+as zero.
+
+## BONOBO significance and sparse features
+
+BONOBO edge significance tests whether an individual donor-specific covariance edge
+differs from zero. It does not test whether AD, MCI, and Control differ. The native
+rule retains two-sided posterior `p < 0.05`; the stricter rule applies BH correction
+within each donor-module over its undirected edges and retains `FDR < 0.05`.
+Structurally valid scopes with no retained edge receive zero-valued sparse-network
+features, and the app explicitly warns when a selected score is constant. A
+structurally nonexistent tissue block remains missing.

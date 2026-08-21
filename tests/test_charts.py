@@ -14,8 +14,12 @@ from app_helpers.charts import (  # noqa: E402
     association_figure,
     correlation_heatmap_figure,
     distribution_figure,
+    edge_summary_figure,
     mdc_module_figure,
     mdc_overview_figure,
+    mdc_resolved_heatmap_figure,
+    mdc_resolved_module_figure,
+    module_entropy_figure,
     module_region_composition_figure,
     module_size_distribution_figure,
     resolved_to_long,
@@ -25,6 +29,8 @@ from app_helpers.data import (  # noqa: E402
     load_aggregate,
     load_aggregate_statistics,
     load_mdc_summary,
+    load_mdc_resolved,
+    load_edge_summaries,
     load_module_details,
     load_resolved,
     load_resolved_statistics,
@@ -142,9 +148,12 @@ def test_continuous_color_and_correlation_heatmap() -> None:
             "cogn_global": "Global cognition",
             "motor10_demog_slope": "Demographic-adjusted motor slope",
         },
+        continuous_colorscale="Viridis",
+        reverse_colorscale=True,
     )
     assert scatter.layout.coloraxis.colorbar.title.text == "Demographic-adjusted motor slope"
     assert any("motor slope" in str(trace.hovertemplate) for trace in scatter.data)
+    assert bool(scatter.layout.coloraxis.reversescale)
 
     correlations = calculate_correlations(
         long,
@@ -280,3 +289,27 @@ def test_module_size_and_region_composition_charts_filter_and_sort() -> None:
     ts_composition = module_region_composition_figure(ts_only)
     assert len(ts_composition.layout.yaxis.categoryarray) == len(ts_only) == 28
     assert set(ts_composition.data[0].customdata[:, 1]) == {"TS"}
+
+    entropy = module_entropy_figure(details, selected_module=935)
+    assert len(entropy.data) >= 3
+    assert any(trace.name == "Selected module" for trace in entropy.data)
+    assert entropy.layout.yaxis.range == (-0.03, 1.03)
+
+
+def test_resolved_mdc_and_edge_summary_charts() -> None:
+    resolved = load_mdc_resolved()
+    selected = resolved.loc[resolved["module"].eq(1918)]
+    module_figure = mdc_resolved_module_figure(selected, threshold=0.05)
+    assert len(module_figure.data) == 1
+    assert len(module_figure.data[0].x) == 6
+    overview = mdc_resolved_heatmap_figure(
+        resolved, threshold=0.05, selected_module=1918
+    )
+    assert len(overview.data) == 1
+    assert list(overview.data[0].y)[0] == "M1918"
+
+    edges = load_edge_summaries("lioness", "control_anchored", 935)
+    edge_figure = edge_summary_figure(
+        edges, "absolute_weight_sum", "Absolute weight sum", 935
+    )
+    assert len(edge_figure.data) == 3

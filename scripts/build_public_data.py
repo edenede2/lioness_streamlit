@@ -219,6 +219,36 @@ def parse_args() -> argparse.Namespace:
         help="Streamlit deploy data directory.",
     )
     parser.add_argument(
+        "--bonobo-app-data-root",
+        type=Path,
+        default=repo_root
+        / "out/bonobo_app_rosmap/20260821_bonobo_all450_full_and_control_derived/app_data",
+    )
+    parser.add_argument(
+        "--bonobo-network-root",
+        type=Path,
+        default=repo_root
+        / "out/bonobo_app_rosmap/20260821_bonobo_all450_full_and_control_derived",
+    )
+    parser.add_argument(
+        "--lioness-expansion-root",
+        type=Path,
+        default=repo_root
+        / "out/lioness_app_expansion/20260821_lioness_edge_summaries_entropy",
+    )
+    parser.add_argument(
+        "--lioness-all12-stats-root",
+        type=Path,
+        default=repo_root
+        / "out/lioness_app_expansion/20260821_lioness_all12_robust_statistics",
+    )
+    parser.add_argument(
+        "--resolved-mdc-root",
+        type=Path,
+        default=repo_root
+        / "out/mdc_resolved_rosmap/20260821_ad_reference_control_target_200perms",
+    )
+    parser.add_argument(
         "--mdc-only",
         action="store_true",
         help="Refresh only the module-level MDC summary and existing data manifest.",
@@ -416,6 +446,281 @@ def write_combined_statistics(
         frame = normalize_resolved_component_labels(frame)
     frame.to_parquet(output, index=False, compression="zstd")
     return len(frame)
+
+
+def normalize_public_tissue_labels(frame: pd.DataFrame) -> pd.DataFrame:
+    """Replace every internal DLPFC/PCG token in string columns."""
+
+    result = frame.copy()
+    for column in result.select_dtypes(include=["object", "string"]).columns:
+        result[column] = (
+            result[column]
+            .astype("string")
+            .str.replace("MFBA9BA46", "DLPFC", regex=False)
+            .str.replace("MFBA9/BA46", "DLPFC", regex=False)
+            .str.replace("PCGBA23", "PCGBA23", regex=False)
+        )
+    return result
+
+
+def write_sanitized_edge_data(
+    source: Path,
+    output: Path,
+    sample_map: dict[str, str],
+    edge_rule: str | None = None,
+) -> int:
+    filters = [("edge_rule", "=", edge_rule)] if edge_rule is not None else None
+    frame = pq.read_table(source, filters=filters).to_pandas()
+    if "donor" not in frame:
+        raise ValueError(f"Edge-summary source has no donor column: {source}")
+    frame.insert(0, "sample_id", frame.pop("donor").astype(str).map(sample_map))
+    if frame["sample_id"].isna().any():
+        raise ValueError(f"Edge-summary donor mapping failed: {source}")
+    frame = frame.drop(columns=["projid"], errors="ignore")
+    frame = normalize_public_tissue_labels(frame)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    frame.to_parquet(output, index=False, compression="zstd")
+    return len(frame)
+
+
+def write_expanded_module_bundle(
+    config: DatasetConfig,
+    sample_map: dict[str, str],
+    *,
+    bonobo_app_data_root: Path,
+    bonobo_network_root: Path,
+    lioness_expansion_root: Path,
+    lioness_all12_stats_root: Path,
+    resolved_mdc_root: Path,
+) -> dict[str, object]:
+    """Add BONOBO, all-12 stats, entropy, resolved MDC, and edge summaries."""
+
+    # Replace the legacy five-outcome statistics with all-12-outcome tables.
+    aggregate_stats = []
+    resolved_stats = []
+    for method in config.methods:
+        source_dir = lioness_all12_stats_root / config.key / method
+        aggregate_stats.append(source_dir / "aggregate_statistics.parquet")
+        resolved_stats.append(source_dir / "resolved_statistics.parquet")
+    aggregate_stat_rows = write_combined_statistics(
+        aggregate_stats, config.output / "aggregate_statistics.parquet"
+    )
+    resolved_stat_rows = write_combined_statistics(
+        resolved_stats, config.output / "resolved_statistics.parquet", resolved=True
+    )
+
+    bonobo_rows: dict[str, dict[str, int]] = {}
+    for edge_rule in ("all", "native_p05", "bh_fdr05"):
+        source_dir = bonobo_app_data_root / config.key / "bonobo" / edge_rule
+        output_dir = config.output / "bonobo" / edge_rule
+        output_dir.mkdir(parents=True, exist_ok=True)
+        aggregate_rows = write_sanitized_plot_data(
+            [source_dir / "aggregate_plot_data.parquet"],
+            output_dir / "aggregate_plot_data.parquet",
+            sample_map,
+            resolved=False,
+        )
+        resolved_rows = write_sanitized_plot_data(
+            [source_dir / "resolved_plot_data.parquet"],
+            output_dir / "resolved_plot_data.parquet",
+            sample_map,
+            resolved=True,
+        )
+        bonobo_aggregate_stats = write_combined_statistics(
+            [source_dir / "aggregate_statistics.parquet"],
+            output_dir / "aggregate_statistics.parquet",
+        )
+        bonobo_resolved_stats = write_combined_statistics(
+            [source_dir / "resolved_statistics.parquet"],
+            output_dir / "resolved_statistics.parquet",
+            resolved=True,
+        )
+        bonobo_rows[edge_rule] = {
+            "aggregate_plot_rows": aggregate_rows,
+            "resolved_plot_rows": resolved_rows,
+            "aggregate_stat_rows": bonobo_aggregate_stats,
+            "resolved_stat_rows": bonobo_resolved_stats,
+        }
+
+    edge_output = config.output / "edge_summaries"
+    edge_output.mkdir(parents=True, exist_ok=True)
+    lioness_edge_rows = {}
+    for method in config.methods:
+        source = (
+            lioness_expansion_root
+            / config.key
+            / f"lioness_edge_summaries__{method}.parquet"
+        )
+        lioness_edge_rows[method] = write_sanitized_edge_data(
+            source,
+            edge_output / f"lioness__{method}.parquet",
+            sample_map,
+        )
+    bonobo_edge_source = (
+        bonobo_network_root / config.key / "bonobo_edge_summaries.parquet"
+    )
+    bonobo_edge_rows = {
+        edge_rule: write_sanitized_edge_data(
+            bonobo_edge_source,
+            edge_output / f"bonobo__{edge_rule}.parquet",
+            sample_map,
+            edge_rule=edge_rule,
+        )
+        for edge_rule in ("all", "native_p05", "bh_fdr05")
+    }
+
+    entropy = pd.read_csv(
+        lioness_expansion_root / config.key / "module_tissue_entropy.tsv", sep="\t"
+    )[["module", "tissue_entropy", "tissue_entropy_normalized"]]
+    details_path = config.output / MODULE_DETAILS_OUTPUT_NAME
+    details = pd.read_csv(details_path, sep="\t")
+    details = details.merge(entropy, on="module", how="left", validate="one_to_one")
+    if details[["tissue_entropy", "tissue_entropy_normalized"]].isna().any().any():
+        raise ValueError(f"{config.key}: entropy merge failed")
+    details.to_csv(details_path, sep="\t", index=False, float_format="%.10g")
+
+    resolved_mdc = pd.read_csv(
+        resolved_mdc_root / config.key / "mdc_resolved_ad_vs_control.tsv", sep="\t"
+    )
+    resolved_mdc = resolved_mdc.loc[
+        ~resolved_mdc["component"].isin(["total", "TS", "CT"])
+    ].copy()
+    resolved_mdc = normalize_public_tissue_labels(resolved_mdc)
+    component_labels = {
+        "TS_AC": "TS: AC",
+        "TS_DLPFC": "TS: DLPFC",
+        "TS_PCGBA23": "TS: PCG",
+        "CT_AC__DLPFC": "CT: AC - DLPFC",
+        "CT_AC__PCGBA23": "CT: AC - PCG",
+        "CT_DLPFC__PCGBA23": "CT: DLPFC - PCG",
+    }
+    resolved_mdc["component_label"] = resolved_mdc["component"].map(component_labels)
+    if resolved_mdc["component_label"].isna().any():
+        raise ValueError(f"{config.key}: unknown resolved MDC component")
+    resolved_mdc.to_csv(
+        config.output / "mdc_resolved_ad_vs_control.tsv",
+        sep="\t", index=False,
+    )
+    expected_bonobo = {
+        "aggregate_plot_rows": config.module_count * 450 * 3,
+        "resolved_plot_rows": config.module_count * 450 * 3 * 6,
+        "aggregate_stat_rows": config.module_count * 3 * 12 * 3,
+        "resolved_stat_rows": config.module_count * 3 * 6 * 12 * 3,
+    }
+    for edge_rule, rows in bonobo_rows.items():
+        if rows != expected_bonobo:
+            raise ValueError(
+                f"{config.key}/{edge_rule}: BONOBO row mismatch {rows} != {expected_bonobo}"
+            )
+    return {
+        "outcomes": 12,
+        "lioness_aggregate_stat_rows": aggregate_stat_rows,
+        "lioness_resolved_stat_rows": resolved_stat_rows,
+        "bonobo": bonobo_rows,
+        "edge_summaries": {
+            "lioness": lioness_edge_rows,
+            "bonobo": bonobo_edge_rows,
+        },
+        "resolved_mdc_rows": len(resolved_mdc),
+        "entropy_rows": len(entropy),
+    }
+
+
+def validate_resolved_mdc_run(
+    root: Path, expected_modules: dict[str, int]
+) -> dict[str, object]:
+    """Require the completed 200/200 resolved-MDC run before public packaging."""
+    manifest_path = root / "run_manifest.tsv"
+    completed_path = root / "COMPLETED.txt"
+    if not manifest_path.exists() or not completed_path.exists():
+        raise FileNotFoundError(f"Resolved MDC run is not complete under {root}")
+    manifest_frame = pd.read_csv(manifest_path, sep="\t", dtype=str)
+    if set(manifest_frame.columns) != {"key", "value"}:
+        raise ValueError("Resolved MDC manifest must contain key and value columns")
+    values = dict(manifest_frame[["key", "value"]].itertuples(index=False, name=None))
+    required = {
+        "sample_permutations": "200",
+        "gene_permutations": "200",
+        "seed": "42",
+        "beta_TS": "3",
+        "beta_CT": "2",
+        "rows": str(sum(expected_modules.values()) * 9),
+    }
+    mismatches = {
+        key: {"observed": values.get(key), "expected": expected}
+        for key, expected in required.items()
+        if values.get(key) != expected
+    }
+    if mismatches:
+        raise ValueError(f"Resolved MDC run-manifest mismatch: {mismatches}")
+    expected_components = {
+        "total", "TS", "CT", "TS_AC", "TS_MFBA9BA46", "TS_PCGBA23",
+        "CT_AC__MFBA9BA46", "CT_AC__PCGBA23", "CT_MFBA9BA46__PCGBA23",
+    }
+    for module_set, module_count in expected_modules.items():
+        source = root / module_set / "mdc_resolved_ad_vs_control.tsv"
+        frame = pd.read_csv(source, sep="\t")
+        if len(frame) != module_count * 9:
+            raise ValueError(
+                f"{module_set}: expected {module_count * 9} MDC rows, found {len(frame)}"
+            )
+        if frame["module"].nunique() != module_count:
+            raise ValueError(f"{module_set}: resolved MDC module count mismatch")
+        if set(frame["component"].astype(str)) != expected_components:
+            raise ValueError(f"{module_set}: resolved MDC component set mismatch")
+    return {
+        "sample_permutations": 200,
+        "gene_permutations": 200,
+        "seed": 42,
+        "beta_ts": 3,
+        "beta_ct": 2,
+        "gene_null": values.get("gene_null"),
+        "directional_fdr": values.get("directional_fdr"),
+        "source_manifest_sha256": sha256(manifest_path),
+    }
+
+
+def validate_bonobo_run(root: Path) -> dict[str, object]:
+    """Validate the complete BONOBO cohort, assignments, and direct equivalence audit."""
+    manifest_path = root / "run_manifest.json"
+    validation_path = root / "optimized_direct_validation.tsv"
+    if not manifest_path.exists() or not validation_path.exists():
+        raise FileNotFoundError(f"BONOBO validation outputs are missing under {root}")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if int(manifest.get("donors", -1)) != 450:
+        raise ValueError("BONOBO manifest does not contain exactly 450 donors")
+    if manifest.get("diagnosis_counts") != {"AD": 167, "Control": 164, "MCI": 119}:
+        raise ValueError("BONOBO diagnosis counts do not match the app cohort")
+    expected = {
+        "full_cohort": {"modules": 154, "assignment_rows": 46_898},
+        "control_derived": {"modules": 186, "assignment_rows": 49_392},
+    }
+    for module_set, values in expected.items():
+        observed = manifest.get("module_sets", {}).get(module_set, {})
+        for key, expected_value in values.items():
+            if int(observed.get(key, -1)) != expected_value:
+                raise ValueError(
+                    f"BONOBO {module_set} {key}={observed.get(key)!r}, "
+                    f"expected {expected_value}"
+                )
+    validation = pd.read_csv(validation_path, sep="\t")
+    if validation.empty or not validation["passed"].fillna(False).astype(bool).all():
+        raise ValueError("Optimized BONOBO direct-equivalence validation did not pass")
+    error_columns = [
+        "max_abs_correlation_error", "max_abs_p_error", "abs_delta_error"
+    ]
+    max_error = float(validation[error_columns].max().max())
+    if not np.isfinite(max_error) or max_error >= 1e-9:
+        raise ValueError(f"Optimized BONOBO maximum direct error is {max_error}")
+    return {
+        "donors": 450,
+        "diagnosis_counts": manifest["diagnosis_counts"],
+        "module_sets": expected,
+        "direct_validation_cases": len(validation),
+        "maximum_direct_error": max_error,
+        "source_manifest_sha256": sha256(manifest_path),
+        "direct_validation_sha256": sha256(validation_path),
+    }
 
 
 def write_module_details(
@@ -616,6 +921,21 @@ def sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def deploy_file_manifest_entry(path: Path) -> dict[str, object]:
+    """Return integrity metadata and, for Parquet files, an explicit schema."""
+    entry: dict[str, object] = {
+        "bytes": path.stat().st_size,
+        "sha256": sha256(path),
+    }
+    if path.suffix.lower() == ".parquet":
+        parquet = pq.ParquetFile(path)
+        entry["rows"] = parquet.metadata.num_rows
+        entry["schema"] = {
+            field.name: str(field.type) for field in parquet.schema_arrow
+        }
+    return entry
 
 
 def prepare_public_kegg(
@@ -908,10 +1228,7 @@ def dataset_file_manifest(output: Path) -> dict[str, dict[str, object]]:
         for path in output.iterdir()
         if path.is_file() and path.name in module_set_filenames
     )
-    result = {
-        path.name: {"bytes": path.stat().st_size, "sha256": sha256(path)}
-        for path in files
-    }
+    result = {path.name: deploy_file_manifest_entry(path) for path in files}
     too_large = {
         name: values["bytes"]
         for name, values in result.items()
@@ -926,7 +1243,7 @@ def validate_public_module_set(output: Path, expected_sample_ids: set[str]) -> N
     """Reject identifiers or internal tissue labels in a deploy module bundle."""
     forbidden_columns = {"donor", "projid"}
     internal_labels = ("MFBA9BA46", "MFBA9/BA46")
-    parquet_paths = sorted(output.glob("*.parquet"))
+    parquet_paths = sorted(output.rglob("*.parquet"))
     for path in parquet_paths:
         parquet = pq.ParquetFile(path)
         names = set(parquet.schema_arrow.names)
@@ -956,7 +1273,7 @@ def validate_public_module_set(output: Path, expected_sample_ids: set[str]) -> N
             )
             if sample_ids != expected_sample_ids:
                 raise ValueError(f"Public sample labels are inconsistent in {path}")
-    for path in output.glob("*.tsv"):
+    for path in output.rglob("*.tsv"):
         contents = path.read_text(encoding="utf-8")
         header = contents.splitlines()[0].split("\t") if contents else []
         if forbidden_columns.intersection(header):
@@ -1288,56 +1605,66 @@ def refresh_existing_module_details_bundle(
 
 
 def refresh_existing_statistics_bundle(
-    analysis_root: Path, output: Path
+    all12_stats_root: Path, output: Path
 ) -> dict[str, object]:
-    """Refresh statistics and their manifest entries without changing donor labels."""
-    aggregate_sources = [
-        source_file(
-            analysis_root,
-            method,
-            "_robust_statistics.parquet",
-            exclude_text="tissue_resolved",
-        )
-        for method in METHODS
-    ]
-    resolved_sources = [
-        source_file(analysis_root, method, "_tissue_resolved_robust_statistics.parquet")
-        for method in METHODS
-    ]
-    aggregate_path = output / "aggregate_statistics.parquet"
-    resolved_path = output / "resolved_statistics.parquet"
-    aggregate_rows = write_combined_statistics(
-        aggregate_sources, aggregate_path, resolved=False
-    )
-    resolved_rows = write_combined_statistics(
-        resolved_sources, resolved_path, resolved=True
-    )
-    expected = {
-        "aggregate_stat_rows": 2 * 154 * 5 * 6 * 3,
-        "resolved_stat_rows": 2 * 154 * 5 * 6 * 6 * 3,
-    }
-    observed = {
-        "aggregate_stat_rows": aggregate_rows,
-        "resolved_stat_rows": resolved_rows,
-    }
-    if observed != expected:
-        raise ValueError(
-            f"Statistics row-count validation failed: observed={observed}, expected={expected}"
-        )
-
+    """Refresh all-12-outcome LIONESS statistics without changing donor labels."""
     manifest_path = output / "data_manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    manifest.setdefault("rows", {}).update(observed)
-    for path in (aggregate_path, resolved_path):
-        file_entry = {
-            "bytes": path.stat().st_size,
-            "sha256": sha256(path),
+    configurations = {
+        "full_cohort": {
+            "methods": ("standard", "control_anchored"),
+            "modules": 154,
+            "directory": output,
+        },
+        "control_derived": {
+            "methods": ("control_anchored",),
+            "modules": 186,
+            "directory": output / "control_derived",
+        },
+    }
+    for module_set, config in configurations.items():
+        aggregate_sources = [
+            all12_stats_root / module_set / method / "aggregate_statistics.parquet"
+            for method in config["methods"]
+        ]
+        resolved_sources = [
+            all12_stats_root / module_set / method / "resolved_statistics.parquet"
+            for method in config["methods"]
+        ]
+        missing = [str(path) for path in (*aggregate_sources, *resolved_sources) if not path.exists()]
+        if missing:
+            raise FileNotFoundError(
+                f"{module_set} all-12 statistics are incomplete: {', '.join(missing)}"
+            )
+        aggregate_path = config["directory"] / "aggregate_statistics.parquet"
+        resolved_path = config["directory"] / "resolved_statistics.parquet"
+        observed = {
+            "aggregate_stat_rows": write_combined_statistics(
+                aggregate_sources, aggregate_path, resolved=False
+            ),
+            "resolved_stat_rows": write_combined_statistics(
+                resolved_sources, resolved_path, resolved=True
+            ),
         }
-        manifest["files"][path.name] = file_entry
-        if "module_sets" in manifest:
-            manifest["module_sets"]["full_cohort"]["files"][path.name] = file_entry
-    if "module_sets" in manifest:
-        manifest["module_sets"]["full_cohort"]["rows"].update(observed)
+        expected = {
+            "aggregate_stat_rows": len(config["methods"]) * config["modules"] * 6 * 12 * 3,
+            "resolved_stat_rows": len(config["methods"]) * config["modules"] * 6 * 6 * 12 * 3,
+        }
+        if observed != expected:
+            raise ValueError(
+                f"{module_set} statistics row-count validation failed: "
+                f"observed={observed}, expected={expected}"
+            )
+        module_manifest = manifest["module_sets"][module_set]
+        module_manifest["rows"].update(observed)
+        for path in (aggregate_path, resolved_path):
+            relative = str(path.relative_to(output))
+            file_entry = {"bytes": path.stat().st_size, "sha256": sha256(path)}
+            module_manifest["files"][path.name] = file_entry
+            manifest["files"][relative] = file_entry
+        if module_set == "full_cohort":
+            manifest.setdefault("rows", {}).update(observed)
+    manifest["created_utc"] = datetime.now(timezone.utc).isoformat()
     manifest_path.write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
@@ -1429,7 +1756,7 @@ def main() -> None:
         return
     if args.statistics_only:
         manifest = refresh_existing_statistics_bundle(
-            args.analysis_root.resolve(), output
+            args.lioness_all12_stats_root.resolve(), output
         )
         print(
             json.dumps(
@@ -1501,6 +1828,12 @@ def main() -> None:
         ),
     )
 
+    resolved_mdc_design = validate_resolved_mdc_run(
+        args.resolved_mdc_root.resolve(),
+        {config.key: config.module_count for config in configs},
+    )
+    bonobo_analysis = validate_bonobo_run(args.bonobo_network_root.resolve())
+
     # Preflight every input before replacing any deploy data.
     for config in configs:
         mandatory = [
@@ -1513,6 +1846,49 @@ def main() -> None:
         if config.key == "control_derived":
             mandatory.append(
                 config.analysis_root / "control_reference_formula_validation.tsv"
+            )
+        mandatory.extend(
+            [
+                args.bonobo_network_root.resolve()
+                / config.key
+                / "bonobo_edge_summaries.parquet",
+                args.lioness_expansion_root.resolve()
+                / config.key
+                / "module_tissue_entropy.tsv",
+                args.resolved_mdc_root.resolve()
+                / config.key
+                / "mdc_resolved_ad_vs_control.tsv",
+            ]
+        )
+        for edge_rule in ("all", "native_p05", "bh_fdr05"):
+            mandatory.extend(
+                args.bonobo_app_data_root.resolve()
+                / config.key
+                / "bonobo"
+                / edge_rule
+                / filename
+                for filename in (
+                    "aggregate_plot_data.parquet",
+                    "resolved_plot_data.parquet",
+                    "aggregate_statistics.parquet",
+                    "resolved_statistics.parquet",
+                )
+            )
+        for method in config.methods:
+            mandatory.extend(
+                [
+                    args.lioness_expansion_root.resolve()
+                    / config.key
+                    / f"lioness_edge_summaries__{method}.parquet",
+                    args.lioness_all12_stats_root.resolve()
+                    / config.key
+                    / method
+                    / "aggregate_statistics.parquet",
+                    args.lioness_all12_stats_root.resolve()
+                    / config.key
+                    / method
+                    / "resolved_statistics.parquet",
+                ]
             )
         missing = [str(path) for path in mandatory if not path.exists()]
         if missing:
@@ -1557,6 +1933,80 @@ def main() -> None:
     module_set_manifests = {
         config.key: build_module_set(config, sample_map) for config in configs
     }
+    expansion_manifests = {}
+    for config in configs:
+        expansion = write_expanded_module_bundle(
+            config,
+            sample_map,
+            bonobo_app_data_root=args.bonobo_app_data_root.resolve(),
+            bonobo_network_root=args.bonobo_network_root.resolve(),
+            lioness_expansion_root=args.lioness_expansion_root.resolve(),
+            lioness_all12_stats_root=args.lioness_all12_stats_root.resolve(),
+            resolved_mdc_root=args.resolved_mdc_root.resolve(),
+        )
+        expansion_manifests[config.key] = expansion
+        module_manifest = module_set_manifests[config.key]
+        module_manifest["outcomes"] = list(
+            (*PHENOTYPES, "age_at_death", "education_years", "cogdx", "braak_stage", "cerad_score", "adnc", "parkinsonism")
+        )
+        module_manifest["estimators"] = ["lioness", "bonobo"]
+        module_manifest["bonobo"] = expansion["bonobo"]
+        module_manifest["bonobo_analysis"] = bonobo_analysis
+        module_manifest["edge_summaries"] = expansion["edge_summaries"]
+        module_manifest["fdr_test_families"] = {
+            "definition": (
+                "BH correction is separate by module definition, estimator/network "
+                "method, aggregate or resolved component family, correlation test, "
+                "and BONOBO edge rule"
+            ),
+            "lioness": {
+                "all12_aggregate_global": config.module_count * 6 * 12 * 3,
+                "primary5_aggregate_global": config.module_count * 6 * 5 * 3,
+                "aggregate_within_outcome": config.module_count * 6 * 3,
+                "all12_resolved_global": config.module_count * 6 * 6 * 12 * 3,
+                "primary5_resolved_global": config.module_count * 6 * 6 * 5 * 3,
+                "resolved_within_outcome": config.module_count * 6 * 6 * 3,
+            },
+            "bonobo_per_edge_rule": {
+                "all12_aggregate_global": config.module_count * 3 * 12 * 3,
+                "primary5_aggregate_global": config.module_count * 3 * 5 * 3,
+                "aggregate_within_outcome": config.module_count * 3 * 3,
+                "all12_resolved_global": config.module_count * 3 * 6 * 12 * 3,
+                "primary5_resolved_global": config.module_count * 3 * 6 * 5 * 3,
+                "resolved_within_outcome": config.module_count * 3 * 6 * 3,
+            },
+        }
+        module_manifest["rows"]["aggregate_stat_rows"] = expansion[
+            "lioness_aggregate_stat_rows"
+        ]
+        module_manifest["rows"]["resolved_stat_rows"] = expansion[
+            "lioness_resolved_stat_rows"
+        ]
+        module_manifest["rows"]["resolved_mdc_rows"] = expansion[
+            "resolved_mdc_rows"
+        ]
+        module_manifest["rows"]["entropy_rows"] = expansion["entropy_rows"]
+        module_manifest["entropy"] = {
+            "raw": "H=-sum(p_t*log2(p_t)) over AC, DLPFC, and PCG",
+            "normalized": "H/log2(3)",
+        }
+        module_manifest["resolved_mdc"] = {
+            "components": 6,
+            **resolved_mdc_design,
+        }
+        module_paths = [
+            path
+            for path in sorted(config.output.rglob("*"))
+            if path.is_file()
+            and not (
+                config.key == "full_cohort"
+                and path.relative_to(config.output).parts[0] == "control_derived"
+            )
+        ]
+        module_manifest["files"] = {
+            str(path.relative_to(config.output)): deploy_file_manifest_entry(path)
+            for path in module_paths
+        }
 
     features = pd.read_csv(
         configs[0].analysis_root / "feature_definitions.tsv", sep="\t"
@@ -1596,7 +2046,7 @@ def main() -> None:
     too_large = {
         str(path.relative_to(output)): path.stat().st_size
         for path in deploy_files
-        if path.stat().st_size >= 100 * 1024 * 1024
+        if path.stat().st_size >= 95 * 1024 * 1024
     }
     if too_large:
         raise ValueError(f"Deploy files exceed GitHub's 100-MiB limit: {too_large}")
@@ -1611,6 +2061,17 @@ def main() -> None:
         "modules": 154,
         "phenotypes": list(PHENOTYPES),
         "feature_families": 6,
+        "estimators": ["lioness", "bonobo"],
+        "outcomes": list(
+            (*PHENOTYPES, "age_at_death", "education_years", "cogdx", "braak_stage", "cerad_score", "adnc", "parkinsonism")
+        ),
+        "bonobo_significance": {
+            "native_p05": "two-sided posterior covariance-edge p < 0.05",
+            "bh_fdr05": (
+                "BH FDR < 0.05 within each donor-module across undirected edges"
+            ),
+        },
+        "bonobo_analysis": bonobo_analysis,
         "privacy": (
             "donor and projid were removed; sample_id is a random-salted HMAC label "
             "whose salt and source mapping were discarded. Selected deidentified clinical "
@@ -1621,10 +2082,7 @@ def main() -> None:
         "rows": {"metadata_rows": metadata_rows, **full_manifest["rows"]},
         "module_sets": module_set_manifests,
         "files": {
-            str(path.relative_to(output)): {
-                "bytes": path.stat().st_size,
-                "sha256": sha256(path),
-            }
+            str(path.relative_to(output)): deploy_file_manifest_entry(path)
             for path in deploy_files
         },
     }

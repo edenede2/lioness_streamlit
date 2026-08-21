@@ -65,7 +65,7 @@ def test_all_modules_and_m1918_are_packaged() -> None:
     annotations = data.load_module_annotations()
     assert annotations["module"].nunique() == 154
     assert 1918 in set(annotations["module"].astype(int))
-    for method in data.METHOD_LABELS:
+    for method in data.MODULE_SET_METHODS["full_cohort"]:
         selected = data.load_aggregate(method, 1918, "abs_sum")
         assert len(selected) == 450
         assert selected["sample_id"].nunique() == 450
@@ -84,6 +84,8 @@ def test_module_details_match_level4_modules_and_tissue_counts() -> None:
     assert not details.astype(str).apply(
         lambda column: column.str.contains("MFBA9", regex=False)
     ).any().any()
+    assert details["tissue_entropy"].between(0.0, 1.5849625008).all()
+    assert details["tissue_entropy_normalized"].between(0.0, 1.0).all()
 
     m1012 = data.load_module_details(1012).iloc[0]
     assert int(m1012["module_size"]) == 152
@@ -254,6 +256,30 @@ def test_mdc_table_matches_modules_and_directional_fdr() -> None:
     assert manifest["mdc"]["gene_permutations"] == 200
 
 
+def test_resolved_mdc_has_six_components_and_conservative_fdr() -> None:
+    for module_set, module_count in {"full_cohort": 154, "control_derived": 186}.items():
+        resolved = data.load_mdc_resolved(module_set)
+        assert len(resolved) == module_count * 6
+        assert resolved["module"].nunique() == module_count
+        assert resolved["component"].nunique() == 6
+        assert not resolved.astype(str).apply(
+            lambda column: column.str.contains("MFBA9", regex=False)
+        ).any().any()
+        finite = resolved["directional_fdr"].notna()
+        expected = resolved.loc[finite, ["directional_p_sample", "directional_p_gene"]]
+        assert expected.notna().all().all()
+        ad_higher = finite & resolved["mdc"].ge(1)
+        control_higher = finite & resolved["mdc"].lt(1)
+        assert (
+            resolved.loc[ad_higher, "directional_fdr"]
+            - resolved.loc[ad_higher, ["q_loss_sample", "q_loss_gene"]].max(axis=1)
+        ).abs().max() < 1e-12
+        assert (
+            resolved.loc[control_higher, "directional_fdr"]
+            - resolved.loc[control_higher, ["q_gain_sample", "q_gain_gene"]].max(axis=1)
+        ).abs().max() < 1e-12
+
+
 def test_control_derived_bundle_is_isolated_complete_and_private() -> None:
     module_set = "control_derived"
     annotations = data.load_module_annotations(module_set)
@@ -304,14 +330,45 @@ def test_control_derived_bundle_is_isolated_complete_and_private() -> None:
     assert manifest["methods"] == ["control_anchored"]
     assert manifest["rows"]["aggregate_rows"] == 502_200
     assert manifest["rows"]["resolved_rows"] == 3_013_200
-    assert manifest["rows"]["aggregate_stat_rows"] == 16_740
-    assert manifest["rows"]["resolved_stat_rows"] == 100_440
+    assert manifest["rows"]["aggregate_stat_rows"] == 40_176
+    assert manifest["rows"]["resolved_stat_rows"] == 241_056
     assert manifest["ct_unavailable_modules"] == [356]
     assert manifest["ts_labeled_modules"] == [355, 356, 867]
     assert manifest["kegg"]["input_modules"] == 186
     assert manifest["kegg"]["admitted_modules"] == 186
     assert manifest["formula_validation"]["groups"] == ["AD", "Control", "MCI"]
     assert manifest["formula_validation"]["max_relative_error"] < 1e-8
+
+
+def test_lioness_statistics_cover_all_twelve_outcomes() -> None:
+    configurations = [
+        ("full_cohort", "standard", 154),
+        ("full_cohort", "control_anchored", 154),
+        ("control_derived", "control_anchored", 186),
+    ]
+    for module_set, method, module_count in configurations:
+        aggregate = data.load_aggregate_statistics(method, module_set=module_set)
+        resolved = data.load_resolved_statistics(method, module_set=module_set)
+        assert len(aggregate) == module_count * 6 * 12 * 3
+        assert len(resolved) == module_count * 6 * 6 * 12 * 3
+        assert set(aggregate["phenotype"]) == set(data.NUMERIC_OUTCOMES)
+        assert {
+            "q_spearman_CT_all12_global",
+            "q_spearman_TS_all12_global",
+            "q_component_rank_all12_global",
+            "q_rint_CT_all12_global",
+            "q_rint_TS_all12_global",
+            "q_component_rint_all12_global",
+        }.issubset(aggregate.columns)
+        families = data.load_data_manifest()["module_sets"][module_set][
+            "fdr_test_families"
+        ]
+        assert families["lioness"]["all12_aggregate_global"] == (
+            module_count * 6 * 12 * 3
+        )
+        assert families["bonobo_per_edge_rule"]["all12_aggregate_global"] == (
+            module_count * 3 * 12 * 3
+        )
 
 
 def test_control_derived_kegg_keeps_ts_modules_and_unavailable_annotations() -> None:
@@ -334,5 +391,120 @@ def test_manifest_file_hashes_and_github_size_limit() -> None:
         path = data.DATA_DIR / relative_path
         assert path.exists()
         assert path.stat().st_size == expected["bytes"]
-        assert path.stat().st_size < 100 * 1024 * 1024
+        assert path.stat().st_size < 95 * 1024 * 1024
         assert file_sha256(path) == expected["sha256"]
+        if path.suffix == ".parquet":
+            parquet = pq.ParquetFile(path)
+            assert {"donor", "projid"}.isdisjoint(parquet.schema_arrow.names)
+            assert expected["rows"] == parquet.metadata.num_rows
+            assert expected["schema"] == {
+                field.name: str(field.type) for field in parquet.schema_arrow
+            }
+
+
+def test_bonobo_rules_are_complete_private_and_explicit_about_zero_states() -> None:
+    for module_set, module_count in {"full_cohort": 154, "control_derived": 186}.items():
+        for edge_rule in ("all", "native_p05", "bh_fdr05"):
+            aggregate_path = data.estimator_path(
+                "aggregate_plot_data.parquet", module_set, "bonobo", edge_rule
+            )
+            resolved_path = data.estimator_path(
+                "resolved_plot_data.parquet", module_set, "bonobo", edge_rule
+            )
+            assert pq.ParquetFile(aggregate_path).metadata.num_rows == module_count * 450 * 3
+            assert pq.ParquetFile(resolved_path).metadata.num_rows == module_count * 450 * 3 * 6
+            for path in (aggregate_path, resolved_path):
+                assert {"donor", "projid"}.isdisjoint(
+                    pq.ParquetFile(path).schema_arrow.names
+                )
+                assert path.stat().st_size < 95 * 1024 * 1024
+            aggregate_stats = data.load_aggregate_statistics(
+                "bonobo", module_set=module_set, estimator="bonobo",
+                edge_rule=edge_rule,
+            )
+            resolved_stats = data.load_resolved_statistics(
+                "bonobo", module_set=module_set, estimator="bonobo",
+                edge_rule=edge_rule,
+            )
+            assert len(aggregate_stats) == module_count * 3 * 12 * 3
+            assert len(resolved_stats) == module_count * 3 * 6 * 12 * 3
+            assert set(aggregate_stats["phenotype"]) == set(data.NUMERIC_OUTCOMES)
+            assert {
+                "q_spearman_CT_all12_global",
+                "q_spearman_TS_all12_global",
+                "q_component_rank_all12_global",
+                "q_rint_CT_all12_global",
+                "q_rint_TS_all12_global",
+                "q_component_rint_all12_global",
+            }.issubset(aggregate_stats.columns)
+        sparse = data.load_aggregate(
+            "bonobo", 34 if module_set == "full_cohort" else 10,
+            "connectivity", module_set=module_set,
+            estimator="bonobo", edge_rule="bh_fdr05",
+        )
+        assert len(sparse) == 450
+
+
+def test_edge_summaries_cover_nine_scopes_and_obey_identities() -> None:
+    for module_set, method, module in [
+        ("full_cohort", "standard", 935),
+        ("full_cohort", "control_anchored", 935),
+        ("control_derived", "control_anchored", 935),
+    ]:
+        frame = data.load_edge_summaries(
+            "lioness", method, module, module_set=module_set
+        )
+        assert len(frame) == 450 * 9
+        assert frame["scope"].nunique() == 9
+        assert (frame["n_retained_edges"] == frame["n_possible_edges"]).all()
+        assert (frame["n_pruned_edges"] == 0).all()
+        assert (
+            frame["n_positive_edges"]
+            + frame["n_negative_edges"]
+            + frame["n_zero_edges"]
+            == frame["n_retained_edges"]
+        ).all()
+        assert (
+            frame["positive_weight_sum"] + frame["negative_weight_magnitude"]
+            - frame["absolute_weight_sum"]
+        ).abs().max() < 1e-8
+
+    for module_set, module in [("full_cohort", 935), ("control_derived", 935)]:
+        for edge_rule in ("all", "native_p05", "bh_fdr05"):
+            frame = data.load_edge_summaries(
+                "bonobo", "bonobo", module, module_set=module_set,
+                edge_rule=edge_rule,
+            )
+            assert len(frame) == 450 * 9
+            assert frame["scope"].nunique() == 9
+            assert (frame["n_retained_edges"] <= frame["n_possible_edges"]).all()
+            assert (
+                frame["n_positive_edges"]
+                + frame["n_negative_edges"]
+                + frame["n_zero_edges"]
+                == frame["n_retained_edges"]
+            ).all()
+            assert (
+                frame["n_possible_edges"]
+                - frame["n_retained_edges"]
+                == frame["n_pruned_edges"]
+            ).all()
+            assert (
+                frame["positive_weight_sum"] + frame["negative_weight_magnitude"]
+                - frame["absolute_weight_sum"]
+            ).abs().max() < 1e-8
+
+
+def test_shared_anonymous_samples_cover_all_estimators_and_module_sets() -> None:
+    expected = set(data.load_sample_metadata()["sample_id"])
+    assert len(expected) == 450
+    for module_set, module in [("full_cohort", 935), ("control_derived", 935)]:
+        lioness = data.load_aggregate(
+            "control_anchored", module, "connectivity", module_set=module_set
+        )
+        bonobo = data.load_aggregate(
+            "bonobo", module, "connectivity", module_set=module_set,
+            estimator="bonobo", edge_rule="all",
+        )
+        assert set(lioness["sample_id"]) == expected
+        assert set(bonobo["sample_id"]) == expected

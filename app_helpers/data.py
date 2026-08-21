@@ -26,6 +26,15 @@ MODULE_SET_METHODS = {
     "full_cohort": ("standard", "control_anchored"),
     "control_derived": ("control_anchored",),
 }
+ESTIMATOR_LABELS = {
+    "lioness": "LIONESS",
+    "bonobo": "BONOBO",
+}
+BONOBO_METHOD = "bonobo"
+BONOBO_EDGE_RULE_LABELS = {
+    "native_p05": "Native posterior p < 0.05",
+    "bh_fdr05": "Within donor-module BH FDR < 0.05",
+}
 
 AGGREGATE_DATA = DATA_DIR / "aggregate_plot_data.parquet"
 RESOLVED_DATA = DATA_DIR / "resolved_plot_data.parquet"
@@ -39,6 +48,7 @@ FEATURE_DEFINITIONS = DATA_DIR / "feature_definitions.tsv"
 TISSUE_MAPPING = DATA_DIR / "tissue_mapping.tsv"
 SAMPLE_METADATA = DATA_DIR / "sample_metadata.parquet"
 MDC_SUMMARY = DATA_DIR / "mdc_ad_vs_control_summary.tsv"
+MDC_RESOLVED = DATA_DIR / "mdc_resolved_ad_vs_control.tsv"
 DATA_MANIFEST = DATA_DIR / "data_manifest.json"
 
 MODULE_SET_FILENAMES = (
@@ -51,11 +61,13 @@ MODULE_SET_FILENAMES = (
     "module_kegg_annotations.tsv",
     "module_details.tsv",
     "mdc_ad_vs_control_summary.tsv",
+    "mdc_resolved_ad_vs_control.tsv",
 )
 
 METHOD_LABELS = {
     "standard": "Standard LIONESS (all-donor reference)",
     "control_anchored": "Control-referenced LIONESS",
+    "bonobo": "All-donor empirical-Bayes BONOBO",
 }
 
 PHENOTYPE_LABELS = {
@@ -95,6 +107,11 @@ FEATURE_LABELS = {
     "positive_abs_sum": "Positive absolute edge-weight sum",
     "negative_abs_sum": "Negative absolute edge-weight sum",
 }
+BONOBO_FEATURE_LABELS = {
+    "connectivity": "Connectivity",
+    "positive_density": "Positive density",
+    "negative_density": "Negative density",
+}
 
 SCALE_LABELS = {
     "rint": "Z-score",
@@ -111,6 +128,17 @@ COMPONENT_ORDER = [
     "TS_DLPFC",
     "TS_PCGBA23",
 ]
+EDGE_SCOPE_LABELS = {
+    "total": "Total",
+    "TS": "TS pooled",
+    "CT": "CT pooled",
+    "TS_AC": "TS: AC",
+    "TS_DLPFC": "TS: DLPFC",
+    "TS_PCGBA23": "TS: PCG",
+    "CT_AC__DLPFC": "CT: AC - DLPFC",
+    "CT_AC__PCGBA23": "CT: AC - PCG",
+    "CT_DLPFC__PCGBA23": "CT: DLPFC - PCG",
+}
 
 
 def module_set_data_dir(module_set: str = "full_cohort") -> Path:
@@ -127,6 +155,21 @@ def module_set_path(filename: str, module_set: str = "full_cohort") -> Path:
     return module_set_data_dir(module_set) / filename
 
 
+def estimator_path(
+    filename: str,
+    module_set: str = "full_cohort",
+    estimator: str = "lioness",
+    edge_rule: str = "all",
+) -> Path:
+    if estimator == "lioness":
+        return module_set_path(filename, module_set)
+    if estimator != "bonobo":
+        raise ValueError(f"Unknown estimator: {estimator}")
+    if edge_rule not in {"all", *BONOBO_EDGE_RULE_LABELS}:
+        raise ValueError(f"Unknown BONOBO edge rule: {edge_rule}")
+    return module_set_data_dir(module_set) / "bonobo" / edge_rule / filename
+
+
 def require_data_files() -> None:
     """Raise a useful error if the GitHub data bundle was not built."""
     required = [
@@ -138,6 +181,27 @@ def require_data_files() -> None:
     for module_set in MODULE_SET_DIRS:
         required.extend(
             module_set_path(filename, module_set) for filename in MODULE_SET_FILENAMES
+        )
+        for edge_rule in ("all", *BONOBO_EDGE_RULE_LABELS):
+            required.extend(
+                estimator_path(filename, module_set, "bonobo", edge_rule)
+                for filename in (
+                    "aggregate_plot_data.parquet",
+                    "resolved_plot_data.parquet",
+                    "aggregate_statistics.parquet",
+                    "resolved_statistics.parquet",
+                )
+            )
+            required.append(
+                module_set_data_dir(module_set)
+                / "edge_summaries"
+                / f"bonobo__{edge_rule}.parquet"
+            )
+        required.extend(
+            module_set_data_dir(module_set)
+            / "edge_summaries"
+            / f"lioness__{method}.parquet"
+            for method in MODULE_SET_METHODS[module_set]
         )
     missing = [str(path.relative_to(APP_ROOT)) for path in required if not path.exists()]
     if missing:
@@ -166,6 +230,8 @@ def load_aggregate(
     module: int,
     metric_family: str,
     module_set: str = "full_cohort",
+    estimator: str = "lioness",
+    edge_rule: str = "all",
 ) -> pd.DataFrame:
     columns = [
         "sample_id",
@@ -182,7 +248,9 @@ def load_aggregate(
         "lioness_method",
     ]
     return _read_filtered(
-        module_set_path("aggregate_plot_data.parquet", module_set),
+        estimator_path(
+            "aggregate_plot_data.parquet", module_set, estimator, edge_rule
+        ),
         [
             ("lioness_method", "=", method),
             ("module", "=", int(module)),
@@ -197,6 +265,8 @@ def load_aggregate_scope(
     module: int | None = None,
     metric_family: str | None = None,
     module_set: str = "full_cohort",
+    estimator: str = "lioness",
+    edge_rule: str = "all",
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
@@ -214,7 +284,9 @@ def load_aggregate_scope(
         "lioness_method",
     ]
     return _read_filtered(
-        module_set_path("aggregate_plot_data.parquet", module_set), filters, columns
+        estimator_path(
+            "aggregate_plot_data.parquet", module_set, estimator, edge_rule
+        ), filters, columns
     )
 
 
@@ -223,6 +295,8 @@ def load_resolved(
     module: int,
     metric_family: str,
     module_set: str = "full_cohort",
+    estimator: str = "lioness",
+    edge_rule: str = "all",
 ) -> pd.DataFrame:
     columns = [
         "sample_id",
@@ -239,7 +313,9 @@ def load_resolved(
         "lioness_method",
     ]
     return _read_filtered(
-        module_set_path("resolved_plot_data.parquet", module_set),
+        estimator_path(
+            "resolved_plot_data.parquet", module_set, estimator, edge_rule
+        ),
         [
             ("lioness_method", "=", method),
             ("module", "=", int(module)),
@@ -255,6 +331,8 @@ def load_resolved_scope(
     metric_family: str | None = None,
     component: str | None = None,
     module_set: str = "full_cohort",
+    estimator: str = "lioness",
+    edge_rule: str = "all",
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
@@ -276,7 +354,9 @@ def load_resolved_scope(
         "lioness_method",
     ]
     return _read_filtered(
-        module_set_path("resolved_plot_data.parquet", module_set), filters, columns
+        estimator_path(
+            "resolved_plot_data.parquet", module_set, estimator, edge_rule
+        ), filters, columns
     )
 
 
@@ -286,6 +366,8 @@ def load_aggregate_statistics(
     phenotype: str | None = None,
     metric_family: str | None = None,
     module_set: str = "full_cohort",
+    estimator: str = "lioness",
+    edge_rule: str = "all",
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
@@ -295,7 +377,9 @@ def load_aggregate_statistics(
     if metric_family is not None:
         filters.append(("metric_family", "=", metric_family))
     return _read_filtered(
-        module_set_path("aggregate_statistics.parquet", module_set), filters
+        estimator_path(
+            "aggregate_statistics.parquet", module_set, estimator, edge_rule
+        ), filters
     )
 
 
@@ -305,6 +389,8 @@ def load_resolved_statistics(
     phenotype: str | None = None,
     metric_family: str | None = None,
     module_set: str = "full_cohort",
+    estimator: str = "lioness",
+    edge_rule: str = "all",
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
@@ -314,7 +400,9 @@ def load_resolved_statistics(
     if metric_family is not None:
         filters.append(("metric_family", "=", metric_family))
     return _read_filtered(
-        module_set_path("resolved_statistics.parquet", module_set), filters
+        estimator_path(
+            "resolved_statistics.parquet", module_set, estimator, edge_rule
+        ), filters
     )
 
 
@@ -347,6 +435,34 @@ def load_mdc_summary(module_set: str = "full_cohort") -> pd.DataFrame:
     return pd.read_csv(
         module_set_path("mdc_ad_vs_control_summary.tsv", module_set), sep="\t"
     )
+
+
+def load_mdc_resolved(module_set: str = "full_cohort") -> pd.DataFrame:
+    return pd.read_csv(
+        module_set_path("mdc_resolved_ad_vs_control.tsv", module_set), sep="\t"
+    )
+
+
+def load_edge_summaries(
+    estimator: str,
+    method: str,
+    module: int,
+    module_set: str = "full_cohort",
+    edge_rule: str = "all",
+) -> pd.DataFrame:
+    if estimator == "lioness":
+        path = module_set_data_dir(module_set) / "edge_summaries" / f"lioness__{method}.parquet"
+    elif estimator == "bonobo":
+        path = module_set_data_dir(module_set) / "edge_summaries" / f"bonobo__{edge_rule}.parquet"
+    else:
+        raise ValueError(f"Unknown estimator: {estimator}")
+    frame = _read_filtered(path, [("module", "=", int(module))])
+    if "scope" in frame:
+        frame["scope"] = (
+            frame["scope"].astype("string").str.replace("MFBA9BA46", "DLPFC", regex=False)
+        )
+        frame["scope_label"] = frame["scope"].map(EDGE_SCOPE_LABELS)
+    return frame
 
 
 def load_data_manifest() -> dict[str, object]:

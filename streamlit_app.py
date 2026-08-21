@@ -1,4 +1,4 @@
-"""Public explorer for standard and control-referenced ROSMAP LIONESS results."""
+"""Public explorer for ROSMAP LIONESS and BONOBO module networks."""
 
 from __future__ import annotations
 
@@ -7,19 +7,26 @@ import pandas as pd
 import streamlit as st
 
 from app_helpers.charts import (
+    CONTINUOUS_COLOR_SCALES,
     aggregate_to_long,
     association_figure,
     correlation_heatmap_figure,
     distribution_figure,
     distribution_summary,
+    edge_summary_figure,
     mdc_module_figure,
     mdc_overview_figure,
+    mdc_resolved_heatmap_figure,
+    mdc_resolved_module_figure,
+    module_entropy_figure,
     module_region_composition_figure,
     module_size_distribution_figure,
     resolved_to_long,
 )
 from app_helpers.correlations import calculate_correlations
 from app_helpers.data import (
+    BONOBO_EDGE_RULE_LABELS,
+    BONOBO_FEATURE_LABELS,
     COLOR_LABELS,
     COMPONENT_ORDER,
     DATA_DIR,
@@ -27,6 +34,7 @@ from app_helpers.data import (
     FEATURE_LABELS,
     HOVER_LABELS,
     METHOD_LABELS,
+    ESTIMATOR_LABELS,
     MODULE_SET_LABELS,
     MODULE_SET_METHODS,
     NUMERIC_OUTCOMES,
@@ -40,8 +48,10 @@ from app_helpers.data import (
     load_aggregate_statistics,
     load_data_manifest,
     load_feature_definitions,
+    load_edge_summaries,
     load_kegg,
     load_mdc_summary,
+    load_mdc_resolved,
     load_module_annotations,
     load_module_details,
     load_resolved,
@@ -57,7 +67,7 @@ from app_helpers.data import (
 
 
 st.set_page_config(
-    page_title="ROSMAP LIONESS Explorer",
+    page_title="ROSMAP Network Explorer",
     page_icon="🧠",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -88,16 +98,32 @@ def cached_module_details(module_set: str) -> pd.DataFrame:
 
 @st.cache_data(show_spinner=False, max_entries=48)
 def cached_aggregate(
-    module_set: str, method: str, module: int, feature: str
+    module_set: str,
+    estimator: str,
+    method: str,
+    module: int,
+    feature: str,
+    edge_rule: str,
 ) -> pd.DataFrame:
-    return load_aggregate(method, module, feature, module_set=module_set)
+    return load_aggregate(
+        method, module, feature, module_set=module_set,
+        estimator=estimator, edge_rule=edge_rule,
+    )
 
 
 @st.cache_data(show_spinner=False, max_entries=48)
 def cached_resolved(
-    module_set: str, method: str, module: int, feature: str
+    module_set: str,
+    estimator: str,
+    method: str,
+    module: int,
+    feature: str,
+    edge_rule: str,
 ) -> pd.DataFrame:
-    return load_resolved(method, module, feature, module_set=module_set)
+    return load_resolved(
+        method, module, feature, module_set=module_set,
+        estimator=estimator, edge_rule=edge_rule,
+    )
 
 
 @st.cache_data(show_spinner=False)
@@ -111,6 +137,24 @@ def cached_mdc_summary(module_set: str) -> pd.DataFrame:
 
 
 @st.cache_data(show_spinner=False)
+def cached_mdc_resolved(module_set: str) -> pd.DataFrame:
+    return load_mdc_resolved(module_set)
+
+
+@st.cache_data(show_spinner=False, max_entries=32)
+def cached_edge_summaries(
+    module_set: str,
+    estimator: str,
+    method: str,
+    module: int,
+    edge_rule: str,
+) -> pd.DataFrame:
+    return load_edge_summaries(
+        estimator, method, module, module_set=module_set, edge_rule=edge_rule
+    )
+
+
+@st.cache_data(show_spinner=False)
 def cached_data_manifest() -> dict[str, object]:
     return load_data_manifest()
 
@@ -118,22 +162,32 @@ def cached_data_manifest() -> dict[str, object]:
 @st.cache_data(show_spinner=False, max_entries=96)
 def cached_aggregate_stats(
     module_set: str,
+    estimator: str,
     method: str,
     module: int | None,
     phenotype: str | None,
     feature: str | None,
+    edge_rule: str,
 ) -> pd.DataFrame:
     return load_aggregate_statistics(
-        method, module, phenotype, feature, module_set=module_set
+        method, module, phenotype, feature, module_set=module_set,
+        estimator=estimator, edge_rule=edge_rule,
     )
 
 
 @st.cache_data(show_spinner=False, max_entries=48)
 def cached_resolved_stats(
-    module_set: str, method: str, module: int, phenotype: str, feature: str
+    module_set: str,
+    estimator: str,
+    method: str,
+    module: int,
+    phenotype: str,
+    feature: str,
+    edge_rule: str,
 ) -> pd.DataFrame:
     return load_resolved_statistics(
-        method, module, phenotype, feature, module_set=module_set
+        method, module, phenotype, feature, module_set=module_set,
+        estimator=estimator, edge_rule=edge_rule,
     )
 
 
@@ -175,13 +229,24 @@ def add_correlation_labels(frame: pd.DataFrame) -> pd.DataFrame:
 
 @st.cache_data(show_spinner="Calculating the selected module correlation matrix…", max_entries=24)
 def cached_module_correlations(
-    module_set: str, method: str, module: int, resolved: bool
+    module_set: str,
+    estimator: str,
+    method: str,
+    module: int,
+    resolved: bool,
+    edge_rule: str,
 ) -> pd.DataFrame:
     if resolved:
-        source = load_resolved_scope(method, module=module, module_set=module_set)
+        source = load_resolved_scope(
+            method, module=module, module_set=module_set,
+            estimator=estimator, edge_rule=edge_rule,
+        )
         long = resolved_to_long(source, "rint")
     else:
-        source = load_aggregate_scope(method, module=module, module_set=module_set)
+        source = load_aggregate_scope(
+            method, module=module, module_set=module_set,
+            estimator=estimator, edge_rule=edge_rule,
+        )
         long = aggregate_to_long(source, "rint")
     long = attach_metadata(long)
     all_donors = long.copy()
@@ -204,11 +269,13 @@ def cached_module_correlations(
 @st.cache_data(show_spinner="Calculating correlations across all modules…", max_entries=24)
 def cached_all_module_correlations(
     module_set: str,
+    estimator: str,
     method: str,
     resolved: bool,
     feature: str,
     component: str,
     diagnosis: str,
+    edge_rule: str,
 ) -> pd.DataFrame:
     if resolved:
         source = load_resolved_scope(
@@ -216,11 +283,14 @@ def cached_all_module_correlations(
             metric_family=feature,
             component=component,
             module_set=module_set,
+            estimator=estimator,
+            edge_rule=edge_rule,
         )
         long = resolved_to_long(source, "rint")
     else:
         source = load_aggregate_scope(
-            method, metric_family=feature, module_set=module_set
+            method, metric_family=feature, module_set=module_set,
+            estimator=estimator, edge_rule=edge_rule,
         )
         long = aggregate_to_long(source, "rint")
         long = long.loc[long["component"].eq(component)]
@@ -251,36 +321,13 @@ def readable_method(method: str) -> str:
 
 
 def fdr_text(module_manifest: dict[str, object], module_count: int) -> str:
-    stored = module_manifest.get("fdr_test_families", {})
-    aggregate_global = int(
-        stored.get(
-            "aggregate_global",
-            module_count * len(PHENOTYPE_LABELS) * len(FEATURE_LABELS) * 3,
-        )
-    )
-    aggregate_within = int(
-        stored.get(
-            "aggregate_within_phenotype",
-            module_count * len(FEATURE_LABELS) * 3,
-        )
-    )
-    resolved_global = int(
-        stored.get("resolved_global", aggregate_global * len(COMPONENT_ORDER))
-    )
-    resolved_within = int(
-        stored.get("resolved_within_phenotype", aggregate_within * len(COMPONENT_ORDER))
-    )
     return (
-        "Stored LIONESS FDR values use Benjamini–Hochberg correction separately within each "
-        "network method. For aggregate Pearson/RINT results, CT and TS correlation FDRs each cover "
-        f"{aggregate_global:,} tests; the global CT-vs-TS FDR covers {aggregate_global:,} "
-        f"dependent-correlation tests, and the within-phenotype CT-vs-TS FDR covers "
-        f"{aggregate_within:,} tests. Tissue-resolved Pearson/RINT and Spearman global "
-        f"FDRs each cover {resolved_global:,} component tests; the tissue-resolved "
-        f"Pearson/RINT within-phenotype FDR covers {resolved_within:,} tests. Aggregate "
-        "Spearman FDR was not stored by the source analysis and is not calculated by the app. "
-        "KEGG FDR is independent and comes directly from the supplied tissue-expanded "
-        "enrichment analysis."
+        "Association FDR values use Benjamini–Hochberg correction separately by module "
+        "definition, estimator/network method, aggregate versus resolved component family, "
+        "correlation test, and BONOBO edge rule. Expanded global columns cover all 12 numeric "
+        "outcomes; primary-five columns are retained for backward comparison, and "
+        "within-outcome columns correct the selected outcome family. KEGG FDR is independent "
+        "and comes from the supplied enrichment analysis."
     )
 
 
@@ -292,10 +339,10 @@ except FileNotFoundError as error:
 
 data_manifest = cached_data_manifest()
 
-st.title("ROSMAP LIONESS Network Explorer")
+st.title("ROSMAP Single-Sample Network Explorer")
 st.markdown(
-    "Explore donor-level module features from the standard and control-referenced "
-    "LIONESS networks, including aggregate CT/TS and tissue-resolved components."
+    "Explore donor-level LIONESS and BONOBO module features, including aggregate "
+    "CT/TS and tissue-resolved components."
 )
 
 with st.sidebar:
@@ -323,8 +370,16 @@ with st.sidebar:
         st.stop()
     module_details = cached_module_details(module_set)
     mdc_summary = cached_mdc_summary(module_set)
-    allowed_methods = list(
-        module_manifest.get("methods", MODULE_SET_METHODS[module_set])
+    estimator = st.radio(
+        "Network estimator",
+        options=list(ESTIMATOR_LABELS),
+        format_func=lambda value: ESTIMATOR_LABELS[value],
+        horizontal=True,
+    )
+    allowed_methods = (
+        list(module_manifest.get("methods", MODULE_SET_METHODS[module_set]))
+        if estimator == "lioness"
+        else ["bonobo"]
     )
     method = st.radio(
         "Network method",
@@ -342,15 +397,38 @@ with st.sidebar:
         format_func=module_label,
     )
     phenotype = st.selectbox(
-        "Phenotype",
-        options=list(PHENOTYPE_LABELS),
-        format_func=lambda value: PHENOTYPE_LABELS[value],
+        "Association outcome",
+        options=list(OUTCOME_LABELS),
+        format_func=lambda value: OUTCOME_LABELS[value],
+    )
+    active_feature_labels = (
+        FEATURE_LABELS if estimator == "lioness" else BONOBO_FEATURE_LABELS
     )
     feature = st.selectbox(
         "Module feature",
-        options=list(FEATURE_LABELS),
-        format_func=lambda value: FEATURE_LABELS[value],
+        options=list(active_feature_labels),
+        format_func=lambda value: active_feature_labels[value],
     )
+    if estimator == "bonobo":
+        bonobo_edge_subset = st.radio(
+            "BONOBO edge subset",
+            options=["All edges", "Significant edges"],
+            help=(
+                "Significance tests whether a donor-specific BONOBO covariance edge "
+                "differs from zero; it is not a diagnostic-group comparison."
+            ),
+        )
+        if bonobo_edge_subset == "Significant edges":
+            edge_rule = st.radio(
+                "Significant-edge rule",
+                options=list(BONOBO_EDGE_RULE_LABELS),
+                format_func=lambda value: BONOBO_EDGE_RULE_LABELS[value],
+            )
+        else:
+            edge_rule = "all"
+    else:
+        bonobo_edge_subset = "All edges"
+        edge_rule = "all"
     resolution = st.radio("Resolution", ["Aggregate CT / TS", "Tissue resolved"])
     scale = st.selectbox(
         "Feature scale",
@@ -377,9 +455,23 @@ with st.sidebar:
         options=list(COLOR_LABELS),
         format_func=lambda value: COLOR_LABELS[value],
     )
+    continuous_colorscale = st.selectbox(
+        "Continuous color scale",
+        options=list(CONTINUOUS_COLOR_SCALES),
+        index=0,
+        disabled=color_by == "diagnosis_group",
+    )
+    reverse_colorscale = st.checkbox(
+        "Reverse continuous color scale",
+        value=False,
+        disabled=color_by == "diagnosis_group",
+    )
 
-st.caption(f"Module definition: **{module_set_label}**")
-download_prefix = f"{module_set}__"
+st.caption(
+    f"Module definition: **{module_set_label}** · Estimator: "
+    f"**{ESTIMATOR_LABELS[estimator]}**"
+)
+download_prefix = f"{module_set}__{estimator}__{edge_rule}__"
 
 if not diagnoses:
     st.warning("Select at least one diagnosis group in the sidebar.")
@@ -387,17 +479,21 @@ if not diagnoses:
 
 with st.spinner("Loading the selected module…"):
     if resolution == "Aggregate CT / TS":
-        plot_data = cached_aggregate(module_set, method, module, feature)
+        plot_data = cached_aggregate(
+            module_set, estimator, method, module, feature, edge_rule
+        )
         plot_data = aggregate_to_long(plot_data, scale)
         statistics = cached_aggregate_stats(
-            module_set, method, module, phenotype, feature
+            module_set, estimator, method, module, phenotype, feature, edge_rule
         )
         resolved = False
     else:
-        plot_data = cached_resolved(module_set, method, module, feature)
+        plot_data = cached_resolved(
+            module_set, estimator, method, module, feature, edge_rule
+        )
         plot_data = resolved_to_long(plot_data, scale)
         statistics = cached_resolved_stats(
-            module_set, method, module, phenotype, feature
+            module_set, estimator, method, module, phenotype, feature, edge_rule
         )
         resolved = True
 
@@ -440,6 +536,20 @@ if plot_data.empty or not selected_components:
     st.warning("No data remain for the current filters.")
     st.stop()
 
+zero_variance_components = (
+    plot_data.groupby("component", observed=True)["metric_value"]
+    .nunique(dropna=True)
+    .loc[lambda values: values <= 1]
+    .index.tolist()
+)
+if estimator == "bonobo" and zero_variance_components:
+    zero_labels = [component_labels.get(value, value) for value in zero_variance_components]
+    st.warning(
+        "BONOBO has no donor-to-donor variation for the selected sparse-network score in: "
+        + ", ".join(zero_labels)
+        + ". Correlations are intentionally unavailable for constant zero-valued states."
+    )
+
 selected_details = module_details.loc[
     module_details["module"].astype(int).eq(int(module))
 ]
@@ -457,12 +567,13 @@ else:
         unsafe_allow_html=True,
     )
 
-summary_cols = st.columns(5)
-summary_cols[0].metric("Method", "Control-referenced" if method == "control_anchored" else "Standard")
-summary_cols[1].metric("Module", module_label(module))
-summary_cols[2].metric("Module genes", int(selected_details["module_size"]))
-summary_cols[3].metric("Samples shown", plot_data["sample_id"].nunique())
-summary_cols[4].metric("Components", plot_data["component"].nunique())
+summary_cols = st.columns(6)
+summary_cols[0].metric("Estimator", ESTIMATOR_LABELS[estimator])
+summary_cols[1].metric("Network method", readable_method(method))
+summary_cols[2].metric("Module", module_label(module))
+summary_cols[3].metric("Module genes", int(selected_details["module_size"]))
+summary_cols[4].metric("Samples shown", plot_data["sample_id"].nunique())
+summary_cols[5].metric("Components", plot_data["component"].nunique())
 
 tissue_composition = pd.DataFrame(
     [
@@ -518,6 +629,7 @@ with st.expander(
     distribution_tab,
     correlation_tab,
     screen_tab,
+    edge_tab,
     mdc_tab,
     statistics_tab,
     kegg_tab,
@@ -529,6 +641,7 @@ with st.expander(
         "Feature distributions",
         "Correlation heatmaps",
         "CT–TS screen",
+        "Edge summaries",
         "MDC",
         "Statistics",
         "KEGG enrichment",
@@ -551,8 +664,8 @@ with association_tab:
         plot_data,
         statistics,
         phenotype=phenotype,
-        phenotype_label=PHENOTYPE_LABELS[phenotype],
-        feature_label=FEATURE_LABELS[feature],
+        phenotype_label=OUTCOME_LABELS[phenotype],
+        feature_label=active_feature_labels[feature],
         scale=scale,
         scale_label=SCALE_LABELS[scale],
         diagnoses=diagnoses,
@@ -563,6 +676,8 @@ with association_tab:
         hover_fields=HOVER_LABELS,
         correlation_method=correlation_method.lower(),
         module_definition=module_set_label,
+        continuous_colorscale=continuous_colorscale,
+        reverse_colorscale=reverse_colorscale,
     )
     st.plotly_chart(
         figure,
@@ -606,9 +721,9 @@ with association_tab:
     )
 
 with correlation_tab:
-    st.subheader("LIONESS score correlations across phenotypes and outcomes")
+    st.subheader("Network-score correlations across phenotypes and outcomes")
     st.caption(
-        "Heatmaps use donor-level Z-scored LIONESS features. Nominal fields such as sex code "
+        "Heatmaps use donor-level Z-scored module features. Nominal fields such as sex code "
         "and APOE genotype remain available in hover but are excluded from Pearson/Spearman "
         "heatmaps because numeric correlation is not appropriate for unordered categories. "
         "CogDx, Braak, CERAD, ADNC, and Parkinsonism are source-coded ordinal/binary outcomes; "
@@ -650,7 +765,7 @@ with correlation_tab:
 
     if heatmap_mode.startswith("Selected module"):
         correlation_table = cached_module_correlations(
-            module_set, method, module, resolved
+            module_set, estimator, method, module, resolved, edge_rule
         )
         heatmap_data = correlation_table.loc[
             correlation_table["diagnosis_group"].eq(heatmap_diagnosis)
@@ -668,7 +783,8 @@ with correlation_tab:
         )
         row_order = row_order_frame["heatmap_row"].tolist()
         heatmap_title = (
-            f"{module_set_label} · Module M{module}: all LIONESS feature scores vs "
+            f"{module_set_label} · Module M{module}: all {ESTIMATOR_LABELS[estimator]} "
+            "feature scores vs "
             f"outcomes · {heatmap_diagnosis}"
         )
         fdr_scope = (
@@ -678,9 +794,9 @@ with correlation_tab:
     else:
         all_feature = st.selectbox(
             "Feature for all-module heatmap",
-            options=list(FEATURE_LABELS),
-            format_func=lambda value: FEATURE_LABELS[value],
-            index=list(FEATURE_LABELS).index(feature),
+            options=list(active_feature_labels),
+            format_func=lambda value: active_feature_labels[value],
+            index=list(active_feature_labels).index(feature),
         )
         if resolved:
             component_options = available_components["component"].tolist()
@@ -697,17 +813,19 @@ with correlation_tab:
             )
         correlation_table = cached_all_module_correlations(
             module_set,
+            estimator,
             method,
             resolved,
             all_feature,
             all_component,
             heatmap_diagnosis,
+            edge_rule,
         )
         heatmap_data = correlation_table.copy()
         module_order = sorted(heatmap_data["module"].astype(int).unique())
         row_order = [f"M{value}" for value in module_order]
         heatmap_title = (
-            f"{module_set_label}: {FEATURE_LABELS[all_feature]} · "
+            f"{module_set_label}: {active_feature_labels[all_feature]} · "
             f"{heatmap_data['component_label'].iloc[0]} · {heatmap_diagnosis}"
         )
         fdr_scope = (
@@ -787,7 +905,7 @@ with correlation_tab:
 with distribution_tab:
     st.subheader("Donor-level feature distributions")
     st.caption(
-        "These views use only the selected LIONESS module feature; no phenotype is on an axis. "
+        "These views use only the selected module feature; no phenotype is on an axis. "
         "Histogram heights are probability densities so diagnosis groups with different sample "
         "sizes remain comparable."
     )
@@ -796,7 +914,7 @@ with distribution_tab:
     bins = bin_col.slider("Histogram bins", 10, 80, 30, disabled=chart_type != "Histogram")
     distribution = distribution_figure(
         plot_data,
-        feature_label=FEATURE_LABELS[feature],
+        feature_label=active_feature_labels[feature],
         scale_label=SCALE_LABELS[scale],
         diagnoses=diagnoses,
         module=module,
@@ -845,28 +963,40 @@ with screen_tab:
         index=diagnoses.index("AD") if "AD" in diagnoses else 0,
         key="screen_diagnosis",
     )
-    screen = cached_aggregate_stats(module_set, method, None, phenotype, feature)
+    screen = cached_aggregate_stats(
+        module_set, estimator, method, None, phenotype, feature, edge_rule
+    )
     screen = screen.loc[screen["diagnosis_group"].eq(screen_diagnosis)].copy()
     if correlation_method == "Spearman":
         screen["correlation_CT"] = screen["rho_CT"]
         screen["p_CT"] = screen["p_spearman_CT"]
+        screen["fdr_CT_global"] = screen["q_spearman_CT_all12_global"]
         screen["correlation_TS"] = screen["rho_TS"]
         screen["p_TS"] = screen["p_spearman_TS"]
+        screen["fdr_TS_global"] = screen["q_spearman_TS_all12_global"]
         screen["ct_ts_test_statistic"] = screen["component_t_rank"]
         screen["p_CT_vs_TS"] = screen["p_component_rank"]
+        screen["fdr_CT_vs_TS_within_phenotype"] = screen[
+            "q_component_rank_within_phenotype"
+        ]
+        screen["fdr_CT_vs_TS_global"] = screen[
+            "q_component_rank_all12_global"
+        ]
     else:
         screen["correlation_CT"] = screen["r_rint_CT"]
         screen["p_CT"] = screen["p_rint_CT"]
-        screen["fdr_CT_global"] = screen["q_rint_CT_global"]
+        screen["fdr_CT_global"] = screen["q_rint_CT_all12_global"]
         screen["correlation_TS"] = screen["r_rint_TS"]
         screen["p_TS"] = screen["p_rint_TS"]
-        screen["fdr_TS_global"] = screen["q_rint_TS_global"]
+        screen["fdr_TS_global"] = screen["q_rint_TS_all12_global"]
         screen["ct_ts_test_statistic"] = screen["component_t_rint"]
         screen["p_CT_vs_TS"] = screen["p_component_rint"]
         screen["fdr_CT_vs_TS_within_phenotype"] = screen[
             "q_component_rint_within_phenotype"
         ]
-        screen["fdr_CT_vs_TS_global"] = screen["q_component_rint_global"]
+        screen["fdr_CT_vs_TS_global"] = screen[
+            "q_component_rint_all12_global"
+        ]
     screen["correlation_method"] = correlation_method
     screen["delta_correlation_CT_minus_TS"] = (
         screen["correlation_CT"] - screen["correlation_TS"]
@@ -924,16 +1054,15 @@ with screen_tab:
         "displayed_pathway",
         "displayed_fdr",
     ]
-    if correlation_method == "Pearson":
-        ct_p_index = screen_columns.index("p_CT") + 1
-        screen_columns[ct_p_index:ct_p_index] = ["fdr_CT_global"]
-        ts_p_index = screen_columns.index("p_TS") + 1
-        screen_columns[ts_p_index:ts_p_index] = ["fdr_TS_global"]
-        ct_ts_p_index = screen_columns.index("p_CT_vs_TS") + 1
-        screen_columns[ct_ts_p_index:ct_ts_p_index] = [
-            "fdr_CT_vs_TS_within_phenotype",
-            "fdr_CT_vs_TS_global",
-        ]
+    ct_p_index = screen_columns.index("p_CT") + 1
+    screen_columns[ct_p_index:ct_p_index] = ["fdr_CT_global"]
+    ts_p_index = screen_columns.index("p_TS") + 1
+    screen_columns[ts_p_index:ts_p_index] = ["fdr_TS_global"]
+    ct_ts_p_index = screen_columns.index("p_CT_vs_TS") + 1
+    screen_columns[ct_ts_p_index:ct_ts_p_index] = [
+        "fdr_CT_vs_TS_within_phenotype",
+        "fdr_CT_vs_TS_global",
+    ]
     st.dataframe(
         screen[screen_columns].head(n_screen),
         width="stretch",
@@ -951,12 +1080,105 @@ with screen_tab:
     )
     if correlation_method == "Spearman":
         st.caption(
-            "Aggregate Spearman coefficients, nominal p-values, and the existing rank-based "
-            "CT-vs-TS comparison are used directly from the stored statistics. Aggregate "
-            "Spearman FDR columns were not produced by the source analysis, so the app does "
-            "not substitute Pearson FDR values or calculate new ones."
+            "Spearman and rank-based CT-vs-TS FDR values use the expanded all-12-outcome "
+            "Benjamini–Hochberg families for the selected module definition, estimator, "
+            "network method, component family, and BONOBO edge rule."
         )
     st.info(fdr_text(module_manifest, module_count))
+
+with edge_tab:
+    st.subheader("Donor- and diagnosis-level edge summaries")
+    st.caption(
+        "Each undirected edge is counted once and the diagonal is excluded. LIONESS sign "
+        "counts are recovered from the stored density and weight-sum identities and validated "
+        "as integers. BONOBO counts are computed directly from the selected all-edge or "
+        "significant-edge mask. Structurally unavailable scopes remain missing."
+    )
+    edge_data = cached_edge_summaries(
+        module_set, estimator, method, module, edge_rule
+    )
+    edge_data = edge_data.loc[edge_data["diagnosis_group"].isin(diagnoses)].copy()
+    edge_scope_options = edge_data["scope"].drop_duplicates().tolist()
+    selected_edge_scopes = st.multiselect(
+        "Edge scopes",
+        options=edge_scope_options,
+        default=edge_scope_options,
+        format_func=lambda value: edge_data.loc[
+            edge_data["scope"].eq(value), "scope_label"
+        ].iloc[0],
+        key=f"edge_scopes_{module_set}_{estimator}_{method}_{edge_rule}",
+    )
+    edge_data = edge_data.loc[edge_data["scope"].isin(selected_edge_scopes)]
+    edge_metric_labels = {
+        "n_possible_edges": "Possible edges",
+        "n_retained_edges": "Retained edges",
+        "n_positive_edges": "Positive edges",
+        "n_negative_edges": "Negative edges",
+        "n_zero_edges": "Zero-weight edges",
+        "n_pruned_edges": "Pruned edges",
+        "signed_weight_sum": "Signed weight sum",
+        "positive_weight_sum": "Positive weight sum",
+        "negative_weight_magnitude": "Negative weight magnitude",
+        "absolute_weight_sum": "Absolute weight sum",
+    }
+    edge_metric = st.selectbox(
+        "Edge summary metric",
+        options=list(edge_metric_labels),
+        format_func=lambda value: edge_metric_labels[value],
+        key=f"edge_metric_{module_set}_{estimator}",
+    )
+    if edge_data.empty:
+        st.info("No edge scopes remain for the current filters.")
+    else:
+        st.plotly_chart(
+            edge_summary_figure(
+                edge_data,
+                edge_metric,
+                edge_metric_labels[edge_metric],
+                module,
+                module_definition=module_set_label,
+            ),
+            width="stretch",
+            config={"displaylogo": False},
+        )
+        edge_group_summary = (
+            edge_data.groupby(
+                ["scope", "scope_label", "diagnosis_group"], observed=True
+            )[edge_metric]
+            .agg(
+                group_n="count",
+                mean="mean",
+                sd="std",
+                median="median",
+                q1=lambda values: values.quantile(0.25),
+                q3=lambda values: values.quantile(0.75),
+                minimum="min",
+                maximum="max",
+            )
+            .reset_index()
+        )
+        edge_group_summary["iqr"] = (
+            edge_group_summary["q3"] - edge_group_summary["q1"]
+        )
+        edge_group_summary.insert(0, "module_definition", module_set_label)
+        edge_group_summary.insert(1, "estimator", ESTIMATOR_LABELS[estimator])
+        edge_group_summary.insert(2, "network_method", readable_method(method))
+        edge_group_summary.insert(3, "edge_rule", edge_rule)
+        st.dataframe(edge_group_summary, width="stretch", hide_index=True)
+        st.download_button(
+            "Download diagnosis-group summary (TSV)",
+            data=dataframe_to_tsv_bytes(edge_group_summary),
+            file_name=f"{download_prefix}M{module}_{edge_metric}_group_summary.tsv",
+            mime="text/tab-separated-values",
+        )
+        with st.expander("Donor-level edge-summary rows", expanded=False):
+            st.dataframe(edge_data, width="stretch", hide_index=True, height=480)
+            st.download_button(
+                "Download donor-level edge summaries (TSV)",
+                data=dataframe_to_tsv_bytes(edge_data),
+                file_name=f"{download_prefix}M{module}_donor_edge_summaries.tsv",
+                mime="text/tab-separated-values",
+            )
 
 with mdc_tab:
     st.subheader("Module differential connectivity (MDC)")
@@ -973,7 +1195,7 @@ with mdc_tab:
         f"{mdc_metadata.get('target_assembled_donors', 408)} Control donors across the "
         "tissue union, including the 167 AD and 164 Control complete-three-tissue donors "
         "used here plus donors with partial tissue availability. MCI was not included. "
-        "MDC is module-level context and does not change with the LIONESS method selector."
+        "MDC is module-level context and does not change with the estimator or network-method selector."
     )
     mdc_threshold = st.radio(
         "MDC significance threshold",
@@ -1173,6 +1395,76 @@ with mdc_tab:
         "source used 200 sample permutations and 200 gene permutations."
     )
 
+    st.markdown("#### Tissue-resolved MDC")
+    st.caption(
+        "Resolved MDC separates the three within-tissue blocks and the three cross-tissue "
+        "pairs. Gene permutations preserve each module's AC, DLPFC, and PCG feature counts."
+    )
+    resolved_mdc = cached_mdc_resolved(module_set).copy()
+    resolved_components_available = resolved_mdc[
+        ["component", "component_label"]
+    ].drop_duplicates()
+    selected_mdc_components = st.multiselect(
+        "Resolved MDC components",
+        options=resolved_components_available["component"].tolist(),
+        default=resolved_components_available["component"].tolist(),
+        format_func=lambda value: resolved_components_available.loc[
+            resolved_components_available["component"].eq(value), "component_label"
+        ].iloc[0],
+        key=f"resolved_mdc_components_{module_set}",
+    )
+    resolved_mdc = resolved_mdc.loc[
+        resolved_mdc["component"].isin(selected_mdc_components)
+    ].copy()
+    resolved_significance = st.selectbox(
+        "Resolved MDC rows",
+        options=["All", "FDR significant", "Not FDR significant"],
+        key=f"resolved_mdc_significance_{module_set}",
+    )
+    resolved_is_significant = pd.to_numeric(
+        resolved_mdc["directional_fdr"], errors="coerce"
+    ).lt(mdc_threshold)
+    if resolved_significance == "FDR significant":
+        resolved_mdc = resolved_mdc.loc[resolved_is_significant]
+    elif resolved_significance == "Not FDR significant":
+        resolved_mdc = resolved_mdc.loc[~resolved_is_significant]
+    selected_resolved_mdc = resolved_mdc.loc[
+        resolved_mdc["module"].astype(int).eq(int(module))
+    ]
+    if selected_resolved_mdc.empty:
+        st.info("The selected module has no resolved MDC row under the current filters.")
+    else:
+        st.plotly_chart(
+            mdc_resolved_module_figure(
+                selected_resolved_mdc,
+                mdc_threshold,
+                module_definition=module_set_label,
+            ),
+            width="stretch",
+            config={"displaylogo": False},
+        )
+    if resolved_mdc.empty:
+        st.info("No resolved MDC rows remain under the current filters.")
+    else:
+        st.plotly_chart(
+            mdc_resolved_heatmap_figure(
+                resolved_mdc,
+                mdc_threshold,
+                selected_module=module,
+                module_definition=module_set_label,
+            ),
+            width="stretch",
+            config={"displaylogo": False, "scrollZoom": True},
+        )
+        resolved_mdc.insert(0, "module_definition_label", module_set_label)
+        st.dataframe(resolved_mdc, width="stretch", hide_index=True, height=520)
+        st.download_button(
+            "Download displayed resolved MDC rows (TSV)",
+            data=dataframe_to_tsv_bytes(resolved_mdc),
+            file_name=f"{download_prefix}AD_Control_resolved_MDC.tsv",
+            mime="text/tab-separated-values",
+        )
+
 with statistics_tab:
     st.subheader("Robust association statistics")
     st.caption(
@@ -1187,7 +1479,7 @@ with statistics_tab:
             "n",
             "rho",
             "p_spearman",
-            "q_spearman_global",
+            "q_spearman_all12_global",
         ]
     elif resolved:
         display_columns = [
@@ -1196,7 +1488,7 @@ with statistics_tab:
             "n",
             "r_rint",
             "p_rint",
-            "q_rint_global",
+            "q_rint_all12_global",
             "q_rint_within_phenotype",
             "rho",
             "p_spearman",
@@ -1209,10 +1501,14 @@ with statistics_tab:
             "n",
             "rho_CT",
             "p_spearman_CT",
+            "q_spearman_CT_all12_global",
             "rho_TS",
             "p_spearman_TS",
+            "q_spearman_TS_all12_global",
             "component_t_rank",
             "p_component_rank",
+            "q_component_rank_within_phenotype",
+            "q_component_rank_all12_global",
         ]
     else:
         display_columns = [
@@ -1220,15 +1516,15 @@ with statistics_tab:
             "n",
             "r_rint_CT",
             "p_rint_CT",
-            "q_rint_CT_global",
+            "q_rint_CT_all12_global",
             "r_rint_TS",
             "p_rint_TS",
-            "q_rint_TS_global",
+            "q_rint_TS_all12_global",
             "rho_CT",
             "rho_TS",
             "p_component_rint",
             "q_component_rint_within_phenotype",
-            "q_component_rint_global",
+            "q_component_rint_all12_global",
         ]
     statistics = statistics.copy()
     statistics.insert(0, "module_definition", module_set_label)
@@ -1266,7 +1562,7 @@ with kegg_tab:
     if source_kegg.empty:
         st.info(
             f"{module_label(module)} has no row in the supplied tissue-expanded KEGG "
-            "table. The LIONESS module itself is still available in every plot and "
+            "table. The module itself is still available in every plot and "
             "statistics view. Choose All modules to browse the reported enrichments."
         )
     else:
@@ -1542,7 +1838,7 @@ with module_details_tab:
     if chart_module_details.empty:
         st.warning(f"No {module_type_scope} modules are available in this definition.")
     else:
-        landscape_metrics = st.columns(4)
+        landscape_metrics = st.columns(5)
         landscape_metrics[0].metric("Modules shown", f"{len(chart_module_details):,}")
         landscape_metrics[1].metric(
             "Median size", f"{chart_module_details['module_size'].median():,.0f} genes"
@@ -1555,6 +1851,10 @@ with module_details_tab:
         )
         landscape_metrics[3].metric(
             "Largest size", f"{int(largest_module['module_size']):,} genes"
+        )
+        landscape_metrics[4].metric(
+            "Median normalized entropy",
+            f"{chart_module_details['tissue_entropy_normalized'].median():.3f}",
         )
         st.plotly_chart(
             module_size_distribution_figure(
@@ -1578,10 +1878,22 @@ with module_details_tab:
             },
             key=f"module_region_composition_{module_set}_{module_type_scope}",
         )
+        st.plotly_chart(
+            module_entropy_figure(
+                chart_module_details,
+                selected_module=module,
+                module_definition=module_set_label,
+            ),
+            width="stretch",
+            config={"displaylogo": False, "responsive": True},
+            key=f"module_entropy_{module_set}_{module_type_scope}",
+        )
         st.caption(
             "Total bar width is module size; colored segments are AC, DLPFC, and PCG "
             "gene counts. Modules are ordered largest to smallest. Hover for exact "
-            "counts and proportions; drag or scroll to zoom."
+            "counts and proportions; drag or scroll to zoom. Entropy is the continuous "
+            "tissue-mixing complement to the discrete CT/TS module classification: zero "
+            "means one tissue only and one means equal representation of all three tissues."
         )
 
     detail_columns = [
@@ -1592,6 +1904,8 @@ with module_details_tab:
         "tissues",
         "n_tissues",
         "dominant_tissue",
+        "tissue_entropy",
+        "tissue_entropy_normalized",
         "n_genes_ac",
         "proportion_ac",
         "n_genes_dlpfc",
@@ -1613,6 +1927,12 @@ with module_details_tab:
             "tissues": "Tissues",
             "n_tissues": st.column_config.NumberColumn("N tissues", format="%d"),
             "dominant_tissue": "Dominant tissue",
+            "tissue_entropy": st.column_config.NumberColumn(
+                "Tissue entropy (bits)", format="%.4f"
+            ),
+            "tissue_entropy_normalized": st.column_config.ProgressColumn(
+                "Normalized tissue entropy", format="%.3f", min_value=0.0, max_value=1.0
+            ),
             "n_genes_ac": st.column_config.NumberColumn("AC genes", format="%d"),
             "proportion_ac": st.column_config.NumberColumn("AC proportion", format="percent"),
             "n_genes_dlpfc": st.column_config.NumberColumn("DLPFC genes", format="%d"),
@@ -1636,6 +1956,12 @@ with module_details_tab:
             "tissues": "Tissues",
             "n_tissues": st.column_config.NumberColumn("N tissues", format="%d"),
             "dominant_tissue": "Dominant tissue",
+            "tissue_entropy": st.column_config.NumberColumn(
+                "Tissue entropy (bits)", format="%.4f"
+            ),
+            "tissue_entropy_normalized": st.column_config.ProgressColumn(
+                "Normalized tissue entropy", format="%.3f", min_value=0.0, max_value=1.0
+            ),
             "n_genes_ac": st.column_config.NumberColumn("AC genes", format="%d"),
             "proportion_ac": st.column_config.NumberColumn("AC proportion", format="percent"),
             "n_genes_dlpfc": st.column_config.NumberColumn("DLPFC genes", format="%d"),
@@ -1654,7 +1980,7 @@ with module_details_tab:
     )
     st.info(
         "A tissue with one module gene can contribute CT edges but has no within-tissue "
-        "gene pair, so its tissue-specific LIONESS feature is unavailable."
+        "gene pair, so its tissue-specific feature is unavailable."
     )
 
 with about_tab:
@@ -1668,6 +1994,14 @@ with about_tab:
         "**Standard LIONESS** scores each donor relative to the complete 450-donor "
         "reference network. **Control-referenced LIONESS** uses the 164 Controls as the "
         "reference and scores Controls by leave-one-out and MCI/AD by donor addition."
+    )
+    st.markdown(
+        "**BONOBO** estimates one empirical-Bayes covariance network for each of the same "
+        "450 donors. The donor/module delta is estimated automatically, correlations are "
+        "converted with the same signedAlt β=3 TS and β=2 CT weighting, and the app can "
+        "summarize all edges or edges passing the native posterior p<0.05 or within-"
+        "donor-module BH FDR<0.05 rule. BONOBO edge significance tests nonzero covariance, "
+        "not AD/MCI/Control differences."
     )
     formula_col1, formula_col2 = st.columns(2)
     with formula_col1:
@@ -1688,7 +2022,7 @@ with about_tab:
     st.markdown(
         "MDC is an independent group-network comparison supplied as module-level context: "
         "mean absolute AD adjacency divided by mean absolute Control adjacency. The app "
-        "shows total, same-tissue (TS), and cross-tissue (CT) ratios and their conservative "
+        "shows total, pooled TS/CT, and six tissue-resolved ratios and their conservative "
         "directional permutation FDR. Its broader tissue-union AD/Control cohort and absence "
         "of MCI are stated in the MDC tab."
     )

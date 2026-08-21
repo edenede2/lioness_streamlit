@@ -34,6 +34,21 @@ REGION_COLORS = {
     "DLPFC": "#D8A500",
     "PCG": "#E66101",
 }
+CONTINUOUS_COLOR_SCALES = {
+    "Blue–white–orange": [
+        [0.0, "#2C7FB8"],
+        [0.5, "#F4F4F2"],
+        [1.0, "#E66101"],
+    ],
+    "Viridis": "Viridis",
+    "Cividis": "Cividis",
+    "Plasma": "Plasma",
+    "Turbo": "Turbo",
+    "Blues": "Blues",
+    "Reds": "Reds",
+    "RdBu": "RdBu",
+    "Spectral": "Spectral",
+}
 
 
 def aggregate_to_long(frame: pd.DataFrame, scale: str) -> pd.DataFrame:
@@ -108,27 +123,40 @@ def _stat_text(
         if correlation_method == "spearman":
             coefficient = row.get("rho")
             p = row.get("p_spearman")
-            q = row.get("q_spearman_global")
-            q_available = "q_spearman_global" in row.index
+            q = row.get("q_spearman_all12_global", row.get("q_spearman_global"))
+            q_available = pd.notna(q)
             coefficient_label = "ρ"
         else:
             coefficient = row.get(f"r_{scale}")
             p = row.get(f"p_{scale}")
-            q = row.get("q_rint_within_phenotype") if scale == "rint" else np.nan
-            q_available = scale == "rint"
+            q = (
+                row.get("q_rint_all12_global", row.get("q_rint_within_phenotype"))
+                if scale == "rint" else np.nan
+            )
+            q_available = scale == "rint" and pd.notna(q)
             coefficient_label = "r"
     else:
         component = str(row.get("_display_component", "CT"))
         if correlation_method == "spearman":
             coefficient = row.get(f"rho_{component}")
             p = row.get(f"p_spearman_{component}")
-            q = np.nan
+            q = row.get(
+                f"q_spearman_{component}_all12_global",
+                row.get(f"q_spearman_{component}_global"),
+            )
+            q_available = pd.notna(q)
             coefficient_label = "ρ"
         else:
             coefficient = row.get(f"r_{scale}_{component}")
             p = row.get(f"p_{scale}_{component}")
-            q = row.get(f"q_rint_{component}_global") if scale == "rint" else np.nan
-            q_available = scale == "rint"
+            q = (
+                row.get(
+                    f"q_rint_{component}_all12_global",
+                    row.get(f"q_rint_{component}_global"),
+                )
+                if scale == "rint" else np.nan
+            )
+            q_available = scale == "rint" and pd.notna(q)
             coefficient_label = "r"
     text = (
         f"n={int(row.get('n', 0))}; "
@@ -176,6 +204,8 @@ def association_figure(
     hover_fields: dict[str, str],
     correlation_method: str = "spearman",
     module_definition: str | None = None,
+    continuous_colorscale: str = "Blue–white–orange",
+    reverse_colorscale: bool = False,
 ) -> go.Figure:
     """Build faceted scatter plots with selected correlation annotations and OLS lines."""
     diagnoses = list(diagnoses)
@@ -335,15 +365,15 @@ def association_figure(
         hoverlabel={"font_size": 13},
     )
     if continuous_color and color_min is not None and color_max is not None:
+        colorscale = CONTINUOUS_COLOR_SCALES.get(
+            continuous_colorscale, CONTINUOUS_COLOR_SCALES["Blue–white–orange"]
+        )
         fig.update_layout(
             coloraxis={
                 "cmin": color_min,
                 "cmax": color_max,
-                "colorscale": [
-                    [0.0, "#2C7FB8"],
-                    [0.5, "#F4F4F2"],
-                    [1.0, "#E66101"],
-                ],
+                "colorscale": colorscale,
+                "reversescale": bool(reverse_colorscale),
                 "colorbar": {"title": {"text": color_label}, "thickness": 16},
             }
         )
@@ -652,6 +682,260 @@ def module_region_composition_figure(
             "x": 1,
         },
         hovermode="closest",
+    )
+    return figure
+
+
+def module_entropy_figure(
+    frame: pd.DataFrame,
+    selected_module: int,
+    module_definition: str | None = None,
+) -> go.Figure:
+    """Show module size against normalized tissue-mixing entropy."""
+
+    data = frame.copy()
+    data["module_size"] = pd.to_numeric(data["module_size"], errors="coerce")
+    data["tissue_entropy_normalized"] = pd.to_numeric(
+        data["tissue_entropy_normalized"], errors="coerce"
+    )
+    data = data.dropna(subset=["module_size", "tissue_entropy_normalized"])
+    figure = go.Figure()
+    for module_type in ["CT", "TS"]:
+        group = data.loc[data["cluster_type"].astype(str).str.upper().eq(module_type)]
+        if group.empty:
+            continue
+        customdata = np.column_stack(
+            [
+                group["module"].astype(int).map(lambda value: f"M{value}"),
+                group["n_tissues"].astype(int),
+                group["tissue_entropy"].map(lambda value: f"{float(value):.4f}"),
+            ]
+        )
+        figure.add_trace(
+            go.Scatter(
+                x=group["module_size"],
+                y=group["tissue_entropy_normalized"],
+                mode="markers",
+                name=module_type,
+                marker={
+                    "color": MODULE_TYPE_COLORS.get(module_type, "#7A8793"),
+                    "size": 8,
+                    "opacity": 0.72,
+                    "line": {"color": "white", "width": 0.5},
+                },
+                customdata=customdata,
+                hovertemplate=(
+                    "Module: %{customdata[0]}<br>Module genes: %{x:,}<br>"
+                    "Normalized entropy: %{y:.4f}<br>Raw entropy: %{customdata[2]}<br>"
+                    "Tissues represented: %{customdata[1]}<extra></extra>"
+                ),
+            )
+        )
+    selected = data.loc[data["module"].astype(int).eq(int(selected_module))]
+    if not selected.empty:
+        figure.add_trace(
+            go.Scatter(
+                x=selected["module_size"],
+                y=selected["tissue_entropy_normalized"],
+                mode="markers+text",
+                text=[f"M{int(selected_module)}"],
+                textposition="top center",
+                name="Selected module",
+                marker={
+                    "symbol": "star",
+                    "size": 16,
+                    "color": "#222222",
+                    "line": {"color": "white", "width": 1},
+                },
+                hovertemplate=(
+                    f"Selected module: M{int(selected_module)}<br>"
+                    "Module genes: %{x:,}<br>Normalized entropy: %{y:.4f}<extra></extra>"
+                ),
+            )
+        )
+    title = "Module size and continuous tissue-mixing entropy"
+    if module_definition:
+        title += f"<br><sup>{module_definition}</sup>"
+    figure.update_layout(
+        title={"text": title, "x": 0.01},
+        template="plotly_white",
+        height=520,
+        xaxis={"title": "Module size (genes)", "type": "log"},
+        yaxis={"title": "Normalized Shannon entropy", "range": [-0.03, 1.03]},
+        legend={"orientation": "h", "y": 1.04, "x": 1, "xanchor": "right"},
+        margin={"l": 65, "r": 25, "t": 90, "b": 60},
+    )
+    return figure
+
+
+def mdc_resolved_module_figure(
+    frame: pd.DataFrame,
+    threshold: float,
+    module_definition: str | None = None,
+) -> go.Figure:
+    """Resolved MDC bars for one selected module."""
+
+    data = frame.copy()
+    data["significant"] = pd.to_numeric(
+        data["directional_fdr"], errors="coerce"
+    ).lt(threshold)
+    colors = [
+        MDC_DIRECTION_COLORS.get(str(direction), "#7A8793")
+        for direction in data["direction"]
+    ]
+    figure = go.Figure(
+        go.Bar(
+            x=data["component_label"],
+            y=data["log2_mdc"],
+            marker={"color": colors},
+            text=[
+                ("NA" if pd.isna(value) else f"{float(value):.3f}")
+                + (" ★" if significant else "")
+                for value, significant in zip(
+                    data["mdc"], data["significant"], strict=True
+                )
+            ],
+            textposition="outside",
+            customdata=np.column_stack(
+                [
+                    data["mdc"],
+                    data["directional_fdr"],
+                    data["direction"],
+                    data["n_edges"],
+                ]
+            ),
+            hovertemplate=(
+                "Component: %{x}<br>MDC: %{customdata[0]:.4f}<br>"
+                "log2 MDC: %{y:.4f}<br>Direction: %{customdata[2]}<br>"
+                "Directional FDR: %{customdata[1]:.4g}<br>Edges: %{customdata[3]:,}"
+                "<extra></extra>"
+            ),
+        )
+    )
+    figure.add_hline(y=0, line_dash="dash", line_color="#657584")
+    title = f"Module M{int(data['module'].iloc[0])}: tissue-resolved MDC"
+    if module_definition:
+        title += f"<br><sup>{module_definition}</sup>"
+    figure.update_layout(
+        title={"text": title, "x": 0.01},
+        template="plotly_white",
+        height=480,
+        yaxis={"title": "log2 MDC (AD / Control)"},
+        xaxis={"title": "Resolved edge component"},
+        showlegend=False,
+        margin={"l": 65, "r": 25, "t": 85, "b": 100},
+    )
+    return figure
+
+
+def mdc_resolved_heatmap_figure(
+    frame: pd.DataFrame,
+    threshold: float,
+    selected_module: int,
+    module_definition: str | None = None,
+) -> go.Figure:
+    """All-module resolved MDC heatmap with FDR significance markers."""
+
+    data = frame.copy()
+    pivot = data.pivot(index="module", columns="component_label", values="log2_mdc")
+    fdr = data.pivot(index="module", columns="component_label", values="directional_fdr")
+    module_order = (
+        pivot.abs().max(axis=1).sort_values(ascending=False).index.astype(int).tolist()
+    )
+    if int(selected_module) in module_order:
+        module_order.remove(int(selected_module))
+        module_order.insert(0, int(selected_module))
+    component_order = [
+        value
+        for value in [
+            "TS: AC", "TS: DLPFC", "TS: PCG",
+            "CT: AC - DLPFC", "CT: AC - PCG", "CT: DLPFC - PCG",
+        ]
+        if value in pivot.columns
+    ]
+    pivot = pivot.reindex(index=module_order, columns=component_order)
+    fdr = fdr.reindex(index=module_order, columns=component_order)
+    text = np.empty(pivot.shape, dtype=object)
+    for row in range(pivot.shape[0]):
+        for column in range(pivot.shape[1]):
+            value = pivot.iat[row, column]
+            q = fdr.iat[row, column]
+            text[row, column] = (
+                "NA"
+                if pd.isna(value)
+                else f"{float(value):.2f}" + (" ★" if pd.notna(q) and q < threshold else "")
+            )
+    figure = go.Figure(
+        go.Heatmap(
+            z=pivot.to_numpy(),
+            x=component_order,
+            y=[f"M{value}" for value in module_order],
+            colorscale="RdBu_r",
+            zmid=0,
+            text=text,
+            texttemplate="%{text}",
+            customdata=fdr.to_numpy(),
+            hovertemplate=(
+                "Module: %{y}<br>Component: %{x}<br>log2 MDC: %{z:.4f}<br>"
+                "Directional FDR: %{customdata:.4g}<extra></extra>"
+            ),
+            colorbar={"title": "log2 MDC"},
+        )
+    )
+    title = "Resolved MDC across modules"
+    if module_definition:
+        title += f"<br><sup>{module_definition} · ★ FDR &lt; {threshold:.2f}</sup>"
+    figure.update_layout(
+        title={"text": title, "x": 0.01},
+        template="plotly_white",
+        height=max(650, min(2800, 240 + 15 * len(module_order))),
+        margin={"l": 85, "r": 30, "t": 90, "b": 95},
+        xaxis={"side": "top"},
+        yaxis={"autorange": "reversed"},
+    )
+    return figure
+
+
+def edge_summary_figure(
+    frame: pd.DataFrame,
+    metric: str,
+    metric_label: str,
+    module: int,
+    module_definition: str | None = None,
+) -> go.Figure:
+    """Diagnosis-level box plots for one donor-level edge-summary metric."""
+
+    figure = go.Figure()
+    for diagnosis in ["Control", "MCI", "AD"]:
+        group = frame.loc[frame["diagnosis_group"].eq(diagnosis)]
+        if group.empty:
+            continue
+        figure.add_trace(
+            go.Box(
+                x=group["scope_label"],
+                y=pd.to_numeric(group[metric], errors="coerce"),
+                name=diagnosis,
+                legendgroup=diagnosis,
+                marker_color=DIAGNOSIS_COLORS[diagnosis],
+                boxpoints="outliers",
+                hovertemplate=(
+                    f"Diagnosis: {diagnosis}<br>Scope: %{{x}}<br>"
+                    f"{metric_label}: %{{y:.4g}}<extra></extra>"
+                ),
+            )
+        )
+    title = f"Module M{int(module)}: {metric_label} by edge scope and diagnosis"
+    if module_definition:
+        title += f"<br><sup>{module_definition}</sup>"
+    figure.update_layout(
+        title={"text": title, "x": 0.01},
+        template="plotly_white",
+        boxmode="group",
+        height=540,
+        yaxis={"title": metric_label},
+        xaxis={"title": "Edge scope", "tickangle": -25},
+        legend={"orientation": "h", "y": 1.04, "x": 1, "xanchor": "right"},
+        margin={"l": 70, "r": 25, "t": 90, "b": 110},
     )
     return figure
 
