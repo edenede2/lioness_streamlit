@@ -27,14 +27,18 @@ from app_helpers.charts import (  # noqa: E402
 )
 from app_helpers.correlations import calculate_correlations  # noqa: E402
 from app_helpers.data import (  # noqa: E402
+    association_kegg_subtitles,
     load_aggregate,
     load_aggregate_statistics,
+    load_kegg,
     load_mdc_summary,
     load_mdc_resolved,
     load_edge_summaries,
+    load_module_annotations,
     load_module_details,
     load_resolved,
     load_resolved_statistics,
+    selected_annotation,
 )
 
 
@@ -81,6 +85,77 @@ def test_scatter_and_distribution_chart_paths() -> None:
     )
     assert len(histogram.data) == 6
     assert all(trace.histnorm == "probability density" for trace in histogram.data)
+
+
+def test_association_panels_show_scope_matched_kegg_subtitles() -> None:
+    aggregate = load_aggregate("control_anchored", 935, "connectivity")
+    aggregate_long = aggregate_to_long(aggregate, "rint")
+    aggregate_stats = load_aggregate_statistics(
+        "control_anchored", 935, "cogn_global", "connectivity"
+    )
+    annotation = selected_annotation(load_module_annotations(), 935)
+    kegg = load_kegg(935)
+    aggregate_subtitles = association_kegg_subtitles(
+        kegg,
+        aggregate_long["component"].unique(),
+        resolved=False,
+        aggregate_annotation=annotation,
+    )
+    aggregate_figure = association_figure(
+        aggregate_long,
+        aggregate_stats,
+        phenotype="cogn_global",
+        phenotype_label="Global cognition",
+        feature_label="Connectivity",
+        scale="rint",
+        scale_label="Z-score",
+        diagnoses=["Control", "MCI", "AD"],
+        module=935,
+        resolved=False,
+        color_by="diagnosis_group",
+        color_label="Diagnosis group",
+        hover_fields={},
+        kegg_subtitles=aggregate_subtitles,
+    )
+    aggregate_titles = [
+        str(value.text) for value in aggregate_figure.layout.annotations[:2]
+    ]
+    assert all("KEGG enrichment (tissue-expanded)" in text for text in aggregate_titles)
+
+    resolved = load_resolved("control_anchored", 935, "connectivity")
+    resolved_long = resolved_to_long(resolved, "rint")
+    resolved_stats = load_resolved_statistics(
+        "control_anchored", 935, "cogn_global", "connectivity"
+    )
+    resolved_subtitles = association_kegg_subtitles(
+        kegg, resolved_long["component"].unique(), resolved=True
+    )
+    resolved_figure = association_figure(
+        resolved_long,
+        resolved_stats,
+        phenotype="cogn_global",
+        phenotype_label="Global cognition",
+        feature_label="Connectivity",
+        scale="rint",
+        scale_label="Z-score",
+        diagnoses=["Control", "MCI", "AD"],
+        module=935,
+        resolved=True,
+        color_by="diagnosis_group",
+        color_label="Diagnosis group",
+        hover_fields={},
+        kegg_subtitles=resolved_subtitles,
+    )
+    resolved_titles = {
+        component: str(annotation.text)
+        for component, annotation in zip(
+            sorted(resolved_long["component"].unique()),
+            resolved_figure.layout.annotations[:6],
+        )
+    }
+    assert "KEGG enrichment (AC)" in resolved_titles["TS_AC"]
+    pair_title = resolved_titles["CT_AC__DLPFC"]
+    assert "AC FDR=" in pair_title and "DLPFC FDR=" in pair_title
 
 
 def test_association_scatter_can_switch_from_default_spearman_to_pearson() -> None:

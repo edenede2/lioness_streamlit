@@ -232,7 +232,7 @@ def association_figure(
         )
         subtitle_html = "<br>".join(html.escape(line) for line in wrapped)
         subplot_titles.append(
-            f"<b>{html.escape(str(component_label))}</b><br><sup>{subtitle_html}</sup>"
+            f"<b>{html.escape(str(component_label))}</b><br>{subtitle_html}"
         )
     fig = make_subplots(
         rows=nrows,
@@ -242,7 +242,7 @@ def association_figure(
         vertical_spacing=0.25 if nrows > 1 else 0.08,
     )
     for annotation in fig.layout.annotations:
-        annotation.update(font={"size": 11, "color": "#27364B"})
+        annotation.update(font={"size": 12, "color": "#27364B"})
 
     continuous_color = color_by != "diagnosis_group"
     color_min = color_max = None
@@ -376,7 +376,7 @@ def association_figure(
         legend={
             "orientation": "h",
             "yanchor": "bottom",
-            "y": 1.05,
+            "y": 1.14,
             "xanchor": "right",
             "x": 1,
             "groupclick": "togglegroup",

@@ -52,6 +52,7 @@ from app_helpers.data import (
     OUTCOME_LABELS,
     PHENOTYPE_LABELS,
     SCALE_LABELS,
+    association_kegg_subtitles,
     dataframe_to_tsv_bytes,
     filter_kegg_enrichments,
     load_aggregate,
@@ -612,6 +613,13 @@ if len(selected_details) != 1:
 selected_details = selected_details.iloc[0]
 
 annotation = selected_annotation(annotations, module)
+module_kegg = cached_kegg(module_set, int(module))
+association_subtitles = association_kegg_subtitles(
+    module_kegg,
+    selected_components,
+    resolved=resolved,
+    aggregate_annotation=annotation,
+)
 if annotation:
     st.markdown(f'<div class="kegg-note">{annotation}</div>', unsafe_allow_html=True)
 else:
@@ -711,7 +719,11 @@ with association_tab:
         "in the legend to hide or show its points and trend together. Point shape identifies "
         "diagnosis; point color follows the selected color variable. Gray points have a missing "
         "value for a continuous color variable. The OLS lines are visual guides and do not "
-        "change when Spearman is selected."
+        "change when Spearman is selected. Aggregate CT/TS panel subtitles use the "
+        "tissue-expanded KEGG result. Tissue-resolved TS subtitles use the corresponding "
+        "regional enrichment; CT-pair subtitles report both regions' FDRs for the pathway "
+        "with the strongest conservative joint regional support. Those two FDRs are regional "
+        "tests, not a newly combined pair-level p-value."
     )
     figure = association_figure(
         plot_data,
@@ -731,6 +743,7 @@ with association_tab:
         module_definition=module_set_label,
         continuous_colorscale=continuous_colorscale,
         reverse_colorscale=reverse_colorscale,
+        kegg_subtitles=association_subtitles,
     )
     st.plotly_chart(
         figure,
