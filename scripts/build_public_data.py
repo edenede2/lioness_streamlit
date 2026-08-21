@@ -355,7 +355,9 @@ def write_sample_metadata(
         frame[column] = pd.to_numeric(frame[column], errors="coerce").astype("float64")
     frame["sample_id"] = frame["sample_id"].astype("string")
     frame["diagnosis_group"] = frame["diagnosis_group"].astype("string")
-    frame.to_parquet(output, index=False, compression="zstd")
+    frame.to_parquet(
+        output, index=False, compression="zstd", row_group_size=50_000
+    )
     return len(frame)
 
 
@@ -444,7 +446,9 @@ def write_combined_statistics(
     frame["module"] = pd.to_numeric(frame["module"], errors="raise").astype("int32")
     if resolved:
         frame = normalize_resolved_component_labels(frame)
-    frame.to_parquet(output, index=False, compression="zstd")
+    frame.to_parquet(
+        output, index=False, compression="zstd", row_group_size=50_000
+    )
     return len(frame)
 
 
@@ -478,8 +482,16 @@ def write_sanitized_edge_data(
         raise ValueError(f"Edge-summary donor mapping failed: {source}")
     frame = frame.drop(columns=["projid"], errors="ignore")
     frame = normalize_public_tissue_labels(frame)
+    frame = frame.sort_values(
+        ["module", "sample_id", "scope"], kind="stable"
+    ).reset_index(drop=True)
     output.parent.mkdir(parents=True, exist_ok=True)
-    frame.to_parquet(output, index=False, compression="zstd")
+    frame.to_parquet(
+        output,
+        index=False,
+        compression="zstd",
+        row_group_size=450 * 9,
+    )
     return len(frame)
 
 
@@ -2095,6 +2107,38 @@ def main() -> None:
         raise ValueError(f"Deploy files exceed GitHub's 100-MiB limit: {too_large}")
 
     full_manifest = module_set_manifests["full_cohort"]
+    expansion_grains = {
+        "bonobo_networks": sum(config.module_count * 450 for config in configs),
+        "bonobo_aggregate_plot_rows": sum(
+            rule_rows["aggregate_plot_rows"]
+            for expansion in expansion_manifests.values()
+            for rule_rows in expansion["bonobo"].values()
+        ),
+        "bonobo_resolved_plot_rows": sum(
+            rule_rows["resolved_plot_rows"]
+            for expansion in expansion_manifests.values()
+            for rule_rows in expansion["bonobo"].values()
+        ),
+        "bonobo_aggregate_stat_rows": sum(
+            rule_rows["aggregate_stat_rows"]
+            for expansion in expansion_manifests.values()
+            for rule_rows in expansion["bonobo"].values()
+        ),
+        "bonobo_resolved_stat_rows": sum(
+            rule_rows["resolved_stat_rows"]
+            for expansion in expansion_manifests.values()
+            for rule_rows in expansion["bonobo"].values()
+        ),
+        "resolved_mdc_rows": sum(
+            expansion["resolved_mdc_rows"]
+            for expansion in expansion_manifests.values()
+        ),
+        "edge_summary_rows": sum(
+            sum(expansion["edge_summaries"]["lioness"].values())
+            + sum(expansion["edge_summaries"]["bonobo"].values())
+            for expansion in expansion_manifests.values()
+        ),
+    }
     manifest = {
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "source_run": RUN_NAME,
@@ -2116,6 +2160,16 @@ def main() -> None:
             ),
         },
         "bonobo_analysis": bonobo_analysis,
+        "analysis_grains": expansion_grains,
+        "edge_summary_identities": [
+            "retained=positive+negative+zero",
+            "possible=retained+pruned",
+            "signed_weight_sum=positive_weight_sum-negative_weight_magnitude",
+            "absolute_weight_sum=positive_weight_sum+negative_weight_magnitude",
+            "total=TS+CT for every additive edge statistic",
+            "TS=sum of AC,DLPFC,PCG blocks",
+            "CT=sum of AC-DLPFC,AC-PCG,DLPFC-PCG blocks",
+        ],
         "transformations": {
             "raw": "untransformed module/component score",
             "asinh": (

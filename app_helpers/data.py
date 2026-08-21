@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from io import StringIO
 from pathlib import Path
 from typing import Iterable
@@ -12,7 +13,7 @@ import pyarrow.parquet as pq
 
 
 APP_ROOT = Path(__file__).resolve().parents[1]
-DATA_DIR = APP_ROOT / "data"
+DATA_DIR = Path(os.environ.get("LIONESS_APP_DATA_DIR", APP_ROOT / "data")).resolve()
 
 MODULE_SET_LABELS = {
     "full_cohort": "Full-cohort L4 modules (154)",
@@ -203,7 +204,11 @@ def require_data_files() -> None:
             / f"lioness__{method}.parquet"
             for method in MODULE_SET_METHODS[module_set]
         )
-    missing = [str(path.relative_to(APP_ROOT)) for path in required if not path.exists()]
+    missing = [
+        str(path.relative_to(APP_ROOT)) if path.is_relative_to(APP_ROOT) else str(path)
+        for path in required
+        if not path.exists()
+    ]
     if missing:
         raise FileNotFoundError(
             "The deploy data bundle is incomplete. Run "

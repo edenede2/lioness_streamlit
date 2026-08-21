@@ -10,6 +10,7 @@ APP_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(APP_ROOT))
 
 from app_helpers.charts import (  # noqa: E402
+    CONTINUOUS_COLOR_SCALES,
     aggregate_to_long,
     association_figure,
     correlation_heatmap_figure,
@@ -154,6 +155,25 @@ def test_continuous_color_and_correlation_heatmap() -> None:
     assert scatter.layout.coloraxis.colorbar.title.text == "Demographic-adjusted motor slope"
     assert any("motor slope" in str(trace.hovertemplate) for trace in scatter.data)
     assert bool(scatter.layout.coloraxis.reversescale)
+
+    for palette in CONTINUOUS_COLOR_SCALES:
+        palette_figure = association_figure(
+            long,
+            stats,
+            phenotype="cogn_global",
+            phenotype_label="Global cognition",
+            feature_label="Connectivity",
+            scale="rint",
+            scale_label="Z-score",
+            diagnoses=["Control", "MCI", "AD"],
+            module=935,
+            resolved=False,
+            color_by="motor10_demog_slope",
+            color_label="Demographic-adjusted motor slope",
+            hover_fields={},
+            continuous_colorscale=palette,
+        )
+        assert palette_figure.layout.coloraxis.colorscale is not None
 
     correlations = calculate_correlations(
         long,

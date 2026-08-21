@@ -542,10 +542,15 @@ component_variation = plot_data.groupby("component", observed=True)["metric_valu
 structurally_unavailable_components = component_variation.loc[
     component_variation["nonmissing"].eq(0)
 ].index.tolist()
-zero_variance_components = component_variation.loc[
-    component_variation["nonmissing"].gt(0)
-    & component_variation["distinct"].le(1)
-].index.tolist()
+diagnosis_variation = plot_data.groupby(
+    ["component", "diagnosis_group"], observed=True
+)["metric_value"].agg(
+    nonmissing="count", distinct=lambda values: values.nunique(dropna=True)
+)
+zero_variance_states = diagnosis_variation.loc[
+    diagnosis_variation["nonmissing"].gt(0)
+    & diagnosis_variation["distinct"].le(1)
+].reset_index()
 if estimator == "bonobo" and structurally_unavailable_components:
     unavailable_labels = [
         component_labels.get(value, value)
@@ -556,14 +561,16 @@ if estimator == "bonobo" and structurally_unavailable_components:
         + ", ".join(unavailable_labels)
         + ". These scopes remain missing rather than being encoded as zero."
     )
-if estimator == "bonobo" and zero_variance_components:
+if estimator == "bonobo" and not zero_variance_states.empty:
     zero_labels = [
-        component_labels.get(value, value) for value in zero_variance_components
+        f"{component_labels.get(row.component, row.component)} ({row.diagnosis_group})"
+        for row in zero_variance_states.itertuples(index=False)
     ]
     st.warning(
         "BONOBO has no donor-to-donor variation for the selected sparse-network score in: "
         + ", ".join(zero_labels)
-        + ". Correlations are intentionally unavailable for constant zero-valued states."
+        + ". Correlations are intentionally unavailable for constant states; for sparse "
+        "features these are generally zero because no edge passed the selected rule."
     )
 
 selected_details = module_details.loc[
@@ -1111,7 +1118,9 @@ with edge_tab:
         "Each undirected edge is counted once and the diagonal is excluded. LIONESS sign "
         "counts are recovered from the stored density and weight-sum identities and validated "
         "as integers. BONOBO counts are computed directly from the selected all-edge or "
-        "significant-edge mask. Structurally unavailable scopes remain missing."
+        "significant-edge mask. Structurally unavailable scopes remain missing. These rows "
+        "summarize each underlying network/edge rule once, so they do not change when the "
+        "derived feature dropdown changes."
     )
     edge_data = cached_edge_summaries(
         module_set, estimator, method, module, edge_rule

@@ -78,6 +78,12 @@ def validate_edge_file(path: Path, expected_rows: int, expected_samples: set[str
         raise ValueError(
             f"{path}: expected {expected_rows} edge rows, found {parquet.metadata.num_rows}"
         )
+    expected_row_groups = expected_rows // (450 * 9)
+    if parquet.metadata.num_row_groups != expected_row_groups:
+        raise ValueError(
+            f"{path}: expected one predicate-friendly row group per module "
+            f"({expected_row_groups}), found {parquet.metadata.num_row_groups}"
+        )
     seen_samples: set[str] = set()
     columns = [
         "sample_id", "n_possible_edges", "n_retained_edges", "n_positive_edges",
@@ -111,6 +117,40 @@ def validate_edge_file(path: Path, expected_rows: int, expected_samples: set[str
             raise ValueError(f"{path}: absolute weight identity failed")
     if seen_samples != expected_samples:
         raise ValueError(f"{path}: anonymous sample IDs are inconsistent")
+    scope_children = {
+        "total": ["TS", "CT"],
+        "TS": ["TS_AC", "TS_DLPFC", "TS_PCGBA23"],
+        "CT": [
+            "CT_AC__DLPFC", "CT_AC__PCGBA23", "CT_DLPFC__PCGBA23"
+        ],
+    }
+    additive = [
+        "n_possible_edges", "n_retained_edges", "n_positive_edges",
+        "n_negative_edges", "n_zero_edges", "n_pruned_edges",
+        "signed_weight_sum", "positive_weight_sum", "negative_weight_magnitude",
+        "absolute_weight_sum",
+    ]
+    identity_columns = ["sample_id", "module", "edge_rule", "scope", *additive]
+    for row_group in range(parquet.metadata.num_row_groups):
+        module_frame = parquet.read_row_group(
+            row_group, columns=identity_columns
+        ).to_pandas()
+        if module_frame["module"].nunique() != 1:
+            raise ValueError(f"{path}: edge row group spans multiple modules")
+        for metric in additive:
+            pivot = module_frame.pivot(
+                index=["sample_id", "module", "edge_rule"],
+                columns="scope",
+                values=metric,
+            ).apply(pd.to_numeric, errors="coerce").fillna(0.0)
+            for parent, children in scope_children.items():
+                if not np.allclose(
+                    pivot[parent], pivot[children].sum(axis=1),
+                    rtol=1e-9, atol=1e-9,
+                ):
+                    raise ValueError(
+                        f"{path}: {metric} scope identity failed for {parent}"
+                    )
 
 
 def validate_module_set(root: Path, key: str, expected_samples: set[str]) -> dict[str, int]:
@@ -223,6 +263,24 @@ def main() -> None:
             raise ValueError(f"Deploy file is at least 95 MiB: {path}")
         if path.suffix == ".parquet":
             assert_parquet_private_and_publicly_labeled(path)
+        elif path.suffix == ".tsv":
+            contents = path.read_text(encoding="utf-8")
+            header = contents.splitlines()[0].split("\t") if contents else []
+            if FORBIDDEN_COLUMNS.intersection(header):
+                raise ValueError(f"Private identifier column remains in {path}")
+            if any(label in contents for label in INTERNAL_TISSUE_LABELS):
+                raise ValueError(f"Internal tissue label remains in {path}")
+    observed_manifest_files = {
+        str(path.relative_to(root))
+        for path in files
+        if path.name != "data_manifest.json"
+    }
+    if observed_manifest_files != set(manifest["files"]):
+        raise ValueError(
+            "Manifest file catalog mismatch: "
+            f"missing={sorted(observed_manifest_files - set(manifest['files']))}, "
+            f"stale={sorted(set(manifest['files']) - observed_manifest_files)}"
+        )
     for relative, expected in manifest["files"].items():
         path = root / relative
         if not path.exists() or path.stat().st_size != expected["bytes"]:
@@ -244,6 +302,25 @@ def main() -> None:
         "resolved_mdc_rows": sum(values["resolved_mdc_rows"] for values in module_results.values()),
         "edge_rows": sum(values["edge_rows"] for values in module_results.values()),
     }
+    expected_grains = {
+        "bonobo_networks": 153_000,
+        "bonobo_aggregate_plot_rows": 1_377_000,
+        "bonobo_resolved_plot_rows": 8_262_000,
+        "bonobo_aggregate_stat_rows": 110_160,
+        "bonobo_resolved_stat_rows": 660_960,
+        "resolved_mdc_rows": 2_040,
+        "edge_summary_rows": 6_131_700,
+    }
+    if manifest.get("analysis_grains") != expected_grains:
+        raise ValueError(
+            f"Analysis-grain manifest mismatch: {manifest.get('analysis_grains')}"
+        )
+    if result["bonobo_networks"] != expected_grains["bonobo_networks"]:
+        raise ValueError("BONOBO donor-module network count mismatch")
+    if result["resolved_mdc_rows"] != expected_grains["resolved_mdc_rows"]:
+        raise ValueError("Resolved MDC total row count mismatch")
+    if result["edge_rows"] != expected_grains["edge_summary_rows"]:
+        raise ValueError("Edge-summary total row count mismatch")
     print(json.dumps(result, indent=2, sort_keys=True))
 
 
