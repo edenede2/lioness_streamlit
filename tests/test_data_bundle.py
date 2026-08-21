@@ -4,6 +4,7 @@ import hashlib
 import sys
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 
@@ -97,6 +98,21 @@ def test_module_details_match_level4_modules_and_tissue_counts() -> None:
     manifest = data.load_data_manifest()
     assert manifest["rows"]["module_details_rows"] == 154
     assert "module_details.tsv" in manifest["files"]
+
+
+def test_legacy_module_details_reconstruct_tissue_entropy() -> None:
+    legacy = pd.DataFrame(
+        {
+            "proportion_ac": [1.0, 1.0 / 3.0],
+            "proportion_dlpfc": [0.0, 1.0 / 3.0],
+            "proportion_pcg": [0.0, 1.0 / 3.0],
+        }
+    )
+    restored = data.ensure_tissue_entropy(legacy)
+    assert float(restored.loc[0, "tissue_entropy"]) == 0.0
+    assert float(restored.loc[0, "tissue_entropy_normalized"]) == 0.0
+    assert abs(float(restored.loc[1, "tissue_entropy"]) - np.log2(3.0)) < 1e-12
+    assert abs(float(restored.loc[1, "tissue_entropy_normalized"]) - 1.0) < 1e-12
 
 
 def test_dlpfc_public_label_replaces_internal_mf_code() -> None:

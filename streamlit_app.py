@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import importlib
 
 import numpy as np
@@ -347,6 +348,25 @@ except FileNotFoundError as error:
     st.error(str(error))
     st.stop()
 
+
+@st.cache_resource(show_spinner=False)
+def _bundle_cache_state() -> dict[str, str | None]:
+    """Track the deployed bundle independently of Streamlit's data caches."""
+    return {"manifest_sha256": None}
+
+
+def _synchronize_bundle_cache() -> str:
+    """Clear cached tables exactly once when a new deploy manifest appears."""
+    manifest_path = DATA_DIR / "data_manifest.json"
+    manifest_sha256 = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+    state = _bundle_cache_state()
+    if state["manifest_sha256"] != manifest_sha256:
+        st.cache_data.clear()
+        state["manifest_sha256"] = manifest_sha256
+    return manifest_sha256
+
+
+_synchronize_bundle_cache()
 data_manifest = cached_data_manifest()
 
 st.title("ROSMAP Single-Sample Network Explorer")

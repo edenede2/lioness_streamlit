@@ -8,6 +8,7 @@ from io import StringIO
 from pathlib import Path
 from typing import Iterable
 
+import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 
@@ -419,9 +420,37 @@ def load_module_details(
     module: int | None = None, module_set: str = "full_cohort"
 ) -> pd.DataFrame:
     details = pd.read_csv(module_set_path("module_details.tsv", module_set), sep="\t")
+    details = ensure_tissue_entropy(details)
     if module is not None:
         details = details.loc[details["module"].astype(int).eq(int(module))]
     return details.reset_index(drop=True)
+
+
+def ensure_tissue_entropy(details: pd.DataFrame) -> pd.DataFrame:
+    """Reconstruct tissue entropy when a hot deploy briefly exposes legacy details."""
+    required = ("tissue_entropy", "tissue_entropy_normalized")
+    if all(column in details.columns for column in required):
+        return details
+    proportion_columns = ("proportion_ac", "proportion_dlpfc", "proportion_pcg")
+    missing = set(proportion_columns).difference(details.columns)
+    if missing:
+        raise ValueError(
+            "Module details lack tissue entropy and the tissue proportions needed to "
+            f"reconstruct it: {sorted(missing)}"
+        )
+    result = details.copy()
+    proportions = (
+        result[list(proportion_columns)]
+        .apply(pd.to_numeric, errors="coerce")
+        .to_numpy(dtype=float)
+    )
+    log_proportions = np.zeros_like(proportions)
+    positive = proportions > 0
+    np.log2(proportions, out=log_proportions, where=positive)
+    entropy = -(proportions * log_proportions).sum(axis=1)
+    result["tissue_entropy"] = entropy
+    result["tissue_entropy_normalized"] = entropy / np.log2(3.0)
+    return result
 
 
 def load_feature_definitions() -> pd.DataFrame:
