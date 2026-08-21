@@ -224,6 +224,14 @@ def validate_module_set(root: Path, key: str, expected_samples: set[str]) -> dic
         raise ValueError(
             f"{key}: resolved MDC availability does not match structural edge presence"
         )
+    unavailable_mdc = resolved_mdc["n_edges"].eq(0)
+    inference_columns = [
+        "p_loss_sample", "p_loss_gene", "q_loss_sample", "q_loss_gene",
+        "p_gain_sample", "p_gain_gene", "q_gain_sample", "q_gain_gene",
+        "directional_p_sample", "directional_p_gene", "directional_fdr",
+    ]
+    if resolved_mdc.loc[unavailable_mdc, inference_columns].notna().any().any():
+        raise ValueError(f"{key}: unavailable MDC blocks have inferential values")
     for method in methods:
         validate_edge_file(
             directory / "edge_summaries" / f"lioness__{method}.parquet",

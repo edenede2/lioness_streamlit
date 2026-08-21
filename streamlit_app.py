@@ -1426,7 +1426,9 @@ with mdc_tab:
     st.markdown("#### Tissue-resolved MDC")
     st.caption(
         "Resolved MDC separates the three within-tissue blocks and the three cross-tissue "
-        "pairs. Gene permutations preserve each module's AC, DLPFC, and PCG feature counts."
+        "pairs. Gene permutations preserve each module's AC, DLPFC, and PCG feature counts. "
+        "For each component and direction, BH correction uses only modules where that edge "
+        "block structurally exists; unavailable blocks remain missing."
     )
     resolved_mdc = cached_mdc_resolved(module_set).copy()
     resolved_components_available = resolved_mdc[

@@ -254,8 +254,8 @@ method.
 The six resolved MDC components use the same AD-reference/Control-target design.
 Directional FDR is calculated separately for every component and direction and is
 the larger of the sample-permutation and tissue-count-preserving gene-permutation BH
-values. Structurally absent components remain unavailable rather than being encoded
-as zero.
+values, corrected across modules where that component structurally exists.
+Structurally absent components remain unavailable rather than being encoded as zero.
 
 ## BONOBO significance and sparse features
 

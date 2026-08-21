@@ -263,6 +263,13 @@ def test_resolved_mdc_has_six_components_and_conservative_fdr() -> None:
         assert resolved["module"].nunique() == module_count
         assert resolved["component"].nunique() == 6
         assert resolved["mdc"].isna().eq(resolved["n_edges"].eq(0)).all()
+        unavailable = resolved["n_edges"].eq(0)
+        inferential_columns = [
+            "p_loss_sample", "p_loss_gene", "q_loss_sample", "q_loss_gene",
+            "p_gain_sample", "p_gain_gene", "q_gain_sample", "q_gain_gene",
+            "directional_p_sample", "directional_p_gene", "directional_fdr",
+        ]
+        assert not resolved.loc[unavailable, inferential_columns].notna().any().any()
         assert not resolved.astype(str).apply(
             lambda column: column.str.contains("MFBA9", regex=False)
         ).any().any()
@@ -300,8 +307,8 @@ def test_control_derived_bundle_is_isolated_complete_and_private() -> None:
     assert resolved_file.metadata.num_rows == 450 * 186 * 6 * 6
     for parquet in (aggregate_file, resolved_file):
         assert {"donor", "projid"}.isdisjoint(parquet.schema_arrow.names)
-    assert aggregate_path.stat().st_size < 100 * 1024 * 1024
-    assert resolved_path.stat().st_size < 100 * 1024 * 1024
+    assert aggregate_path.stat().st_size < 95 * 1024 * 1024
+    assert resolved_path.stat().st_size < 95 * 1024 * 1024
 
     aggregate = data.load_aggregate(
         "control_anchored", 935, "connectivity", module_set=module_set

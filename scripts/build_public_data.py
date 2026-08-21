@@ -680,6 +680,22 @@ def validate_resolved_mdc_run(
             raise ValueError(f"{module_set}: resolved MDC module count mismatch")
         if set(frame["component"].astype(str)) != expected_components:
             raise ValueError(f"{module_set}: resolved MDC component set mismatch")
+        unavailable = frame["n_edges"].eq(0)
+        if not frame["mdc"].isna().eq(unavailable).all():
+            raise ValueError(
+                f"{module_set}: MDC availability does not match structural edges"
+            )
+        inferential_columns = [
+            "p_loss_sample", "p_loss_gene", "q_loss_sample", "q_loss_gene",
+            "p_gain_sample", "p_gain_gene", "q_gain_sample", "q_gain_gene",
+            "directional_p_sample", "directional_p_gene", "directional_fdr",
+        ]
+        if frame.loc[unavailable, inferential_columns].notna().any().any():
+            raise ValueError(
+                f"{module_set}: structurally unavailable MDC rows have inferential values"
+            )
+        if frame.loc[~unavailable, "directional_fdr"].isna().any():
+            raise ValueError(f"{module_set}: available MDC rows lack directional FDR")
     return {
         "sample_permutations": 200,
         "gene_permutations": 200,
@@ -1571,10 +1587,7 @@ def refresh_existing_mdc_bundle(source: Path, output: Path) -> dict[str, object]
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest.setdefault("rows", {})["mdc_rows"] = mdc_rows
     manifest["mdc"] = mdc_manifest(source)
-    file_entry = {
-        "bytes": summary_path.stat().st_size,
-        "sha256": sha256(summary_path),
-    }
+    file_entry = deploy_file_manifest_entry(summary_path)
     manifest["files"][summary_path.name] = file_entry
     if "module_sets" in manifest:
         full = manifest["module_sets"]["full_cohort"]
@@ -1595,15 +1608,22 @@ def refresh_existing_module_details_bundle(
     expected_modules = set(annotations["module"].astype(int))
     details_path = output / MODULE_DETAILS_OUTPUT_NAME
     details_rows = write_module_details(source, details_path, expected_modules)
+    details = pd.read_csv(details_path, sep="\t")
+    proportions = details[["n_genes_ac", "n_genes_dlpfc", "n_genes_pcg"]].div(
+        details["module_size"], axis=0
+    )
+    details["tissue_entropy"] = -(
+        proportions.where(proportions > 0)
+        * np.log2(proportions.where(proportions > 0))
+    ).sum(axis=1)
+    details["tissue_entropy_normalized"] = details["tissue_entropy"] / np.log2(3)
+    details.to_csv(details_path, sep="\t", index=False, float_format="%.10g")
 
     manifest_path = output / "data_manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest.setdefault("rows", {})["module_details_rows"] = details_rows
     manifest["module_details"] = module_details_manifest(source)
-    file_entry = {
-        "bytes": details_path.stat().st_size,
-        "sha256": sha256(details_path),
-    }
+    file_entry = deploy_file_manifest_entry(details_path)
     manifest["files"][details_path.name] = file_entry
     if "module_sets" in manifest:
         full = manifest["module_sets"]["full_cohort"]
@@ -1671,7 +1691,7 @@ def refresh_existing_statistics_bundle(
         module_manifest["rows"].update(observed)
         for path in (aggregate_path, resolved_path):
             relative = str(path.relative_to(output))
-            file_entry = {"bytes": path.stat().st_size, "sha256": sha256(path)}
+            file_entry = deploy_file_manifest_entry(path)
             module_manifest["files"][path.name] = file_entry
             manifest["files"][relative] = file_entry
         if module_set == "full_cohort":
@@ -1726,9 +1746,9 @@ def refresh_existing_kegg_bundles(
             "kegg_tissue_expanded_full.tsv",
         ):
             path = dataset_output / filename
-            file_entry = {"bytes": path.stat().st_size, "sha256": sha256(path)}
-            if path.stat().st_size >= 100 * 1024 * 1024:
-                raise ValueError(f"Refreshed KEGG file exceeds GitHub limit: {path}")
+            file_entry = deploy_file_manifest_entry(path)
+            if path.stat().st_size >= 95 * 1024 * 1024:
+                raise ValueError(f"Refreshed KEGG file exceeds 95-MiB cap: {path}")
             module_manifest["files"][filename] = file_entry
             manifest["files"][str(path.relative_to(output))] = file_entry
 
@@ -2104,7 +2124,7 @@ def main() -> None:
         if path.stat().st_size >= 95 * 1024 * 1024
     }
     if too_large:
-        raise ValueError(f"Deploy files exceed GitHub's 100-MiB limit: {too_large}")
+        raise ValueError(f"Deploy files exceed the 95-MiB release cap: {too_large}")
 
     full_manifest = module_set_manifests["full_cohort"]
     expansion_grains = {
