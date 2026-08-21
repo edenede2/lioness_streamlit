@@ -1122,8 +1122,10 @@ with edge_tab:
         "summarize each underlying network/edge rule once, so they do not change when the "
         "derived feature dropdown changes."
     )
-    edge_data = cached_edge_summaries(
-        module_set, estimator, method, module, edge_rule
+    edge_data = attach_metadata(
+        cached_edge_summaries(
+            module_set, estimator, method, module, edge_rule
+        )
     )
     edge_data = edge_data.loc[edge_data["diagnosis_group"].isin(diagnoses)].copy()
     edge_scope_options = edge_data["scope"].drop_duplicates().tolist()
@@ -2116,7 +2118,7 @@ with about_tab:
     )
     st.caption(
         "Sex is displayed as source Code 0/1 because this deploy bundle does not infer a label "
-        "without an accompanying reviewed data dictionary. Age at death is rounded to one decimal."
+        "without an accompanying reviewed data dictionary."
     )
     manifest_path = DATA_DIR / "data_manifest.json"
     if manifest_path.exists():

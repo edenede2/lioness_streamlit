@@ -506,21 +506,27 @@ def test_edge_summaries_cover_nine_scopes_and_obey_identities() -> None:
             )
             assert len(frame) == 450 * 9
             assert frame["scope"].nunique() == 9
-            assert (frame["n_retained_edges"] <= frame["n_possible_edges"]).all()
+            unavailable = frame["n_possible_edges"].eq(0)
+            assert frame.loc[unavailable, "n_retained_edges"].isna().all()
+            available = frame.loc[~unavailable]
             assert (
-                frame["n_positive_edges"]
-                + frame["n_negative_edges"]
-                + frame["n_zero_edges"]
-                == frame["n_retained_edges"]
+                available["n_retained_edges"] <= available["n_possible_edges"]
             ).all()
             assert (
-                frame["n_possible_edges"]
-                - frame["n_retained_edges"]
-                == frame["n_pruned_edges"]
+                available["n_positive_edges"]
+                + available["n_negative_edges"]
+                + available["n_zero_edges"]
+                == available["n_retained_edges"]
             ).all()
             assert (
-                frame["positive_weight_sum"] + frame["negative_weight_magnitude"]
-                - frame["absolute_weight_sum"]
+                available["n_possible_edges"]
+                - available["n_retained_edges"]
+                == available["n_pruned_edges"]
+            ).all()
+            assert (
+                available["positive_weight_sum"]
+                + available["negative_weight_magnitude"]
+                - available["absolute_weight_sum"]
             ).abs().max() < 1e-8
 
 

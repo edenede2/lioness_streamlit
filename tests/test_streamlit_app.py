@@ -40,4 +40,6 @@ def test_streamlit_smoke_lioness_and_bonobo_module_definitions() -> None:
         "control_derived"
     ).run()
     assert_app_clean(app)
-    assert widget_with_label(app.radio, "Network method").options == ["bonobo"]
+    network_method = widget_with_label(app.radio, "Network method")
+    assert network_method.value == "bonobo"
+    assert network_method.options == ["All-donor empirical-Bayes BONOBO"]

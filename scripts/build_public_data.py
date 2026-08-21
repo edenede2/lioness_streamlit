@@ -340,7 +340,7 @@ def write_sample_metadata(
     frame["parkinsonism_label"] = frame["parkinsonism"].map(
         {0.0: "No", 1.0: "Yes"}
     ).astype("string")
-    frame["age_at_death"] = pd.to_numeric(frame["age_at_death"], errors="coerce").round(1)
+    frame["age_at_death"] = pd.to_numeric(frame["age_at_death"], errors="coerce")
     numeric_columns = [
         *PHENOTYPES,
         "age_at_death",
