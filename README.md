@@ -178,6 +178,13 @@ The build is intentionally one-way: donor/projid columns and the pseudonym salt 
 not written. `data/data_manifest.json` records separate module-set row counts,
 source hashes, correction-family sizes, unavailable CT modules, and deploy-file hashes.
 
+Validate a staged or deployed bundle, including privacy, hashes, schemas, row counts,
+sample consistency, edge identities, entropy ranges, resolved MDC, and the 95-MiB cap:
+
+```bash
+python scripts/validate_public_bundle.py /path/to/data
+```
+
 ## Data organization
 
 - `data/`: the existing 154-module full-cohort bundle.
