@@ -14,7 +14,10 @@ import streamlit as st
 # is absent so a repository update cannot leave the two modules out of sync.
 from app_helpers import charts as _chart_helpers
 
-if not hasattr(_chart_helpers, "CONTINUOUS_COLOR_SCALES"):
+if not all(
+    hasattr(_chart_helpers, name)
+    for name in ("CONTINUOUS_COLOR_SCALES", "edge_volcano_figure")
+):
     _chart_helpers = importlib.reload(_chart_helpers)
 
 from app_helpers.charts import (
@@ -49,6 +52,7 @@ from app_helpers.data import (
     HOVER_LABELS,
     METHOD_LABELS,
     ESTIMATOR_LABELS,
+    FDR_SCOPE_LABELS,
     MODULE_SET_LABELS,
     MODULE_SET_METHODS,
     NUMERIC_OUTCOMES,
@@ -124,12 +128,14 @@ def cached_aggregate(
     feature: str,
     edge_rule: str,
     differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
     score_normalization: str = "standard_pruned",
 ) -> pd.DataFrame:
     return load_aggregate(
         method, module, feature, module_set=module_set,
         estimator=estimator, edge_rule=edge_rule,
         differential_edge_rule=differential_edge_rule,
+        differential_fdr_scope=differential_fdr_scope,
         score_normalization=score_normalization,
     )
 
@@ -143,12 +149,14 @@ def cached_resolved(
     feature: str,
     edge_rule: str,
     differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
     score_normalization: str = "standard_pruned",
 ) -> pd.DataFrame:
     return load_resolved(
         method, module, feature, module_set=module_set,
         estimator=estimator, edge_rule=edge_rule,
         differential_edge_rule=differential_edge_rule,
+        differential_fdr_scope=differential_fdr_scope,
         score_normalization=score_normalization,
     )
 
@@ -176,10 +184,12 @@ def cached_edge_summaries(
     module: int,
     edge_rule: str,
     differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
 ) -> pd.DataFrame:
     return load_edge_summaries(
         estimator, method, module, module_set=module_set, edge_rule=edge_rule,
         differential_edge_rule=differential_edge_rule,
+        differential_fdr_scope=differential_fdr_scope,
     )
 
 
@@ -198,6 +208,7 @@ def cached_aggregate_stats(
     feature: str | None,
     edge_rule: str,
     differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
 ) -> pd.DataFrame:
@@ -205,6 +216,7 @@ def cached_aggregate_stats(
         method, module, phenotype, feature, module_set=module_set,
         estimator=estimator, edge_rule=edge_rule,
         differential_edge_rule=differential_edge_rule,
+        differential_fdr_scope=differential_fdr_scope,
         score_normalization=score_normalization,
         analysis_subset=analysis_subset,
     )
@@ -220,6 +232,7 @@ def cached_resolved_stats(
     feature: str,
     edge_rule: str,
     differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
 ) -> pd.DataFrame:
@@ -227,6 +240,7 @@ def cached_resolved_stats(
         method, module, phenotype, feature, module_set=module_set,
         estimator=estimator, edge_rule=edge_rule,
         differential_edge_rule=differential_edge_rule,
+        differential_fdr_scope=differential_fdr_scope,
         score_normalization=score_normalization,
         analysis_subset=analysis_subset,
     )
@@ -241,9 +255,15 @@ def cached_volcano_candidates(
 
 @st.cache_data(show_spinner=False, max_entries=48)
 def cached_volcano_bins(
-    module_set: str, estimator: str, method: str, module: int
+    module_set: str,
+    estimator: str,
+    method: str,
+    module: int,
+    differential_fdr_scope: str,
 ) -> pd.DataFrame:
-    return load_volcano_bins(module_set, estimator, method, module)
+    return load_volcano_bins(
+        module_set, estimator, method, module, differential_fdr_scope
+    )
 
 
 @st.cache_data(show_spinner=False, max_entries=48)
@@ -291,6 +311,7 @@ def cached_module_correlations(
     resolved: bool,
     edge_rule: str,
     differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
 ) -> pd.DataFrame:
@@ -299,6 +320,7 @@ def cached_module_correlations(
             method, module=module, module_set=module_set,
             estimator=estimator, edge_rule=edge_rule,
             differential_edge_rule=differential_edge_rule,
+            differential_fdr_scope=differential_fdr_scope,
             score_normalization=score_normalization,
         )
         long = resolved_to_long(source, "rint")
@@ -307,6 +329,7 @@ def cached_module_correlations(
             method, module=module, module_set=module_set,
             estimator=estimator, edge_rule=edge_rule,
             differential_edge_rule=differential_edge_rule,
+            differential_fdr_scope=differential_fdr_scope,
             score_normalization=score_normalization,
         )
         long = aggregate_to_long(source, "rint")
@@ -346,6 +369,7 @@ def cached_all_module_correlations(
     diagnosis: str,
     edge_rule: str,
     differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
 ) -> pd.DataFrame:
@@ -358,6 +382,7 @@ def cached_all_module_correlations(
             estimator=estimator,
             edge_rule=edge_rule,
             differential_edge_rule=differential_edge_rule,
+            differential_fdr_scope=differential_fdr_scope,
             score_normalization=score_normalization,
         )
         long = resolved_to_long(source, "rint")
@@ -366,6 +391,7 @@ def cached_all_module_correlations(
             method, metric_family=feature, module_set=module_set,
             estimator=estimator, edge_rule=edge_rule,
             differential_edge_rule=differential_edge_rule,
+            differential_fdr_scope=differential_fdr_scope,
             score_normalization=score_normalization,
         )
         long = aggregate_to_long(source, "rint")
@@ -538,12 +564,25 @@ with st.sidebar:
         format_func=lambda value: DIFFERENTIAL_EDGE_RULE_LABELS[value],
         help=(
             "The differential mask is learned only in the diagnosis-and-sex-stratified "
-            "discovery donors. BH FDR is corrected across every undirected edge in the "
-            "selected module."
+            "discovery donors. The FDR scope below determines whether BH is corrected "
+            "across the full analysis family or within the selected module."
         ),
     )
     if not differential_available:
         st.caption("AD–Control filtered scores are not present in this deployed bundle.")
+        differential_fdr_scope = "global"
+    else:
+        differential_fdr_scope = st.radio(
+            "Differential-edge FDR scope",
+            options=list(FDR_SCOPE_LABELS),
+            format_func=lambda value: FDR_SCOPE_LABELS[value],
+            index=0,
+            help=(
+                "Global BH adjusts all tested edges within the selected module definition, "
+                "estimator, network method, and discovery/validation family. Per-module BH "
+                "adjusts only across the edges of each module."
+            ),
+        )
     if differential_edge_rule == "all":
         score_normalization = "standard_pruned"
         analysis_subset = "all_donors"
@@ -613,11 +652,12 @@ with st.sidebar:
 st.caption(
     f"Module definition: **{module_set_label}** · Estimator: "
     f"**{ESTIMATOR_LABELS[estimator]}** · Edge subset: "
-    f"**{DIFFERENTIAL_EDGE_RULE_LABELS[differential_edge_rule]}**"
+    f"**{DIFFERENTIAL_EDGE_RULE_LABELS[differential_edge_rule]}** · Differential FDR: "
+    f"**{FDR_SCOPE_LABELS[differential_fdr_scope]}**"
 )
 download_prefix = (
     f"{module_set}__{estimator}__{edge_rule}__{differential_edge_rule}__"
-    f"{score_normalization}__"
+    f"{differential_fdr_scope}__{score_normalization}__"
 )
 
 if not diagnoses:
@@ -628,23 +668,25 @@ with st.spinner("Loading the selected module…"):
     if resolution == "Aggregate CT / TS":
         plot_data = cached_aggregate(
             module_set, estimator, method, module, feature, edge_rule,
-            differential_edge_rule, score_normalization,
+            differential_edge_rule, differential_fdr_scope, score_normalization,
         )
         plot_data = aggregate_to_long(plot_data, scale)
         statistics = cached_aggregate_stats(
             module_set, estimator, method, module, phenotype, feature, edge_rule,
-            differential_edge_rule, score_normalization, analysis_subset,
+            differential_edge_rule, differential_fdr_scope, score_normalization,
+            analysis_subset,
         )
         resolved = False
     else:
         plot_data = cached_resolved(
             module_set, estimator, method, module, feature, edge_rule,
-            differential_edge_rule, score_normalization,
+            differential_edge_rule, differential_fdr_scope, score_normalization,
         )
         plot_data = resolved_to_long(plot_data, scale)
         statistics = cached_resolved_stats(
             module_set, estimator, method, module, phenotype, feature, edge_rule,
-            differential_edge_rule, score_normalization, analysis_subset,
+            differential_edge_rule, differential_fdr_scope, score_normalization,
+            analysis_subset,
         )
         resolved = True
 
@@ -971,7 +1013,8 @@ with correlation_tab:
     if heatmap_mode.startswith("Selected module"):
         correlation_table = cached_module_correlations(
             module_set, estimator, method, module, resolved, edge_rule,
-            differential_edge_rule, score_normalization, analysis_subset,
+            differential_edge_rule, differential_fdr_scope, score_normalization,
+            analysis_subset,
         )
         heatmap_data = correlation_table.loc[
             correlation_table["diagnosis_group"].eq(heatmap_diagnosis)
@@ -1027,6 +1070,7 @@ with correlation_tab:
             heatmap_diagnosis,
             edge_rule,
             differential_edge_rule,
+            differential_fdr_scope,
             score_normalization,
             analysis_subset,
         )
@@ -1174,7 +1218,8 @@ with screen_tab:
     )
     screen = cached_aggregate_stats(
         module_set, estimator, method, None, phenotype, feature, edge_rule,
-        differential_edge_rule, score_normalization, analysis_subset,
+        differential_edge_rule, differential_fdr_scope, score_normalization,
+        analysis_subset,
     )
     screen = screen.loc[screen["diagnosis_group"].eq(screen_diagnosis)].copy()
     if correlation_method == "Spearman":
@@ -1309,7 +1354,7 @@ with edge_tab:
     edge_data = attach_metadata(
         cached_edge_summaries(
             module_set, estimator, method, module, edge_rule,
-            differential_edge_rule,
+            differential_edge_rule, differential_fdr_scope,
         )
     )
     if differential_edge_rule != "all" and analysis_subset != "all_donors":
@@ -1402,8 +1447,9 @@ with volcano_tab:
     st.caption(
         "Each point is one undirected module edge. The mask is discovered with a "
         "two-sided Welch test in 117 AD and 114 Control donors; Hedges’ g and mean "
-        "difference are AD minus Control. BH FDR is corrected within the selected "
-        "module across all of its edges, not separately by tissue component. The "
+        "difference are AD minus Control. Both global and per-module BH values are "
+        "stored for every edge; this view and the filtered-score mask use the "
+        f"sidebar selection (**{FDR_SCOPE_LABELS[differential_fdr_scope]}**). The "
         "validation view uses the held-out 50 AD and 50 Control donors and never "
         "changes the discovery mask."
     )
@@ -1413,7 +1459,9 @@ with volcano_tab:
         volcano_candidates = cached_volcano_candidates(
             module_set, estimator, method, module
         )
-        volcano_bins = cached_volcano_bins(module_set, estimator, method, module)
+        volcano_bins = cached_volcano_bins(
+            module_set, estimator, method, module, differential_fdr_scope
+        )
         volcano_left, volcano_middle, volcano_right = st.columns(3)
         with volcano_left:
             volcano_analysis_set = st.radio(
@@ -1510,6 +1558,7 @@ with volcano_tab:
             module=module,
             scope=volcano_scope,
             analysis_set=volcano_analysis_set,
+            fdr_scope=differential_fdr_scope,
             x_metric=volcano_x_metric,
             y_metric=volcano_y_metric,
             significant_only=significant_only,
@@ -1537,7 +1586,11 @@ with volcano_tab:
             "plus the top 500 remaining edges per resolved component."
         )
         prefix = volcano_analysis_set.lower()
-        probability_column = f"{prefix}_{volcano_y_metric}"
+        probability_column = (
+            f"{prefix}_fdr_{differential_fdr_scope}"
+            if volcano_y_metric == "fdr"
+            else f"{prefix}_p_value"
+        )
         displayed_edges = volcano_candidates.copy()
         if volcano_scope in {"CT", "TS"}:
             displayed_edges = displayed_edges.loc[
@@ -2457,6 +2510,24 @@ with about_tab:
         "For each estimator/method, module, feature, and CT/TS or resolved component, "
         "the app stores raw values, a robust-scale asinh transformation, and a rank "
         "inverse-normal Z-score calculated across all 450 donors."
+    )
+    st.markdown("#### AD–Control differential-edge filtering")
+    st.markdown(
+        "A diagnosis-and-sex-stratified discovery cohort (117 AD, 114 Control) defines "
+        "the optional edge mask with two-sided Welch tests on raw signedAlt donor-edge "
+        "weights. Every edge stores AD and Control means, AD-minus-Control difference, "
+        "Hedges’ g, p-value, **global BH FDR**, and **per-module BH FDR**. Global BH is "
+        "calculated across all tested edges within one module-definition, estimator, "
+        "network-method, and discovery/validation family; per-module BH is calculated "
+        "across all edges of one module. The sidebar FDR-scope choice controls filtered "
+        "features, associations, distributions, heatmaps, edge summaries, and volcano "
+        "significance. Selecting All edges continues to use the original unfiltered data."
+    )
+    st.markdown(
+        "The default filtered evaluation uses 50 held-out AD and 50 held-out Control "
+        "donors. MCI (n=119) is external to edge selection. Validation labels do not "
+        "alter the discovery mask, although the underlying unsupervised donor-network "
+        "estimation is not a completely external network validation."
     )
 
     st.markdown("#### Module differential connectivity")

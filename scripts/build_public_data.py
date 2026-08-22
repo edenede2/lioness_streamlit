@@ -736,51 +736,54 @@ def write_differential_module_bundle(
                         edge_source, edge_output, sample_map, edge_rule=edge_rule
                     )
                 )
-                for normalization in ("standard_pruned", "retained_edge"):
-                    source = (
-                        app_data_root
-                        / config.key
-                        / estimator
-                        / method
-                        / "ad_control_discovery_fdr05"
-                        / edge_rule
-                        / normalization
-                    )
-                    output = (
-                        output_root
-                        / estimator
-                        / method
-                        / "ad_control_discovery_fdr05"
-                        / edge_rule
-                        / normalization
-                    )
-                    output.mkdir(parents=True, exist_ok=True)
-                    rows = {
-                        "aggregate_plot_rows": write_sanitized_plot_data(
-                            [source / "aggregate_plot_data.parquet"],
-                            output / "aggregate_plot_data.parquet",
-                            sample_map,
-                            resolved=False,
-                        ),
-                        "resolved_plot_rows": write_sanitized_plot_data(
-                            [source / "resolved_plot_data.parquet"],
-                            output / "resolved_plot_data.parquet",
-                            sample_map,
-                            resolved=True,
-                        ),
-                        "aggregate_stat_rows": write_combined_statistics(
-                            [source / "aggregate_statistics.parquet"],
-                            output / "aggregate_statistics.parquet",
-                        ),
-                        "resolved_stat_rows": write_combined_statistics(
-                            [source / "resolved_statistics.parquet"],
-                            output / "resolved_statistics.parquet",
-                            resolved=True,
-                        ),
-                    }
-                    variant_rows[
-                        f"{estimator}/{method}/{edge_rule}/{normalization}"
-                    ] = rows
+                for fdr_scope in ("global", "per_module"):
+                    for normalization in ("standard_pruned", "retained_edge"):
+                        source = (
+                            app_data_root
+                            / config.key
+                            / estimator
+                            / method
+                            / "ad_control_discovery_fdr05"
+                            / fdr_scope
+                            / edge_rule
+                            / normalization
+                        )
+                        output = (
+                            output_root
+                            / estimator
+                            / method
+                            / "ad_control_discovery_fdr05"
+                            / fdr_scope
+                            / edge_rule
+                            / normalization
+                        )
+                        output.mkdir(parents=True, exist_ok=True)
+                        rows = {
+                            "aggregate_plot_rows": write_sanitized_plot_data(
+                                [source / "aggregate_plot_data.parquet"],
+                                output / "aggregate_plot_data.parquet",
+                                sample_map,
+                                resolved=False,
+                            ),
+                            "resolved_plot_rows": write_sanitized_plot_data(
+                                [source / "resolved_plot_data.parquet"],
+                                output / "resolved_plot_data.parquet",
+                                sample_map,
+                                resolved=True,
+                            ),
+                            "aggregate_stat_rows": write_combined_statistics(
+                                [source / "aggregate_statistics.parquet"],
+                                output / "aggregate_statistics.parquet",
+                            ),
+                            "resolved_stat_rows": write_combined_statistics(
+                                [source / "resolved_statistics.parquet"],
+                                output / "resolved_statistics.parquet",
+                                resolved=True,
+                            ),
+                        }
+                        variant_rows[
+                            f"{estimator}/{method}/{fdr_scope}/{edge_rule}/{normalization}"
+                        ] = rows
 
     missing = [path for path in [*candidate_sources, *bin_sources] if not path.exists()]
     if missing:
@@ -800,11 +803,20 @@ def write_differential_module_bundle(
         },
         "test": "two-sided Welch t-test on raw signedAlt donor-edge weights",
         "effect": "Hedges g and AD-minus-Control mean difference",
-        "fdr": (
-            "BH within each module across all undirected edges, separately by "
-            "module definition, estimator, network method, and analysis set"
-        ),
-        "feature_mask": "discovery BH FDR < 0.05",
+        "fdr": {
+            "global": (
+                "BH across all tested edges in each module-definition, estimator, "
+                "network-method, and analysis-set family"
+            ),
+            "per_module": (
+                "BH within each module across all undirected edges, separately by "
+                "module definition, estimator, network method, and analysis set"
+            ),
+        },
+        "feature_masks": {
+            "global": "discovery global BH FDR < 0.05",
+            "per_module": "discovery per-module BH FDR < 0.05",
+        },
         "variants": variant_rows,
         "edge_summary_rows": edge_summary_rows,
         "volcano_candidate_rows": candidate_rows,
@@ -2090,25 +2102,27 @@ def main() -> None:
                     )
                 )
                 for edge_rule in edge_rules:
-                    for normalization in ("standard_pruned", "retained_edge"):
-                        app_source = (
-                            args.differential_app_data_root.resolve()
-                            / config.key
-                            / estimator
-                            / method
-                            / "ad_control_discovery_fdr05"
-                            / edge_rule
-                            / normalization
-                        )
-                        mandatory.extend(
-                            app_source / filename
-                            for filename in (
-                                "aggregate_plot_data.parquet",
-                                "resolved_plot_data.parquet",
-                                "aggregate_statistics.parquet",
-                                "resolved_statistics.parquet",
+                    for fdr_scope in ("global", "per_module"):
+                        for normalization in ("standard_pruned", "retained_edge"):
+                            app_source = (
+                                args.differential_app_data_root.resolve()
+                                / config.key
+                                / estimator
+                                / method
+                                / "ad_control_discovery_fdr05"
+                                / fdr_scope
+                                / edge_rule
+                                / normalization
                             )
-                        )
+                            mandatory.extend(
+                                app_source / filename
+                                for filename in (
+                                    "aggregate_plot_data.parquet",
+                                    "resolved_plot_data.parquet",
+                                    "aggregate_statistics.parquet",
+                                    "resolved_statistics.parquet",
+                                )
+                            )
         for edge_rule in ("all", "native_p05", "bh_fdr05"):
             mandatory.extend(
                 args.bonobo_app_data_root.resolve()

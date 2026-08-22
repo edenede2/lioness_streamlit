@@ -80,6 +80,7 @@ def edge_volcano_figure(
     module: int,
     scope: str,
     analysis_set: str = "Discovery",
+    fdr_scope: str = "global",
     x_metric: str = "hedges_g",
     y_metric: str = "fdr",
     significant_only: bool = False,
@@ -93,7 +94,11 @@ def edge_volcano_figure(
 
     prefix = analysis_set.lower()
     x_column = f"{prefix}_{x_metric}"
-    probability_column = f"{prefix}_{y_metric}"
+    probability_column = (
+        f"{prefix}_fdr_{fdr_scope}"
+        if y_metric == "fdr"
+        else f"{prefix}_p_value"
+    )
     if scope == "total":
         points = candidates.copy()
     elif scope in {"CT", "TS"}:
@@ -112,6 +117,7 @@ def edge_volcano_figure(
     figure = go.Figure()
     matching_bins = bins.loc[
         bins["analysis_set"].eq(analysis_set)
+        & bins["fdr_scope"].eq(fdr_scope)
         & bins["scope"].eq(scope)
         & bins["x_metric"].eq(x_metric)
         & bins["y_metric"].eq(y_metric)
@@ -173,7 +179,8 @@ def edge_volcano_figure(
             f"{prefix}_mean_difference",
             f"{prefix}_hedges_g",
             f"{prefix}_p_value",
-            f"{prefix}_fdr",
+            f"{prefix}_fdr_global",
+            f"{prefix}_fdr_per_module",
             "validation_direction_concordant",
         ]
         if prevalence_column and prevalence_column in points:
@@ -184,11 +191,12 @@ def edge_volcano_figure(
             "<br>Component: %{customdata[4]}"
             "<br>AD mean: %{customdata[5]:.4g}; Control mean: %{customdata[6]:.4g}"
             "<br>AD−Control: %{customdata[7]:.4g}; Hedges g: %{customdata[8]:.4g}"
-            "<br>p=%{customdata[9]:.3g}; FDR=%{customdata[10]:.3g}"
-            "<br>Validation direction concordant: %{customdata[11]}"
+            "<br>p=%{customdata[9]:.3g}; global FDR=%{customdata[10]:.3g}"
+            "<br>Per-module FDR=%{customdata[11]:.3g}"
+            "<br>Validation direction concordant: %{customdata[12]}"
         )
         if prevalence_column and prevalence_column in points:
-            template += "<br>BONOBO significance prevalence: %{customdata[12]:.1%}"
+            template += "<br>BONOBO significance prevalence: %{customdata[13]:.1%}"
         template += "<extra></extra>"
         figure.add_trace(
             go.Scattergl(
@@ -212,8 +220,10 @@ def edge_volcano_figure(
     x_label = "Hedges’ g (AD − Control)" if x_metric == "hedges_g" else "Mean edge-weight difference (AD − Control)"
     y_label = "−log10(BH FDR)" if y_metric == "fdr" else "−log10(Welch p-value)"
     title = f"Module M{int(module)}: {analysis_set} AD–Control edge volcano"
+    subtitle = "Global BH" if fdr_scope == "global" else "Per-module BH"
     if module_definition:
-        title += f"<br><sup>{module_definition}</sup>"
+        subtitle = f"{module_definition} · {subtitle}"
+    title += f"<br><sup>{subtitle}</sup>"
     figure.update_layout(
         title={"text": title, "x": 0.01},
         xaxis_title=x_label,

@@ -41,6 +41,10 @@ DIFFERENTIAL_EDGE_RULE_LABELS = {
     "all": "All edges",
     "ad_control_discovery_fdr05": "Discovery AD–Control BH FDR < 0.05",
 }
+FDR_SCOPE_LABELS = {
+    "global": "Global BH",
+    "per_module": "Per-module BH",
+}
 SCORE_NORMALIZATION_LABELS = {
     "standard_pruned": "Standard pruned network",
     "retained_edge": "Retained-edge normalized",
@@ -211,6 +215,7 @@ def differential_estimator_path(
     method: str,
     edge_rule: str,
     differential_edge_rule: str,
+    differential_fdr_scope: str,
     score_normalization: str,
 ) -> Path:
     """Return a filtered-score path while preserving legacy all-edge paths."""
@@ -219,6 +224,8 @@ def differential_estimator_path(
         return estimator_path(filename, module_set, estimator, edge_rule)
     if differential_edge_rule not in DIFFERENTIAL_EDGE_RULE_LABELS:
         raise ValueError(f"Unknown differential edge rule: {differential_edge_rule}")
+    if differential_fdr_scope not in FDR_SCOPE_LABELS:
+        raise ValueError(f"Unknown differential FDR scope: {differential_fdr_scope}")
     if score_normalization not in SCORE_NORMALIZATION_LABELS:
         raise ValueError(f"Unknown score normalization: {score_normalization}")
     return (
@@ -227,6 +234,7 @@ def differential_estimator_path(
         / estimator
         / method
         / differential_edge_rule
+        / differential_fdr_scope
         / edge_rule
         / score_normalization
         / filename
@@ -308,6 +316,7 @@ def load_aggregate(
     estimator: str = "lioness",
     edge_rule: str = "all",
     differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
     score_normalization: str = "standard_pruned",
 ) -> pd.DataFrame:
     columns = [
@@ -327,7 +336,7 @@ def load_aggregate(
     return _read_filtered(
         differential_estimator_path(
             "aggregate_plot_data.parquet", module_set, estimator, method, edge_rule,
-            differential_edge_rule, score_normalization,
+            differential_edge_rule, differential_fdr_scope, score_normalization,
         ),
         [
             ("lioness_method", "=", method),
@@ -346,6 +355,7 @@ def load_aggregate_scope(
     estimator: str = "lioness",
     edge_rule: str = "all",
     differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
     score_normalization: str = "standard_pruned",
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
@@ -366,7 +376,7 @@ def load_aggregate_scope(
     return _read_filtered(
         differential_estimator_path(
             "aggregate_plot_data.parquet", module_set, estimator, method, edge_rule,
-            differential_edge_rule, score_normalization,
+            differential_edge_rule, differential_fdr_scope, score_normalization,
         ), filters, columns
     )
 
@@ -379,6 +389,7 @@ def load_resolved(
     estimator: str = "lioness",
     edge_rule: str = "all",
     differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
     score_normalization: str = "standard_pruned",
 ) -> pd.DataFrame:
     columns = [
@@ -398,7 +409,7 @@ def load_resolved(
     return _read_filtered(
         differential_estimator_path(
             "resolved_plot_data.parquet", module_set, estimator, method, edge_rule,
-            differential_edge_rule, score_normalization,
+            differential_edge_rule, differential_fdr_scope, score_normalization,
         ),
         [
             ("lioness_method", "=", method),
@@ -418,6 +429,7 @@ def load_resolved_scope(
     estimator: str = "lioness",
     edge_rule: str = "all",
     differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
     score_normalization: str = "standard_pruned",
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
@@ -442,7 +454,7 @@ def load_resolved_scope(
     return _read_filtered(
         differential_estimator_path(
             "resolved_plot_data.parquet", module_set, estimator, method, edge_rule,
-            differential_edge_rule, score_normalization,
+            differential_edge_rule, differential_fdr_scope, score_normalization,
         ), filters, columns
     )
 
@@ -456,6 +468,7 @@ def load_aggregate_statistics(
     estimator: str = "lioness",
     edge_rule: str = "all",
     differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
 ) -> pd.DataFrame:
@@ -471,7 +484,7 @@ def load_aggregate_statistics(
     return _read_filtered(
         differential_estimator_path(
             "aggregate_statistics.parquet", module_set, estimator, method, edge_rule,
-            differential_edge_rule, score_normalization,
+            differential_edge_rule, differential_fdr_scope, score_normalization,
         ), filters
     )
 
@@ -485,6 +498,7 @@ def load_resolved_statistics(
     estimator: str = "lioness",
     edge_rule: str = "all",
     differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
 ) -> pd.DataFrame:
@@ -500,7 +514,7 @@ def load_resolved_statistics(
     return _read_filtered(
         differential_estimator_path(
             "resolved_statistics.parquet", module_set, estimator, method, edge_rule,
-            differential_edge_rule, score_normalization,
+            differential_edge_rule, differential_fdr_scope, score_normalization,
         ), filters
     )
 
@@ -577,6 +591,7 @@ def load_edge_summaries(
     module_set: str = "full_cohort",
     edge_rule: str = "all",
     differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
 ) -> pd.DataFrame:
     if differential_edge_rule != "all":
         path = (
@@ -591,7 +606,10 @@ def load_edge_summaries(
         path = module_set_data_dir(module_set) / "edge_summaries" / f"bonobo__{edge_rule}.parquet"
     else:
         raise ValueError(f"Unknown estimator: {estimator}")
-    frame = _read_filtered(path, [("module", "=", int(module))])
+    filters: list[tuple[str, str, object]] = [("module", "=", int(module))]
+    if differential_edge_rule != "all":
+        filters.append(("differential_fdr_scope", "=", differential_fdr_scope))
+    frame = _read_filtered(path, filters)
     if "scope" in frame:
         frame["scope"] = (
             frame["scope"].astype("string").str.replace("MFBA9BA46", "DLPFC", regex=False)
@@ -622,6 +640,7 @@ def load_volcano_bins(
     estimator: str,
     method: str,
     module: int,
+    differential_fdr_scope: str = "global",
 ) -> pd.DataFrame:
     path = module_set_data_dir(module_set) / "differential" / "volcano_bins.parquet"
     return _read_filtered(
@@ -630,6 +649,7 @@ def load_volcano_bins(
             ("estimator", "=", estimator),
             ("network_method", "=", method),
             ("module", "=", int(module)),
+            ("fdr_scope", "=", differential_fdr_scope),
         ],
     )
 
