@@ -53,6 +53,7 @@ from app_helpers.data import (
     METHOD_LABELS,
     ESTIMATOR_LABELS,
     FDR_SCOPE_LABELS,
+    FDR_THRESHOLD_LABELS,
     MODULE_SET_LABELS,
     MODULE_SET_METHODS,
     NUMERIC_OUTCOMES,
@@ -129,6 +130,7 @@ def cached_aggregate(
     edge_rule: str,
     differential_edge_rule: str = "all",
     differential_fdr_scope: str = "global",
+    differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
 ) -> pd.DataFrame:
     return load_aggregate(
@@ -136,6 +138,7 @@ def cached_aggregate(
         estimator=estimator, edge_rule=edge_rule,
         differential_edge_rule=differential_edge_rule,
         differential_fdr_scope=differential_fdr_scope,
+        differential_fdr_threshold=differential_fdr_threshold,
         score_normalization=score_normalization,
     )
 
@@ -150,6 +153,7 @@ def cached_resolved(
     edge_rule: str,
     differential_edge_rule: str = "all",
     differential_fdr_scope: str = "global",
+    differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
 ) -> pd.DataFrame:
     return load_resolved(
@@ -157,6 +161,7 @@ def cached_resolved(
         estimator=estimator, edge_rule=edge_rule,
         differential_edge_rule=differential_edge_rule,
         differential_fdr_scope=differential_fdr_scope,
+        differential_fdr_threshold=differential_fdr_threshold,
         score_normalization=score_normalization,
     )
 
@@ -185,11 +190,13 @@ def cached_edge_summaries(
     edge_rule: str,
     differential_edge_rule: str = "all",
     differential_fdr_scope: str = "global",
+    differential_fdr_threshold: float = 0.05,
 ) -> pd.DataFrame:
     return load_edge_summaries(
         estimator, method, module, module_set=module_set, edge_rule=edge_rule,
         differential_edge_rule=differential_edge_rule,
         differential_fdr_scope=differential_fdr_scope,
+        differential_fdr_threshold=differential_fdr_threshold,
     )
 
 
@@ -209,6 +216,7 @@ def cached_aggregate_stats(
     edge_rule: str,
     differential_edge_rule: str = "all",
     differential_fdr_scope: str = "global",
+    differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
 ) -> pd.DataFrame:
@@ -217,6 +225,7 @@ def cached_aggregate_stats(
         estimator=estimator, edge_rule=edge_rule,
         differential_edge_rule=differential_edge_rule,
         differential_fdr_scope=differential_fdr_scope,
+        differential_fdr_threshold=differential_fdr_threshold,
         score_normalization=score_normalization,
         analysis_subset=analysis_subset,
     )
@@ -233,6 +242,7 @@ def cached_resolved_stats(
     edge_rule: str,
     differential_edge_rule: str = "all",
     differential_fdr_scope: str = "global",
+    differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
 ) -> pd.DataFrame:
@@ -241,6 +251,7 @@ def cached_resolved_stats(
         estimator=estimator, edge_rule=edge_rule,
         differential_edge_rule=differential_edge_rule,
         differential_fdr_scope=differential_fdr_scope,
+        differential_fdr_threshold=differential_fdr_threshold,
         score_normalization=score_normalization,
         analysis_subset=analysis_subset,
     )
@@ -312,6 +323,7 @@ def cached_module_correlations(
     edge_rule: str,
     differential_edge_rule: str = "all",
     differential_fdr_scope: str = "global",
+    differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
 ) -> pd.DataFrame:
@@ -321,6 +333,7 @@ def cached_module_correlations(
             estimator=estimator, edge_rule=edge_rule,
             differential_edge_rule=differential_edge_rule,
             differential_fdr_scope=differential_fdr_scope,
+            differential_fdr_threshold=differential_fdr_threshold,
             score_normalization=score_normalization,
         )
         long = resolved_to_long(source, "rint")
@@ -330,6 +343,7 @@ def cached_module_correlations(
             estimator=estimator, edge_rule=edge_rule,
             differential_edge_rule=differential_edge_rule,
             differential_fdr_scope=differential_fdr_scope,
+            differential_fdr_threshold=differential_fdr_threshold,
             score_normalization=score_normalization,
         )
         long = aggregate_to_long(source, "rint")
@@ -370,6 +384,7 @@ def cached_all_module_correlations(
     edge_rule: str,
     differential_edge_rule: str = "all",
     differential_fdr_scope: str = "global",
+    differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
 ) -> pd.DataFrame:
@@ -383,6 +398,7 @@ def cached_all_module_correlations(
             edge_rule=edge_rule,
             differential_edge_rule=differential_edge_rule,
             differential_fdr_scope=differential_fdr_scope,
+            differential_fdr_threshold=differential_fdr_threshold,
             score_normalization=score_normalization,
         )
         long = resolved_to_long(source, "rint")
@@ -392,6 +408,7 @@ def cached_all_module_correlations(
             estimator=estimator, edge_rule=edge_rule,
             differential_edge_rule=differential_edge_rule,
             differential_fdr_scope=differential_fdr_scope,
+            differential_fdr_threshold=differential_fdr_threshold,
             score_normalization=score_normalization,
         )
         long = aggregate_to_long(source, "rint")
@@ -571,6 +588,7 @@ with st.sidebar:
     if not differential_available:
         st.caption("AD–Control filtered scores are not present in this deployed bundle.")
         differential_fdr_scope = "global"
+        differential_fdr_threshold = 0.05
     else:
         differential_fdr_scope = st.radio(
             "Differential-edge FDR scope",
@@ -581,6 +599,16 @@ with st.sidebar:
                 "Global BH adjusts all tested edges within the selected module definition, "
                 "estimator, network method, and discovery/validation family. Per-module BH "
                 "adjusts only across the edges of each module."
+            ),
+        )
+        differential_fdr_threshold = st.radio(
+            "Differential-edge FDR cutoff",
+            options=list(FDR_THRESHOLD_LABELS),
+            format_func=lambda value: FDR_THRESHOLD_LABELS[value],
+            index=0,
+            help=(
+                "FDR < 0.10 is an exploratory, less restrictive mask. The selected "
+                "cutoff is applied after the chosen global or per-module BH correction."
             ),
         )
     if differential_edge_rule == "all":
@@ -653,11 +681,13 @@ st.caption(
     f"Module definition: **{module_set_label}** · Estimator: "
     f"**{ESTIMATOR_LABELS[estimator]}** · Edge subset: "
     f"**{DIFFERENTIAL_EDGE_RULE_LABELS[differential_edge_rule]}** · Differential FDR: "
-    f"**{FDR_SCOPE_LABELS[differential_fdr_scope]}**"
+    f"**{FDR_SCOPE_LABELS[differential_fdr_scope]}, "
+    f"{FDR_THRESHOLD_LABELS[differential_fdr_threshold]}**"
 )
 download_prefix = (
     f"{module_set}__{estimator}__{edge_rule}__{differential_edge_rule}__"
-    f"{differential_fdr_scope}__{score_normalization}__"
+    f"{differential_fdr_scope}__fdr{differential_fdr_threshold:.2f}__"
+    f"{score_normalization}__"
 )
 
 if not diagnoses:
@@ -668,25 +698,27 @@ with st.spinner("Loading the selected module…"):
     if resolution == "Aggregate CT / TS":
         plot_data = cached_aggregate(
             module_set, estimator, method, module, feature, edge_rule,
-            differential_edge_rule, differential_fdr_scope, score_normalization,
+            differential_edge_rule, differential_fdr_scope,
+            differential_fdr_threshold, score_normalization,
         )
         plot_data = aggregate_to_long(plot_data, scale)
         statistics = cached_aggregate_stats(
             module_set, estimator, method, module, phenotype, feature, edge_rule,
-            differential_edge_rule, differential_fdr_scope, score_normalization,
-            analysis_subset,
+            differential_edge_rule, differential_fdr_scope,
+            differential_fdr_threshold, score_normalization, analysis_subset,
         )
         resolved = False
     else:
         plot_data = cached_resolved(
             module_set, estimator, method, module, feature, edge_rule,
-            differential_edge_rule, differential_fdr_scope, score_normalization,
+            differential_edge_rule, differential_fdr_scope,
+            differential_fdr_threshold, score_normalization,
         )
         plot_data = resolved_to_long(plot_data, scale)
         statistics = cached_resolved_stats(
             module_set, estimator, method, module, phenotype, feature, edge_rule,
-            differential_edge_rule, differential_fdr_scope, score_normalization,
-            analysis_subset,
+            differential_edge_rule, differential_fdr_scope,
+            differential_fdr_threshold, score_normalization, analysis_subset,
         )
         resolved = True
 
@@ -1013,8 +1045,8 @@ with correlation_tab:
     if heatmap_mode.startswith("Selected module"):
         correlation_table = cached_module_correlations(
             module_set, estimator, method, module, resolved, edge_rule,
-            differential_edge_rule, differential_fdr_scope, score_normalization,
-            analysis_subset,
+            differential_edge_rule, differential_fdr_scope,
+            differential_fdr_threshold, score_normalization, analysis_subset,
         )
         heatmap_data = correlation_table.loc[
             correlation_table["diagnosis_group"].eq(heatmap_diagnosis)
@@ -1071,6 +1103,7 @@ with correlation_tab:
             edge_rule,
             differential_edge_rule,
             differential_fdr_scope,
+            differential_fdr_threshold,
             score_normalization,
             analysis_subset,
         )
@@ -1218,8 +1251,8 @@ with screen_tab:
     )
     screen = cached_aggregate_stats(
         module_set, estimator, method, None, phenotype, feature, edge_rule,
-        differential_edge_rule, differential_fdr_scope, score_normalization,
-        analysis_subset,
+        differential_edge_rule, differential_fdr_scope,
+        differential_fdr_threshold, score_normalization, analysis_subset,
     )
     screen = screen.loc[screen["diagnosis_group"].eq(screen_diagnosis)].copy()
     if correlation_method == "Spearman":
@@ -1355,6 +1388,7 @@ with edge_tab:
         cached_edge_summaries(
             module_set, estimator, method, module, edge_rule,
             differential_edge_rule, differential_fdr_scope,
+            differential_fdr_threshold,
         )
     )
     if differential_edge_rule != "all" and analysis_subset != "all_donors":
@@ -1488,7 +1522,13 @@ with volcano_tab:
                 }[value],
             )
             volcano_threshold = st.selectbox(
-                "Significance threshold", options=[0.05, 0.10], index=0
+                "Volcano display threshold",
+                options=[0.05, 0.10],
+                index=0 if np.isclose(differential_fdr_threshold, 0.05) else 1,
+                help=(
+                    "Defaults to the sidebar feature-mask cutoff. Changing this only "
+                    "changes the volcano display, not the calculated module scores."
+                ),
             )
         with volcano_right:
             volcano_scope_options = volcano_bins["scope"].drop_duplicates().tolist()
@@ -2519,7 +2559,8 @@ with about_tab:
         "Hedges’ g, p-value, **global BH FDR**, and **per-module BH FDR**. Global BH is "
         "calculated across all tested edges within one module-definition, estimator, "
         "network-method, and discovery/validation family; per-module BH is calculated "
-        "across all edges of one module. The sidebar FDR-scope choice controls filtered "
+        "across all edges of one module. The sidebar FDR-scope and 0.05/0.10 cutoff "
+        "choices control filtered "
         "features, associations, distributions, heatmaps, edge summaries, and volcano "
         "significance. Selecting All edges continues to use the original unfiltered data."
     )
