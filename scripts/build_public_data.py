@@ -400,6 +400,19 @@ def normalize_batch(
     frame["sample_id"] = frame["sample_id"].astype("string")
     frame["module"] = pd.to_numeric(frame["module"], errors="raise").astype("int32")
     string_columns = ["metric_family", "diagnosis_group", "lioness_method"]
+    string_columns += [
+        column
+        for column in (
+            "estimator",
+            "network_method",
+            "edge_rule",
+            "differential_edge_rule",
+            "differential_fdr_scope",
+            "score_normalization",
+            "ad_control_split",
+        )
+        if column in frame
+    ]
     if resolved:
         string_columns += ["component", "component_class", "component_label"]
     for column in string_columns:
@@ -408,6 +421,14 @@ def normalize_batch(
         frame = normalize_resolved_component_labels(frame)
     for column in (*value_columns, *PHENOTYPES):
         frame[column] = pd.to_numeric(frame[column], errors="coerce").astype("float64")
+    if "differential_fdr_threshold" in frame:
+        frame["differential_fdr_threshold"] = pd.to_numeric(
+            frame["differential_fdr_threshold"], errors="raise"
+        ).astype("float64")
+    if "global_bh_family_tested_edges" in frame:
+        frame["global_bh_family_tested_edges"] = pd.to_numeric(
+            frame["global_bh_family_tested_edges"], errors="coerce"
+        ).astype("Int64")
     return frame
 
 
@@ -439,6 +460,23 @@ def write_sanitized_plot_data(
     if resolved:
         source_columns += ["component", "component_class", "component_label"]
     source_columns += [*value_columns, "diagnosis_group", *PHENOTYPES, "lioness_method"]
+    optional_columns = (
+        "estimator",
+        "network_method",
+        "edge_rule",
+        "differential_edge_rule",
+        "differential_fdr_scope",
+        "differential_fdr_threshold",
+        "score_normalization",
+        "ad_control_split",
+        "global_bh_family_tested_edges",
+    )
+    source_schemas = [set(pq.ParquetFile(source).schema_arrow.names) for source in sources]
+    source_columns += [
+        column
+        for column in optional_columns
+        if all(column in schema for schema in source_schemas)
+    ]
 
     writer: pq.ParquetWriter | None = None
     rows = 0

@@ -218,6 +218,53 @@ def validate_differential_module_set(
                                         f"{expected_rows} rows, found {observed}"
                                     )
                                 if "plot_data" in filename:
+                                    variant_columns = {
+                                        "differential_edge_rule",
+                                        "differential_fdr_scope",
+                                        "differential_fdr_threshold",
+                                        "score_normalization",
+                                        "ad_control_split",
+                                    }
+                                    schema_names = set(
+                                        pq.ParquetFile(path).schema_arrow.names
+                                    )
+                                    if not variant_columns.issubset(schema_names):
+                                        raise ValueError(
+                                            f"{key}/{path.relative_to(directory)}: "
+                                            "differential provenance fields are incomplete"
+                                        )
+                                    provenance = pq.read_table(
+                                        path,
+                                        columns=[
+                                            "differential_fdr_scope",
+                                            "differential_fdr_threshold",
+                                            "score_normalization",
+                                        ],
+                                    ).to_pandas()
+                                    if set(
+                                        provenance["differential_fdr_scope"].astype(str)
+                                    ) != {fdr_scope}:
+                                        raise ValueError(
+                                            f"{key}/{path.relative_to(directory)}: "
+                                            "incorrect differential FDR scope"
+                                        )
+                                    if set(
+                                        pd.to_numeric(
+                                            provenance["differential_fdr_threshold"],
+                                            errors="raise",
+                                        ).round(2)
+                                    ) != {fdr_threshold}:
+                                        raise ValueError(
+                                            f"{key}/{path.relative_to(directory)}: "
+                                            "incorrect differential FDR threshold"
+                                        )
+                                    if set(
+                                        provenance["score_normalization"].astype(str)
+                                    ) != {normalization}:
+                                        raise ValueError(
+                                            f"{key}/{path.relative_to(directory)}: "
+                                            "incorrect score normalization"
+                                        )
                                     samples = set(
                                         pc.unique(
                                             pq.read_table(path, columns=["sample_id"])[
@@ -277,11 +324,22 @@ def validate_differential_module_set(
     }
     if not required_q.issubset(candidate_schema):
         raise ValueError(f"{key}: volcano candidates omit one or more BH columns")
-    bins = pq.read_table(root / "volcano_bins.parquet", columns=["fdr_scope"])
+    bins = pq.read_table(
+        root / "volcano_bins.parquet", columns=["fdr_scope", "counts", "n_edges"]
+    )
     if set(pc.unique(bins["fdr_scope"]).cast(pa.string()).to_pylist()) != set(
         DIFFERENTIAL_FDR_SCOPES
     ):
         raise ValueError(f"{key}: volcano bins do not contain both BH scopes")
+    bin_frame = bins.select(["counts", "n_edges"]).to_pandas()
+    represented = bin_frame["counts"].map(
+        lambda values: int(np.asarray(values).sum())
+    )
+    if not np.array_equal(
+        represented.to_numpy(),
+        pd.to_numeric(bin_frame["n_edges"], errors="raise").astype(int).to_numpy(),
+    ):
+        raise ValueError(f"{key}: volcano bins do not account for every edge")
     return {
         "variants": variants,
         "aggregate_rows": aggregate_rows,
