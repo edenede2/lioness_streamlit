@@ -2567,9 +2567,10 @@ with about_tab:
         "calculated across all tested edges within one module-definition, estimator, "
         "network-method, and discovery/validation family; per-module BH is calculated "
         "across all edges of one module. The sidebar FDR-scope and 0.05/0.10 cutoff "
-        "choices control filtered "
-        "features, associations, distributions, heatmaps, edge summaries, and volcano "
-        "significance. Selecting All edges continues to use the original unfiltered data."
+        "choices control filtered features, associations, distributions, heatmaps, and "
+        "edge summaries. The same scope and cutoff initialize the volcano view, where "
+        "the display-only threshold can be changed without recalculating module scores. "
+        "Selecting All edges continues to use the original unfiltered data."
     )
     st.markdown(
         "The default filtered evaluation uses 50 held-out AD and 50 held-out Control "
