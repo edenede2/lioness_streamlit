@@ -15,6 +15,7 @@ from app_helpers.charts import (  # noqa: E402
     association_figure,
     correlation_heatmap_figure,
     distribution_figure,
+    edge_volcano_figure,
     edge_summary_figure,
     mdc_module_figure,
     mdc_overview_figure,
@@ -34,12 +35,46 @@ from app_helpers.data import (  # noqa: E402
     load_mdc_summary,
     load_mdc_resolved,
     load_edge_summaries,
+    load_volcano_bins,
+    load_volcano_candidates,
     load_module_annotations,
     load_module_details,
     load_resolved,
     load_resolved_statistics,
     selected_annotation,
 )
+
+
+def test_edge_volcano_switches_between_global_and_per_module_bh() -> None:
+    candidates = load_volcano_candidates(
+        "full_cohort", "lioness", "control_anchored", 935
+    )
+    for fdr_scope, label in (("global", "Global BH"), ("per_module", "Per-module BH")):
+        bins = load_volcano_bins(
+            "full_cohort", "lioness", "control_anchored", 935, fdr_scope
+        )
+        figure = edge_volcano_figure(
+            candidates,
+            bins,
+            module=935,
+            scope="CT",
+            analysis_set="Discovery",
+            fdr_scope=fdr_scope,
+            x_metric="hedges_g",
+            y_metric="fdr",
+            significant_only=False,
+            significance_threshold=0.10,
+            direction="Either",
+            prevalence_column=None,
+            minimum_prevalence=0.0,
+            module_definition="Full-cohort L4 modules (154)",
+        )
+        assert label in str(figure.layout.title.text)
+        assert any(
+            "Global BH FDR" in str(trace.hovertemplate)
+            and "Per-module BH FDR" in str(trace.hovertemplate)
+            for trace in figure.data
+        )
 
 
 def test_scatter_and_distribution_chart_paths() -> None:

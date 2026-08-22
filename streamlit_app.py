@@ -677,12 +677,19 @@ with st.sidebar:
         disabled=color_by == "diagnosis_group",
     )
 
+differential_caption = (
+    "not applied to module scores"
+    if differential_edge_rule == "all"
+    else (
+        f"{FDR_SCOPE_LABELS[differential_fdr_scope]}, "
+        f"{FDR_THRESHOLD_LABELS[differential_fdr_threshold]}"
+    )
+)
 st.caption(
     f"Module definition: **{module_set_label}** · Estimator: "
     f"**{ESTIMATOR_LABELS[estimator]}** · Edge subset: "
     f"**{DIFFERENTIAL_EDGE_RULE_LABELS[differential_edge_rule]}** · Differential FDR: "
-    f"**{FDR_SCOPE_LABELS[differential_fdr_scope]}, "
-    f"{FDR_THRESHOLD_LABELS[differential_fdr_threshold]}**"
+    f"**{differential_caption}**"
 )
 download_prefix = (
     f"{module_set}__{estimator}__{edge_rule}__{differential_edge_rule}__"

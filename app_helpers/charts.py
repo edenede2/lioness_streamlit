@@ -191,8 +191,8 @@ def edge_volcano_figure(
             "<br>Component: %{customdata[4]}"
             "<br>AD mean: %{customdata[5]:.4g}; Control mean: %{customdata[6]:.4g}"
             "<br>AD−Control: %{customdata[7]:.4g}; Hedges g: %{customdata[8]:.4g}"
-            "<br>p=%{customdata[9]:.3g}; global FDR=%{customdata[10]:.3g}"
-            "<br>Per-module FDR=%{customdata[11]:.3g}"
+            "<br>p=%{customdata[9]:.3g}; Global BH FDR=%{customdata[10]:.3g}"
+            "<br>Per-module BH FDR=%{customdata[11]:.3g}"
             "<br>Validation direction concordant: %{customdata[12]}"
         )
         if prevalence_column and prevalence_column in points:

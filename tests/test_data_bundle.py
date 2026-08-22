@@ -72,6 +72,73 @@ def test_all_modules_and_m1918_are_packaged() -> None:
         assert selected["sample_id"].nunique() == 450
 
 
+def test_differential_scores_keep_all_edges_and_offer_both_bh_scopes() -> None:
+    assert data.differential_data_available("full_cohort")
+    unfiltered = data.load_aggregate(
+        "control_anchored", 935, "connectivity", module_set="full_cohort"
+    )
+    explicit_unfiltered = data.load_aggregate(
+        "control_anchored",
+        935,
+        "connectivity",
+        module_set="full_cohort",
+        differential_edge_rule="all",
+        differential_fdr_scope="per_module",
+        differential_fdr_threshold=0.10,
+    )
+    pd.testing.assert_frame_equal(unfiltered, explicit_unfiltered)
+
+    selections = []
+    for scope in ("global", "per_module"):
+        for threshold in (0.05, 0.10):
+            selected = data.load_aggregate(
+                "control_anchored",
+                935,
+                "connectivity",
+                module_set="full_cohort",
+                differential_edge_rule="ad_control_discovery_fdr05",
+                differential_fdr_scope=scope,
+                differential_fdr_threshold=threshold,
+            )
+            assert len(selected) == selected["sample_id"].nunique() == 450
+            assert set(selected["differential_fdr_scope"].astype(str)) == {scope}
+            assert set(
+                pd.to_numeric(selected["differential_fdr_threshold"]).round(2)
+            ) == {threshold}
+            selections.append(selected)
+    assert not selections[0].equals(selections[-1])
+
+    candidates = data.load_volcano_candidates(
+        "full_cohort", "lioness", "control_anchored", 935
+    )
+    assert {
+        "discovery_fdr_global",
+        "discovery_fdr_per_module",
+        "validation_fdr_global",
+        "validation_fdr_per_module",
+    }.issubset(candidates.columns)
+    for scope in ("global", "per_module"):
+        bins = data.load_volcano_bins(
+            "full_cohort", "lioness", "control_anchored", 935, scope
+        )
+        assert not bins.empty
+        assert set(bins["fdr_scope"].astype(str)) == {scope}
+    summaries = data.load_edge_summaries(
+        "lioness",
+        "control_anchored",
+        935,
+        module_set="full_cohort",
+        differential_edge_rule="ad_control_discovery_fdr05",
+        differential_fdr_scope="per_module",
+        differential_fdr_threshold=0.10,
+    )
+    assert len(summaries) == 450 * 9
+    assert set(summaries["differential_fdr_scope"].astype(str)) == {"per_module"}
+    assert set(pd.to_numeric(summaries["differential_fdr_threshold"]).round(2)) == {
+        0.10
+    }
+
+
 def test_module_details_match_level4_modules_and_tissue_counts() -> None:
     details = data.load_module_details()
     annotations = data.load_module_annotations()

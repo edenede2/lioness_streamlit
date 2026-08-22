@@ -52,3 +52,25 @@ def test_streamlit_smoke_lioness_and_bonobo_module_definitions() -> None:
     network_method = widget_with_label(app.radio, "Network method")
     assert network_method.value == "bonobo"
     assert network_method.options == ["All-donor empirical-Bayes BONOBO"]
+
+
+def test_streamlit_differential_filter_can_switch_bh_scope_and_cutoff() -> None:
+    app = AppTest.from_file(APP, default_timeout=180).run()
+    assert_app_clean(app)
+
+    widget_with_label(app.radio, "AD–Control edge subset").set_value(
+        "ad_control_discovery_fdr05"
+    ).run()
+    widget_with_label(app.radio, "Differential-edge FDR scope").set_value(
+        "per_module"
+    ).run()
+    widget_with_label(app.radio, "Differential-edge FDR cutoff").set_value(
+        0.10
+    ).run()
+    assert_app_clean(app)
+    assert widget_with_label(app.selectbox, "Evaluation cohort").value == (
+        "validation_ad_control"
+    )
+
+    widget_with_label(app.radio, "AD–Control edge subset").set_value("all").run()
+    assert_app_clean(app)

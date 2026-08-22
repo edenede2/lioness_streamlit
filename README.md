@@ -35,6 +35,12 @@ The app includes two explicitly separated module definitions:
   FDR significance and an all-module resolved heatmap.
 - Donor-level edge summaries for nine edge scopes, with diagnosis-level summary
   statistics calculated interactively.
+- Optional AD-Control differential-edge masks learned in diagnosis/sex-stratified
+  discovery donors, with Global BH or Per-module BH and 0.05 or exploratory 0.10
+  FDR cutoffs. The original all-edge analyses remain the default.
+- An edge-volcano view with Hedges' g or mean-difference effects, nominal p-value
+  or either BH FDR scope, held-out validation statistics, and BONOBO significance
+  prevalence.
 - Full raw, robust, RINT, leave-one-out, CT-vs-TS, and FDR statistics.
 - A descriptive CT-vs-TS screen across all modules.
 - Every row and column of the tissue-expanded KEGG enrichment table, filterable
@@ -229,6 +235,20 @@ The additional heatmap tables calculate Pearson and Spearman correlations on dem
 Their `*_fdr_displayed_family` columns use Benjamini-Hochberg correction over the
 complete correlation family used by that displayed module or all-module heatmap; the
 scope is stated directly below each heatmap.
+
+AD-Control edge tests store two BH values for every tested edge. **Global BH**
+adjusts across all edges in one module-definition, estimator, network-method, and
+discovery/validation analysis family. **Per-module BH** adjusts across the
+undirected edges inside each module in that same family. The sidebar-selected scope
+and cutoff (`FDR < 0.05` or exploratory `FDR < 0.10`) define the feature mask in
+associations, distributions, heatmaps, CT-TS screening, and edge summaries. The
+volcano tab can display either stored scope. Selecting **All edges** bypasses these
+masks and reads the unchanged original analyses.
+
+The differential mask is learned from 117 AD and 114 Control discovery donors.
+The 50 AD and 50 Control validation donors and all 119 MCI donors are excluded from
+edge selection. The 0.10 option is intended for exploratory screening and should be
+reported as such; it does not change the underlying Welch tests or effect sizes.
 
 ## MDC scope
 

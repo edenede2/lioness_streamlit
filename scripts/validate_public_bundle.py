@@ -28,6 +28,9 @@ MODULE_SETS = {
     },
 }
 RULES = ("all", "native_p05", "bh_fdr05")
+DIFFERENTIAL_FDR_SCOPES = ("global", "per_module")
+DIFFERENTIAL_FDR_THRESHOLDS = (0.05, 0.10)
+DIFFERENTIAL_NORMALIZATIONS = ("standard_pruned", "retained_edge")
 OUTCOMES = {
     "cogn_global", "cogng_demog_slope", "cogng_path_slope",
     "motor10_demog_slope", "sqrt_parksc_demog_slope", "age_at_death",
@@ -153,6 +156,141 @@ def validate_edge_file(path: Path, expected_rows: int, expected_samples: set[str
                     )
 
 
+def validate_differential_module_set(
+    directory: Path,
+    *,
+    key: str,
+    modules: int,
+    methods: tuple[str, ...],
+    expected_samples: set[str],
+) -> dict[str, int]:
+    """Validate both BH scopes without disturbing the legacy all-edge bundle."""
+
+    root = directory / "differential"
+    if not root.exists():
+        raise ValueError(f"{key}: differential bundle is missing")
+    variants = 0
+    aggregate_rows = 0
+    resolved_rows = 0
+    statistics_rows = 0
+    edge_rows = 0
+    method_catalog = {"lioness": methods, "bonobo": ("bonobo",)}
+    for estimator, network_methods in method_catalog.items():
+        edge_rules = ("all",) if estimator == "lioness" else RULES
+        feature_count = 6 if estimator == "lioness" else 3
+        for method in network_methods:
+            for fdr_scope in DIFFERENTIAL_FDR_SCOPES:
+                for fdr_threshold in DIFFERENTIAL_FDR_THRESHOLDS:
+                    for edge_rule in edge_rules:
+                        for normalization in DIFFERENTIAL_NORMALIZATIONS:
+                            variant = (
+                                root
+                                / estimator
+                                / method
+                                / "ad_control_discovery_fdr05"
+                                / fdr_scope
+                                / f"fdr_{fdr_threshold:.2f}"
+                                / edge_rule
+                                / normalization
+                            )
+                            expected = {
+                                "aggregate_plot_data.parquet": modules * 450 * feature_count,
+                                "resolved_plot_data.parquet": (
+                                    modules * 450 * feature_count * 6
+                                ),
+                                # all donors contributes 3 diagnosis rows; discovery and
+                                # validation contribute 2 each; external MCI contributes 1.
+                                "aggregate_statistics.parquet": (
+                                    modules * feature_count * len(OUTCOMES) * 8
+                                ),
+                                "resolved_statistics.parquet": (
+                                    modules * feature_count * 6 * len(OUTCOMES) * 8
+                                ),
+                            }
+                            for filename, expected_rows in expected.items():
+                                path = variant / filename
+                                if not path.exists():
+                                    raise ValueError(f"{key}: missing differential file {path}")
+                                observed = pq.ParquetFile(path).metadata.num_rows
+                                if observed != expected_rows:
+                                    raise ValueError(
+                                        f"{key}/{path.relative_to(directory)}: expected "
+                                        f"{expected_rows} rows, found {observed}"
+                                    )
+                                if "plot_data" in filename:
+                                    samples = set(
+                                        pc.unique(
+                                            pq.read_table(path, columns=["sample_id"])[
+                                                "sample_id"
+                                            ]
+                                        )
+                                        .cast(pa.string())
+                                        .to_pylist()
+                                    )
+                                    if samples != expected_samples:
+                                        raise ValueError(
+                                            f"{key}/{path.relative_to(directory)}: "
+                                            "anonymous samples mismatch"
+                                        )
+                            variants += 1
+                            aggregate_rows += expected["aggregate_plot_data.parquet"]
+                            resolved_rows += expected["resolved_plot_data.parquet"]
+                            statistics_rows += (
+                                expected["aggregate_statistics.parquet"]
+                                + expected["resolved_statistics.parquet"]
+                            )
+            for edge_rule in edge_rules:
+                edge_path = (
+                    root
+                    / "edge_summaries"
+                    / f"{estimator}__{method}__{edge_rule}.parquet"
+                )
+                expected_edge_rows = modules * 450 * 9 * 4
+                if pq.ParquetFile(edge_path).metadata.num_rows != expected_edge_rows:
+                    raise ValueError(f"{key}/{edge_path.name}: differential row mismatch")
+                selections = pq.read_table(
+                    edge_path,
+                    columns=["differential_fdr_scope", "differential_fdr_threshold"],
+                ).to_pandas()
+                if set(selections["differential_fdr_scope"].astype(str)) != set(
+                    DIFFERENTIAL_FDR_SCOPES
+                ):
+                    raise ValueError(f"{key}/{edge_path.name}: FDR scopes are incomplete")
+                observed_thresholds = set(
+                    pd.to_numeric(
+                        selections["differential_fdr_threshold"], errors="raise"
+                    ).round(2)
+                )
+                if observed_thresholds != set(DIFFERENTIAL_FDR_THRESHOLDS):
+                    raise ValueError(
+                        f"{key}/{edge_path.name}: FDR thresholds are incomplete"
+                    )
+                edge_rows += expected_edge_rows
+
+    candidates = root / "volcano_candidates.parquet"
+    candidate_schema = set(pq.read_schema(candidates).names)
+    required_q = {
+        "discovery_fdr_global",
+        "discovery_fdr_per_module",
+        "validation_fdr_global",
+        "validation_fdr_per_module",
+    }
+    if not required_q.issubset(candidate_schema):
+        raise ValueError(f"{key}: volcano candidates omit one or more BH columns")
+    bins = pq.read_table(root / "volcano_bins.parquet", columns=["fdr_scope"])
+    if set(pc.unique(bins["fdr_scope"]).cast(pa.string()).to_pylist()) != set(
+        DIFFERENTIAL_FDR_SCOPES
+    ):
+        raise ValueError(f"{key}: volcano bins do not contain both BH scopes")
+    return {
+        "variants": variants,
+        "aggregate_rows": aggregate_rows,
+        "resolved_rows": resolved_rows,
+        "statistics_rows": statistics_rows,
+        "edge_rows": edge_rows,
+    }
+
+
 def validate_module_set(root: Path, key: str, expected_samples: set[str]) -> dict[str, int]:
     config = MODULE_SETS[key]
     directory = root / str(config["directory"])
@@ -244,12 +382,20 @@ def validate_module_set(root: Path, key: str, expected_samples: set[str]) -> dic
             modules * 450 * 9,
             expected_samples,
         )
+    differential = validate_differential_module_set(
+        directory,
+        key=key,
+        modules=modules,
+        methods=methods,
+        expected_samples=expected_samples,
+    )
     return {
         "modules": modules,
         "lioness_aggregate_rows": expected_lioness["aggregate_plot_data.parquet"],
         "bonobo_networks": modules * 450,
         "resolved_mdc_rows": len(resolved_mdc),
         "edge_rows": modules * 450 * 9 * (len(methods) + len(RULES)),
+        "differential": differential,
     }
 
 
