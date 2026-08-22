@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 from io import StringIO
 from pathlib import Path
 from typing import Iterable
@@ -12,9 +11,10 @@ import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
 
+from app_helpers.drive_data import DATA_DIR, data_path_available, ensure_data_path
+
 
 APP_ROOT = Path(__file__).resolve().parents[1]
-DATA_DIR = Path(os.environ.get("LIONESS_APP_DATA_DIR", APP_ROOT / "data")).resolve()
 
 MODULE_SET_LABELS = {
     "full_cohort": "Full-cohort L4 modules (154)",
@@ -64,6 +64,11 @@ KEGG_REGION_FDR_COLUMNS = {
     "AC": "fdr_AC",
     "DLPFC": "fdr_DLPFC",
     "PCG": "fdr_PCGBA23",
+}
+KEGG_REGION_P_COLUMNS = {
+    "AC": "p_AC",
+    "DLPFC": "p_DLPFC",
+    "PCG": "p_PCGBA23",
 }
 KEGG_COMPONENT_REGIONS = {
     "TS_AC": ("AC",),
@@ -251,11 +256,11 @@ def differential_estimator_path(
 
 
 def differential_data_available(module_set: str = "full_cohort") -> bool:
-    return (
+    return data_path_available(
         module_set_data_dir(module_set)
         / "differential"
         / "volcano_candidates.parquet"
-    ).exists()
+    )
 
 
 def require_data_files() -> None:
@@ -294,7 +299,7 @@ def require_data_files() -> None:
     missing = [
         str(path.relative_to(APP_ROOT)) if path.is_relative_to(APP_ROOT) else str(path)
         for path in required
-        if not path.exists()
+        if not data_path_available(path)
     ]
     if missing:
         raise FileNotFoundError(
@@ -309,8 +314,9 @@ def _read_filtered(
     filters: list[tuple[str, str, object]],
     columns: Iterable[str] | None = None,
 ) -> pd.DataFrame:
+    materialized = ensure_data_path(path, filters)
     table = pq.read_table(
-        path,
+        materialized,
         filters=filters or None,
         columns=list(columns) if columns else None,
     )
@@ -343,6 +349,19 @@ def load_aggregate(
         *PHENOTYPE_LABELS,
         "lioness_method",
     ]
+    if differential_edge_rule != "all":
+        columns.extend(
+            [
+                "estimator",
+                "network_method",
+                "edge_rule",
+                "differential_edge_rule",
+                "differential_fdr_scope",
+                "differential_fdr_threshold",
+                "score_normalization",
+                "ad_control_split",
+            ]
+        )
     return _read_filtered(
         differential_estimator_path(
             "aggregate_plot_data.parquet", module_set, estimator, method, edge_rule,
@@ -385,6 +404,19 @@ def load_aggregate_scope(
         *PHENOTYPE_LABELS,
         "lioness_method",
     ]
+    if differential_edge_rule != "all":
+        columns.extend(
+            [
+                "estimator",
+                "network_method",
+                "edge_rule",
+                "differential_edge_rule",
+                "differential_fdr_scope",
+                "differential_fdr_threshold",
+                "score_normalization",
+                "ad_control_split",
+            ]
+        )
     return _read_filtered(
         differential_estimator_path(
             "aggregate_plot_data.parquet", module_set, estimator, method, edge_rule,
@@ -420,6 +452,19 @@ def load_resolved(
         *PHENOTYPE_LABELS,
         "lioness_method",
     ]
+    if differential_edge_rule != "all":
+        columns.extend(
+            [
+                "estimator",
+                "network_method",
+                "edge_rule",
+                "differential_edge_rule",
+                "differential_fdr_scope",
+                "differential_fdr_threshold",
+                "score_normalization",
+                "ad_control_split",
+            ]
+        )
     return _read_filtered(
         differential_estimator_path(
             "resolved_plot_data.parquet", module_set, estimator, method, edge_rule,
@@ -467,6 +512,19 @@ def load_resolved_scope(
         *PHENOTYPE_LABELS,
         "lioness_method",
     ]
+    if differential_edge_rule != "all":
+        columns.extend(
+            [
+                "estimator",
+                "network_method",
+                "edge_rule",
+                "differential_edge_rule",
+                "differential_fdr_scope",
+                "differential_fdr_threshold",
+                "score_normalization",
+                "ad_control_split",
+            ]
+        )
     return _read_filtered(
         differential_estimator_path(
             "resolved_plot_data.parquet", module_set, estimator, method, edge_rule,
@@ -541,13 +599,17 @@ def load_resolved_statistics(
 
 
 def load_module_annotations(module_set: str = "full_cohort") -> pd.DataFrame:
-    return pd.read_csv(module_set_path("module_kegg_annotations.tsv", module_set), sep="\t")
+    path = ensure_data_path(
+        module_set_path("module_kegg_annotations.tsv", module_set)
+    )
+    return pd.read_csv(path, sep="\t")
 
 
 def load_module_details(
     module: int | None = None, module_set: str = "full_cohort"
 ) -> pd.DataFrame:
-    details = pd.read_csv(module_set_path("module_details.tsv", module_set), sep="\t")
+    path = ensure_data_path(module_set_path("module_details.tsv", module_set))
+    details = pd.read_csv(path, sep="\t")
     details = ensure_tissue_entropy(details)
     if module is not None:
         details = details.loc[details["module"].astype(int).eq(int(module))]
@@ -582,27 +644,29 @@ def ensure_tissue_entropy(details: pd.DataFrame) -> pd.DataFrame:
 
 
 def load_feature_definitions() -> pd.DataFrame:
-    return pd.read_csv(FEATURE_DEFINITIONS, sep="\t")
+    return pd.read_csv(ensure_data_path(FEATURE_DEFINITIONS), sep="\t")
 
 
 def load_tissue_mapping() -> pd.DataFrame:
-    return pd.read_csv(TISSUE_MAPPING, sep="\t")
+    return pd.read_csv(ensure_data_path(TISSUE_MAPPING), sep="\t")
 
 
 def load_sample_metadata() -> pd.DataFrame:
-    return pd.read_parquet(SAMPLE_METADATA)
+    return pd.read_parquet(ensure_data_path(SAMPLE_METADATA))
 
 
 def load_mdc_summary(module_set: str = "full_cohort") -> pd.DataFrame:
-    return pd.read_csv(
-        module_set_path("mdc_ad_vs_control_summary.tsv", module_set), sep="\t"
+    path = ensure_data_path(
+        module_set_path("mdc_ad_vs_control_summary.tsv", module_set)
     )
+    return pd.read_csv(path, sep="\t")
 
 
 def load_mdc_resolved(module_set: str = "full_cohort") -> pd.DataFrame:
-    return pd.read_csv(
-        module_set_path("mdc_resolved_ad_vs_control.tsv", module_set), sep="\t"
+    path = ensure_data_path(
+        module_set_path("mdc_resolved_ad_vs_control.tsv", module_set)
     )
+    return pd.read_csv(path, sep="\t")
 
 
 def load_edge_summaries(
@@ -680,7 +744,8 @@ def load_volcano_bins(
 
 
 def load_data_manifest() -> dict[str, object]:
-    return json.loads(DATA_MANIFEST.read_text(encoding="utf-8"))
+    path = ensure_data_path(DATA_MANIFEST)
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def load_kegg(
@@ -782,6 +847,247 @@ def filter_kegg_enrichments(
         .drop(columns="_selected_scope_fdr")
         .reset_index(drop=True)
     )
+
+
+def build_pathway_mdc_rows(
+    mdc_summary: pd.DataFrame,
+    mdc_resolved: pd.DataFrame,
+    kegg: pd.DataFrame,
+    *,
+    enrichment_fdr_threshold: float = 0.05,
+) -> pd.DataFrame:
+    """Join module MDC to KEGG pathways using component-matched region FDRs.
+
+    This is an annotation-level join: MDC remains a module statistic. For a CT
+    tissue pair, both regions must support the pathway and the displayed pair FDR
+    is the larger of the two region-specific KEGG FDRs.
+    """
+
+    enrichment_fdr_threshold = float(enrichment_fdr_threshold)
+    if not 0.0 <= enrichment_fdr_threshold <= 1.0:
+        raise ValueError("enrichment_fdr_threshold must be between 0 and 1")
+
+    required_summary = {
+        "module",
+        "mdc_total",
+        "log2_mdc_total",
+        "direction_total",
+        "directional_fdr_total",
+        "n_ts_edges",
+        "n_ct_edges",
+        "mdc_ts",
+        "log2_mdc_ts",
+        "direction_ts",
+        "directional_fdr_ts",
+        "mdc_ct",
+        "log2_mdc_ct",
+        "direction_ct",
+        "directional_fdr_ct",
+    }
+    required_resolved = {
+        "module",
+        "component",
+        "component_label",
+        "mdc",
+        "log2_mdc",
+        "direction",
+        "directional_fdr",
+        "n_edges",
+    }
+    required_kegg = {
+        "cluster_id",
+        "pathway_id",
+        "pathway_name",
+        "category_level1",
+        "category_level2",
+        "p",
+        "fdr",
+        *KEGG_REGION_P_COLUMNS.values(),
+        *KEGG_REGION_FDR_COLUMNS.values(),
+    }
+    for label, frame, required in (
+        ("MDC summary", mdc_summary, required_summary),
+        ("resolved MDC", mdc_resolved, required_resolved),
+        ("KEGG", kegg, required_kegg),
+    ):
+        missing = required.difference(frame.columns)
+        if missing:
+            raise ValueError(f"{label} is missing columns: {sorted(missing)}")
+
+    pooled_parts = []
+    pooled_config = [
+        ("total", "Total", "total", "n_ts_edges", "n_ct_edges"),
+        ("TS", "TS pooled", "ts", "n_ts_edges", None),
+        ("CT", "CT pooled", "ct", "n_ct_edges", None),
+    ]
+    for component, component_label, suffix, edge_column, extra_edge_column in pooled_config:
+        columns = [
+            "module",
+            f"mdc_{suffix}",
+            f"log2_mdc_{suffix}",
+            f"direction_{suffix}",
+            f"directional_fdr_{suffix}",
+            edge_column,
+        ]
+        if extra_edge_column:
+            columns.append(extra_edge_column)
+        part = mdc_summary[columns].copy()
+        part = part.rename(
+            columns={
+                f"mdc_{suffix}": "mdc",
+                f"log2_mdc_{suffix}": "log2_mdc",
+                f"direction_{suffix}": "direction",
+                f"directional_fdr_{suffix}": "directional_fdr",
+                edge_column: "n_edges",
+            }
+        )
+        if component == "total":
+            part["n_edges"] = (
+                pd.to_numeric(part["n_edges"], errors="coerce").fillna(0)
+                + pd.to_numeric(part[extra_edge_column], errors="coerce").fillna(0)
+            )
+            part = part.drop(columns=extra_edge_column)
+        part["component"] = component
+        part["component_label"] = component_label
+        part["component_class"] = component if component in {"TS", "CT"} else "total"
+        pooled_parts.append(part)
+
+    resolved = mdc_resolved[
+        [
+            "module",
+            "component",
+            "component_label",
+            "mdc",
+            "log2_mdc",
+            "direction",
+            "directional_fdr",
+            "n_edges",
+        ]
+    ].copy()
+    resolved["component_class"] = resolved["component"].astype(str).str[:2]
+    mdc_long = pd.concat([*pooled_parts, resolved], ignore_index=True)
+    mdc_long["module"] = pd.to_numeric(mdc_long["module"], errors="raise").astype(int)
+
+    pathways = kegg.copy().rename(columns={"cluster_id": "module"})
+    pathways["module"] = pd.to_numeric(pathways["module"], errors="raise").astype(int)
+    rows = mdc_long.merge(pathways, on="module", how="inner", validate="many_to_many")
+    rows["enrichment_scope"] = "All regions (expanded)"
+    rows["enrichment_p"] = pd.to_numeric(rows["p"], errors="coerce")
+    rows["enrichment_fdr"] = pd.to_numeric(rows["fdr"], errors="coerce")
+    rows["enrichment_region_a"] = pd.NA
+    rows["enrichment_region_b"] = pd.NA
+    rows["enrichment_fdr_region_a"] = np.nan
+    rows["enrichment_fdr_region_b"] = np.nan
+
+    for component, regions in KEGG_COMPONENT_REGIONS.items():
+        component_mask = rows["component"].astype(str).eq(component)
+        if not component_mask.any():
+            continue
+        region_a = regions[0]
+        region_b = regions[1] if len(regions) == 2 else None
+        rows.loc[component_mask, "enrichment_region_a"] = region_a
+        rows.loc[component_mask, "enrichment_fdr_region_a"] = pd.to_numeric(
+            rows.loc[component_mask, KEGG_REGION_FDR_COLUMNS[region_a]],
+            errors="coerce",
+        )
+        if region_b is None:
+            rows.loc[component_mask, "enrichment_scope"] = region_a
+            rows.loc[component_mask, "enrichment_p"] = pd.to_numeric(
+                rows.loc[component_mask, KEGG_REGION_P_COLUMNS[region_a]],
+                errors="coerce",
+            )
+            rows.loc[component_mask, "enrichment_fdr"] = rows.loc[
+                component_mask, "enrichment_fdr_region_a"
+            ]
+        else:
+            rows.loc[component_mask, "enrichment_region_b"] = region_b
+            rows.loc[component_mask, "enrichment_fdr_region_b"] = pd.to_numeric(
+                rows.loc[component_mask, KEGG_REGION_FDR_COLUMNS[region_b]],
+                errors="coerce",
+            )
+            rows.loc[component_mask, "enrichment_scope"] = (
+                f"{region_a} + {region_b} (both regions)"
+            )
+            pair_p_columns = [
+                KEGG_REGION_P_COLUMNS[region_a],
+                KEGG_REGION_P_COLUMNS[region_b],
+            ]
+            rows.loc[component_mask, "enrichment_p"] = rows.loc[
+                component_mask, pair_p_columns
+            ].apply(pd.to_numeric, errors="coerce").max(axis=1)
+            rows.loc[component_mask, "enrichment_fdr"] = rows.loc[
+                component_mask,
+                ["enrichment_fdr_region_a", "enrichment_fdr_region_b"],
+            ].max(axis=1)
+
+    rows = rows.loc[
+        pd.to_numeric(rows["enrichment_fdr"], errors="coerce").le(
+            enrichment_fdr_threshold
+        )
+    ].copy()
+    rows["pathway_label"] = (
+        rows["pathway_name"]
+        .astype("string")
+        .str.replace(" - Homo sapiens (human)", "", regex=False)
+    )
+    rows["enrichment_fdr_threshold"] = enrichment_fdr_threshold
+    sort_columns = ["enrichment_fdr", "pathway_label", "module", "component"]
+    return rows.sort_values(sort_columns, kind="stable").reset_index(drop=True)
+
+
+def summarize_pathway_mdc_rows(
+    rows: pd.DataFrame,
+    *,
+    mdc_fdr_threshold: float = 0.05,
+    minimum_modules: int = 1,
+) -> pd.DataFrame:
+    """Summarize pathway-annotated module MDC within each edge component."""
+
+    if rows.empty:
+        return pd.DataFrame()
+    minimum_modules = int(minimum_modules)
+    if minimum_modules < 1:
+        raise ValueError("minimum_modules must be at least 1")
+    data = rows.copy()
+    data["mdc_significant"] = pd.to_numeric(
+        data["directional_fdr"], errors="coerce"
+    ).lt(float(mdc_fdr_threshold))
+    group_columns = [
+        "pathway_id",
+        "pathway_label",
+        "pathway_name",
+        "category_level1",
+        "category_level2",
+        "component",
+        "component_label",
+        "component_class",
+        "enrichment_scope",
+    ]
+    summary = (
+        data.groupby(group_columns, observed=True, dropna=False)
+        .agg(
+            n_modules=("module", "nunique"),
+            mean_log2_mdc=("log2_mdc", "mean"),
+            median_log2_mdc=("log2_mdc", "median"),
+            median_mdc=("mdc", "median"),
+            minimum_enrichment_fdr=("enrichment_fdr", "min"),
+            median_enrichment_fdr=("enrichment_fdr", "median"),
+            n_mdc_significant=("mdc_significant", "sum"),
+            minimum_mdc_fdr=("directional_fdr", "min"),
+            total_edges=("n_edges", "sum"),
+        )
+        .reset_index()
+    )
+    summary["geometric_mean_mdc"] = np.exp2(summary["mean_log2_mdc"])
+    summary["proportion_mdc_significant"] = (
+        summary["n_mdc_significant"] / summary["n_modules"]
+    )
+    summary = summary.loc[summary["n_modules"].ge(minimum_modules)].copy()
+    return summary.sort_values(
+        ["minimum_enrichment_fdr", "mean_log2_mdc"],
+        ascending=[True, False],
+        kind="stable",
+    ).reset_index(drop=True)
 
 
 def module_label(module: int | str) -> str:

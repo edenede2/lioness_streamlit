@@ -3,4 +3,6 @@ __pycache__/
 .pytest_cache/
 .streamlit/secrets.toml
 .venv/
-
+data/
+google-drive-service-account.json
+streamSecrets*.txt

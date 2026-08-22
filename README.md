@@ -89,17 +89,75 @@ streamlit run streamlit_app.py
 ## Publish with Streamlit Community Cloud
 
 1. Create a new GitHub repository and copy the contents of this directory to the
-   repository root. Keep the `data/` directory; the app does not use the original
-   analysis filesystem.
-2. Commit and push the repository. Every packaged file is below 95 MiB (and thus
-   below GitHub's 100 MB per-file limit), so Git LFS is not required for this build.
+   repository root. Do not commit `data/`; it is fetched lazily from the indexed,
+   read-only Google Drive folder.
+2. Share the Drive `data` folder with the service account's `client_email` as a
+   Viewer. The committed `drive_file_index.json` contains file IDs, sizes, and MD5
+   checksums, but no credentials.
 3. In Streamlit Community Cloud, choose **Create app**, select the repository and
    branch, set the entrypoint to `streamlit_app.py`, and select **Python 3.12** in
    Advanced settings.
-4. Deploy. No secrets are required.
+4. Open **Advanced settings → Secrets** and paste the following TOML, replacing the
+   placeholders with the complete service-account JSON values:
+
+```toml
+[google_drive]
+folder_id = "1dTj5SkLxuDIvII5LayLViqOzjKQt-dos"
+credentials_json = '''
+{
+  "type": "service_account",
+  "project_id": "YOUR_PROJECT_ID",
+  "private_key_id": "YOUR_PRIVATE_KEY_ID",
+  "private_key": "-----BEGIN PRIVATE KEY-----\\nYOUR_PRIVATE_KEY\\n-----END PRIVATE KEY-----\\n",
+  "client_email": "YOUR_SERVICE_ACCOUNT@YOUR_PROJECT.iam.gserviceaccount.com",
+  "client_id": "YOUR_CLIENT_ID",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "YOUR_CLIENT_CERT_URL",
+  "universe_domain": "googleapis.com"
+}
+'''
+```
+
+   A copyable template is also provided at `.streamlit/secrets.toml.example`.
+5. Deploy. The first access to a view downloads only its required indexed files to
+   Streamlit's ephemeral cache; later reruns in the same process reuse them.
 
 `requirements.txt` pins the exact direct dependency versions validated with a clean
 resolver install, `pip check`, the complete test suite, and a Streamlit app execution.
+
+### Google Drive data backend
+
+The app prefers a local `data/data_manifest.json` during development. If the local
+bundle is absent, it uses `drive_file_index.json` and read-only service-account
+credentials to download files on demand. Runtime startup does not list the Drive
+folder: each required file is fetched directly by its indexed ID, its byte count and
+MD5 checksum are verified, and it is atomically placed in the local cache. Partitioned
+volcano datasets include predicate summaries in the index so unrelated parts are not
+downloaded for the selected estimator, method, and module.
+
+For a local Drive-backed smoke test without creating `.streamlit/secrets.toml`:
+
+```bash
+export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+export LIONESS_GOOGLE_DRIVE_FOLDER_ID=1dTj5SkLxuDIvII5LayLViqOzjKQt-dos
+export LIONESS_FORCE_DRIVE=1
+streamlit run streamlit_app.py
+```
+
+Rebuild the static index after replacing any Drive data files:
+
+```bash
+python scripts/build_drive_index.py \
+  --credentials /path/to/service-account.json \
+  --root-folder-id 1dTj5SkLxuDIvII5LayLViqOzjKQt-dos \
+  --local-data data \
+  --output drive_file_index.json
+```
+
+The index builder lists Drive with the largest page size, validates all relative paths,
+sizes, and checksums against the local bundle, and writes no credential fields.
 
 ### Required Python version
 
@@ -193,8 +251,8 @@ python scripts/validate_public_bundle.py /path/to/data
 
 ## Data organization
 
-- `data/`: the existing 154-module full-cohort bundle.
-- `data/control_derived/`: the isolated 186-module Control-derived bundle. It has
+- Google Drive `data/`: the existing 154-module full-cohort bundle.
+- Google Drive `data/control_derived/`: the isolated 186-module Control-derived bundle. It has
   its own plot data, statistics, KEGG, MDC, annotations, and module-details files.
 - `aggregate_plot_data.parquet`: LIONESS CT/TS raw, asinh, and Z-score features.
 - `resolved_plot_data.parquet`: LIONESS DLPFC/AC/PCG tissue and tissue-pair features.
@@ -276,6 +334,22 @@ Directional FDR is calculated separately for every component and direction and i
 the larger of the sample-permutation and tissue-count-preserving gene-permutation BH
 values, corrected across modules where that component structurally exists.
 Structurally absent components remain unavailable rather than being encoded as zero.
+Every MDC chart can be displayed either as the raw AD/Control ratio (equality at 1)
+or as `log2(MDC)` (equality at 0). The MDC tab also joins each module to its normalized
+Shannon tissue-mixing entropy and shows separate TS-MDC-versus-entropy and
+CT-MDC-versus-entropy scatter plots, with selected-module highlighting, directional
+FDR status, an OLS visual guide, and a Spearman association summary.
+
+The MDC tab contains separate **Region-resolved MDC** and **Pathway-resolved MDC**
+views. Pathway-resolved MDC is an annotation-level summary rather than a new
+edge-level MDC calculation: each module-component MDC is linked to KEGG pathways
+enriched in its matching region, and pathway cells summarize the qualifying modules.
+Within-tissue components use the corresponding regional KEGG FDR. Cross-tissue pairs
+require both regions to pass the selected KEGG threshold and use the larger regional
+FDR as conservative pair support; this maximum is not treated as a combined p-value.
+Log2 heatmap cells show mean log2 MDC, while raw-scale cells show the equivalent
+geometric mean MDC ratio. Module-level rows remain available for inspection and TSV
+download.
 
 ## BONOBO significance and sparse features
 

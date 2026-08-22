@@ -17,6 +17,7 @@ from app_helpers.charts import (  # noqa: E402
     distribution_figure,
     edge_volcano_figure,
     edge_summary_figure,
+    mdc_entropy_figure,
     mdc_module_figure,
     mdc_overview_figure,
     mdc_resolved_heatmap_figure,
@@ -24,11 +25,14 @@ from app_helpers.charts import (  # noqa: E402
     module_entropy_figure,
     module_region_composition_figure,
     module_size_distribution_figure,
+    pathway_mdc_detail_figure,
+    pathway_mdc_heatmap_figure,
     resolved_to_long,
 )
 from app_helpers.correlations import calculate_correlations  # noqa: E402
 from app_helpers.data import (  # noqa: E402
     association_kegg_subtitles,
+    build_pathway_mdc_rows,
     load_aggregate,
     load_aggregate_statistics,
     load_kegg,
@@ -42,6 +46,7 @@ from app_helpers.data import (  # noqa: E402
     load_resolved,
     load_resolved_statistics,
     selected_annotation,
+    summarize_pathway_mdc_rows,
 )
 
 
@@ -380,6 +385,106 @@ def test_mdc_selected_module_and_overview_charts() -> None:
     assert any(trace.name == "Selected M1918" for trace in overview.data)
     assert overview.layout.xaxis.title.text == "TS log2 MDC (AD / Control)"
 
+    raw_module = mdc_module_figure(selected, threshold=0.05, scale="raw")
+    assert raw_module.layout.yaxis.title.text == "MDC ratio (AD / Control)"
+    assert list(raw_module.data[0].y) == [
+        selected["mdc_total"],
+        selected["mdc_ts"],
+        selected["mdc_ct"],
+    ]
+    raw_overview = mdc_overview_figure(
+        mdc, selected_module=1918, threshold=0.05, scale="raw"
+    )
+    assert raw_overview.layout.xaxis.title.text == "TS MDC ratio (AD / Control)"
+    assert raw_overview.layout.yaxis.title.text == "CT MDC ratio (AD / Control)"
+
+
+def test_mdc_entropy_scatter_supports_ts_ct_and_both_scales() -> None:
+    mdc = load_mdc_summary()
+    details = load_module_details()
+    data = mdc.merge(
+        details[
+            [
+                "module",
+                "module_size",
+                "cluster_type",
+                "tissue_entropy",
+                "tissue_entropy_normalized",
+            ]
+        ],
+        on="module",
+        validate="one_to_one",
+    )
+    for scope in ("ts", "ct"):
+        for scale, expected_reference in (("log2", 0.0), ("raw", 1.0)):
+            figure = mdc_entropy_figure(
+                data,
+                scope=scope,
+                selected_module=1918,
+                threshold=0.05,
+                scale=scale,
+                module_definition="Full-cohort L4 modules (154)",
+            )
+            assert f"{scope.upper()} MDC vs normalized" in figure.layout.title.text
+            assert "Spearman" in figure.layout.title.text
+            assert figure.layout.xaxis.title.text == "Normalized Shannon entropy"
+            assert any(trace.name == "Selected M1918" for trace in figure.data)
+            assert any(trace.name == "OLS trend" for trace in figure.data)
+            horizontal_lines = [
+                shape
+                for shape in figure.layout.shapes
+                if shape.y0 == shape.y1 == expected_reference
+            ]
+            assert horizontal_lines
+
+
+def test_pathway_resolved_mdc_heatmap_and_detail_charts() -> None:
+    rows = build_pathway_mdc_rows(
+        load_mdc_summary(),
+        load_mdc_resolved(),
+        load_kegg(),
+        enrichment_fdr_threshold=0.05,
+    )
+    rows = rows.loc[
+        rows["component"].isin(
+            [
+                "TS_AC",
+                "TS_DLPFC",
+                "TS_PCGBA23",
+                "CT_AC__DLPFC",
+                "CT_AC__PCGBA23",
+                "CT_DLPFC__PCGBA23",
+            ]
+        )
+    ]
+    summary = summarize_pathway_mdc_rows(rows, minimum_modules=1)
+    selected_pathway = str(summary.iloc[0]["pathway_id"])
+    for scale, expected_reference in (("log2", 0.0), ("raw", 1.0)):
+        heatmap = pathway_mdc_heatmap_figure(
+            summary,
+            scale=scale,
+            top_n=20,
+            selected_pathway_id=selected_pathway,
+            module_definition="Full-cohort L4 modules (154)",
+        )
+        assert len(heatmap.data) == 1
+        assert len(heatmap.data[0].y) == 20
+        assert any(str(label).startswith("★") for label in heatmap.data[0].y)
+        detail = pathway_mdc_detail_figure(
+            rows,
+            pathway_id=selected_pathway,
+            selected_module=935,
+            threshold=0.05,
+            scale=scale,
+        )
+        assert len(detail.data) >= 1
+        horizontal_lines = [
+            shape
+            for shape in detail.layout.shapes
+            if shape.y0 == shape.y1 == expected_reference
+        ]
+        assert horizontal_lines
+
 
 def test_module_size_and_region_composition_charts_filter_and_sort() -> None:
     details = load_module_details()
@@ -437,6 +542,14 @@ def test_resolved_mdc_and_edge_summary_charts() -> None:
     )
     assert len(overview.data) == 1
     assert list(overview.data[0].y)[0] == "M1918"
+    raw_module_figure = mdc_resolved_module_figure(
+        selected, threshold=0.05, scale="raw"
+    )
+    assert raw_module_figure.layout.yaxis.title.text == "MDC ratio (AD / Control)"
+    raw_overview = mdc_resolved_heatmap_figure(
+        resolved, threshold=0.05, selected_module=1918, scale="raw"
+    )
+    assert raw_overview.data[0].colorbar.title.text == "MDC ratio (AD / Control)"
 
     edges = load_edge_summaries("lioness", "control_anchored", 935)
     edge_figure = edge_summary_figure(

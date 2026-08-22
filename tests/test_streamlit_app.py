@@ -74,3 +74,40 @@ def test_streamlit_differential_filter_can_switch_bh_scope_and_cutoff() -> None:
 
     widget_with_label(app.radio, "AD–Control edge subset").set_value("all").run()
     assert_app_clean(app)
+
+
+def test_streamlit_mdc_can_switch_to_raw_scale() -> None:
+    app = AppTest.from_file(APP, default_timeout=180).run()
+    assert_app_clean(app)
+
+    scale = widget_with_label(app.radio, "MDC display scale")
+    assert scale.value == "log2"
+    scale.set_value("raw").run()
+    assert_app_clean(app)
+    assert widget_with_label(app.radio, "MDC display scale").value == "raw"
+
+    widget_with_label(app.selectbox, "Module definition").set_value(
+        "control_derived"
+    ).run()
+    assert_app_clean(app)
+    assert widget_with_label(app.radio, "MDC display scale").value == "raw"
+
+
+def test_streamlit_pathway_resolved_mdc_controls_both_module_sets() -> None:
+    app = AppTest.from_file(APP, default_timeout=180).run()
+    assert_app_clean(app)
+    assert any(tab.label == "Region-resolved MDC" for tab in app.tabs)
+    assert any(tab.label == "Pathway-resolved MDC" for tab in app.tabs)
+    assert widget_with_label(app.selectbox, "Pathway detail").value
+
+    widget_with_label(app.radio, "KEGG enrichment threshold").set_value(0.10).run()
+    widget_with_label(app.radio, "Module MDC rows").set_value(
+        "MDC FDR-significant only"
+    ).run()
+    assert_app_clean(app)
+
+    widget_with_label(app.selectbox, "Module definition").set_value(
+        "control_derived"
+    ).run()
+    assert_app_clean(app)
+    assert widget_with_label(app.selectbox, "Pathway detail").value

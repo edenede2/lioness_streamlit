@@ -521,6 +521,10 @@ def normalize_public_tissue_labels(frame: pd.DataFrame) -> pd.DataFrame:
 
     result = frame.copy()
     for column in result.select_dtypes(include=["object", "string"]).columns:
+        non_missing = result[column].dropna()
+        if not non_missing.map(lambda value: isinstance(value, str)).all():
+            # Preserve list/array-valued volcano bins as Arrow list columns.
+            continue
         result[column] = (
             result[column]
             .astype("string")
@@ -711,6 +715,22 @@ def _write_public_edge_dataset(
     """Write identifier-free edge tables as bounded Parquet dataset parts."""
 
     output_directory.mkdir(parents=True, exist_ok=True)
+    # PyArrow infers a dataset schema from its first fragment. LIONESS volcano
+    # rows do not have BONOBO prevalence fields, so writing each source schema
+    # unchanged makes those BONOBO-only columns invisible when a mixed-method
+    # dataset is read. Materialize the union schema in every shard instead.
+    union_fields: dict[str, pa.Field] = {}
+    for source in sources:
+        for field in pq.ParquetFile(source).schema_arrow:
+            previous = union_fields.get(field.name)
+            if previous is not None and previous.type != field.type:
+                raise ValueError(
+                    f"Conflicting edge-dataset types for {field.name}: "
+                    f"{previous.type} versus {field.type}"
+                )
+            union_fields.setdefault(field.name, field)
+    union_schema = pa.schema(list(union_fields.values()))
+
     total_rows = 0
     part = 0
     for source in sources:
@@ -721,11 +741,18 @@ def _write_public_edge_dataset(
             if forbidden:
                 raise ValueError(f"Public edge dataset contains identifiers: {forbidden}")
             destination = output_directory / f"part-{part:05d}.parquet"
-            frame.to_parquet(
+            table = pa.Table.from_pandas(frame, preserve_index=False)
+            for field in union_schema:
+                if field.name not in table.column_names:
+                    table = table.append_column(
+                        field.name, pa.nulls(len(table), type=field.type)
+                    )
+            table = table.select(union_schema.names).cast(union_schema, safe=False)
+            pq.write_table(
+                table,
                 destination,
-                index=False,
                 compression="zstd",
-                row_group_size=min(rows_per_file, len(frame)),
+                row_group_size=min(rows_per_file, len(table)),
             )
             if destination.stat().st_size >= 95 * 1024 * 1024:
                 raise ValueError(f"Differential edge part exceeds 95 MiB: {destination}")

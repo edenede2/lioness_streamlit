@@ -16,7 +16,12 @@ from app_helpers import charts as _chart_helpers
 
 if not all(
     hasattr(_chart_helpers, name)
-    for name in ("CONTINUOUS_COLOR_SCALES", "edge_volcano_figure")
+    for name in (
+        "CONTINUOUS_COLOR_SCALES",
+        "edge_volcano_figure",
+        "mdc_entropy_figure",
+        "pathway_mdc_heatmap_figure",
+    )
 ):
     _chart_helpers = importlib.reload(_chart_helpers)
 
@@ -29,6 +34,7 @@ from app_helpers.charts import (
     distribution_summary,
     edge_volcano_figure,
     edge_summary_figure,
+    mdc_entropy_figure,
     mdc_module_figure,
     mdc_overview_figure,
     mdc_resolved_heatmap_figure,
@@ -36,9 +42,12 @@ from app_helpers.charts import (
     module_entropy_figure,
     module_region_composition_figure,
     module_size_distribution_figure,
+    pathway_mdc_detail_figure,
+    pathway_mdc_heatmap_figure,
     resolved_to_long,
 )
 from app_helpers.correlations import calculate_correlations
+from app_helpers.drive_data import data_source_label, ensure_data_path
 from app_helpers.data import (
     ANALYSIS_SUBSET_LABELS,
     BONOBO_EDGE_RULE_LABELS,
@@ -61,6 +70,7 @@ from app_helpers.data import (
     PHENOTYPE_LABELS,
     SCALE_LABELS,
     SCORE_NORMALIZATION_LABELS,
+    build_pathway_mdc_rows,
     association_kegg_subtitles,
     dataframe_to_tsv_bytes,
     differential_data_available,
@@ -87,6 +97,7 @@ from app_helpers.data import (
     module_set_path,
     require_data_files,
     selected_annotation,
+    summarize_pathway_mdc_rows,
 )
 
 
@@ -179,6 +190,18 @@ def cached_mdc_summary(module_set: str) -> pd.DataFrame:
 @st.cache_data(show_spinner=False)
 def cached_mdc_resolved(module_set: str) -> pd.DataFrame:
     return load_mdc_resolved(module_set)
+
+
+@st.cache_data(show_spinner=False, max_entries=8)
+def cached_pathway_mdc_rows(
+    module_set: str, enrichment_fdr_threshold: float
+) -> pd.DataFrame:
+    return build_pathway_mdc_rows(
+        load_mdc_summary(module_set),
+        load_mdc_resolved(module_set),
+        load_kegg(module_set=module_set),
+        enrichment_fdr_threshold=enrichment_fdr_threshold,
+    )
 
 
 @st.cache_data(show_spinner=False, max_entries=32)
@@ -284,7 +307,8 @@ def cached_kegg(module_set: str, module: int | None) -> pd.DataFrame:
 
 @st.cache_data(show_spinner=False)
 def cached_kegg_tsv(module_set: str) -> bytes:
-    return module_set_path("kegg_tissue_expanded_full.tsv", module_set).read_bytes()
+    path = ensure_data_path(module_set_path("kegg_tissue_expanded_full.tsv", module_set))
+    return path.read_bytes()
 
 
 @st.cache_data(show_spinner=False)
@@ -472,7 +496,7 @@ def _bundle_cache_state() -> dict[str, str | None]:
 
 def _synchronize_bundle_cache() -> str:
     """Clear cached tables exactly once when a new deploy manifest appears."""
-    manifest_path = DATA_DIR / "data_manifest.json"
+    manifest_path = ensure_data_path(DATA_DIR / "data_manifest.json")
     manifest_sha256 = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
     state = _bundle_cache_state()
     if state["manifest_sha256"] != manifest_sha256:
@@ -492,6 +516,7 @@ st.markdown(
 
 with st.sidebar:
     st.header("Plot controls")
+    st.caption(f"Data source: {data_source_label()}")
     module_set = st.selectbox(
         "Module definition",
         options=list(MODULE_SET_LABELS),
@@ -884,7 +909,7 @@ with st.expander(
     detail_cols[3].metric("Dominant tissue", str(selected_details["dominant_tissue"]))
     st.dataframe(
         tissue_composition,
-        width="stretch",
+        use_container_width=True,
         hide_index=True,
         column_config={
             "Genes": st.column_config.NumberColumn(format="%d"),
@@ -964,7 +989,7 @@ with association_tab:
     )
     st.plotly_chart(
         figure,
-        width="stretch",
+        use_container_width=True,
         config={
             "displaylogo": False,
             "toImageButtonOptions": {
@@ -1142,7 +1167,7 @@ with correlation_tab:
     )
     st.plotly_chart(
         correlation_heatmap,
-        width="stretch",
+        use_container_width=True,
         config={
             "displaylogo": False,
             "toImageButtonOptions": {
@@ -1183,7 +1208,7 @@ with correlation_tab:
     with st.expander("Complete correlation table", expanded=False):
         st.dataframe(
             correlation_table[correlation_columns],
-            width="stretch",
+            use_container_width=True,
             hide_index=True,
         )
         st.download_button(
@@ -1217,7 +1242,7 @@ with distribution_tab:
     )
     st.plotly_chart(
         distribution,
-        width="stretch",
+        use_container_width=True,
         config={
             "displaylogo": False,
             "toImageButtonOptions": {
@@ -1232,7 +1257,7 @@ with distribution_tab:
     summary = distribution_summary(plot_data)
     summary.insert(0, "module_definition", module_set_label)
     with st.expander("Distribution summary table", expanded=False):
-        st.dataframe(summary, width="stretch", hide_index=True)
+        st.dataframe(summary, use_container_width=True, hide_index=True)
         st.download_button(
             "Download distribution summary (TSV)",
             data=dataframe_to_tsv_bytes(summary),
@@ -1360,7 +1385,7 @@ with screen_tab:
     ]
     st.dataframe(
         screen[screen_columns].head(n_screen),
-        width="stretch",
+        use_container_width=True,
         hide_index=True,
         column_config={"module": st.column_config.NumberColumn(format="M%d")},
     )
@@ -1441,7 +1466,7 @@ with edge_tab:
                 module,
                 module_definition=module_set_label,
             ),
-            width="stretch",
+            use_container_width=True,
             config={"displaylogo": False},
         )
         edge_group_summary = (
@@ -1467,7 +1492,7 @@ with edge_tab:
         edge_group_summary.insert(1, "estimator", ESTIMATOR_LABELS[estimator])
         edge_group_summary.insert(2, "network_method", readable_method(method))
         edge_group_summary.insert(3, "edge_rule", edge_rule)
-        st.dataframe(edge_group_summary, width="stretch", hide_index=True)
+        st.dataframe(edge_group_summary, use_container_width=True, hide_index=True)
         st.download_button(
             "Download diagnosis-group summary (TSV)",
             data=dataframe_to_tsv_bytes(edge_group_summary),
@@ -1475,7 +1500,7 @@ with edge_tab:
             mime="text/tab-separated-values",
         )
         with st.expander("Donor-level edge-summary rows", expanded=False):
-            st.dataframe(edge_data, width="stretch", hide_index=True, height=480)
+            st.dataframe(edge_data, use_container_width=True, hide_index=True, height=480)
             st.download_button(
                 "Download donor-level edge summaries (TSV)",
                 data=dataframe_to_tsv_bytes(edge_data),
@@ -1568,36 +1593,56 @@ with volcano_tab:
         prevalence_column = None
         minimum_prevalence = 0.0
         if estimator == "bonobo":
-            prevalence_cols = st.columns(3)
-            with prevalence_cols[0]:
-                prevalence_rule = st.selectbox(
-                    "BONOBO prevalence rule",
-                    options=["native_p05", "bh_fdr05"],
-                    format_func=lambda value: BONOBO_EDGE_RULE_LABELS[value],
+            available_prevalence_rules = [
+                rule
+                for rule in ("native_p05", "bh_fdr05")
+                if any(
+                    f"bonobo_{rule}_prevalence_{group}" in volcano_candidates.columns
+                    for group in ("all", "control", "mci", "ad")
                 )
-            with prevalence_cols[1]:
-                prevalence_group = st.selectbox(
-                    "Prevalence donor group",
-                    options=["all", "control", "mci", "ad"],
-                    format_func=lambda value: {
-                        "all": "All donors",
-                        "control": "Control",
-                        "mci": "MCI",
-                        "ad": "AD",
-                    }[value],
+            ]
+            if available_prevalence_rules:
+                prevalence_cols = st.columns(3)
+                with prevalence_cols[0]:
+                    prevalence_rule = st.selectbox(
+                        "BONOBO prevalence rule",
+                        options=available_prevalence_rules,
+                        format_func=lambda value: BONOBO_EDGE_RULE_LABELS[value],
+                    )
+                available_prevalence_groups = [
+                    group
+                    for group in ("all", "control", "mci", "ad")
+                    if f"bonobo_{prevalence_rule}_prevalence_{group}"
+                    in volcano_candidates.columns
+                ]
+                with prevalence_cols[1]:
+                    prevalence_group = st.selectbox(
+                        "Prevalence donor group",
+                        options=available_prevalence_groups,
+                        format_func=lambda value: {
+                            "all": "All donors",
+                            "control": "Control",
+                            "mci": "MCI",
+                            "ad": "AD",
+                        }[value],
+                    )
+                with prevalence_cols[2]:
+                    minimum_prevalence = st.slider(
+                        "Minimum native significance prevalence",
+                        min_value=0.0,
+                        max_value=1.0,
+                        value=0.0,
+                        step=0.05,
+                        format="%.0f%%",
+                    )
+                prevalence_column = (
+                    f"bonobo_{prevalence_rule}_prevalence_{prevalence_group}"
                 )
-            with prevalence_cols[2]:
-                minimum_prevalence = st.slider(
-                    "Minimum native significance prevalence",
-                    min_value=0.0,
-                    max_value=1.0,
-                    value=0.0,
-                    step=0.05,
-                    format="%.0f%%",
+            else:
+                st.caption(
+                    "BONOBO native-significance prevalence is unavailable in this "
+                    "volcano shard; effect and AD–Control significance filters remain active."
                 )
-            prevalence_column = (
-                f"bonobo_{prevalence_rule}_prevalence_{prevalence_group}"
-            )
 
         volcano = edge_volcano_figure(
             volcano_candidates,
@@ -1617,7 +1662,7 @@ with volcano_tab:
         )
         st.plotly_chart(
             volcano,
-            width="stretch",
+            use_container_width=True,
             config={
                 "displaylogo": False,
                 "toImageButtonOptions": {
@@ -1659,7 +1704,7 @@ with volcano_tab:
             displayed_edges = displayed_edges.loc[
                 displayed_edges[probability_column].le(volcano_threshold)
             ]
-        if prevalence_column:
+        if prevalence_column and prevalence_column in displayed_edges.columns:
             displayed_edges = displayed_edges.loc[
                 displayed_edges[prevalence_column].ge(minimum_prevalence)
             ]
@@ -1668,7 +1713,7 @@ with volcano_tab:
             ascending=[True, False],
             kind="stable",
         )
-        st.dataframe(displayed_edges, width="stretch", hide_index=True, height=460)
+        st.dataframe(displayed_edges, use_container_width=True, hide_index=True, height=460)
         st.download_button(
             "Download displayed exact edge rows (TSV)",
             data=dataframe_to_tsv_bytes(displayed_edges),
@@ -1693,16 +1738,48 @@ with mdc_tab:
         "used here plus donors with partial tissue availability. MCI was not included. "
         "MDC is module-level context and does not change with the estimator or network-method selector."
     )
-    mdc_threshold = st.radio(
-        "MDC significance threshold",
-        options=[0.05, 0.10],
-        format_func=lambda value: f"FDR < {value:.2f}",
-        horizontal=True,
-        key="mdc_threshold",
-    )
+    mdc_control_columns = st.columns(2)
+    with mdc_control_columns[0]:
+        mdc_threshold = st.radio(
+            "MDC significance threshold",
+            options=[0.05, 0.10],
+            format_func=lambda value: f"FDR < {value:.2f}",
+            horizontal=True,
+            key="mdc_threshold",
+        )
+    with mdc_control_columns[1]:
+        mdc_scale = st.radio(
+            "MDC display scale",
+            options=["log2", "raw"],
+            format_func=lambda value: {
+                "log2": "log₂ ratio (equality = 0)",
+                "raw": "Raw AD/Control ratio (equality = 1)",
+            }[value],
+            horizontal=True,
+            key="mdc_display_scale",
+        )
 
     mdc_view = mdc_summary.copy()
     mdc_view.insert(0, "module_definition", module_set_label)
+    mdc_view = mdc_view.merge(
+        module_details[
+            [
+                "module",
+                "module_size",
+                "cluster_type",
+                "tissue_entropy",
+                "tissue_entropy_normalized",
+            ]
+        ],
+        on="module",
+        how="left",
+        validate="one_to_one",
+    )
+    if mdc_view["tissue_entropy_normalized"].isna().any():
+        st.warning(
+            "Some MDC modules lack module-composition entropy and will be omitted from "
+            "the entropy relationship plots."
+        )
     for scope in ["total", "ts", "ct"]:
         mdc_view[f"significant_{scope}"] = mdc_view[
             f"directional_fdr_{scope}"
@@ -1753,11 +1830,14 @@ with mdc_tab:
                 )
 
         selected_mdc_chart = mdc_module_figure(
-            selected_mdc_row, mdc_threshold, module_definition=module_set_label
+            selected_mdc_row,
+            mdc_threshold,
+            module_definition=module_set_label,
+            scale=mdc_scale,
         )
         st.plotly_chart(
             selected_mdc_chart,
-            width="stretch",
+            use_container_width=True,
             config={
                 "displaylogo": False,
                 "toImageButtonOptions": {
@@ -1768,13 +1848,18 @@ with mdc_tab:
             },
         )
         st.caption(
-            "Bars use log2 MDC so equal AD/Control connectivity is centered at zero. "
+            (
+                "Bars use log2 MDC, so equal AD/Control connectivity is centered at zero. "
+                if mdc_scale == "log2"
+                else "Bars use the raw AD/Control MDC ratio, so equal connectivity is marked at one. "
+            )
+            +
             "Orange indicates higher connectivity in AD, blue indicates higher connectivity "
             "in Control, and ★ marks significance at the selected threshold."
         )
 
     significance_filter = st.selectbox(
-        "Modules to show in the MDC overview",
+        "Modules to show in the MDC overview and entropy plots",
         options=[
             "All modules",
             "Any significant",
@@ -1798,10 +1883,11 @@ with mdc_tab:
         module,
         mdc_threshold,
         module_definition=module_set_label,
+        scale=mdc_scale,
     )
     st.plotly_chart(
         mdc_overview,
-        width="stretch",
+        use_container_width=True,
         config={
             "displaylogo": False,
             "toImageButtonOptions": {
@@ -1823,10 +1909,50 @@ with mdc_tab:
         )
     )
     st.caption(
-        "Dashed zero lines separate AD-higher from Control-higher MDC. The dotted diagonal "
+        (
+            "Dashed zero lines separate AD-higher from Control-higher MDC. "
+            if mdc_scale == "log2"
+            else "Dashed equality lines at one separate AD-higher from Control-higher MDC. "
+        )
+        + "The dotted diagonal "
         f"marks equal TS and CT effects. {ct_unavailable_count} module(s) have no CT edges "
         "and therefore no CT MDC point."
     )
+
+    st.markdown("#### MDC and tissue-mixing entropy")
+    st.caption(
+        "Each point is one module after applying the module filter above. Diamonds are "
+        f"directionally significant at FDR < {mdc_threshold:.2f}; open circles are not. "
+        "The dotted line is an OLS visual guide, while the subtitle reports the Spearman "
+        "association across the displayed modules."
+    )
+    entropy_chart_columns = st.columns(2)
+    for chart_column, entropy_scope in zip(
+        entropy_chart_columns, ["ts", "ct"], strict=True
+    ):
+        with chart_column:
+            st.plotly_chart(
+                mdc_entropy_figure(
+                    displayed_mdc,
+                    scope=entropy_scope,
+                    selected_module=module,
+                    threshold=mdc_threshold,
+                    scale=mdc_scale,
+                    module_definition=module_set_label,
+                ),
+                use_container_width=True,
+                config={
+                    "displaylogo": False,
+                    "toImageButtonOptions": {
+                        "format": "png",
+                        "filename": (
+                            f"{download_prefix}{entropy_scope.upper()}_MDC_"
+                            f"normalized_Shannon_entropy_{mdc_scale}"
+                        ),
+                        "scale": 3,
+                    },
+                },
+            )
 
     displayed_mdc["minimum_directional_fdr"] = displayed_mdc[
         ["directional_fdr_total", "directional_fdr_ts", "directional_fdr_ct"]
@@ -1843,6 +1969,10 @@ with mdc_tab:
         "module_definition",
         "module",
         "module_size_mapped",
+        "module_size",
+        "cluster_type",
+        "tissue_entropy",
+        "tissue_entropy_normalized",
         "mdc_total",
         "direction_total",
         "directional_fdr_total",
@@ -1861,10 +1991,15 @@ with mdc_tab:
     ]
     st.dataframe(
         displayed_mdc[mdc_columns],
-        width="stretch",
+        use_container_width=True,
         hide_index=True,
         column_config={
             "module": st.column_config.NumberColumn(format="M%d"),
+            "module_size": st.column_config.NumberColumn(format="%d"),
+            "tissue_entropy": st.column_config.NumberColumn(format="%.4f"),
+            "tissue_entropy_normalized": st.column_config.ProgressColumn(
+                format="%.3f", min_value=0.0, max_value=1.0
+            ),
             "mdc_total": st.column_config.NumberColumn(format="%.3f"),
             "mdc_ts": st.column_config.NumberColumn(format="%.3f"),
             "mdc_ct": st.column_config.NumberColumn(format="%.3f"),
@@ -1891,77 +2026,369 @@ with mdc_tab:
         "source used 200 sample permutations and 200 gene permutations."
     )
 
-    st.markdown("#### Tissue-resolved MDC")
-    st.caption(
-        "Resolved MDC separates the three within-tissue blocks and the three cross-tissue "
-        "pairs. Gene permutations preserve each module's AC, DLPFC, and PCG feature counts. "
-        "For each component and direction, BH correction uses only modules where that edge "
-        "block structurally exists; unavailable blocks remain missing."
+    region_mdc_tab, pathway_mdc_tab = st.tabs(
+        ["Region-resolved MDC", "Pathway-resolved MDC"]
     )
-    resolved_mdc = cached_mdc_resolved(module_set).copy()
-    resolved_components_available = resolved_mdc[
-        ["component", "component_label"]
-    ].drop_duplicates()
-    selected_mdc_components = st.multiselect(
-        "Resolved MDC components",
-        options=resolved_components_available["component"].tolist(),
-        default=resolved_components_available["component"].tolist(),
-        format_func=lambda value: resolved_components_available.loc[
-            resolved_components_available["component"].eq(value), "component_label"
-        ].iloc[0],
-        key=f"resolved_mdc_components_{module_set}",
-    )
-    resolved_mdc = resolved_mdc.loc[
-        resolved_mdc["component"].isin(selected_mdc_components)
-    ].copy()
-    resolved_significance = st.selectbox(
-        "Resolved MDC rows",
-        options=["All", "FDR significant", "Not FDR significant"],
-        key=f"resolved_mdc_significance_{module_set}",
-    )
-    resolved_is_significant = pd.to_numeric(
-        resolved_mdc["directional_fdr"], errors="coerce"
-    ).lt(mdc_threshold)
-    if resolved_significance == "FDR significant":
-        resolved_mdc = resolved_mdc.loc[resolved_is_significant]
-    elif resolved_significance == "Not FDR significant":
-        resolved_mdc = resolved_mdc.loc[~resolved_is_significant]
-    selected_resolved_mdc = resolved_mdc.loc[
-        resolved_mdc["module"].astype(int).eq(int(module))
-    ]
-    if selected_resolved_mdc.empty:
-        st.info("The selected module has no resolved MDC row under the current filters.")
-    else:
-        st.plotly_chart(
-            mdc_resolved_module_figure(
-                selected_resolved_mdc,
-                mdc_threshold,
-                module_definition=module_set_label,
-            ),
-            width="stretch",
-            config={"displaylogo": False},
+    with region_mdc_tab:
+        st.markdown("#### Tissue-resolved MDC")
+        st.caption(
+            "Resolved MDC separates the three within-tissue blocks and the three cross-tissue "
+            "pairs. Gene permutations preserve each module's AC, DLPFC, and PCG feature counts. "
+            "For each component and direction, BH correction uses only modules where that edge "
+            "block structurally exists; unavailable blocks remain missing."
         )
-    if resolved_mdc.empty:
-        st.info("No resolved MDC rows remain under the current filters.")
-    else:
-        st.plotly_chart(
-            mdc_resolved_heatmap_figure(
-                resolved_mdc,
-                mdc_threshold,
-                selected_module=module,
-                module_definition=module_set_label,
-            ),
-            width="stretch",
-            config={"displaylogo": False, "scrollZoom": True},
+        resolved_mdc = cached_mdc_resolved(module_set).copy()
+        resolved_components_available = resolved_mdc[
+            ["component", "component_label"]
+        ].drop_duplicates()
+        selected_mdc_components = st.multiselect(
+            "Resolved MDC components",
+            options=resolved_components_available["component"].tolist(),
+            default=resolved_components_available["component"].tolist(),
+            format_func=lambda value: resolved_components_available.loc[
+                resolved_components_available["component"].eq(value), "component_label"
+            ].iloc[0],
+            key=f"resolved_mdc_components_{module_set}",
         )
-        resolved_mdc.insert(0, "module_definition_label", module_set_label)
-        st.dataframe(resolved_mdc, width="stretch", hide_index=True, height=520)
-        st.download_button(
-            "Download displayed resolved MDC rows (TSV)",
-            data=dataframe_to_tsv_bytes(resolved_mdc),
-            file_name=f"{download_prefix}AD_Control_resolved_MDC.tsv",
-            mime="text/tab-separated-values",
+        resolved_mdc = resolved_mdc.loc[
+            resolved_mdc["component"].isin(selected_mdc_components)
+        ].copy()
+        resolved_significance = st.selectbox(
+            "Resolved MDC rows",
+            options=["All", "FDR significant", "Not FDR significant"],
+            key=f"resolved_mdc_significance_{module_set}",
         )
+        resolved_is_significant = pd.to_numeric(
+            resolved_mdc["directional_fdr"], errors="coerce"
+        ).lt(mdc_threshold)
+        if resolved_significance == "FDR significant":
+            resolved_mdc = resolved_mdc.loc[resolved_is_significant]
+        elif resolved_significance == "Not FDR significant":
+            resolved_mdc = resolved_mdc.loc[~resolved_is_significant]
+        selected_resolved_mdc = resolved_mdc.loc[
+            resolved_mdc["module"].astype(int).eq(int(module))
+        ]
+        if selected_resolved_mdc.empty:
+            st.info("The selected module has no resolved MDC row under the current filters.")
+        else:
+            st.plotly_chart(
+                mdc_resolved_module_figure(
+                    selected_resolved_mdc,
+                    mdc_threshold,
+                    module_definition=module_set_label,
+                    scale=mdc_scale,
+                ),
+                use_container_width=True,
+                config={"displaylogo": False},
+            )
+        if resolved_mdc.empty:
+            st.info("No resolved MDC rows remain under the current filters.")
+        else:
+            st.plotly_chart(
+                mdc_resolved_heatmap_figure(
+                    resolved_mdc,
+                    mdc_threshold,
+                    selected_module=module,
+                    module_definition=module_set_label,
+                    scale=mdc_scale,
+                ),
+                use_container_width=True,
+                config={"displaylogo": False, "scrollZoom": True},
+            )
+            resolved_mdc.insert(0, "module_definition_label", module_set_label)
+            st.dataframe(
+                resolved_mdc, use_container_width=True, hide_index=True, height=520
+            )
+            st.download_button(
+                "Download displayed resolved MDC rows (TSV)",
+                data=dataframe_to_tsv_bytes(resolved_mdc),
+                file_name=f"{download_prefix}AD_Control_resolved_MDC.tsv",
+                mime="text/tab-separated-values",
+            )
+
+    with pathway_mdc_tab:
+        st.markdown("#### Pathway-annotated regional MDC")
+        st.caption(
+            "MDC remains a module-level statistic. This view annotates each module-component "
+            "MDC with KEGG pathways enriched in the matching region, then summarizes MDC "
+            "across enriched modules. For a CT tissue pair, both regions must meet the KEGG "
+            "threshold; the displayed pair FDR is the larger regional FDR and is not a new "
+            "combined p-value."
+        )
+        pathway_control_columns = st.columns(3)
+        with pathway_control_columns[0]:
+            pathway_kegg_threshold = st.radio(
+                "KEGG enrichment threshold",
+                options=[0.05, 0.10],
+                format_func=lambda value: (
+                    f"FDR < {value:.2f}"
+                    + (" (exploratory)" if np.isclose(value, 0.10) else "")
+                ),
+                horizontal=True,
+                key=f"pathway_mdc_kegg_threshold_{module_set}",
+            )
+        with pathway_control_columns[1]:
+            minimum_pathway_modules = st.slider(
+                "Minimum enriched modules per cell",
+                min_value=1,
+                max_value=10,
+                value=1,
+                key=f"pathway_mdc_minimum_modules_{module_set}",
+            )
+        with pathway_control_columns[2]:
+            pathway_mdc_row_scope = st.radio(
+                "Module MDC rows",
+                options=["All", "MDC FDR-significant only"],
+                horizontal=True,
+                key=f"pathway_mdc_row_scope_{module_set}",
+            )
+
+        pathway_rows = cached_pathway_mdc_rows(
+            module_set, pathway_kegg_threshold
+        ).copy()
+        component_preference = [
+            "TS_AC",
+            "TS_DLPFC",
+            "TS_PCGBA23",
+            "CT_AC__DLPFC",
+            "CT_AC__PCGBA23",
+            "CT_DLPFC__PCGBA23",
+            "total",
+            "TS",
+            "CT",
+        ]
+        component_labels = (
+            pathway_rows[["component", "component_label"]]
+            .drop_duplicates("component")
+            .set_index("component")["component_label"]
+            .to_dict()
+        )
+        available_pathway_components = [
+            value for value in component_preference if value in component_labels
+        ]
+        default_pathway_components = available_pathway_components[:6]
+        selected_pathway_components = st.multiselect(
+            "Regions and tissue pairs",
+            options=available_pathway_components,
+            default=default_pathway_components,
+            format_func=lambda value: component_labels[value],
+            key=f"pathway_mdc_components_{module_set}",
+        )
+        pathway_rows = pathway_rows.loc[
+            pathway_rows["component"].isin(selected_pathway_components)
+        ].copy()
+        if pathway_mdc_row_scope == "MDC FDR-significant only":
+            pathway_rows = pathway_rows.loc[
+                pd.to_numeric(pathway_rows["directional_fdr"], errors="coerce").lt(
+                    mdc_threshold
+                )
+            ].copy()
+
+        category_options = sorted(
+            pathway_rows["category_level1"].dropna().astype(str).unique().tolist()
+        )
+        filter_columns = st.columns([2, 3])
+        selected_pathway_categories = filter_columns[0].multiselect(
+            "KEGG categories",
+            options=category_options,
+            default=[],
+            placeholder="All categories",
+            key=f"pathway_mdc_categories_{module_set}",
+        )
+        pathway_search = filter_columns[1].text_input(
+            "Search pathways",
+            placeholder="Pathway, category, sub-category, or KEGG ID",
+            key=f"pathway_mdc_search_{module_set}",
+        ).strip()
+        if selected_pathway_categories:
+            pathway_rows = pathway_rows.loc[
+                pathway_rows["category_level1"].isin(selected_pathway_categories)
+            ].copy()
+        if pathway_search:
+            searchable = pathway_rows[
+                [
+                    "pathway_id",
+                    "pathway_label",
+                    "category_level1",
+                    "category_level2",
+                ]
+            ].fillna("").astype(str)
+            pathway_rows = pathway_rows.loc[
+                searchable.agg(" ".join, axis=1).str.contains(
+                    pathway_search, case=False, regex=False
+                )
+            ].copy()
+
+        pathway_summary = summarize_pathway_mdc_rows(
+            pathway_rows,
+            mdc_fdr_threshold=mdc_threshold,
+            minimum_modules=minimum_pathway_modules,
+        )
+        if pathway_summary.empty:
+            st.info("No pathway-MDC cells remain under the current filters.")
+        else:
+            retained_pathway_ids = set(pathway_summary["pathway_id"].astype(str))
+            pathway_rows = pathway_rows.loc[
+                pathway_rows["pathway_id"].astype(str).isin(retained_pathway_ids)
+            ].copy()
+            pathway_ranking = (
+                pathway_summary.assign(
+                    absolute_mean_log2_mdc=pathway_summary["mean_log2_mdc"].abs()
+                )
+                .groupby(["pathway_id", "pathway_label"], observed=True)
+                .agg(
+                    maximum_absolute_mean_log2_mdc=(
+                        "absolute_mean_log2_mdc",
+                        "max",
+                    ),
+                    minimum_enrichment_fdr=("minimum_enrichment_fdr", "min"),
+                    maximum_module_support=("n_modules", "max"),
+                )
+                .reset_index()
+                .sort_values(
+                    [
+                        "maximum_absolute_mean_log2_mdc",
+                        "minimum_enrichment_fdr",
+                        "maximum_module_support",
+                    ],
+                    ascending=[False, True, False],
+                    kind="stable",
+                )
+            )
+            pathway_metric_columns = st.columns(4)
+            pathway_metric_columns[0].metric(
+                "Pathways", f"{pathway_summary['pathway_id'].nunique():,}"
+            )
+            pathway_metric_columns[1].metric(
+                "Modules", f"{pathway_rows['module'].nunique():,}"
+            )
+            pathway_metric_columns[2].metric(
+                "Region/pathway cells", f"{len(pathway_summary):,}"
+            )
+            pathway_metric_columns[3].metric(
+                "Module-component annotations", f"{len(pathway_rows):,}"
+            )
+            pathway_options = pathway_ranking["pathway_id"].astype(str).tolist()
+            pathway_label_map = pathway_ranking.set_index("pathway_id")[
+                "pathway_label"
+            ].to_dict()
+            pathway_selection_columns = st.columns([2, 1])
+            selected_pathway_id = pathway_selection_columns[0].selectbox(
+                "Pathway detail",
+                options=pathway_options,
+                format_func=lambda value: f"{pathway_label_map[value]} ({value})",
+                key=f"pathway_mdc_selected_{module_set}",
+            )
+            maximum_top_pathways = min(60, len(pathway_options))
+            top_pathways = pathway_selection_columns[1].slider(
+                "Pathways in heatmap",
+                min_value=1,
+                max_value=maximum_top_pathways,
+                value=min(25, maximum_top_pathways),
+                key=f"pathway_mdc_top_n_{module_set}",
+            )
+            st.plotly_chart(
+                pathway_mdc_heatmap_figure(
+                    pathway_summary,
+                    scale=mdc_scale,
+                    top_n=top_pathways,
+                    selected_pathway_id=selected_pathway_id,
+                    module_definition=module_set_label,
+                ),
+                use_container_width=True,
+                config={"displaylogo": False, "scrollZoom": True},
+            )
+            st.caption(
+                "Each heatmap cell gives equal weight to every qualifying enriched module. "
+                "On log2 scale it is the arithmetic mean log2 MDC; on raw scale it is the "
+                "equivalent geometric mean MDC ratio. Cell n is the number of enriched modules."
+            )
+            selected_pathway_rows = pathway_rows.loc[
+                pathway_rows["pathway_id"].astype(str).eq(selected_pathway_id)
+            ].copy()
+            st.plotly_chart(
+                pathway_mdc_detail_figure(
+                    selected_pathway_rows,
+                    pathway_id=selected_pathway_id,
+                    selected_module=module,
+                    threshold=mdc_threshold,
+                    scale=mdc_scale,
+                    module_definition=module_set_label,
+                ),
+                use_container_width=True,
+                config={"displaylogo": False},
+            )
+            pathway_detail_columns = [
+                "pathway_id",
+                "pathway_label",
+                "category_level1",
+                "category_level2",
+                "module",
+                "component_label",
+                "enrichment_scope",
+                "enrichment_p",
+                "enrichment_fdr",
+                "enrichment_region_a",
+                "enrichment_fdr_region_a",
+                "enrichment_region_b",
+                "enrichment_fdr_region_b",
+                "mdc",
+                "log2_mdc",
+                "direction",
+                "directional_fdr",
+                "n_edges",
+                "overlap_k",
+                "overlap_genes",
+            ]
+            selected_pathway_rows = selected_pathway_rows.sort_values(
+                ["component_label", "directional_fdr", "enrichment_fdr"],
+                kind="stable",
+            )
+            st.dataframe(
+                selected_pathway_rows[pathway_detail_columns],
+                use_container_width=True,
+                hide_index=True,
+                height=480,
+            )
+            download_columns = [
+                "pathway_id",
+                "pathway_label",
+                "category_level1",
+                "category_level2",
+                "component",
+                "component_label",
+                "enrichment_scope",
+                "n_modules",
+                "mean_log2_mdc",
+                "geometric_mean_mdc",
+                "median_mdc",
+                "minimum_enrichment_fdr",
+                "median_enrichment_fdr",
+                "n_mdc_significant",
+                "proportion_mdc_significant",
+                "minimum_mdc_fdr",
+                "total_edges",
+            ]
+            download_columns = [
+                column for column in download_columns if column in pathway_summary
+            ]
+            pathway_download_columns = st.columns(2)
+            pathway_download_columns[0].download_button(
+                "Download pathway-component summary (TSV)",
+                data=dataframe_to_tsv_bytes(pathway_summary[download_columns]),
+                file_name=f"{download_prefix}pathway_resolved_MDC_summary.tsv",
+                mime="text/tab-separated-values",
+            )
+            pathway_download_columns[1].download_button(
+                "Download selected pathway module rows (TSV)",
+                data=dataframe_to_tsv_bytes(
+                    selected_pathway_rows[pathway_detail_columns]
+                ),
+                file_name=(
+                    f"{download_prefix}{selected_pathway_id}_regional_MDC_modules.tsv"
+                ),
+                mime="text/tab-separated-values",
+            )
 
 with statistics_tab:
     st.subheader("Robust association statistics")
@@ -2037,7 +2464,7 @@ with statistics_tab:
     statistics = statistics.copy()
     statistics.insert(0, "module_definition", module_set_label)
     st.dataframe(
-        statistics[display_columns], width="stretch", hide_index=True
+        statistics[display_columns], use_container_width=True, hide_index=True
     )
     st.download_button(
         "Download all selected robust-statistics columns (TSV)",
@@ -2259,7 +2686,7 @@ with kegg_tab:
         ]
         st.dataframe(
             displayed_kegg,
-            width="stretch",
+            use_container_width=True,
             hide_index=True,
             height=650,
             column_config={
@@ -2386,7 +2813,7 @@ with module_details_tab:
                 chart_module_details,
                 module_definition=module_set_label,
             ),
-            width="stretch",
+            use_container_width=True,
             config={"displaylogo": False, "responsive": True},
             key=f"module_size_distribution_{module_set}_{module_type_scope}",
         )
@@ -2395,7 +2822,7 @@ with module_details_tab:
                 chart_module_details,
                 module_definition=module_set_label,
             ),
-            width="stretch",
+            use_container_width=True,
             config={
                 "displaylogo": False,
                 "responsive": True,
@@ -2409,7 +2836,7 @@ with module_details_tab:
                 selected_module=module,
                 module_definition=module_set_label,
             ),
-            width="stretch",
+            use_container_width=True,
             config={"displaylogo": False, "responsive": True},
             key=f"module_entropy_{module_set}_{module_type_scope}",
         )
@@ -2454,7 +2881,7 @@ with module_details_tab:
     st.markdown(f"#### Selected module: {module_label(module)}")
     st.dataframe(
         module_details.loc[module_details["module"].astype(int).eq(int(module)), detail_columns],
-        width="stretch",
+        use_container_width=True,
         hide_index=True,
         column_config={
             "module": st.column_config.NumberColumn("Module", format="M%d"),
@@ -2482,7 +2909,7 @@ with module_details_tab:
     st.markdown(f"#### All {module_count} modules")
     st.dataframe(
         module_details[detail_columns],
-        width="stretch",
+        use_container_width=True,
         hide_index=True,
         height=520,
         column_config={
@@ -2584,14 +3011,17 @@ with about_tab:
         "MDC is an independent group-network comparison supplied as module-level context: "
         "mean absolute AD adjacency divided by mean absolute Control adjacency. The app "
         "shows total, pooled TS/CT, and six tissue-resolved ratios and their conservative "
-        "directional permutation FDR. Its broader tissue-union AD/Control cohort and absence "
-        "of MCI are stated in the MDC tab."
+        "directional permutation FDR on raw-ratio or log2 scales. Separate TS and CT "
+        "scatter plots relate MDC to normalized Shannon tissue-mixing entropy. The "
+        "pathway-resolved tab annotates module MDC with component-matched KEGG enrichment; "
+        "it is not a newly recomputed edge-level pathway MDC. Its broader tissue-union "
+        "AD/Control cohort and absence of MCI are stated in the MDC tab."
     )
 
     st.markdown("#### Module feature definitions")
-    st.dataframe(cached_feature_definitions(), width="stretch", hide_index=True)
+    st.dataframe(cached_feature_definitions(), use_container_width=True, hide_index=True)
     st.markdown("#### Tissue labels")
-    st.dataframe(cached_tissue_mapping(), width="stretch", hide_index=True)
+    st.dataframe(cached_tissue_mapping(), use_container_width=True, hide_index=True)
     st.markdown("#### Public deploy safeguards")
     st.markdown(
         "The deploy Parquet files do not contain `projid`, the source donor identifier, "
@@ -2606,8 +3036,8 @@ with about_tab:
         "Sex is displayed as source Code 0/1 because this deploy bundle does not infer a label "
         "without an accompanying reviewed data dictionary."
     )
-    manifest_path = DATA_DIR / "data_manifest.json"
-    if manifest_path.exists():
+    manifest_path = ensure_data_path(DATA_DIR / "data_manifest.json")
+    if manifest_path.is_file():
         with st.expander("Deploy data manifest"):
             st.json(manifest_path.read_text(encoding="utf-8"))
 

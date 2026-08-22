@@ -167,6 +167,48 @@ def test_module_details_match_level4_modules_and_tissue_counts() -> None:
     assert "module_details.tsv" in manifest["files"]
 
 
+def test_pathway_mdc_join_uses_component_matched_kegg_fdrs() -> None:
+    expected_components = {
+        "total",
+        "TS",
+        "CT",
+        "TS_AC",
+        "TS_DLPFC",
+        "TS_PCGBA23",
+        "CT_AC__DLPFC",
+        "CT_AC__PCGBA23",
+        "CT_DLPFC__PCGBA23",
+    }
+    for module_set in data.MODULE_SET_LABELS:
+        rows = data.build_pathway_mdc_rows(
+            data.load_mdc_summary(module_set),
+            data.load_mdc_resolved(module_set),
+            data.load_kegg(module_set=module_set),
+            enrichment_fdr_threshold=0.05,
+        )
+        assert not rows.empty
+        assert set(rows["component"].astype(str)) == expected_components
+        assert rows["enrichment_fdr"].le(0.05).all()
+
+        ac = rows.loc[rows["component"].eq("TS_AC")]
+        assert np.allclose(ac["enrichment_fdr"], ac["fdr_AC"])
+        pair = rows.loc[rows["component"].eq("CT_AC__DLPFC")]
+        expected_pair_fdr = pair[["fdr_AC", "fdr_DLPFC"]].max(axis=1)
+        assert np.allclose(pair["enrichment_fdr"], expected_pair_fdr)
+        assert pair["fdr_AC"].le(0.05).all()
+        assert pair["fdr_DLPFC"].le(0.05).all()
+
+        summary = data.summarize_pathway_mdc_rows(
+            rows, mdc_fdr_threshold=0.05, minimum_modules=2
+        )
+        assert not summary.empty
+        assert summary["n_modules"].ge(2).all()
+        assert np.allclose(
+            summary["geometric_mean_mdc"], np.exp2(summary["mean_log2_mdc"])
+        )
+        assert summary["proportion_mdc_significant"].between(0.0, 1.0).all()
+
+
 def test_legacy_module_details_reconstruct_tissue_entropy() -> None:
     legacy = pd.DataFrame(
         {

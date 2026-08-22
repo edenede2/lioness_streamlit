@@ -13,6 +13,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from scipy.cluster.hierarchy import leaves_list, linkage
 from scipy.spatial.distance import pdist
+from scipy.stats import spearmanr
 
 
 DIAGNOSIS_COLORS = {
@@ -36,6 +37,17 @@ REGION_COLORS = {
     "DLPFC": "#D8A500",
     "PCG": "#E66101",
 }
+MDC_COMPONENT_LABEL_ORDER = [
+    "Total",
+    "TS pooled",
+    "CT pooled",
+    "TS: AC",
+    "TS: DLPFC",
+    "TS: PCG",
+    "CT: AC - DLPFC",
+    "CT: AC - PCG",
+    "CT: DLPFC - PCG",
+]
 CONTINUOUS_COLOR_SCALES = {
     "Blue–white–orange": [
         [0.0, "#2C7FB8"],
@@ -51,6 +63,16 @@ CONTINUOUS_COLOR_SCALES = {
     "RdBu": "RdBu",
     "Spectral": "Spectral",
 }
+
+
+def _mdc_scale_settings(scale: str) -> tuple[str, str, float]:
+    """Return the MDC value-column prefix, axis label, and equality reference."""
+
+    if scale == "log2":
+        return "log2_mdc", "log2 MDC (AD / Control)", 0.0
+    if scale == "raw":
+        return "mdc", "MDC ratio (AD / Control)", 1.0
+    raise ValueError(f"Unknown MDC display scale: {scale}")
 
 
 def aggregate_to_long(frame: pd.DataFrame, scale: str) -> pd.DataFrame:
@@ -950,14 +972,456 @@ def module_entropy_figure(
     return figure
 
 
+def mdc_entropy_figure(
+    frame: pd.DataFrame,
+    *,
+    scope: str,
+    selected_module: int,
+    threshold: float,
+    scale: str = "log2",
+    module_definition: str | None = None,
+) -> go.Figure:
+    """Show TS or CT MDC against normalized tissue-mixing entropy."""
+
+    scope = scope.lower()
+    if scope not in {"ts", "ct"}:
+        raise ValueError("MDC entropy scope must be 'ts' or 'ct'")
+    value_prefix, axis_title, reference = _mdc_scale_settings(scale)
+    value_column = f"{value_prefix}_{scope}"
+    raw_column = f"mdc_{scope}"
+    log_column = f"log2_mdc_{scope}"
+    fdr_column = f"directional_fdr_{scope}"
+    direction_column = f"direction_{scope}"
+
+    data = frame.copy()
+    numeric_columns = [
+        "tissue_entropy_normalized",
+        "tissue_entropy",
+        "module_size",
+        value_column,
+        raw_column,
+        log_column,
+        fdr_column,
+    ]
+    for column in numeric_columns:
+        if column in data.columns:
+            data[column] = pd.to_numeric(data[column], errors="coerce")
+    data = data.dropna(subset=["tissue_entropy_normalized", value_column]).copy()
+    data["significant"] = data[fdr_column].lt(threshold)
+
+    figure = go.Figure()
+    for direction in ["Higher in Control", "Higher in AD", "Equal", "Not available"]:
+        group = data.loc[data[direction_column].fillna("Not available").eq(direction)]
+        if group.empty:
+            continue
+        customdata = np.column_stack(
+            [
+                group["module"].astype(int).map(lambda value: f"M{value}"),
+                group[raw_column],
+                group[log_column],
+                group[fdr_column],
+                group["tissue_entropy"],
+                group["module_size"],
+                group.get("cluster_type", pd.Series("NA", index=group.index)),
+                group["significant"].map(lambda value: "Yes" if value else "No"),
+            ]
+        )
+        figure.add_trace(
+            go.Scatter(
+                x=group["tissue_entropy_normalized"],
+                y=group[value_column],
+                mode="markers",
+                name=direction,
+                marker={
+                    "color": MDC_DIRECTION_COLORS.get(direction, "#7A8793"),
+                    "size": 9,
+                    "opacity": 0.78,
+                    "symbol": [
+                        "diamond" if significant else "circle-open"
+                        for significant in group["significant"]
+                    ],
+                    "line": {"color": "#FFFFFF", "width": 0.6},
+                },
+                customdata=customdata,
+                hovertemplate=(
+                    "Module: %{customdata[0]}<br>"
+                    "Normalized Shannon entropy: %{x:.4f}<br>"
+                    "Raw entropy: %{customdata[4]:.4f}<br>"
+                    f"{scope.upper()} MDC: %{{customdata[1]:.4f}}<br>"
+                    f"{scope.upper()} log2 MDC: %{{customdata[2]:.4f}}<br>"
+                    "Directional FDR: %{customdata[3]:.4g}<br>"
+                    f"Significant at FDR &lt; {threshold:.2f}: %{{customdata[7]}}<br>"
+                    "Module genes: %{customdata[5]:,}<br>Module type: %{customdata[6]}"
+                    "<extra></extra>"
+                ),
+            )
+        )
+
+    x = data["tissue_entropy_normalized"].to_numpy(dtype=float)
+    y = data[value_column].to_numpy(dtype=float)
+    if len(data) >= 3 and np.unique(x).size >= 2 and np.unique(y).size >= 2:
+        slope, intercept = np.polyfit(x, y, 1)
+        line_x = np.array([float(np.min(x)), float(np.max(x))])
+        figure.add_trace(
+            go.Scatter(
+                x=line_x,
+                y=intercept + slope * line_x,
+                mode="lines",
+                name="OLS trend",
+                line={"color": "#343A40", "width": 2, "dash": "dot"},
+                hoverinfo="skip",
+            )
+        )
+
+    selected = data.loc[data["module"].astype(int).eq(int(selected_module))]
+    if not selected.empty:
+        figure.add_trace(
+            go.Scatter(
+                x=selected["tissue_entropy_normalized"],
+                y=selected[value_column],
+                mode="markers+text",
+                text=[f"M{int(selected_module)}"],
+                textposition="top center",
+                name=f"Selected M{int(selected_module)}",
+                marker={
+                    "symbol": "star",
+                    "size": 17,
+                    "color": "#FFD92F",
+                    "line": {"color": "#202124", "width": 1.4},
+                },
+                hovertemplate=(
+                    f"Selected module: M{int(selected_module)}<br>"
+                    "Normalized Shannon entropy: %{x:.4f}<br>"
+                    f"{scope.upper()} {axis_title}: %{{y:.4f}}<extra></extra>"
+                ),
+            )
+        )
+
+    rho = np.nan
+    p_value = np.nan
+    if len(data) >= 3 and np.unique(x).size >= 2 and np.unique(y).size >= 2:
+        result = spearmanr(x, y, nan_policy="omit")
+        rho = float(result.statistic)
+        p_value = float(result.pvalue)
+    statistic_text = (
+        "Spearman unavailable"
+        if not np.isfinite(rho) or not np.isfinite(p_value)
+        else f"Spearman ρ={rho:.3f}, p={p_value:.3g}"
+    )
+    scale_text = "log2 scale" if scale == "log2" else "raw AD/Control ratio"
+    title = (
+        f"{scope.upper()} MDC vs normalized tissue-mixing entropy"
+        f"<br><sup>{scale_text} · n={len(data)} modules · {statistic_text}"
+    )
+    if module_definition:
+        title += f" · {module_definition}"
+    title += "</sup>"
+
+    figure.add_hline(
+        y=reference, line_dash="dash", line_color="#657584", line_width=1
+    )
+    yaxis: dict[str, object] = {"title": axis_title, "zeroline": False}
+    if scale == "raw":
+        yaxis["rangemode"] = "tozero"
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"},
+        template="plotly_white",
+        height=540,
+        margin={"l": 70, "r": 25, "t": 105, "b": 65},
+        xaxis={
+            "title": "Normalized Shannon entropy",
+            "range": [-0.03, 1.03],
+        },
+        yaxis=yaxis,
+        legend={
+            "orientation": "h",
+            "yanchor": "bottom",
+            "y": 1.02,
+            "xanchor": "right",
+            "x": 1,
+        },
+    )
+    return figure
+
+
+def pathway_mdc_heatmap_figure(
+    frame: pd.DataFrame,
+    *,
+    scale: str = "log2",
+    top_n: int = 25,
+    selected_pathway_id: str | None = None,
+    module_definition: str | None = None,
+) -> go.Figure:
+    """Summarize pathway-annotated module MDC across tissue components."""
+
+    if frame.empty:
+        return go.Figure()
+    _, _, reference = _mdc_scale_settings(scale)
+    value_column = "mean_log2_mdc" if scale == "log2" else "geometric_mean_mdc"
+    axis_title = "Mean log2 MDC" if scale == "log2" else "Geometric mean MDC"
+    data = frame.dropna(subset=[value_column]).copy()
+    data["absolute_log2_effect"] = pd.to_numeric(
+        data["mean_log2_mdc"], errors="coerce"
+    ).abs()
+    ranking = (
+        data.groupby(["pathway_id", "pathway_label"], observed=True)
+        .agg(
+            maximum_absolute_log2_mdc=("absolute_log2_effect", "max"),
+            minimum_enrichment_fdr=("minimum_enrichment_fdr", "min"),
+            maximum_module_support=("n_modules", "max"),
+        )
+        .reset_index()
+        .sort_values(
+            [
+                "maximum_absolute_log2_mdc",
+                "minimum_enrichment_fdr",
+                "maximum_module_support",
+            ],
+            ascending=[False, True, False],
+            kind="stable",
+        )
+    )
+    selected_ids = ranking.head(max(1, int(top_n)))["pathway_id"].astype(str).tolist()
+    if selected_pathway_id is not None and str(selected_pathway_id) not in selected_ids:
+        selected_ids = [str(selected_pathway_id), *selected_ids[:-1]]
+    data = data.loc[data["pathway_id"].astype(str).isin(selected_ids)].copy()
+
+    component_order = [
+        label
+        for label in MDC_COMPONENT_LABEL_ORDER
+        if label in set(data["component_label"].astype(str))
+    ]
+    pathway_order = [
+        pathway_id
+        for pathway_id in selected_ids
+        if pathway_id in set(data["pathway_id"].astype(str))
+    ]
+    data["pathway_id"] = data["pathway_id"].astype(str)
+    pivot = data.pivot(
+        index="pathway_id", columns="component_label", values=value_column
+    ).reindex(index=pathway_order, columns=component_order)
+    n_modules = data.pivot(
+        index="pathway_id", columns="component_label", values="n_modules"
+    ).reindex(index=pathway_order, columns=component_order)
+    enrichment_fdr = data.pivot(
+        index="pathway_id", columns="component_label", values="minimum_enrichment_fdr"
+    ).reindex(index=pathway_order, columns=component_order)
+    mdc_significant = data.pivot(
+        index="pathway_id",
+        columns="component_label",
+        values="proportion_mdc_significant",
+    ).reindex(index=pathway_order, columns=component_order)
+    minimum_mdc_fdr = data.pivot(
+        index="pathway_id", columns="component_label", values="minimum_mdc_fdr"
+    ).reindex(index=pathway_order, columns=component_order)
+    pathway_labels = (
+        data[["pathway_id", "pathway_label"]]
+        .drop_duplicates("pathway_id")
+        .set_index("pathway_id")["pathway_label"]
+        .to_dict()
+    )
+    display_labels = []
+    for pathway_id in pathway_order:
+        label = "<br>".join(textwrap.wrap(str(pathway_labels[pathway_id]), width=46))
+        if selected_pathway_id is not None and pathway_id == str(selected_pathway_id):
+            label = "★ " + label
+        display_labels.append(label)
+    customdata = np.stack(
+        [
+            n_modules.to_numpy(),
+            enrichment_fdr.to_numpy(),
+            mdc_significant.to_numpy(),
+            minimum_mdc_fdr.to_numpy(),
+        ],
+        axis=-1,
+    )
+    text = np.empty(pivot.shape, dtype=object)
+    for row_index in range(pivot.shape[0]):
+        for column_index in range(pivot.shape[1]):
+            value = pivot.iat[row_index, column_index]
+            support = n_modules.iat[row_index, column_index]
+            text[row_index, column_index] = (
+                ""
+                if pd.isna(value)
+                else f"{float(value):.2f}<br>n={int(support)}"
+            )
+    figure = go.Figure(
+        go.Heatmap(
+            z=pivot.to_numpy(),
+            x=component_order,
+            y=display_labels,
+            colorscale="RdBu_r",
+            zmid=reference,
+            text=text,
+            texttemplate="%{text}",
+            customdata=customdata,
+            hovertemplate=(
+                "Pathway: %{y}<br>Component: %{x}<br>"
+                + axis_title
+                + ": %{z:.4f}<br>Enriched modules: %{customdata[0]:.0f}<br>"
+                "Minimum KEGG FDR: %{customdata[1]:.4g}<br>"
+                "MDC-significant module proportion: %{customdata[2]:.1%}<br>"
+                "Minimum directional MDC FDR: %{customdata[3]:.4g}"
+                "<extra></extra>"
+            ),
+            colorbar={"title": axis_title},
+        )
+    )
+    scale_text = "mean log2 MDC" if scale == "log2" else "geometric mean MDC ratio"
+    title = (
+        "Pathway-annotated MDC across regions and tissue pairs"
+        f"<br><sup>Top {len(pathway_order)} pathways by maximum absolute mean log2 MDC · "
+        f"cells show {scale_text} and enriched-module n"
+    )
+    if module_definition:
+        title += f" · {module_definition}"
+    title += "</sup>"
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"},
+        template="plotly_white",
+        height=max(650, min(1800, 260 + 34 * len(pathway_order))),
+        margin={"l": 280, "r": 35, "t": 110, "b": 120},
+        xaxis={"side": "top", "tickangle": -30},
+        yaxis={"autorange": "reversed", "tickfont": {"size": 10}},
+    )
+    return figure
+
+
+def pathway_mdc_detail_figure(
+    frame: pd.DataFrame,
+    *,
+    pathway_id: str,
+    selected_module: int,
+    threshold: float,
+    scale: str = "log2",
+    module_definition: str | None = None,
+) -> go.Figure:
+    """Show module-level MDC values for one KEGG pathway across components."""
+
+    value_column = "log2_mdc" if scale == "log2" else "mdc"
+    _, axis_title, reference = _mdc_scale_settings(scale)
+    data = frame.loc[frame["pathway_id"].astype(str).eq(str(pathway_id))].copy()
+    data = data.dropna(subset=[value_column])
+    data["mdc_significant"] = pd.to_numeric(
+        data["directional_fdr"], errors="coerce"
+    ).lt(float(threshold))
+    component_order = [
+        label
+        for label in MDC_COMPONENT_LABEL_ORDER
+        if label in set(data["component_label"].astype(str))
+    ]
+    figure = go.Figure()
+    for direction in ["Higher in Control", "Higher in AD", "Equal", "Not available"]:
+        group = data.loc[data["direction"].fillna("Not available").eq(direction)]
+        if group.empty:
+            continue
+        customdata = np.column_stack(
+            [
+                group["module"].astype(int).map(lambda value: f"M{value}"),
+                group["mdc"],
+                group["log2_mdc"],
+                group["directional_fdr"],
+                group["enrichment_fdr"],
+                group["enrichment_scope"],
+                group["n_edges"],
+                group["mdc_significant"].map(lambda value: "Yes" if value else "No"),
+            ]
+        )
+        figure.add_trace(
+            go.Scatter(
+                x=group["component_label"],
+                y=group[value_column],
+                mode="markers",
+                name=direction,
+                marker={
+                    "color": MDC_DIRECTION_COLORS.get(direction, "#7A8793"),
+                    "size": 9,
+                    "opacity": 0.75,
+                    "symbol": [
+                        "diamond" if significant else "circle-open"
+                        for significant in group["mdc_significant"]
+                    ],
+                    "line": {"color": "white", "width": 0.6},
+                },
+                customdata=customdata,
+                hovertemplate=(
+                    "Module: %{customdata[0]}<br>Component: %{x}<br>"
+                    "MDC: %{customdata[1]:.4f}<br>log2 MDC: %{customdata[2]:.4f}<br>"
+                    "Directional MDC FDR: %{customdata[3]:.4g}<br>"
+                    "KEGG FDR for component: %{customdata[4]:.4g}<br>"
+                    "KEGG scope: %{customdata[5]}<br>Edges: %{customdata[6]:,}<br>"
+                    f"MDC significant at FDR &lt; {threshold:.2f}: %{{customdata[7]}}"
+                    "<extra></extra>"
+                ),
+            )
+        )
+    selected = data.loc[data["module"].astype(int).eq(int(selected_module))]
+    if not selected.empty:
+        figure.add_trace(
+            go.Scatter(
+                x=selected["component_label"],
+                y=selected[value_column],
+                mode="markers+text",
+                text=[f"M{int(selected_module)}"] * len(selected),
+                textposition="top center",
+                name=f"Selected M{int(selected_module)}",
+                marker={
+                    "symbol": "star",
+                    "size": 17,
+                    "color": "#FFD92F",
+                    "line": {"color": "#202124", "width": 1.4},
+                },
+                hovertemplate=(
+                    f"Selected module: M{int(selected_module)}<br>"
+                    "Component: %{x}<br>MDC value: %{y:.4f}<extra></extra>"
+                ),
+            )
+        )
+    figure.add_hline(
+        y=reference, line_dash="dash", line_color="#657584", line_width=1
+    )
+    pathway_name = (
+        str(data["pathway_label"].iloc[0]) if not data.empty else str(pathway_id)
+    )
+    title = f"Module MDCs annotated to {html.escape(pathway_name)}"
+    if module_definition:
+        title += f"<br><sup>{module_definition}</sup>"
+    yaxis: dict[str, object] = {"title": axis_title, "zeroline": False}
+    if scale == "raw":
+        yaxis["rangemode"] = "tozero"
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"},
+        template="plotly_white",
+        height=570,
+        margin={"l": 70, "r": 25, "t": 90, "b": 120},
+        xaxis={
+            "title": "MDC edge component",
+            "categoryorder": "array",
+            "categoryarray": component_order,
+            "tickangle": -30,
+        },
+        yaxis=yaxis,
+        legend={
+            "orientation": "h",
+            "yanchor": "bottom",
+            "y": 1.02,
+            "xanchor": "right",
+            "x": 1,
+        },
+    )
+    return figure
+
+
 def mdc_resolved_module_figure(
     frame: pd.DataFrame,
     threshold: float,
     module_definition: str | None = None,
+    scale: str = "log2",
 ) -> go.Figure:
     """Resolved MDC bars for one selected module."""
 
     data = frame.copy()
+    value_column, axis_title, reference = _mdc_scale_settings(scale)
     data["significant"] = pd.to_numeric(
         data["directional_fdr"], errors="coerce"
     ).lt(threshold)
@@ -968,7 +1432,7 @@ def mdc_resolved_module_figure(
     figure = go.Figure(
         go.Bar(
             x=data["component_label"],
-            y=data["log2_mdc"],
+            y=data[value_column],
             marker={"color": colors},
             text=[
                 ("NA" if pd.isna(value) else f"{float(value):.3f}")
@@ -981,6 +1445,7 @@ def mdc_resolved_module_figure(
             customdata=np.column_stack(
                 [
                     data["mdc"],
+                    data["log2_mdc"],
                     data["directional_fdr"],
                     data["direction"],
                     data["n_edges"],
@@ -988,13 +1453,13 @@ def mdc_resolved_module_figure(
             ),
             hovertemplate=(
                 "Component: %{x}<br>MDC: %{customdata[0]:.4f}<br>"
-                "log2 MDC: %{y:.4f}<br>Direction: %{customdata[2]}<br>"
-                "Directional FDR: %{customdata[1]:.4g}<br>Edges: %{customdata[3]:,}"
+                "log2 MDC: %{customdata[1]:.4f}<br>Direction: %{customdata[3]}<br>"
+                "Directional FDR: %{customdata[2]:.4g}<br>Edges: %{customdata[4]:,}"
                 "<extra></extra>"
             ),
         )
     )
-    figure.add_hline(y=0, line_dash="dash", line_color="#657584")
+    figure.add_hline(y=reference, line_dash="dash", line_color="#657584")
     title = f"Module M{int(data['module'].iloc[0])}: tissue-resolved MDC"
     if module_definition:
         title += f"<br><sup>{module_definition}</sup>"
@@ -1002,7 +1467,10 @@ def mdc_resolved_module_figure(
         title={"text": title, "x": 0.01},
         template="plotly_white",
         height=480,
-        yaxis={"title": "log2 MDC (AD / Control)"},
+        yaxis={
+            "title": axis_title,
+            **({"rangemode": "tozero"} if scale == "raw" else {}),
+        },
         xaxis={"title": "Resolved edge component"},
         showlegend=False,
         margin={"l": 65, "r": 25, "t": 85, "b": 100},
@@ -1015,14 +1483,19 @@ def mdc_resolved_heatmap_figure(
     threshold: float,
     selected_module: int,
     module_definition: str | None = None,
+    scale: str = "log2",
 ) -> go.Figure:
     """All-module resolved MDC heatmap with FDR significance markers."""
 
     data = frame.copy()
-    pivot = data.pivot(index="module", columns="component_label", values="log2_mdc")
+    value_column, axis_title, reference = _mdc_scale_settings(scale)
+    pivot = data.pivot(index="module", columns="component_label", values=value_column)
+    raw = data.pivot(index="module", columns="component_label", values="mdc")
+    log2 = data.pivot(index="module", columns="component_label", values="log2_mdc")
     fdr = data.pivot(index="module", columns="component_label", values="directional_fdr")
     module_order = (
-        pivot.abs().max(axis=1).sort_values(ascending=False).index.astype(int).tolist()
+        pivot.sub(reference).abs().max(axis=1).sort_values(ascending=False)
+        .index.astype(int).tolist()
     )
     if int(selected_module) in module_order:
         module_order.remove(int(selected_module))
@@ -1036,6 +1509,8 @@ def mdc_resolved_heatmap_figure(
         if value in pivot.columns
     ]
     pivot = pivot.reindex(index=module_order, columns=component_order)
+    raw = raw.reindex(index=module_order, columns=component_order)
+    log2 = log2.reindex(index=module_order, columns=component_order)
     fdr = fdr.reindex(index=module_order, columns=component_order)
     text = np.empty(pivot.shape, dtype=object)
     for row in range(pivot.shape[0]):
@@ -1053,15 +1528,18 @@ def mdc_resolved_heatmap_figure(
             x=component_order,
             y=[f"M{value}" for value in module_order],
             colorscale="RdBu_r",
-            zmid=0,
+            zmid=reference,
             text=text,
             texttemplate="%{text}",
-            customdata=fdr.to_numpy(),
-            hovertemplate=(
-                "Module: %{y}<br>Component: %{x}<br>log2 MDC: %{z:.4f}<br>"
-                "Directional FDR: %{customdata:.4g}<extra></extra>"
+            customdata=np.stack(
+                [raw.to_numpy(), log2.to_numpy(), fdr.to_numpy()], axis=-1
             ),
-            colorbar={"title": "log2 MDC"},
+            hovertemplate=(
+                "Module: %{y}<br>Component: %{x}<br>MDC: %{customdata[0]:.4f}<br>"
+                "log2 MDC: %{customdata[1]:.4f}<br>"
+                "Directional FDR: %{customdata[2]:.4g}<extra></extra>"
+            ),
+            colorbar={"title": axis_title},
         )
     )
     title = "Resolved MDC across modules"
@@ -1126,11 +1604,14 @@ def mdc_module_figure(
     row: pd.Series,
     threshold: float,
     module_definition: str | None = None,
+    scale: str = "log2",
 ) -> go.Figure:
-    """Compare total, TS, and CT MDC for the selected module on a centered log2 scale."""
+    """Compare total, TS, and CT MDC for the selected module."""
+    value_prefix, axis_title, reference = _mdc_scale_settings(scale)
     scopes = [("total", "Total"), ("ts", "Tissue-specific (TS)"), ("ct", "Cross-tissue (CT)")]
     ratios = [row.get(f"mdc_{scope}") for scope, _ in scopes]
     log_ratios = [row.get(f"log2_mdc_{scope}") for scope, _ in scopes]
+    displayed_values = [row.get(f"{value_prefix}_{scope}") for scope, _ in scopes]
     fdrs = [row.get(f"directional_fdr_{scope}") for scope, _ in scopes]
     directions = [str(row.get(f"direction_{scope}", "Not available")) for scope, _ in scopes]
     significant = [pd.notna(fdr) and float(fdr) < threshold for fdr in fdrs]
@@ -1148,6 +1629,7 @@ def mdc_module_figure(
     customdata = np.column_stack(
         [
             ["NA" if pd.isna(value) else f"{float(value):.4f}" for value in ratios],
+            ["NA" if pd.isna(value) else f"{float(value):.4f}" for value in log_ratios],
             ["NA" if pd.isna(value) else f"{float(value):.4g}" for value in fdrs],
             directions,
             ["Yes" if value else "No" for value in significant],
@@ -1156,7 +1638,7 @@ def mdc_module_figure(
     figure = go.Figure(
         go.Bar(
             x=labels,
-            y=log_ratios,
+            y=displayed_values,
             marker={"color": colors},
             text=text,
             textposition="outside",
@@ -1164,16 +1646,25 @@ def mdc_module_figure(
             customdata=customdata,
             hovertemplate=(
                 "Component: %{x}<br>MDC (AD / Control): %{customdata[0]}<br>"
-                "log2 MDC: %{y:.3f}<br>Direction: %{customdata[2]}<br>"
-                "Directional FDR: %{customdata[1]}<br>"
-                f"Significant at FDR &lt; {threshold:.2f}: %{{customdata[3]}}"
+                "log2 MDC: %{customdata[1]}<br>Direction: %{customdata[3]}<br>"
+                "Directional FDR: %{customdata[2]}<br>"
+                f"Significant at FDR &lt; {threshold:.2f}: %{{customdata[4]}}"
                 "<extra></extra>"
             ),
         )
     )
-    finite = np.asarray([value for value in log_ratios if pd.notna(value)], dtype=float)
-    extent = max(0.35, float(np.max(np.abs(finite))) * 1.32) if finite.size else 0.35
-    figure.add_hline(y=0, line_dash="dash", line_color="#657584", line_width=1)
+    finite = np.asarray(
+        [value for value in displayed_values if pd.notna(value)], dtype=float
+    )
+    if scale == "log2":
+        extent = max(0.35, float(np.max(np.abs(finite))) * 1.32) if finite.size else 0.35
+        yaxis = {"title": axis_title, "range": [-extent, extent], "zeroline": False}
+    else:
+        maximum = max(1.15, float(np.max(finite)) * 1.28) if finite.size else 1.15
+        yaxis = {"title": axis_title, "range": [0, maximum], "zeroline": False}
+    figure.add_hline(
+        y=reference, line_dash="dash", line_color="#657584", line_width=1
+    )
     title_text = f"Module M{int(row['module'])}: MDC by edge scope"
     if module_definition:
         title_text += f"<br><sup>{module_definition}</sup>"
@@ -1186,11 +1677,7 @@ def mdc_module_figure(
         template="plotly_white",
         height=430,
         margin={"l": 65, "r": 30, "t": 75, "b": 75},
-        yaxis={
-            "title": "log2 MDC (AD / Control)",
-            "range": [-extent, extent],
-            "zeroline": False,
-        },
+        yaxis=yaxis,
         showlegend=False,
     )
     return figure
@@ -1201,9 +1688,13 @@ def mdc_overview_figure(
     selected_module: int,
     threshold: float,
     module_definition: str | None = None,
+    scale: str = "log2",
 ) -> go.Figure:
     """Show tissue-specific versus cross-tissue MDC across modules."""
-    data = frame.dropna(subset=["log2_mdc_ts", "log2_mdc_ct"]).copy()
+    value_prefix, axis_title, reference = _mdc_scale_settings(scale)
+    ts_column = f"{value_prefix}_ts"
+    ct_column = f"{value_prefix}_ct"
+    data = frame.dropna(subset=[ts_column, ct_column]).copy()
     data["ts_significant"] = data["directional_fdr_ts"].lt(threshold)
     data["ct_significant"] = data["directional_fdr_ct"].lt(threshold)
     data["significance"] = np.select(
@@ -1240,8 +1731,8 @@ def mdc_overview_figure(
         ]
         figure.add_trace(
             go.Scatter(
-                x=group["log2_mdc_ts"],
-                y=group["log2_mdc_ct"],
+                x=group[ts_column],
+                y=group[ct_column],
                 mode="markers",
                 name=category,
                 marker={
@@ -1270,8 +1761,8 @@ def mdc_overview_figure(
         row = selected.iloc[0]
         figure.add_trace(
             go.Scatter(
-                x=[row["log2_mdc_ts"]],
-                y=[row["log2_mdc_ct"]],
+                x=[row[ts_column]],
+                y=[row[ct_column]],
                 mode="markers+text",
                 name=f"Selected M{int(selected_module)}",
                 text=[f"M{int(selected_module)}"],
@@ -1284,24 +1775,34 @@ def mdc_overview_figure(
                 },
                 hovertemplate=(
                     f"Selected module: M{int(selected_module)}<br>"
-                    "TS log2 MDC: %{x:.3f}<br>CT log2 MDC: %{y:.3f}<extra></extra>"
+                    f"TS {axis_title}: %{{x:.3f}}<br>CT {axis_title}: %{{y:.3f}}"
+                    "<extra></extra>"
                 ),
             )
         )
 
-    finite = data[["log2_mdc_ts", "log2_mdc_ct"]].to_numpy(dtype=float).ravel()
-    extent = max(0.5, float(np.max(np.abs(finite))) * 1.08) if finite.size else 0.5
+    finite = data[[ts_column, ct_column]].to_numpy(dtype=float).ravel()
+    if scale == "log2":
+        extent = max(0.5, float(np.max(np.abs(finite))) * 1.08) if finite.size else 0.5
+        lower, upper = -extent, extent
+    else:
+        lower = 0.0
+        upper = max(1.1, float(np.max(finite)) * 1.08) if finite.size else 1.1
     figure.add_shape(
         type="line",
-        x0=-extent,
-        y0=-extent,
-        x1=extent,
-        y1=extent,
+        x0=lower,
+        y0=lower,
+        x1=upper,
+        y1=upper,
         line={"color": "#AAB2BA", "dash": "dot", "width": 1},
         layer="below",
     )
-    figure.add_vline(x=0, line_dash="dash", line_color="#657584", line_width=1)
-    figure.add_hline(y=0, line_dash="dash", line_color="#657584", line_width=1)
+    figure.add_vline(
+        x=reference, line_dash="dash", line_color="#657584", line_width=1
+    )
+    figure.add_hline(
+        y=reference, line_dash="dash", line_color="#657584", line_width=1
+    )
     title_text = "TS versus CT MDC across modules"
     if module_definition:
         title_text += f"<br><sup>{module_definition}</sup>"
@@ -1310,8 +1811,8 @@ def mdc_overview_figure(
         template="plotly_white",
         height=610,
         margin={"l": 70, "r": 30, "t": 90, "b": 65},
-        xaxis={"title": "TS log2 MDC (AD / Control)", "range": [-extent, extent]},
-        yaxis={"title": "CT log2 MDC (AD / Control)", "range": [-extent, extent]},
+        xaxis={"title": f"TS {axis_title}", "range": [lower, upper]},
+        yaxis={"title": f"CT {axis_title}", "range": [lower, upper]},
         legend={
             "orientation": "h",
             "yanchor": "bottom",

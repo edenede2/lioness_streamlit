@@ -1,0 +1,4548 @@
+{
+  "schema_version": 1,
+  "root_folder_id": "1dTj5SkLxuDIvII5LayLViqOzjKQt-dos",
+  "generated_at_utc": "2026-08-23T05:50:17.453159+00:00",
+  "file_count": 461,
+  "total_bytes": 4001899121,
+  "drive_list_requests": 2,
+  "files": {
+    "aggregate_plot_data.parquet": {
+      "id": "1Ztq5ndSsYTypS7kSio6Kw1OCYPKD8cuJ",
+      "size": 34129568,
+      "md5": "627cd78fbd62c08a548ec3392967ed05",
+      "modified_time": "2026-08-23T05:30:58.042Z"
+    },
+    "aggregate_statistics.parquet": {
+      "id": "13AAp72UmUPvUWnHnKQWIiwOSSnJfivn0",
+      "size": 26485638,
+      "md5": "e7b3cef485462322e67ccb77fbdd3394",
+      "modified_time": "2026-08-23T05:30:58.048Z"
+    },
+    "bonobo/all/aggregate_plot_data.parquet": {
+      "id": "1iaCZ_f8XIJbtwa3Jn4XUWfv7LWHWSHZq",
+      "size": 8137889,
+      "md5": "a4541d63ab3fcfe5bd79308f6ac1c029",
+      "modified_time": "2026-08-23T05:30:59.409Z"
+    },
+    "bonobo/all/aggregate_statistics.parquet": {
+      "id": "1A-fbhr4oFkl3KR-aOK2224cZ0ECU2pC2",
+      "size": 6309838,
+      "md5": "3a9c93bdf2692f83fb17b06e4952d661",
+      "modified_time": "2026-08-23T05:30:59.417Z"
+    },
+    "bonobo/all/resolved_plot_data.parquet": {
+      "id": "1GD96gKQ49NmsaR-2b8KNj1a6DDtGsd7r",
+      "size": 23217075,
+      "md5": "9860c2fabcb57525eab1abeb6f6b9113",
+      "modified_time": "2026-08-23T05:30:59.422Z"
+    },
+    "bonobo/all/resolved_statistics.parquet": {
+      "id": "1AQSmvWLRmMBxCMFAzFWEOb_ZPSF6peM4",
+      "size": 16042166,
+      "md5": "59ac01a66b938841a99fcdf8f005be4d",
+      "modified_time": "2026-08-23T05:30:59.427Z"
+    },
+    "bonobo/bh_fdr05/aggregate_plot_data.parquet": {
+      "id": "1H8tb6ZK5IQZLZgGjW3aO9z1iWu4U6vXG",
+      "size": 1166462,
+      "md5": "d8b95730556bccc83b087c7030e797f4",
+      "modified_time": "2026-08-23T05:30:59.251Z"
+    },
+    "bonobo/bh_fdr05/aggregate_statistics.parquet": {
+      "id": "1fnz45c_KnoXX3b86ajWFCo1O0n4otWdz",
+      "size": 909419,
+      "md5": "57e3c91a95de78ee27a25f94cd9485d1",
+      "modified_time": "2026-08-23T05:30:59.256Z"
+    },
+    "bonobo/bh_fdr05/resolved_plot_data.parquet": {
+      "id": "1tHUo6eOmBQ3kJo7i5xoVMbPA7nPZQBpF",
+      "size": 2695995,
+      "md5": "3613ac18da0209faa7bf62bddac98c81",
+      "modified_time": "2026-08-23T05:30:59.265Z"
+    },
+    "bonobo/bh_fdr05/resolved_statistics.parquet": {
+      "id": "1O81o9n4HB_rZw3VgxjsQQqtB_gd1-tJy",
+      "size": 1572241,
+      "md5": "b1e8c97f51707d579a055e8fd9816470",
+      "modified_time": "2026-08-23T05:30:59.281Z"
+    },
+    "bonobo/native_p05/aggregate_plot_data.parquet": {
+      "id": "1SCG7JqbX3aJGjKZAbeff7jHo00WbQQbR",
+      "size": 3451364,
+      "md5": "899191921e0ff574bc0d6b145c64fe1a",
+      "modified_time": "2026-08-23T05:30:59.374Z"
+    },
+    "bonobo/native_p05/aggregate_statistics.parquet": {
+      "id": "1at3cAyjuAEzpfSOgboErTAPEsVlRvfzk",
+      "size": 3184662,
+      "md5": "43ea9a416bcb0e1341dd2b78671a0d85",
+      "modified_time": "2026-08-23T05:30:59.380Z"
+    },
+    "bonobo/native_p05/resolved_plot_data.parquet": {
+      "id": "1daWH5zGARmt71vz2bfOcXm87hcLeJor7",
+      "size": 7209865,
+      "md5": "6268891995dad7369cf150db17618419",
+      "modified_time": "2026-08-23T05:30:59.388Z"
+    },
+    "bonobo/native_p05/resolved_statistics.parquet": {
+      "id": "1EAEpFa1Io1sxAsV-hP4_I48XKlIx2sfA",
+      "size": 6173327,
+      "md5": "286acd9cf6a5cdaf9f7b813a59f53803",
+      "modified_time": "2026-08-23T05:30:59.393Z"
+    },
+    "control_derived/aggregate_plot_data.parquet": {
+      "id": "1wVr5yagm0mG_UpTtoVzSnaSS3dhhoEze",
+      "size": 20973757,
+      "md5": "f86b89ff39324672a5e840f3e0c85176",
+      "modified_time": "2026-08-23T05:30:58.543Z"
+    },
+    "control_derived/aggregate_statistics.parquet": {
+      "id": "1mX5KTDU-H1Ieo7gxdsoHwXEdUuivyFKN",
+      "size": 16632170,
+      "md5": "da9764393a03cb50272347090ace241e",
+      "modified_time": "2026-08-23T05:30:58.547Z"
+    },
+    "control_derived/bonobo/all/aggregate_plot_data.parquet": {
+      "id": "1jbbn-zXAwRYn6ndTPfec9zzjtug7pwcL",
+      "size": 10266286,
+      "md5": "f429a446612a496719e08fc141d072f7",
+      "modified_time": "2026-08-23T05:31:00.373Z"
+    },
+    "control_derived/bonobo/all/aggregate_statistics.parquet": {
+      "id": "1tTAUHAlC58_Mjp3jIjru4qgPHo6pSdlH",
+      "size": 8100458,
+      "md5": "3a61ae7441acb385f67a04ebcaa30c2a",
+      "modified_time": "2026-08-23T05:31:00.377Z"
+    },
+    "control_derived/bonobo/all/resolved_plot_data.parquet": {
+      "id": "16gL89UdpuHWHwSNkeouZMWaSbNrtXCA3",
+      "size": 30410663,
+      "md5": "37e874385af6d59055dfbeb77078826c",
+      "modified_time": "2026-08-23T05:31:00.384Z"
+    },
+    "control_derived/bonobo/all/resolved_statistics.parquet": {
+      "id": "1HGeAA-1qVkT2_Zm8XVS48_ULxZKuAnuz",
+      "size": 20973205,
+      "md5": "693ebdb7f6b1a749f4ce06a06ffbf826",
+      "modified_time": "2026-08-23T05:31:00.391Z"
+    },
+    "control_derived/bonobo/bh_fdr05/aggregate_plot_data.parquet": {
+      "id": "1YBy1wk2qA3K5iluAwt_Vo133eICfEvby",
+      "size": 497132,
+      "md5": "eea396748c7162e2651a6768ee3a3747",
+      "modified_time": "2026-08-23T05:31:00.290Z"
+    },
+    "control_derived/bonobo/bh_fdr05/aggregate_statistics.parquet": {
+      "id": "18ERBjJ8g9dTwPOzhvvl_HY9kmxSvmVFR",
+      "size": 424534,
+      "md5": "d233c507895657ca1b31226e0a2916e2",
+      "modified_time": "2026-08-23T05:31:00.327Z"
+    },
+    "control_derived/bonobo/bh_fdr05/resolved_plot_data.parquet": {
+      "id": "1HcuCAg4Yf46EEd79vxcOAQnwJom8H6P7",
+      "size": 1672948,
+      "md5": "2bc05aa9fe1fdca1158def1bfa80db0a",
+      "modified_time": "2026-08-23T05:31:00.335Z"
+    },
+    "control_derived/bonobo/bh_fdr05/resolved_statistics.parquet": {
+      "id": "1oeygo1NnEewQOlr7g0PsHb432SidlmFk",
+      "size": 738033,
+      "md5": "76fbb8972d989fe665407559c2514642",
+      "modified_time": "2026-08-23T05:31:00.341Z"
+    },
+    "control_derived/bonobo/native_p05/aggregate_plot_data.parquet": {
+      "id": "1j665KrNvnROd0DzD96Q7-6I2rm9A_Ioc",
+      "size": 2891025,
+      "md5": "93fdbe1c9ff5b2566f88dfcf3b33faac",
+      "modified_time": "2026-08-23T05:31:00.347Z"
+    },
+    "control_derived/bonobo/native_p05/aggregate_statistics.parquet": {
+      "id": "1ikQDaQ2SAjZ2mgbbCeYslRdAlhcs_8UN",
+      "size": 2747313,
+      "md5": "f25e479b47475c693d76fa83d1e49790",
+      "modified_time": "2026-08-23T05:31:00.353Z"
+    },
+    "control_derived/bonobo/native_p05/resolved_plot_data.parquet": {
+      "id": "1HldiEOL-pC-K-KP7d-E79lFWGvv7EnpR",
+      "size": 6397551,
+      "md5": "9f08d45cbc4ae2bfe9c76bb576badf0b",
+      "modified_time": "2026-08-23T05:31:00.358Z"
+    },
+    "control_derived/bonobo/native_p05/resolved_statistics.parquet": {
+      "id": "1lXxgs4jH4YTMh1ZzRMWdnzX9wGM2k9AC",
+      "size": 5540688,
+      "md5": "09572c02e1431aacb55de80bc79cd7be",
+      "modified_time": "2026-08-23T05:31:00.368Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/all/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1FAGkD4TSvwQafS8vBmuBS6HAHS9r42Qj",
+      "size": 72910,
+      "md5": "41a0bf7ab387f8b3bdd9991a35b7efcb",
+      "modified_time": "2026-08-23T05:31:20.107Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/all/retained_edge/aggregate_statistics.parquet": {
+      "id": "18NQWUdAWzitAuHLMEygehLOje3JuIIAT",
+      "size": 70455,
+      "md5": "f44b87b06d273538e5861b98f46ac303",
+      "modified_time": "2026-08-23T05:31:20.147Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/all/retained_edge/resolved_plot_data.parquet": {
+      "id": "10EETGrRB-VnubEisKXEfdEq-gnI0BXel",
+      "size": 892728,
+      "md5": "98cade23e392bab263a652633901830b",
+      "modified_time": "2026-08-23T05:31:20.169Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/all/retained_edge/resolved_statistics.parquet": {
+      "id": "1_oP2D07DAh3v-Yom3M8NhQR-1fkhZOyx",
+      "size": 111936,
+      "md5": "fa26b4ac6ae7ce76b1219cbb748bfe15",
+      "modified_time": "2026-08-23T05:31:20.178Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/all/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1B14v6NKJgdpXRSSKD1QFgEQ-VdXPyRlS",
+      "size": 74953,
+      "md5": "38cd842c5fb050060c87b4bdc7ec63b5",
+      "modified_time": "2026-08-23T05:31:20.189Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/all/standard_pruned/aggregate_statistics.parquet": {
+      "id": "14PwlaXKX-bRRBDdtLQ2Yz8MCmrngbNua",
+      "size": 92162,
+      "md5": "ee6d08926273f634693ae4eb19259c02",
+      "modified_time": "2026-08-23T05:31:20.196Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/all/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1xd52F6mARxC1SIEAjczy-nVIUClaHEFn",
+      "size": 901552,
+      "md5": "6eb9480653ccd621e27e7d1d522bcb31",
+      "modified_time": "2026-08-23T05:31:20.205Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/all/standard_pruned/resolved_statistics.parquet": {
+      "id": "1ySvO3PDHfTYNYiBDh33of1lYO3PorG9N",
+      "size": 118170,
+      "md5": "ee2bc9f9d3b7651919d08b3dcf79dcbe",
+      "modified_time": "2026-08-23T05:31:20.211Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/bh_fdr05/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1NsvDfzNLWN2iixOY63k8-2mT2mWNQt8G",
+      "size": 69827,
+      "md5": "08f7e947142724c20af933565d3198aa",
+      "modified_time": "2026-08-23T05:31:19.755Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/bh_fdr05/retained_edge/aggregate_statistics.parquet": {
+      "id": "1WD0HRBQoRDTtxFNG9pd7cAPoz1yeUzrj",
+      "size": 70491,
+      "md5": "dcc45fdb299a761c1a4926bb819688a4",
+      "modified_time": "2026-08-23T05:31:19.769Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/bh_fdr05/retained_edge/resolved_plot_data.parquet": {
+      "id": "1qTO7GkE8ddj92Y3mP4fTmGgWIioktVlr",
+      "size": 892055,
+      "md5": "0b071289318137e88bb3d9b968aa07a0",
+      "modified_time": "2026-08-23T05:31:19.782Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/bh_fdr05/retained_edge/resolved_statistics.parquet": {
+      "id": "1t0gQQOs14UW0R8qStFXZJetB75mPcML7",
+      "size": 82159,
+      "md5": "7741bf362105c7121a35cb2d4830d4ec",
+      "modified_time": "2026-08-23T05:31:19.794Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/bh_fdr05/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "186EzttGpW8EKpKEa00SmYqARQef_a2Ma",
+      "size": 73386,
+      "md5": "ed8c0c35468d82b66fd8fd63e26d73f5",
+      "modified_time": "2026-08-23T05:31:19.815Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/bh_fdr05/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1drviAhD46qd1zjDOgix0Dt87kZykJrXn",
+      "size": 70966,
+      "md5": "6f802ce116c207ead86493b73f3d150d",
+      "modified_time": "2026-08-23T05:31:19.957Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/bh_fdr05/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1W3565LB4CLQHGTVySv-zkHBvNIBfldJB",
+      "size": 901311,
+      "md5": "7f63b898d86eb92d324512bcb21fdd6d",
+      "modified_time": "2026-08-23T05:31:20.001Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/bh_fdr05/standard_pruned/resolved_statistics.parquet": {
+      "id": "1Q7FubkaFDHBHAh1CFUdAKwi2dlq_aEY_",
+      "size": 86847,
+      "md5": "b5d7637d59ceb596cefaabdf39e16b32",
+      "modified_time": "2026-08-23T05:31:20.057Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/native_p05/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1aETY9QyYyw7xoNKWn9XTaJtWBeMLDid5",
+      "size": 73121,
+      "md5": "dc3c633cf0600e64b1b7bc463f275c8d",
+      "modified_time": "2026-08-23T05:31:20.217Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/native_p05/retained_edge/aggregate_statistics.parquet": {
+      "id": "1ditLhwP809tz2zxiJHZ1uRAEhDDZoPF1",
+      "size": 70526,
+      "md5": "23d8c14cfca8e09247a573a87062a659",
+      "modified_time": "2026-08-23T05:31:20.224Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/native_p05/retained_edge/resolved_plot_data.parquet": {
+      "id": "1xYmIPiCP_md46qgmkpy9qt7G6xTfnkzP",
+      "size": 893813,
+      "md5": "95f86d9960638b6b8715af533be6d4d4",
+      "modified_time": "2026-08-23T05:31:20.234Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/native_p05/retained_edge/resolved_statistics.parquet": {
+      "id": "1LpipbHKkSYnN7dAKxi7NwW2fVJWoGxo9",
+      "size": 112181,
+      "md5": "c58662c5f5ce2be63b0e29ffd9f03231",
+      "modified_time": "2026-08-23T05:31:20.240Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/native_p05/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1MSayXy1n99lv0_-reSudAOS4viY33fLk",
+      "size": 75164,
+      "md5": "7b45d87bf79a92922507dc324600ae03",
+      "modified_time": "2026-08-23T05:31:20.247Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/native_p05/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1I8S2NTHh3qCfctnSLKMxq7E1IwfWkQrE",
+      "size": 92232,
+      "md5": "3fb95325d9da65e6287665b878289500",
+      "modified_time": "2026-08-23T05:31:20.253Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/native_p05/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1I3I6PgmPDogvXx7jDvsBC60AwHhzyu8t",
+      "size": 902637,
+      "md5": "f28a05dcdab78e4abbd97290f6a0f7b0",
+      "modified_time": "2026-08-23T05:31:20.260Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/native_p05/standard_pruned/resolved_statistics.parquet": {
+      "id": "1NZFPVtQ_DaXh8LMJm1JaLnnr2gbHSvhZ",
+      "size": 118415,
+      "md5": "8d4652300a89d16fc468e961de006c48",
+      "modified_time": "2026-08-23T05:31:20.268Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/all/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1mHNkEFtKTLBlVgvQIgCquB1o4RQrL8f2",
+      "size": 72910,
+      "md5": "a7857e4b677ecb361e0e254949479c57",
+      "modified_time": "2026-08-23T05:31:20.376Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/all/retained_edge/aggregate_statistics.parquet": {
+      "id": "15KHSHX3APwwE_PNoc4vXSpPdhwH9ER-2",
+      "size": 70455,
+      "md5": "7962635511ee3a44225a1dd2b8ff0c8a",
+      "modified_time": "2026-08-23T05:31:20.384Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/all/retained_edge/resolved_plot_data.parquet": {
+      "id": "191YIHBGoHbC1RwLrN2Y0ty3m8kP-7qoL",
+      "size": 889967,
+      "md5": "6c1fbcc1dfd5e06f38efadefd7e3a252",
+      "modified_time": "2026-08-23T05:31:20.392Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/all/retained_edge/resolved_statistics.parquet": {
+      "id": "1vC8nYa8x2rqYJY6LVyFKuA73xWtLJ8TH",
+      "size": 111936,
+      "md5": "4f26c91c233db3279aaa87d87d7fd907",
+      "modified_time": "2026-08-23T05:31:20.400Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/all/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1qrVFppkDv0utcbbuoZ2KrJBc1-_hZeRS",
+      "size": 74953,
+      "md5": "29f40be00f47d6245468561b77b0c569",
+      "modified_time": "2026-08-23T05:31:20.431Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/all/standard_pruned/aggregate_statistics.parquet": {
+      "id": "19RAq-PsRDf4hVt4bNq9F56WNAsx_eSfp",
+      "size": 92162,
+      "md5": "c4200d1deeb24c829803945706502f73",
+      "modified_time": "2026-08-23T05:31:20.462Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/all/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1XNhufXWcGkNfmqwSUUp2DX68OG2RoZAH",
+      "size": 898791,
+      "md5": "41e42915004d6ffde1eee615c27e6a50",
+      "modified_time": "2026-08-23T05:31:20.436Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/all/standard_pruned/resolved_statistics.parquet": {
+      "id": "1rhiBHbbMnVW73QM9Cr5ScBfvlzW3tFJm",
+      "size": 118170,
+      "md5": "8bc1cbf68de55aff843eb796e713c37e",
+      "modified_time": "2026-08-23T05:31:20.455Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/bh_fdr05/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1xw7YYyOBDqs0KIfvEg1Il28MBaNx0KXE",
+      "size": 69827,
+      "md5": "d4bd58ac990531690fbb1da8f2120753",
+      "modified_time": "2026-08-23T05:31:20.339Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/bh_fdr05/retained_edge/aggregate_statistics.parquet": {
+      "id": "1IhyzbI4TQtr4cwWjUMrOUPG5VX0KFinV",
+      "size": 70491,
+      "md5": "7f2f527934c386bb9b2e337c1f61ed07",
+      "modified_time": "2026-08-23T05:31:20.351Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/bh_fdr05/retained_edge/resolved_plot_data.parquet": {
+      "id": "1FUgSn38dANXC4XU9CBcFEoalUVoIp8fY",
+      "size": 889294,
+      "md5": "8b648c09a43d07040d5c44ea266a777f",
+      "modified_time": "2026-08-23T05:31:20.360Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/bh_fdr05/retained_edge/resolved_statistics.parquet": {
+      "id": "17AxTtKAh6aZenOuVIIV16aKx18WPDqgZ",
+      "size": 82159,
+      "md5": "7ca2cea3592434bb63361aaab5e86156",
+      "modified_time": "2026-08-23T05:31:20.368Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/bh_fdr05/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1AKKFpoENfH4HdLgVJq8Cohyp9D-tYOAB",
+      "size": 73386,
+      "md5": "fe9a5f7dd61a5a9926521e6756e9675f",
+      "modified_time": "2026-08-23T05:31:20.407Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/bh_fdr05/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1Q2NeZJamHByh5-X0oq-XvDB5VaHfm9iN",
+      "size": 70966,
+      "md5": "aae6fa41c5e91a9547b73fc924241f59",
+      "modified_time": "2026-08-23T05:31:20.413Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/bh_fdr05/standard_pruned/resolved_plot_data.parquet": {
+      "id": "17TUZeO1xTYC463fJFM4LsQfZqHcEm5Oc",
+      "size": 898550,
+      "md5": "3cf164c212942dfb2dc83160297eb175",
+      "modified_time": "2026-08-23T05:31:20.424Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/bh_fdr05/standard_pruned/resolved_statistics.parquet": {
+      "id": "1bc6N4iZXw5v6K0ryN7jIcEkS5SMJQ3gP",
+      "size": 86847,
+      "md5": "40386743b4f7afaee62e6c6f80867534",
+      "modified_time": "2026-08-23T05:31:20.419Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/native_p05/retained_edge/aggregate_plot_data.parquet": {
+      "id": "10549q6w_AFfGDZdYCo2leUQxWqmsROy-",
+      "size": 73121,
+      "md5": "08ea0f276d9aeb56007ccbf69a333757",
+      "modified_time": "2026-08-23T05:31:20.468Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/native_p05/retained_edge/aggregate_statistics.parquet": {
+      "id": "1mBSrCoBgRItoErrYJANxums_kgXeFiTb",
+      "size": 70526,
+      "md5": "cb44fae022dfa85df6ae6c7a269546d5",
+      "modified_time": "2026-08-23T05:31:20.474Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/native_p05/retained_edge/resolved_plot_data.parquet": {
+      "id": "1RNAgqaZ5wWLJ0e7HPXnxvP-zlTlDS3EV",
+      "size": 891052,
+      "md5": "89fc88d6cd233286d67b0ddaadb94a58",
+      "modified_time": "2026-08-23T05:31:20.482Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/native_p05/retained_edge/resolved_statistics.parquet": {
+      "id": "1P8WHj1008rUSCogERnBAja-OF-4R4e8L",
+      "size": 112181,
+      "md5": "58745974126017e284d97687b3cd60a6",
+      "modified_time": "2026-08-23T05:31:20.491Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/native_p05/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1s5obDP9ePSYNJOZWEpDoFbVzPuM8Bm9q",
+      "size": 75164,
+      "md5": "e8161ff4b01534a1b64cba082a563817",
+      "modified_time": "2026-08-23T05:31:20.512Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/native_p05/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1gWvjVfe5J0CxtsDdG3uyJSPid3gR15WG",
+      "size": 92232,
+      "md5": "ff132425c2206435b6855a587768f58f",
+      "modified_time": "2026-08-23T05:31:20.526Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/native_p05/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1_Nml-73sSognr98J9Z722vYPXxBdHqio",
+      "size": 899876,
+      "md5": "6fb714c2d6e740ae118c716b47e00fe6",
+      "modified_time": "2026-08-23T05:31:20.541Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/native_p05/standard_pruned/resolved_statistics.parquet": {
+      "id": "1MBHCYWiVgnSdpvKNCzEZnsKF9HFg0Bbe",
+      "size": 118415,
+      "md5": "9122fb929d8d64d27aa7f1a7d3634062",
+      "modified_time": "2026-08-23T05:31:20.534Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/all/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1OdmxWxAYt_nOS4dqFhkMg_HoYCbIfXxN",
+      "size": 125089,
+      "md5": "ab772c4b81e98002ab0640bdd6aa03d3",
+      "modified_time": "2026-08-23T05:31:19.394Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/all/retained_edge/aggregate_statistics.parquet": {
+      "id": "1NUl_HRSnUh_v6oRZLw_OUnTT7xl8K4B3",
+      "size": 70688,
+      "md5": "3f22e7b06954414fc96c542680ccad56",
+      "modified_time": "2026-08-23T05:31:19.403Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/all/retained_edge/resolved_plot_data.parquet": {
+      "id": "1vSvYuQr70mYtUYKf7UqudqMnLzoNWu1E",
+      "size": 937983,
+      "md5": "b879a6e95c13b2642590a71928b48250",
+      "modified_time": "2026-08-23T05:31:19.415Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/all/retained_edge/resolved_statistics.parquet": {
+      "id": "1KbTERb3-88d5ww4mY03eZ59RW9fzEKem",
+      "size": 212049,
+      "md5": "124f0c3c89eaa68d0a198131f4df52cc",
+      "modified_time": "2026-08-23T05:31:19.423Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/all/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1us0A14Daj7XqDpeUZkNj-p0rE3C6GRUM",
+      "size": 137094,
+      "md5": "5c0dfda9493d6b5a60b4a3debb1ae913",
+      "modified_time": "2026-08-23T05:31:19.474Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/all/standard_pruned/aggregate_statistics.parquet": {
+      "id": "15wXkcHsA3v7dZXDDJRB6FRsm1BipwqxS",
+      "size": 186646,
+      "md5": "9f9d257f7d37a3f4abf53ef7d1118c44",
+      "modified_time": "2026-08-23T05:31:19.483Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/all/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1aef78PViyDZCKLFEc_eJklW_ub3menxN",
+      "size": 953424,
+      "md5": "5ad3cf0e28ce8c3383f6ab53f81fe642",
+      "modified_time": "2026-08-23T05:31:19.493Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/all/standard_pruned/resolved_statistics.parquet": {
+      "id": "1gatOAVfA28Q84MjpebN6Le__NF-Hhwfo",
+      "size": 223996,
+      "md5": "d128ec193e100ee73b498c0dbac3e4b0",
+      "modified_time": "2026-08-23T05:31:19.504Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/bh_fdr05/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1mqzDc6LVoa7-rghYM0dCCPTbzeamhLRA",
+      "size": 69947,
+      "md5": "f9f8e91205756b496175d8ac9ebb39d5",
+      "modified_time": "2026-08-23T05:31:19.518Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/bh_fdr05/retained_edge/aggregate_statistics.parquet": {
+      "id": "1TrB-J2PcvW7aGDdx98teoLu7f-WvFxy4",
+      "size": 70531,
+      "md5": "3a93cf83c8d2ea3212b754c551a5a966",
+      "modified_time": "2026-08-23T05:31:19.527Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/bh_fdr05/retained_edge/resolved_plot_data.parquet": {
+      "id": "1-_MZAeJHWZSCXaclvzyJnIV0-G-AGJLB",
+      "size": 889914,
+      "md5": "49246173561300b990883e964c54e8de",
+      "modified_time": "2026-08-23T05:31:19.537Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/bh_fdr05/retained_edge/resolved_statistics.parquet": {
+      "id": "1yNkGe6HkkEIMlVWTKyw7pKS354MNfAIT",
+      "size": 82299,
+      "md5": "600dd911e0d66a87691efceecff92389",
+      "modified_time": "2026-08-23T05:31:19.550Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/bh_fdr05/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "15FrQq5ZS6e8_TiUrGUKvflMPh52QF4h-",
+      "size": 73506,
+      "md5": "c67e9f3f1f63c14d1150c3f00e7fe86a",
+      "modified_time": "2026-08-23T05:31:19.558Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/bh_fdr05/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1H181d400yAStOj_uPYqx7N9ZmaPwTnvo",
+      "size": 71006,
+      "md5": "3e5f3aaf2b47d9635751ac7c2ba950d4",
+      "modified_time": "2026-08-23T05:31:19.568Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/bh_fdr05/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1G9fsAJBDMZawLPpcJQY0PUcQiqih9guf",
+      "size": 899170,
+      "md5": "5dd969d010f782a230583da3abb09bfc",
+      "modified_time": "2026-08-23T05:31:19.576Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/bh_fdr05/standard_pruned/resolved_statistics.parquet": {
+      "id": "1vyfZSrvPfVTcBg0EdIAgLJTCt6Wd3B5f",
+      "size": 86988,
+      "md5": "e5644f5ab0977384baa65a6a3a539671",
+      "modified_time": "2026-08-23T05:31:19.585Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/native_p05/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1f7RyEm4SrT8zIWTujiL3awpSrpygFxn4",
+      "size": 74386,
+      "md5": "e5feb6c7093176bd43c83e371312b191",
+      "modified_time": "2026-08-23T05:31:19.599Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/native_p05/retained_edge/aggregate_statistics.parquet": {
+      "id": "1Mg_h8emnpTqtTibE8YmUD4SdrWW4kTaB",
+      "size": 70653,
+      "md5": "afbb5a05b060544cb40f6e2b1e9da345",
+      "modified_time": "2026-08-23T05:31:19.609Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/native_p05/retained_edge/resolved_plot_data.parquet": {
+      "id": "1KUzzffqhud1ywkuOO3GNRWkrMnhmCFUX",
+      "size": 892673,
+      "md5": "3ce6b9f53b7d5c094c998cb5b766f7d3",
+      "modified_time": "2026-08-23T05:31:19.632Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/native_p05/retained_edge/resolved_statistics.parquet": {
+      "id": "1pDiyGgJxk5tIlIA7IslBqGsQ5Pb1ufn6",
+      "size": 122868,
+      "md5": "63bd122ce9de692d8f98d5b30c4c9ba0",
+      "modified_time": "2026-08-23T05:31:19.622Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/native_p05/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1z9Q1IWqsJqrlrxqx9AYX6M2wtw1DiWZ6",
+      "size": 76465,
+      "md5": "a555257464951a8fcb549f59a7762bf5",
+      "modified_time": "2026-08-23T05:31:19.642Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/native_p05/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1oZv_Cev2QXaHaGtJE-ixrZdlQzRswdTE",
+      "size": 107750,
+      "md5": "ea3c7483f0814c563fea70a7567d52c1",
+      "modified_time": "2026-08-23T05:31:19.660Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/native_p05/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1rTHGxBU9aSKKnHWLhUG6UoQIeBiFVH0b",
+      "size": 901472,
+      "md5": "a851860fa8ac8dad549d94d71e4ec2b6",
+      "modified_time": "2026-08-23T05:31:19.713Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/native_p05/standard_pruned/resolved_statistics.parquet": {
+      "id": "1UMxIFkqnk8xdkCgcP_X6APaYufcJ7jdB",
+      "size": 137797,
+      "md5": "4686689215b3453fdc3932d1706bb111",
+      "modified_time": "2026-08-23T05:31:19.744Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/all/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1Nps7R6H_8uazgBsTN8XIFe9disdR2SMD",
+      "size": 232468,
+      "md5": "e9feb260a1bef6a2d25b6e315fc369fe",
+      "modified_time": "2026-08-23T05:31:19.100Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/all/retained_edge/aggregate_statistics.parquet": {
+      "id": "1qSeTOxWgtEQVHner5kquQIPnyPmDJ2Yk",
+      "size": 175652,
+      "md5": "f96d7c80cd463e41e7929cc9c9fd3893",
+      "modified_time": "2026-08-23T05:31:19.107Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/all/retained_edge/resolved_plot_data.parquet": {
+      "id": "1Bv02leM0sbDRNXphD1pLVas7PpKoRcn8",
+      "size": 1068513,
+      "md5": "31e0a2e775f8949cf8230927fbb61bb6",
+      "modified_time": "2026-08-23T05:31:19.118Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/all/retained_edge/resolved_statistics.parquet": {
+      "id": "1g9TsaoIMOW-gxjnT7eNTgWzMT_vQVY6f",
+      "size": 488600,
+      "md5": "865c91a1ef899b9343c3055e1a5123ef",
+      "modified_time": "2026-08-23T05:31:19.128Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/all/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "194er2XsmwfKDfNI_c3duy659XRaFDg5d",
+      "size": 272337,
+      "md5": "b271e7a6ff2efe69e8148e8eea07b649",
+      "modified_time": "2026-08-23T05:31:19.139Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/all/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1G-bhToi2Y8lwRzlDalM5znqEJu1Q9IJa",
+      "size": 445202,
+      "md5": "ce4c6cbbb55eb37b37db343dcc9b39b6",
+      "modified_time": "2026-08-23T05:31:19.149Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/all/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1XngdwT-_whSnZi8Tai-oyEUhJb-VcV_J",
+      "size": 1112090,
+      "md5": "065194bbb1e0859c3789ceb0379f038b",
+      "modified_time": "2026-08-23T05:31:19.159Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/all/standard_pruned/resolved_statistics.parquet": {
+      "id": "13o0nk6HwU1unjPJwnBgMpHb8_jqKtbP1",
+      "size": 511930,
+      "md5": "3f66ace8a538b7e7d6eb2aa743d59037",
+      "modified_time": "2026-08-23T05:31:19.171Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/bh_fdr05/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1hUEPE0QQHH_0SCsjr69vRLPKcL2ladWx",
+      "size": 70999,
+      "md5": "9a4da60f6d1eab011d7bbd2c8c6194a2",
+      "modified_time": "2026-08-23T05:31:19.180Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/bh_fdr05/retained_edge/aggregate_statistics.parquet": {
+      "id": "1emEKoofwR1jLHZYJYMCxsSQrAhImoyDX",
+      "size": 70615,
+      "md5": "113594db2976d1594e4487d22de6ef85",
+      "modified_time": "2026-08-23T05:31:19.227Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/bh_fdr05/retained_edge/resolved_plot_data.parquet": {
+      "id": "10uVasfwVcEaNRqOXGQDsLMHIC30tFhuh",
+      "size": 890686,
+      "md5": "0a94e9fe264e411ed89cd3348db68e81",
+      "modified_time": "2026-08-23T05:31:19.234Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/bh_fdr05/retained_edge/resolved_statistics.parquet": {
+      "id": "1PV4ZwIJfeXdwFmooYjy60_6QLczbPPJC",
+      "size": 82599,
+      "md5": "79d79ba80a23b7b0c9859473b2f82e2a",
+      "modified_time": "2026-08-23T05:31:19.252Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/bh_fdr05/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "16Dj0zRcas4JAaE9aVAFSgL9yVxbxhXhH",
+      "size": 74126,
+      "md5": "7dd5da75883c463abe37d0cf0dd2a0c8",
+      "modified_time": "2026-08-23T05:31:19.282Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/bh_fdr05/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1BWvJebu4EPp4sR8-2Rwy2IKCzxtvnPZH",
+      "size": 98945,
+      "md5": "ae2e40cf4719ac45f74a790d059f8b27",
+      "modified_time": "2026-08-23T05:31:19.267Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/bh_fdr05/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1QMfxm0Yx8xN5Suaznor34uVPYLoszNP0",
+      "size": 899614,
+      "md5": "7fcc5bcdc8d0db6523714b54cbcac6fe",
+      "modified_time": "2026-08-23T05:31:19.293Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/bh_fdr05/standard_pruned/resolved_statistics.parquet": {
+      "id": "1mgicRsgn_RYDlmQUnID45waNxQ3PPpWU",
+      "size": 123083,
+      "md5": "d20818a69b77dde43358d14bc47bece9",
+      "modified_time": "2026-08-23T05:31:19.310Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/native_p05/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1LyuXsKfm9gOybutDB0Sq8eLdgXckuWYZ",
+      "size": 90802,
+      "md5": "4ea0f0078aadd4e6becbc7f947962125",
+      "modified_time": "2026-08-23T05:31:19.336Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/native_p05/retained_edge/aggregate_statistics.parquet": {
+      "id": "1xnHss1gMGVIbNSz3HdeqYSwSL_d8IMgz",
+      "size": 70848,
+      "md5": "838bcda0862779e86b43c14f086b6440",
+      "modified_time": "2026-08-23T05:31:19.352Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/native_p05/retained_edge/resolved_plot_data.parquet": {
+      "id": "1cgDOQsrG6RWv1TPkgpEpu8YOvxYMkCSu",
+      "size": 907327,
+      "md5": "06d435be0a8c6e79ba3d5913f5d7e1cd",
+      "modified_time": "2026-08-23T05:31:19.369Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/native_p05/retained_edge/resolved_statistics.parquet": {
+      "id": "139NFQLlRAYqewrvjXZnVtLrGUZNtA8UW",
+      "size": 142911,
+      "md5": "a6d96df3a239a1656cc8fd2aa2f528b1",
+      "modified_time": "2026-08-23T05:31:19.380Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/native_p05/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1i-2s7sue1LLAqxAnALVMkWI_EIUf10lT",
+      "size": 101231,
+      "md5": "5206a7e2b7b7799579d86497c39bcdae",
+      "modified_time": "2026-08-23T05:31:19.431Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/native_p05/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1bNmUmd2Hr_UHMAsqsm3EbbidncS6hmbH",
+      "size": 163306,
+      "md5": "8dfe79d2762f715c72a39b7f6f1aed8a",
+      "modified_time": "2026-08-23T05:31:19.444Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/native_p05/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1qlWmJsWR-1h85AVP3O05tjZVcBYz20iR",
+      "size": 921409,
+      "md5": "60aef1bac4d121623c6dd2b57ac22a9d",
+      "modified_time": "2026-08-23T05:31:19.453Z"
+    },
+    "control_derived/differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/native_p05/standard_pruned/resolved_statistics.parquet": {
+      "id": "1QWMV5FQEO_osMYCFqnyLdnytFW_J39U7",
+      "size": 200420,
+      "md5": "6e98053f5243da083043944624f673c0",
+      "modified_time": "2026-08-23T05:31:19.467Z"
+    },
+    "control_derived/differential/edge_summaries/bonobo__bonobo__all.parquet": {
+      "id": "1shOToB9QjjpHZ8h-P6p8_blkBzXg5pnS",
+      "size": 5012144,
+      "md5": "8bc0ebcbf7ed7a3569925e46614a967c",
+      "modified_time": "2026-08-23T05:31:00.399Z"
+    },
+    "control_derived/differential/edge_summaries/bonobo__bonobo__bh_fdr05.parquet": {
+      "id": "150Bid9za4U5RiuOC3QygI79i-3epvLeW",
+      "size": 4754800,
+      "md5": "1c5056b6b43d182e9a816d455270871d",
+      "modified_time": "2026-08-23T05:31:00.407Z"
+    },
+    "control_derived/differential/edge_summaries/bonobo__bonobo__native_p05.parquet": {
+      "id": "14LUOqOsg6DQNdCZ8e8r3ClpcaNznuh4V",
+      "size": 4786825,
+      "md5": "e597a895e2c19af3030baf22f400b9ab",
+      "modified_time": "2026-08-23T05:31:00.415Z"
+    },
+    "control_derived/differential/edge_summaries/lioness__control_anchored__all.parquet": {
+      "id": "1yuPi1ACzHeXAbVm7SZyYDaUlQPFTbPPY",
+      "size": 57327338,
+      "md5": "c9486ffd3f910ee83c136fbec8c1cd14",
+      "modified_time": "2026-08-23T05:31:00.421Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.05/all/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1zs45KXHA0hmhbn663tKNFxHNS9SRZ3is",
+      "size": 7643769,
+      "md5": "f183cc1c05d00057f9ba55eaf17fb0c9",
+      "modified_time": "2026-08-23T05:31:20.273Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.05/all/retained_edge/aggregate_statistics.parquet": {
+      "id": "13RWSoUpJMYBvjMBmP9J1dn-EamaT-091",
+      "size": 16672650,
+      "md5": "5cb0148e155a740cdc36a79feb482d24",
+      "modified_time": "2026-08-23T05:31:20.283Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.05/all/retained_edge/resolved_plot_data.parquet": {
+      "id": "1b4wsda3GyIwS3o7FlB4ZPPQZLOsoquDi",
+      "size": 14646137,
+      "md5": "24b68a5fc3857d2b820237acaf96ab27",
+      "modified_time": "2026-08-23T05:31:20.289Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.05/all/retained_edge/resolved_statistics.parquet": {
+      "id": "1Y2-Lb3nKlDF0bsrE1Vq787dIR_aOi61p",
+      "size": 31983387,
+      "md5": "40b4abe4ac246906d3d5ed5a35a37a3f",
+      "modified_time": "2026-08-23T05:31:20.297Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.05/all/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1G7kuCdAuM8lzGz3ySgzcNbTAXQ7kHEQ9",
+      "size": 7981696,
+      "md5": "8ec265ca634d6c1f847023eb8985d759",
+      "modified_time": "2026-08-23T05:31:20.303Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.05/all/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1pDpLNXlWGJnNgrou3Wz_2Lv0z-sJNITx",
+      "size": 19930334,
+      "md5": "1dd1b44de4b9ad7470e3e9279f5a3764",
+      "modified_time": "2026-08-23T05:31:20.309Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.05/all/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1tywpFIGpzHc-4RAJOQrpu4nyUKE0816M",
+      "size": 15236045,
+      "md5": "debdeec724d04032eeb5a04d46c47269",
+      "modified_time": "2026-08-23T05:31:20.319Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.05/all/standard_pruned/resolved_statistics.parquet": {
+      "id": "1HfNBwRpiKYPwGfjSk9XRi-Iu7L1YBS4u",
+      "size": 32036572,
+      "md5": "c4c94fbc48a3f32701ac9aea2f5fe0ee",
+      "modified_time": "2026-08-23T05:31:20.330Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.10/all/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1tqBER9g2BLTp3v7GzrvNMhzakT3U6fzc",
+      "size": 16713854,
+      "md5": "7acbf5bb3ed49b17f912ec1b323ce799",
+      "modified_time": "2026-08-23T05:31:20.792Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.10/all/retained_edge/aggregate_statistics.parquet": {
+      "id": "1CHtILBphTbghr8dEWx4_108y3K-Te5xE",
+      "size": 36991590,
+      "md5": "8334d2c87544bdd460b6b60c28e0cfb2",
+      "modified_time": "2026-08-23T05:31:20.822Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.10/all/retained_edge/resolved_plot_data.parquet": {
+      "id": "1Key8dN9uFN6carsrgNrRyUtan7zIsFcl",
+      "size": 41010562,
+      "md5": "ed64174af0f7d99f0e12a0297b089440",
+      "modified_time": "2026-08-23T05:31:20.834Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.10/all/retained_edge/resolved_statistics.parquet": {
+      "id": "10TmzIOucsakkUQhqRrjWNG5XvKt_uR6n",
+      "size": 81834690,
+      "md5": "233933d4057e6736aaa20ac03af852d0",
+      "modified_time": "2026-08-23T05:31:20.847Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.10/all/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1wnMvcFG1-jGj3gh2PE4W5HrCO07vJi3f",
+      "size": 16921066,
+      "md5": "bda862ab9264972b8e22e09cd7bf238e",
+      "modified_time": "2026-08-23T05:31:20.552Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.10/all/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1Lyllpfn_fJYZ3FuOAHHspO8-F_1qtm3O",
+      "size": 39053573,
+      "md5": "239ffaf391783939ba3d9fe4c2d55406",
+      "modified_time": "2026-08-23T05:31:20.563Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.10/all/standard_pruned/resolved_plot_data.parquet": {
+      "id": "10TkJ1ja7JyNElil94AJhVlP4tnQ2dE1U",
+      "size": 41440763,
+      "md5": "aff2314d3a9587711c18b6b388031f57",
+      "modified_time": "2026-08-23T05:31:20.571Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.10/all/standard_pruned/resolved_statistics.parquet": {
+      "id": "1HVZDvDqTZP0nxtGNcWvqOk1YwRNfHNYQ",
+      "size": 81851846,
+      "md5": "84d7de0078dc4d16d604a700b1d4bf98",
+      "modified_time": "2026-08-23T05:31:20.579Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.05/all/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1BNTCyOjx6JicDJksGsCdCrfcmVMNFxjj",
+      "size": 8328988,
+      "md5": "96aa660d6d99fc5ed8489e69753e60c6",
+      "modified_time": "2026-08-23T05:31:20.631Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.05/all/retained_edge/aggregate_statistics.parquet": {
+      "id": "1mrJaSKO365Fery_VNqcD_efaOP8ViUk2",
+      "size": 17103645,
+      "md5": "834819e927059a7b4aecee66bb636d61",
+      "modified_time": "2026-08-23T05:31:20.640Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.05/all/retained_edge/resolved_plot_data.parquet": {
+      "id": "1urQpodxs8zBhTOYu_skjgwLBP_kfbsgZ",
+      "size": 18522349,
+      "md5": "6fdbb2251bc0f298102fa763b234119c",
+      "modified_time": "2026-08-23T05:31:20.653Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.05/all/retained_edge/resolved_statistics.parquet": {
+      "id": "1ZRRbUPxSwN8LEywXG-v2qdZ_370hT2L_",
+      "size": 37429457,
+      "md5": "7793a464e513a631c1831043d8aa1722",
+      "modified_time": "2026-08-23T05:31:20.662Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.05/all/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1D0YU8K8wu8dC7nKJdckcrgVCwq1lH6xu",
+      "size": 8590102,
+      "md5": "73a6d9c93dc0b0302f7dd6835c0de169",
+      "modified_time": "2026-08-23T05:31:20.588Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.05/all/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1GNmA9o-i-Nq18hR8Yc0BBeLrCovffMFN",
+      "size": 20272494,
+      "md5": "270d5aadb68e3f6f005f7d9aaeb69512",
+      "modified_time": "2026-08-23T05:31:20.598Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.05/all/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1kk8inhSds7vQEo4lTRLBKDLhiMkWDOb3",
+      "size": 18924149,
+      "md5": "4fca1367b86f1ca1d78bd9230432cdcc",
+      "modified_time": "2026-08-23T05:31:20.607Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.05/all/standard_pruned/resolved_statistics.parquet": {
+      "id": "1QzbFFBWSCTGZeBa5NZyzEiiygm05vG2Z",
+      "size": 37473775,
+      "md5": "d84a0b791c8913525b5d8e2a2f715382",
+      "modified_time": "2026-08-23T05:31:20.621Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.10/all/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1SdqnAw_eKalTGPtisn4t9efVzAikNscY",
+      "size": 13595735,
+      "md5": "ace03da68c575541888dbb511ec1b5bb",
+      "modified_time": "2026-08-23T05:31:20.673Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.10/all/retained_edge/aggregate_statistics.parquet": {
+      "id": "1N1F3YplCJEgfEvRaoCnYEUQgdvpxIuHI",
+      "size": 29984307,
+      "md5": "dbf41686a024386d6e77391240f851f9",
+      "modified_time": "2026-08-23T05:31:20.685Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.10/all/retained_edge/resolved_plot_data.parquet": {
+      "id": "1x8oSoGx57Mbs27X5Gp85VjlQcO6qBrR7",
+      "size": 32989060,
+      "md5": "4b22c61972ba270eaa77eda47cd4a2fc",
+      "modified_time": "2026-08-23T05:31:20.745Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.10/all/retained_edge/resolved_statistics.parquet": {
+      "id": "1UWztepsMIzR35ndN3SDp1Wsrdb8fx-Vb",
+      "size": 65340654,
+      "md5": "ba720e2c2699e91198740ed1375ae06c",
+      "modified_time": "2026-08-23T05:31:20.775Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.10/all/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1NW3OauXtuy7R8cUOESley38vwbj71RGz",
+      "size": 13826248,
+      "md5": "6888630a8826eba6fc41f65f61a0ef94",
+      "modified_time": "2026-08-23T05:31:20.892Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.10/all/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1re96ugIddXJz-maU0QU8HJVlBxf73T5C",
+      "size": 31767112,
+      "md5": "7d8af3b6af301d201916da000d853f11",
+      "modified_time": "2026-08-23T05:31:20.901Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.10/all/standard_pruned/resolved_plot_data.parquet": {
+      "id": "16fTWIqP5EHiADE1raj1q8n9V3DxuVOb-",
+      "size": 33400749,
+      "md5": "5a1572cb77f7454c17d9cd7d7e459aef",
+      "modified_time": "2026-08-23T05:31:20.914Z"
+    },
+    "control_derived/differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.10/all/standard_pruned/resolved_statistics.parquet": {
+      "id": "1yWumhYp54p2GRs3C1X9p7tB9g3GC5Qet",
+      "size": 65374123,
+      "md5": "f73aa25f0de5541b1f205d29b99e87ce",
+      "modified_time": "2026-08-23T05:31:20.921Z"
+    },
+    "control_derived/differential/volcano_bins.parquet/part-00000.parquet": {
+      "id": "1gm_3Cnrr06wEpJNS9gfBcKk_josecqZk",
+      "size": 6727739,
+      "md5": "23b2de16747a273c2a421a3a3969eaa2",
+      "modified_time": "2026-08-23T05:31:00.453Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 10,
+          "max": 959
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        },
+        "fdr_scope": {
+          "values": [
+            "global",
+            "per_module"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_bins.parquet/part-00001.parquet": {
+      "id": "1gUJ5tOj1UVvvUI8QnCMVC9spz4feHq1s",
+      "size": 2085489,
+      "md5": "4bf4eb1214b29b342595c1df23a2cd9e",
+      "modified_time": "2026-08-23T05:31:00.459Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 959,
+          "max": 1150
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        },
+        "fdr_scope": {
+          "values": [
+            "global",
+            "per_module"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_bins.parquet/part-00002.parquet": {
+      "id": "1jAisLplHwji5dcSgbAHcmFUsxT6IiC2L",
+      "size": 5138244,
+      "md5": "23d44475cf93097d5a100d43b3df729d",
+      "modified_time": "2026-08-23T05:31:00.466Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 10,
+          "max": 959
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "fdr_scope": {
+          "values": [
+            "global",
+            "per_module"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_bins.parquet/part-00003.parquet": {
+      "id": "1bgxz7jmgcK_O8fjXK4MyBSCPK0HHHhGW",
+      "size": 1565797,
+      "md5": "df39b201a42ee22d70a06206ddb86b53",
+      "modified_time": "2026-08-23T05:31:00.471Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 959,
+          "max": 1150
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "fdr_scope": {
+          "values": [
+            "global",
+            "per_module"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00000.parquet": {
+      "id": "1OKiEHZmg4dpDjguPqkZYhhIxDkYtXAcx",
+      "size": 11489478,
+      "md5": "b080e13b743ea3c8ad85178fed9b6651",
+      "modified_time": "2026-08-23T05:31:00.483Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 10,
+          "max": 34
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00001.parquet": {
+      "id": "1hLTO2RV5zaHX5f1-E6KH8zvCpaiOLytx",
+      "size": 11644133,
+      "md5": "57ef3e8eb4c229fa49f51bb1016fd98d",
+      "modified_time": "2026-08-23T05:31:00.488Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 34,
+          "max": 86
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00002.parquet": {
+      "id": "13VE0bgpkKqAjVemi_opditlRP7ATma90",
+      "size": 11538067,
+      "md5": "0bdeb9106eaeb5a3bd097ac408dd89ac",
+      "modified_time": "2026-08-23T05:31:00.494Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 86,
+          "max": 111
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00003.parquet": {
+      "id": "1hKCc6IgRdYIv-8BLkoIW_UoODIDxwScK",
+      "size": 11728927,
+      "md5": "2b8d4bedb5c14cf76540d06b031ece72",
+      "modified_time": "2026-08-23T05:31:00.677Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 111,
+          "max": 122
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00004.parquet": {
+      "id": "1WIdQ_1Cx7Be4sEEdsTM_Ol6QQoUXQYyZ",
+      "size": 11508259,
+      "md5": "3a56df3b50f3b78328211b7c84850cf4",
+      "modified_time": "2026-08-23T05:31:00.683Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 122,
+          "max": 492
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00005.parquet": {
+      "id": "1oFJBmjC8_0s17OdsQWlFwgi8DMhYvMjb",
+      "size": 11724485,
+      "md5": "7487fb0c7364004d2158a74c6026b7f6",
+      "modified_time": "2026-08-23T05:31:00.692Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 492,
+          "max": 724
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00006.parquet": {
+      "id": "1dgRDSdofhJ7ni8ar47g3ILChBe-XHwrT",
+      "size": 11729501,
+      "md5": "1c77ccac8a367c18562f9b0ac29dcc31",
+      "modified_time": "2026-08-23T05:31:00.711Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 724,
+          "max": 738
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00007.parquet": {
+      "id": "1BSarT1KEcZNxZy7rgJnJrQSVUYQKaQTZ",
+      "size": 11755670,
+      "md5": "95cbf1cfe8f63965f37c047074842ec2",
+      "modified_time": "2026-08-23T05:31:00.722Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 738,
+          "max": 746
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00008.parquet": {
+      "id": "12IaN3WSlf7ch3ovTBiWPZFg0Zdu2YADm",
+      "size": 11798257,
+      "md5": "991ec13db2c72403a5d9e0fe41f1cd38",
+      "modified_time": "2026-08-23T05:31:00.727Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 746,
+          "max": 750
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00009.parquet": {
+      "id": "1L7MOXgJSHvkeqxHpI27Psyo1vNTeOiVG",
+      "size": 11763511,
+      "md5": "62926692e01dd5aff75885e9cf0aafdb",
+      "modified_time": "2026-08-23T05:31:00.737Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 750,
+          "max": 752
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00010.parquet": {
+      "id": "1bz3IGy5HULStJqhYq81T_i2ggnT3uv9l",
+      "size": 11864094,
+      "md5": "c1bee4e4a76b6f85e665e7998bc9ddab",
+      "modified_time": "2026-08-23T05:31:00.744Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 752,
+          "max": 763
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00011.parquet": {
+      "id": "13uNAwxW6LZqrvlLphG1NDPd9g9e2d8HX",
+      "size": 11868595,
+      "md5": "9757d9daa5deeee661dd75dc5dd4ab1d",
+      "modified_time": "2026-08-23T05:31:00.753Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 763,
+          "max": 771
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00012.parquet": {
+      "id": "1YpUBvdgKsTplXzIXUkth79DI40Jnpken",
+      "size": 11789660,
+      "md5": "5e55b5b54fb1565b975d51b2361c5a02",
+      "modified_time": "2026-08-23T05:31:00.760Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 771,
+          "max": 771
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00013.parquet": {
+      "id": "1QtQK2ZkO-F29efeY97IXon8SeFUznYzn",
+      "size": 11945207,
+      "md5": "367ed8a2eea8e515db854be204299523",
+      "modified_time": "2026-08-23T05:31:00.775Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 771,
+          "max": 794
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00014.parquet": {
+      "id": "1qTutZsUKis4kMbLK2SOKHL-MFJKfmAZi",
+      "size": 11654007,
+      "md5": "af46b50936494d0342dd3524c05932a5",
+      "modified_time": "2026-08-23T05:31:00.768Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 794,
+          "max": 916
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00015.parquet": {
+      "id": "10SWIK1er3nYDRa_QoDnpYnN1xWKC-yOR",
+      "size": 11733467,
+      "md5": "c90f0712d536242ef88aa48d02491be3",
+      "modified_time": "2026-08-23T05:31:00.785Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 916,
+          "max": 938
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00016.parquet": {
+      "id": "1kHn5R_THANR0XwpHxH3MsS-h7c58Y-bI",
+      "size": 11769765,
+      "md5": "7ce8a341712d5dad50570c071f58a784",
+      "modified_time": "2026-08-23T05:31:00.793Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 938,
+          "max": 958
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00017.parquet": {
+      "id": "1QUhnF9UmoT5XrYiQh_qQxmnAOb5UP98l",
+      "size": 11679625,
+      "md5": "c3fa941eb592697d1832253045fa4303",
+      "modified_time": "2026-08-23T05:31:00.824Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 958,
+          "max": 1064
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00018.parquet": {
+      "id": "1e-7WUJrvAj6JaYUIxKvTL32usYWSjNLM",
+      "size": 11781801,
+      "md5": "b3135eca0a6c5f58b594db75600e436e",
+      "modified_time": "2026-08-23T05:31:00.830Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1064,
+          "max": 1075
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00019.parquet": {
+      "id": "1JigEB_8wajZuqrD-e8tMpanUwCfYdhYY",
+      "size": 11778325,
+      "md5": "9b283544940330644d4a6f45f0a4e771",
+      "modified_time": "2026-08-23T05:31:00.841Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1075,
+          "max": 1097
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00020.parquet": {
+      "id": "1NlhvjE4dhMd6cVNB7H2fj_xzcde6RoIl",
+      "size": 11792870,
+      "md5": "ad1443dbcca0469bea5def744ecb26cf",
+      "modified_time": "2026-08-23T05:31:00.849Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1097,
+          "max": 1117
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00021.parquet": {
+      "id": "1la6mGpUnFHZIU4evY5TAm5_3GbDYLbk1",
+      "size": 7412582,
+      "md5": "05bfd782b9c998a637728b2157562c74",
+      "modified_time": "2026-08-23T05:31:00.857Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1117,
+          "max": 1150
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00022.parquet": {
+      "id": "1ddg__9Q0CGpqCOLVxlTm_u93dj9SIdLy",
+      "size": 10281860,
+      "md5": "1a138317eeb56801e2e8453a4587560e",
+      "modified_time": "2026-08-23T05:31:00.864Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 10,
+          "max": 35
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00023.parquet": {
+      "id": "1BWPj2tED5cuQqpTLK8u_PtYt_8w-Pwd4",
+      "size": 10314560,
+      "md5": "f4c57c17d8d6ce9d7c7f934392640c75",
+      "modified_time": "2026-08-23T05:31:00.873Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 35,
+          "max": 101
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00024.parquet": {
+      "id": "107LfbOhR9DtBymYpUI2uqRtsUOKjPyB9",
+      "size": 10443051,
+      "md5": "0ff8e948596b8244cfcba6854775daf9",
+      "modified_time": "2026-08-23T05:31:00.880Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 101,
+          "max": 121
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00025.parquet": {
+      "id": "1RjxNBAbcahOFnGeo4IVLoTKHHA2QdEa9",
+      "size": 10371806,
+      "md5": "2a01aa8f0cce0e34b964d51ad16dc307",
+      "modified_time": "2026-08-23T05:31:00.888Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 121,
+          "max": 494
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00026.parquet": {
+      "id": "15z0xFT5ZhhD_jlgTcGUGC6HSLEy5GIcD",
+      "size": 10663334,
+      "md5": "008355de9ce74053b4034529f875a456",
+      "modified_time": "2026-08-23T05:31:00.899Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 494,
+          "max": 728
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00027.parquet": {
+      "id": "10nYO_70vnOG2lCihZdHi6uQ2bKkIAucP",
+      "size": 10569402,
+      "md5": "ffd792f8a278c76f16eb66d705e193f1",
+      "modified_time": "2026-08-23T05:31:00.907Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 728,
+          "max": 746
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00028.parquet": {
+      "id": "1TiL3TdpTsd63eEbAjaXYQOX4mbkKlwoI",
+      "size": 10471388,
+      "md5": "d1667587039db192b1f9e01d9569d23d",
+      "modified_time": "2026-08-23T05:31:00.932Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 746,
+          "max": 752
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00029.parquet": {
+      "id": "1yzzKmeTpIseId192WVh1Kh3nIQJzTQsK",
+      "size": 10507023,
+      "md5": "96cd5934489532c8a9276a874bdbc090",
+      "modified_time": "2026-08-23T05:31:00.941Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 752,
+          "max": 763
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00030.parquet": {
+      "id": "1uyO96iXChBpWp0oucVgppFLnEG4-rL86",
+      "size": 10462178,
+      "md5": "0a610e251a62f8fc63f7abc095118d61",
+      "modified_time": "2026-08-23T05:31:00.955Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 763,
+          "max": 787
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00031.parquet": {
+      "id": "1EStXWCVOKC0ukHDElgpcrNOLXlj2Am7S",
+      "size": 10545370,
+      "md5": "bc1632ec037ea15793d840e08c94b88a",
+      "modified_time": "2026-08-23T05:31:00.965Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 787,
+          "max": 914
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00032.parquet": {
+      "id": "1JtCmDVOywGV1ARz7Vv4_W-fkG3ZXN7xf",
+      "size": 10399654,
+      "md5": "2ee6ed11eb975c514395dad7e9c957af",
+      "modified_time": "2026-08-23T05:31:00.981Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 914,
+          "max": 951
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00033.parquet": {
+      "id": "19LAQidsP3EHx9urZ751e2iQvtlsWIxSh",
+      "size": 10422710,
+      "md5": "0397b5478aacdf8acd13450e95d0c5aa",
+      "modified_time": "2026-08-23T05:31:00.989Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 951,
+          "max": 1064
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00034.parquet": {
+      "id": "1dtOQ9pHPDFAj4MlP8s95plKyRNwuyX2O",
+      "size": 10408855,
+      "md5": "2295260f40df64843559ff22a28eaf60",
+      "modified_time": "2026-08-23T05:31:00.999Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1064,
+          "max": 1088
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00035.parquet": {
+      "id": "1YQfKmN3wqbFE4FHeJp66R5arofQ1JDcc",
+      "size": 10459818,
+      "md5": "4b133edbe38540776089ddbd91105407",
+      "modified_time": "2026-08-23T05:31:01.069Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1088,
+          "max": 1117
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "control_derived/differential/volcano_candidates.parquet/part-00036.parquet": {
+      "id": "1mvNXXnBZbDscQ1yax6o3lBmHO6jgJc7d",
+      "size": 5268249,
+      "md5": "1fcec62ecbeec1a2f1d680a0e72653b6",
+      "modified_time": "2026-08-23T05:31:01.079Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1117,
+          "max": 1150
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "control_derived/edge_summaries/bonobo__all.parquet": {
+      "id": "1Qkvvbnq9GSH1fuUzvSKf7YFIHnvXAdWb",
+      "size": 31870925,
+      "md5": "311c29b67aec1d2258910f033fb83033",
+      "modified_time": "2026-08-23T05:30:59.289Z"
+    },
+    "control_derived/edge_summaries/bonobo__bh_fdr05.parquet": {
+      "id": "1ODB2siORlBnxIG3agyMLmAjjARo7bPsl",
+      "size": 3281711,
+      "md5": "704f0d475c54ddef4649567ee42d8cb2",
+      "modified_time": "2026-08-23T05:30:59.303Z"
+    },
+    "control_derived/edge_summaries/bonobo__native_p05.parquet": {
+      "id": "1RuMQZB4DpLD3HfWP4W3MKUOlHaFFfHJ4",
+      "size": 8947073,
+      "md5": "6e8e3b3c8df338be3e8c489a531633f8",
+      "modified_time": "2026-08-23T05:30:59.314Z"
+    },
+    "control_derived/edge_summaries/lioness__control_anchored.parquet": {
+      "id": "1PWrgPkQeAZZ6arkhpFRLJq_d9MH799et",
+      "size": 32163703,
+      "md5": "b8f75ca47d2e5f0412864de99dc53159",
+      "modified_time": "2026-08-23T05:30:59.296Z"
+    },
+    "control_derived/kegg_tissue_expanded_full.parquet": {
+      "id": "18eqgpqgf7V5HnLuZ9KyqtZLl0_4U3u81",
+      "size": 794278,
+      "md5": "0ef3022c87b125e0518aeecaecd41e1a",
+      "modified_time": "2026-08-23T05:30:58.557Z"
+    },
+    "control_derived/kegg_tissue_expanded_full.tsv": {
+      "id": "1hhqUHyFYvKCHGvfrl7Ble42gpwsQ9NRB",
+      "size": 4656329,
+      "md5": "abe07e0047ad2fa95a75d82a05e07d5a",
+      "modified_time": "2026-08-23T05:30:58.564Z"
+    },
+    "control_derived/mdc_ad_vs_control_summary.tsv": {
+      "id": "17bzJ2WPChIu2m_YUHn-B8wgW-v8saWP9",
+      "size": 45642,
+      "md5": "395097930608067fddeda2eb4f61ac74",
+      "modified_time": "2026-08-23T05:30:58.569Z"
+    },
+    "control_derived/mdc_resolved_ad_vs_control.tsv": {
+      "id": "13b5oGC6QWN6wc7UpIrbeWvmTpySv57j8",
+      "size": 320763,
+      "md5": "aa18981736a2266fdc6a3629fa501b6f",
+      "modified_time": "2026-08-23T05:30:58.574Z"
+    },
+    "control_derived/module_details.tsv": {
+      "id": "1zYpJgpYLSM46i6Ln3250vC2kb5ds2Saa",
+      "size": 19567,
+      "md5": "2e311c65df16c5f98e3adb57ca034df6",
+      "modified_time": "2026-08-23T05:30:58.579Z"
+    },
+    "control_derived/module_kegg_annotations.tsv": {
+      "id": "1-2uXEoheB2XKLGm19IWFAIGO0cNjYQ2y",
+      "size": 73864,
+      "md5": "c5c571544ac821cd5d8ccc30439507a5",
+      "modified_time": "2026-08-23T05:30:58.585Z"
+    },
+    "control_derived/resolved_plot_data.parquet": {
+      "id": "1UsTn4EUvXak1X7FrmwaBjznQVFZvp-Nl",
+      "size": 62702184,
+      "md5": "71547aaf97eb59f07cc43eef9caa344f",
+      "modified_time": "2026-08-23T05:30:58.590Z"
+    },
+    "control_derived/resolved_statistics.parquet": {
+      "id": "1Yc7PyS4hpZnhAVjEQKtiw69DfSgwq5kw",
+      "size": 43033280,
+      "md5": "fc32f20af21fc6cd73ffcd79e543749d",
+      "modified_time": "2026-08-23T05:30:58.595Z"
+    },
+    "data_manifest.json": {
+      "id": "1h3QAjzKUI76F7A4w-8ABpSaNy_0gG-G9",
+      "size": 1989267,
+      "md5": "971cc2f78de853c697c0eba592fa01e5",
+      "modified_time": "2026-08-23T05:30:58.053Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/all/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1HaJ1JQDyUlnQHJHpKLqInmrfmbjlX8Zi",
+      "size": 65812,
+      "md5": "39da7cc1af603bd71b3eabd6fb934064",
+      "modified_time": "2026-08-23T05:31:16.862Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/all/retained_edge/aggregate_statistics.parquet": {
+      "id": "1FKm3kK4FOKc5J8jM-BD3G6FwkykcsW9T",
+      "size": 55961,
+      "md5": "0733b59c3ee6524deca0ce21262cd948",
+      "modified_time": "2026-08-23T05:31:16.867Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/all/retained_edge/resolved_plot_data.parquet": {
+      "id": "1CTdWRkrNimgwoBsifsvpZGM-tSX26J6F",
+      "size": 725593,
+      "md5": "47c7563ece62818caacbf7402f0db01b",
+      "modified_time": "2026-08-23T05:31:16.873Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/all/retained_edge/resolved_statistics.parquet": {
+      "id": "18Je0HesTd_O2tm-51WB_MuyS16omC74J",
+      "size": 102655,
+      "md5": "28e7ed0892e9c3e405ed0fb61ddb6078",
+      "modified_time": "2026-08-23T05:31:16.914Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/all/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1braAFpu3lYuZbD8RgP7DMvfYy2Aper6F",
+      "size": 67668,
+      "md5": "3288fcd4e7684018560f073aaf4e202a",
+      "modified_time": "2026-08-23T05:31:16.950Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/all/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1qHvEFTyBrhcpJ7jQRP0ErK0Zt1u2rLWC",
+      "size": 77780,
+      "md5": "fe37ef4ba15ab8f54e481c57fa58f88f",
+      "modified_time": "2026-08-23T05:31:16.956Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/all/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1hLUvlGDl4pmjaIIsBOJaFBaTxOvX0zlm",
+      "size": 733326,
+      "md5": "d6035662ff69dcfb4fdfd2b499f7c890",
+      "modified_time": "2026-08-23T05:31:16.961Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/all/standard_pruned/resolved_statistics.parquet": {
+      "id": "1yn5v45xKwz4Lop7PkyW-1eMwmIPDN5lP",
+      "size": 108921,
+      "md5": "2ce8cad519d9c612a52726ab4895907f",
+      "modified_time": "2026-08-23T05:31:16.967Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/bh_fdr05/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1MhrQAfLGQa_N4PEKDkUIyY4MHmZo-qe5",
+      "size": 62806,
+      "md5": "b5cde3f47e59aa1a0f7b88c00e7eef3b",
+      "modified_time": "2026-08-23T05:31:16.972Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/bh_fdr05/retained_edge/aggregate_statistics.parquet": {
+      "id": "1FnWy8nIsjr4Pqu8RSxfVX4WRe93crSgA",
+      "size": 55972,
+      "md5": "ebff8bcffd5e47b42b8752ea9559fb01",
+      "modified_time": "2026-08-23T05:31:16.979Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/bh_fdr05/retained_edge/resolved_plot_data.parquet": {
+      "id": "17LAQIZIxUb7BEaQERFEHOa0_t-cpspD_",
+      "size": 724822,
+      "md5": "70fd179341042475cc65f8fad05c41f1",
+      "modified_time": "2026-08-23T05:31:16.985Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/bh_fdr05/retained_edge/resolved_statistics.parquet": {
+      "id": "1YJYhTNf0MEC1h7wnGm3N4mmh22b8fqsS",
+      "size": 73282,
+      "md5": "066ee9970d5cee9c3be59e00a68a233b",
+      "modified_time": "2026-08-23T05:31:16.990Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/bh_fdr05/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "10Q-FnlS_lssSSae_3mo-FfqJgSTGr2VC",
+      "size": 66028,
+      "md5": "7ba3df5cd5e3f54bbe76d98591c945cf",
+      "modified_time": "2026-08-23T05:31:17.127Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/bh_fdr05/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1sbfeqinZqq0_tqIo3I79uaPlqew-kSxZ",
+      "size": 56588,
+      "md5": "13dbaf6e6d183589081b70e751de1a6f",
+      "modified_time": "2026-08-23T05:31:17.132Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/bh_fdr05/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1a-yi3CYZgmbdH-rIIf2c9mOic7ujf9aC",
+      "size": 733112,
+      "md5": "72912cc2eb6ef436fba9f8fcac8c8bed",
+      "modified_time": "2026-08-23T05:31:17.138Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/bh_fdr05/standard_pruned/resolved_statistics.parquet": {
+      "id": "1Tp7ZJnv3hxv9DnM6fttZJXfuaOn1QkzM",
+      "size": 77788,
+      "md5": "4a1d178135e5cb2bc244bb776995e2ca",
+      "modified_time": "2026-08-23T05:31:17.148Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/native_p05/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1hpisRFlnBLuk9x9swTrpQxX6pdCUbHsv",
+      "size": 65987,
+      "md5": "b3cb8a23e453cb1fd022f8a793261f45",
+      "modified_time": "2026-08-23T05:31:16.997Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/native_p05/retained_edge/aggregate_statistics.parquet": {
+      "id": "11TYgh6KfxkpC1hvixwA7d4J0jCtDZAs4",
+      "size": 55996,
+      "md5": "9b9b7c9d44e72bdc32d84c7282406183",
+      "modified_time": "2026-08-23T05:31:17.003Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/native_p05/retained_edge/resolved_plot_data.parquet": {
+      "id": "1h2lOsoz_s8it6NHyrL-F830Qio2d-70i",
+      "size": 726468,
+      "md5": "4d7f7ebc15bda1cefea4a38e84fb255e",
+      "modified_time": "2026-08-23T05:31:17.010Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/native_p05/retained_edge/resolved_statistics.parquet": {
+      "id": "1kL5BjO_sBfIz1aPa9QMR223aXhszQ3Js",
+      "size": 102865,
+      "md5": "74299b3d22a0c56c6a4df23ff733728a",
+      "modified_time": "2026-08-23T05:31:17.016Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/native_p05/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1-M00iJ21M22PQ4jO0RxQRw00HSOOB1-d",
+      "size": 67843,
+      "md5": "ca15e10b6af808c51ea3931d89850887",
+      "modified_time": "2026-08-23T05:31:17.023Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/native_p05/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1A8PVHMWXUaLad4TAOR9TpekIMreKDmDf",
+      "size": 77815,
+      "md5": "5ea1fa16b6c9d8f4462e41ef0d11819c",
+      "modified_time": "2026-08-23T05:31:17.066Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/native_p05/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1Drj3vt_t_C-8Uc1Q4meFPCNDofvsfOXY",
+      "size": 734201,
+      "md5": "a43f17efcbd58856a2851821678c3d9b",
+      "modified_time": "2026-08-23T05:31:17.101Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.05/native_p05/standard_pruned/resolved_statistics.parquet": {
+      "id": "1qBx4dXhdnSI9YuaWl754FGa7p5n0WwwC",
+      "size": 109131,
+      "md5": "f44c7de5f0e1ba4ac73257c57ed9c8e7",
+      "modified_time": "2026-08-23T05:31:17.093Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/all/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1iVJsrDr4a29Hu67ShBKD_i2D7peX5Ete",
+      "size": 65812,
+      "md5": "92b25d2da3497c945ece319e59d633e8",
+      "modified_time": "2026-08-23T05:31:17.207Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/all/retained_edge/aggregate_statistics.parquet": {
+      "id": "1jQABPLUxP2cwKIP-6QFEJ96hC8jp1Fvg",
+      "size": 55961,
+      "md5": "3ccd281709f9e3712037ccbf98255f63",
+      "modified_time": "2026-08-23T05:31:17.214Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/all/retained_edge/resolved_plot_data.parquet": {
+      "id": "10_2DCUC_eRDmEwybMFzoxMaPoxzRMKgh",
+      "size": 723368,
+      "md5": "a2a3e211d6499d2fc83b27eecd69ed05",
+      "modified_time": "2026-08-23T05:31:17.222Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/all/retained_edge/resolved_statistics.parquet": {
+      "id": "11C_1hjsGtYHmtTPHcw7H6H7-ISKbzV5D",
+      "size": 102655,
+      "md5": "8e406cc5d8b159aed7fa2d893a712ea8",
+      "modified_time": "2026-08-23T05:31:17.228Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/all/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1bZtUvfJlwUOeMfFo2aBwU4z6iQwxIr0Y",
+      "size": 67668,
+      "md5": "39f22648ffe0ddec82fdd90e08fe752e",
+      "modified_time": "2026-08-23T05:31:17.238Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/all/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1VItGA3cbX1S8dOc8P3qGu579ialYQTmc",
+      "size": 77780,
+      "md5": "7b0b4f47ce9f36e986c64962287d5cf1",
+      "modified_time": "2026-08-23T05:31:17.248Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/all/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1lvX1QD8HnOR7cPXjQRgfcU4p6zL-LKiG",
+      "size": 731101,
+      "md5": "5d4ee25a437fb6448ac23299e00ed059",
+      "modified_time": "2026-08-23T05:31:17.255Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/all/standard_pruned/resolved_statistics.parquet": {
+      "id": "1Fis-8-BALUPsk8fTh9W1W8A6GCb6fXh8",
+      "size": 108921,
+      "md5": "29ab097deeedd694f64dbd79131b4db6",
+      "modified_time": "2026-08-23T05:31:17.266Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/bh_fdr05/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1tCJbEe6k3tX09coHAR-CuhMi2oj7XRkb",
+      "size": 62806,
+      "md5": "e1a610ccd8b29b9a8b851d323c87d3db",
+      "modified_time": "2026-08-23T05:31:17.160Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/bh_fdr05/retained_edge/aggregate_statistics.parquet": {
+      "id": "1OGk_uiP8A0yXGSTYWRtHbpmsA8ZdQobr",
+      "size": 55972,
+      "md5": "3f738fed1b4ddc5f2bb5725a8ac1d591",
+      "modified_time": "2026-08-23T05:31:17.185Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/bh_fdr05/retained_edge/resolved_plot_data.parquet": {
+      "id": "1X7G7ihtuT1ZW99d81NXdIH80ldHdBy7j",
+      "size": 722597,
+      "md5": "f1cc9e431942cd5d8706149469d3215e",
+      "modified_time": "2026-08-23T05:31:17.167Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/bh_fdr05/retained_edge/resolved_statistics.parquet": {
+      "id": "18lb_W6rT3p-V_V9zPZlq42z5tsfvxO8N",
+      "size": 73282,
+      "md5": "e17880cbaf21e54b9fb603ce21103fcb",
+      "modified_time": "2026-08-23T05:31:17.173Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/bh_fdr05/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1lVY38QE5jssNPjZ2YcoF5UqbCIrZkrCi",
+      "size": 66028,
+      "md5": "b6bef9db122ea77b38a27c75fc072fb8",
+      "modified_time": "2026-08-23T05:31:17.179Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/bh_fdr05/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1-muf4gnqsyv9hmCpgmNw66Ghq6_vJIs6",
+      "size": 56588,
+      "md5": "065a1a98a6c75d04f6a7d815bdc448a8",
+      "modified_time": "2026-08-23T05:31:17.190Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/bh_fdr05/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1hEA05J1jo-HshlSPeomRVXzDVQLNTdPl",
+      "size": 730887,
+      "md5": "df83f3c6c5ce729b534dfcf3ce2cb549",
+      "modified_time": "2026-08-23T05:31:17.195Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/bh_fdr05/standard_pruned/resolved_statistics.parquet": {
+      "id": "1ouznNa_tiAcw-k9ebxeEHCcOyrx6MPlW",
+      "size": 77788,
+      "md5": "96f24f88ced9a86511931110eb4baca3",
+      "modified_time": "2026-08-23T05:31:17.201Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/native_p05/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1oMT1GqP6zGUeeL-1q855yQtRRqaouN4h",
+      "size": 65987,
+      "md5": "5c3016e6ddddf5a5597458bb633b6484",
+      "modified_time": "2026-08-23T05:31:17.273Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/native_p05/retained_edge/aggregate_statistics.parquet": {
+      "id": "1pMEPbw_wokUMWcU0MIRoa-LrmwYExDow",
+      "size": 55996,
+      "md5": "878522f15735a9041fe46b0550279df6",
+      "modified_time": "2026-08-23T05:31:17.283Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/native_p05/retained_edge/resolved_plot_data.parquet": {
+      "id": "1eDpxACXylzz-vHh7Jpu1UNWQ87C-6xKV",
+      "size": 724243,
+      "md5": "47473fc6a55c2e8379611d3f768dbf6b",
+      "modified_time": "2026-08-23T05:31:17.291Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/native_p05/retained_edge/resolved_statistics.parquet": {
+      "id": "1L3eTwIO6BKl7EHBpZkgT3k3xIBLOtXwo",
+      "size": 102865,
+      "md5": "afaf07102f85bb5b323102c8468792bf",
+      "modified_time": "2026-08-23T05:31:17.301Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/native_p05/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1QOT3PQEoTUlkExCr01mMMYcKuoAG0xqA",
+      "size": 67843,
+      "md5": "757a467f0889887fa519888cd54b5476",
+      "modified_time": "2026-08-23T05:31:17.335Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/native_p05/standard_pruned/aggregate_statistics.parquet": {
+      "id": "14ZfaI1Iqh_D1-XNGooB_aIg-HrMJr8KG",
+      "size": 77815,
+      "md5": "0297ed96852ffebd7dcf2092a5c60a5c",
+      "modified_time": "2026-08-23T05:31:17.339Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/native_p05/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1OPI8Alwneampcs6DY5aw4-77PgnLUrz9",
+      "size": 731976,
+      "md5": "2b97108d9569717fd927bfa1f936c5a5",
+      "modified_time": "2026-08-23T05:31:17.344Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/global/fdr_0.10/native_p05/standard_pruned/resolved_statistics.parquet": {
+      "id": "1ftKDp0NI9zOm6blAkBHUZm1vhlWbazec",
+      "size": 109131,
+      "md5": "419a08db3c0158f1356d320fc16913d7",
+      "modified_time": "2026-08-23T05:31:17.350Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/all/retained_edge/aggregate_plot_data.parquet": {
+      "id": "14SDjwUG4Z8ZVqmT_Yx-F6ADfH6tY2Xy1",
+      "size": 97237,
+      "md5": "bdc7d138cb5090b0a16aed797ae17245",
+      "modified_time": "2026-08-23T05:31:17.309Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/all/retained_edge/aggregate_statistics.parquet": {
+      "id": "1-SR8XiYexdFCO8bDLyJpLq6wpuUSe2T4",
+      "size": 56056,
+      "md5": "2e957893697b4b04755e055ad10c023a",
+      "modified_time": "2026-08-23T05:31:17.318Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/all/retained_edge/resolved_plot_data.parquet": {
+      "id": "15hokjcduFDUeB4WhQLlMELLGuSdU7vbe",
+      "size": 751911,
+      "md5": "d7ec07ca07d8136c766d02cb9ac8c403",
+      "modified_time": "2026-08-23T05:31:17.323Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/all/retained_edge/resolved_statistics.parquet": {
+      "id": "1kyRthRVTy_OOoiUT3TqMrtXLG06DbnXn",
+      "size": 146412,
+      "md5": "1e4395d622932a774bc2afbc6085d43e",
+      "modified_time": "2026-08-23T05:31:17.329Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/all/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1IzUFoNpOcudafOGtI0tulJDqpzndtA-k",
+      "size": 104264,
+      "md5": "aa40ed59e3fe60bfb2d20246d74c43cb",
+      "modified_time": "2026-08-23T05:31:17.356Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/all/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1BS14TlNca35kFBWSODrFSpVyzFUiJY6z",
+      "size": 117027,
+      "md5": "8c39a2c938438354d41a04584eb4f9b9",
+      "modified_time": "2026-08-23T05:31:17.363Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/all/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1iAu73imE-p-blBlKDbsECVR4p1IVjGSA",
+      "size": 764854,
+      "md5": "cd6b570dabb287a620703960a262136a",
+      "modified_time": "2026-08-23T05:31:17.382Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/all/standard_pruned/resolved_statistics.parquet": {
+      "id": "14qOy8mvOStDEnayOFHpHWYN7-H4XCulX",
+      "size": 157939,
+      "md5": "c5ba8ba459883fa6346ed8c018e959b4",
+      "modified_time": "2026-08-23T05:31:17.391Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/bh_fdr05/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1XkVKtssOdWOxZKRAWCbBEH5LtPnzrVU3",
+      "size": 78497,
+      "md5": "1579d4b37c41f5290f4974ecb00b0075",
+      "modified_time": "2026-08-23T05:31:17.413Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/bh_fdr05/retained_edge/aggregate_statistics.parquet": {
+      "id": "17YvtbTX0C0AitsCGozSSl346tJQnD1-M",
+      "size": 56032,
+      "md5": "1ce24ae601b803681c4c3c41446e0c73",
+      "modified_time": "2026-08-23T05:31:17.403Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/bh_fdr05/retained_edge/resolved_plot_data.parquet": {
+      "id": "1ohwhyxcTu34BWDc7UnKq_qSqL3KFFk4c",
+      "size": 736735,
+      "md5": "e920ca191c7fed1c7d5a973e17d65c5a",
+      "modified_time": "2026-08-23T05:31:17.424Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/bh_fdr05/retained_edge/resolved_statistics.parquet": {
+      "id": "1DmFygOfSvTjUG7ZshY0f9wKOKOin1lqb",
+      "size": 106719,
+      "md5": "4de8e4e7bca02076e7af52050199627a",
+      "modified_time": "2026-08-23T05:31:17.430Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/bh_fdr05/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1FCsFB2AeZt9a6N-cZRPiakvqNzDk_-VJ",
+      "size": 84231,
+      "md5": "743273e61bd0c0e6700da81155aa4e6a",
+      "modified_time": "2026-08-23T05:31:17.439Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/bh_fdr05/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1ZxXZH1JoMQpYTcAVo87B3Fx-SYAHHsrD",
+      "size": 78842,
+      "md5": "27d5447b054d41f39acba51f045d2edf",
+      "modified_time": "2026-08-23T05:31:17.448Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/bh_fdr05/standard_pruned/resolved_plot_data.parquet": {
+      "id": "13eSm1KzU8wrlHjA1ubNJLO-5n6Evo-DF",
+      "size": 748145,
+      "md5": "c5baf2f064c8479fd134b0be3be8d1bf",
+      "modified_time": "2026-08-23T05:31:17.455Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/bh_fdr05/standard_pruned/resolved_statistics.parquet": {
+      "id": "1QbQdIGZDXn9sRkTrRfE9g7N6_4EMMqR2",
+      "size": 114085,
+      "md5": "82100377a4522ead29ff81d074f8e2cf",
+      "modified_time": "2026-08-23T05:31:17.481Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/native_p05/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1DeR9KHygIpKXZ1lXXzzUM-s3-iZ1AKRr",
+      "size": 81747,
+      "md5": "c386a01dd11fe81d9dbf308673e21cef",
+      "modified_time": "2026-08-23T05:31:17.559Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/native_p05/retained_edge/aggregate_statistics.parquet": {
+      "id": "1oRlaArZY3F-DGogR-Hj5LqoSkR2_ocie",
+      "size": 56051,
+      "md5": "c0be24a4c887fc0a0d05ea6a8dad3eba",
+      "modified_time": "2026-08-23T05:31:17.570Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/native_p05/retained_edge/resolved_plot_data.parquet": {
+      "id": "13MIjPU5MM3mxfEJT1eQsLnKcLQc9Xqhx",
+      "size": 738381,
+      "md5": "c358ab8af4356f83b5e9dc1741bfdfba",
+      "modified_time": "2026-08-23T05:31:17.593Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/native_p05/retained_edge/resolved_statistics.parquet": {
+      "id": "1Ap2Q6bO31c1LHlh5T9khPvjkexuZXSpW",
+      "size": 127770,
+      "md5": "6475f83ba980cdd2a3781b294e815803",
+      "modified_time": "2026-08-23T05:31:17.674Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/native_p05/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1VMwnkvT2QWrEFLE0Dv6owJw4cwHLL7UG",
+      "size": 86211,
+      "md5": "466eb594ad0b01cb01e097e7b96fc4c0",
+      "modified_time": "2026-08-23T05:31:17.686Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/native_p05/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1sgQcX5WwpEUoHUZoP-PLt5nkBfmFZbL_",
+      "size": 95190,
+      "md5": "4f28192523f4d73602ead0f5fc6df6fe",
+      "modified_time": "2026-08-23T05:31:17.747Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/native_p05/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1hAgDTf98ecOumgdFtuIIDqY2S4B8vXlh",
+      "size": 749234,
+      "md5": "0e48a5edffb77bc2ff2d3569fea5b06d",
+      "modified_time": "2026-08-23T05:31:17.710Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.05/native_p05/standard_pruned/resolved_statistics.parquet": {
+      "id": "1fLAsU1TSgEurX4M_NQsU1Ciw4b1ogavH",
+      "size": 137273,
+      "md5": "2491f2fa20fd681868d2de0f768f0315",
+      "modified_time": "2026-08-23T05:31:17.731Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/all/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1RIGLE4xQyIWJydpAA7_OrYh2cEQ-28At",
+      "size": 169974,
+      "md5": "28e8621c6dbebe9e71388d34adef9959",
+      "modified_time": "2026-08-23T05:31:17.514Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/all/retained_edge/aggregate_statistics.parquet": {
+      "id": "1iqhj_Ez64b26yJ2E-brmgkkKGwTnd5N8",
+      "size": 170243,
+      "md5": "44a419a1ce20370e2e3a3ee998a8ce9b",
+      "modified_time": "2026-08-23T05:31:17.582Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/all/retained_edge/resolved_plot_data.parquet": {
+      "id": "1MNNeUZFWOB6UeqPHGYB9x9dGTb0RwOEN",
+      "size": 833926,
+      "md5": "442d57e1bebbef4fa703c8567ac35536",
+      "modified_time": "2026-08-23T05:31:17.528Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/all/retained_edge/resolved_statistics.parquet": {
+      "id": "1qxmfjHO7lHJFFp9ogwLsgsJNZH3XfemX",
+      "size": 368178,
+      "md5": "e3ce1f814345c70ce6208e09e8158032",
+      "modified_time": "2026-08-23T05:31:17.549Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/all/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1azbs7zeRR-Ogk6FoTi7MToBY0eiAG4-k",
+      "size": 199891,
+      "md5": "d6feade1ddbbf637b0bdfffdf3c51ffe",
+      "modified_time": "2026-08-23T05:31:17.505Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/all/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1640NiY1gqaXErdd_GcQAaZYYs_zH_qk_",
+      "size": 318306,
+      "md5": "e6b955d930e3144263432f9c054a022f",
+      "modified_time": "2026-08-23T05:31:17.464Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/all/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1IsFXqD3fUwLcKMNSi4wmG0hXh3D-Jtjo",
+      "size": 863866,
+      "md5": "5880aff113530edb2692d4286f908de5",
+      "modified_time": "2026-08-23T05:31:17.492Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/all/standard_pruned/resolved_statistics.parquet": {
+      "id": "1r-DjWmJ4lmGo-hAFZnCwkffWS-HLAYLx",
+      "size": 387266,
+      "md5": "7a39a7464bb94b2c2b961f154e1bd2c8",
+      "modified_time": "2026-08-23T05:31:17.473Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/bh_fdr05/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1JnWEUSKPFY5KszxX4BTBjw3_fdY9BcOF",
+      "size": 79354,
+      "md5": "6ec6011e9b15bb149b09bc77922f889e",
+      "modified_time": "2026-08-23T05:31:17.839Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/bh_fdr05/retained_edge/aggregate_statistics.parquet": {
+      "id": "1uciw_Wc88X7GPRoZaX33fKamy3mmF4m3",
+      "size": 56111,
+      "md5": "21965d5a60c113304bcc9074bde03c9c",
+      "modified_time": "2026-08-23T05:31:17.854Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/bh_fdr05/retained_edge/resolved_plot_data.parquet": {
+      "id": "1zlb1sbVvp6L2PqGYm19fA_MDnmhLIq59",
+      "size": 737772,
+      "md5": "acee2783c99400331f611c7b2e530d2f",
+      "modified_time": "2026-08-23T05:31:17.873Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/bh_fdr05/retained_edge/resolved_statistics.parquet": {
+      "id": "1UlWvUkVWE0HhA3Qz_fLVx6WaTPg1JcZy",
+      "size": 115588,
+      "md5": "c3ccff0e63490d8ce558b9529a6548d6",
+      "modified_time": "2026-08-23T05:31:17.906Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/bh_fdr05/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1y5dpd9Zl5IAvLvuHk37WrpKd2Vls6oOB",
+      "size": 85690,
+      "md5": "bceffb6e9cffe54bf8c921ee810736b9",
+      "modified_time": "2026-08-23T05:31:17.911Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/bh_fdr05/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1rgs_fwXtuWWu5bpcVtbGMoP2KLxbvqRd",
+      "size": 102216,
+      "md5": "e0249078f8dab68f8d894f7a677d5f63",
+      "modified_time": "2026-08-23T05:31:17.919Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/bh_fdr05/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1CwSZlbRGzYV-CFoaQSjdHFdHmqcuAmLO",
+      "size": 749285,
+      "md5": "e4830ce34a8b321495f6c04f283403a6",
+      "modified_time": "2026-08-23T05:31:17.925Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/bh_fdr05/standard_pruned/resolved_statistics.parquet": {
+      "id": "1KD0l-ZsXEG8vAsQsEDuzTGZazd1SYcFF",
+      "size": 142535,
+      "md5": "74dbb98c3fb762eb338bd8ca5ea799df",
+      "modified_time": "2026-08-23T05:31:17.933Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/native_p05/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1VX8Tq8ul_XD4ZHvFOLIgfK-ZBMaOgf9Y",
+      "size": 110186,
+      "md5": "66ceaf307acd3639154269aaead9b095",
+      "modified_time": "2026-08-23T05:31:17.788Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/native_p05/retained_edge/aggregate_statistics.parquet": {
+      "id": "199UgWKr3tKIRftbRhUYtUh2Ss2jcefuK",
+      "size": 56128,
+      "md5": "b6221942304c40b4965bea1aa991246c",
+      "modified_time": "2026-08-23T05:31:17.807Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/native_p05/retained_edge/resolved_plot_data.parquet": {
+      "id": "1Nvc3uqcD7SGIBmHDPULIRtteB-gVIC_i",
+      "size": 764624,
+      "md5": "6bb2a8d5cbed9f4e0af2fc370c3698fd",
+      "modified_time": "2026-08-23T05:31:17.794Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/native_p05/retained_edge/resolved_statistics.parquet": {
+      "id": "1EFH5Zwg8qwY-evruyDjp3r9HAIpB0QGR",
+      "size": 183601,
+      "md5": "1b7b98280bbf611c9ad2d0cbece562f9",
+      "modified_time": "2026-08-23T05:31:17.827Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/native_p05/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1CrfW5_I-Z39her4CtQIVuSOEk2-W1EDa",
+      "size": 132070,
+      "md5": "1c0107c263092d68d3faa3a81913d186",
+      "modified_time": "2026-08-23T05:31:17.758Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/native_p05/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1-wIrbCyj3c9Q23mQnb-YcJw9wytIoDc2",
+      "size": 170421,
+      "md5": "0e4726a3197e7ad830e27081dbc1d3ec",
+      "modified_time": "2026-08-23T05:31:17.769Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/native_p05/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1umKnhUAbJvpNlU1HauHZrPmvH5_BGUoh",
+      "size": 787085,
+      "md5": "7ff7cb65c23fa100af175be9ea3f0397",
+      "modified_time": "2026-08-23T05:31:17.777Z"
+    },
+    "differential/bonobo/bonobo/ad_control_discovery_fdr05/per_module/fdr_0.10/native_p05/standard_pruned/resolved_statistics.parquet": {
+      "id": "18_9HpC3lBDuU2BKNyVSN2O76JRfXKSIj",
+      "size": 226642,
+      "md5": "fe386d9e3fc269a89d29107b7a49d22a",
+      "modified_time": "2026-08-23T05:31:17.898Z"
+    },
+    "differential/edge_summaries/bonobo__bonobo__all.parquet": {
+      "id": "1h4UBX4cMOpMzHY2zXbqCK_SxOtCDCBG8",
+      "size": 4093776,
+      "md5": "050473fd37257180211e8756afd4aea3",
+      "modified_time": "2026-08-23T05:30:59.435Z"
+    },
+    "differential/edge_summaries/bonobo__bonobo__bh_fdr05.parquet": {
+      "id": "1dtUe5z5SIbCGnPatCNRz0MxSgXZebxpJ",
+      "size": 3956753,
+      "md5": "a5fc6c95c42c255a623b0958645445b1",
+      "modified_time": "2026-08-23T05:30:59.441Z"
+    },
+    "differential/edge_summaries/bonobo__bonobo__native_p05.parquet": {
+      "id": "1rLfRlI9B1X9jrSf32HwKE9OrKgInAagS",
+      "size": 4008757,
+      "md5": "7adf45013cc2bded2f6541a657aa3346",
+      "modified_time": "2026-08-23T05:30:59.448Z"
+    },
+    "differential/edge_summaries/lioness__control_anchored__all.parquet": {
+      "id": "1CMD1zce6v8DfQkFpWAAWi2oCELH_oe3x",
+      "size": 61625507,
+      "md5": "469952948035aa32ef6116853e9480e5",
+      "modified_time": "2026-08-23T05:30:59.454Z"
+    },
+    "differential/edge_summaries/lioness__standard__all.parquet": {
+      "id": "1mxgvo6HQBFrwKL8Aghw_GzEMKDH0Wh2S",
+      "size": 4194518,
+      "md5": "87e0eba7e61c05a9d8a5ea3f04b31cf1",
+      "modified_time": "2026-08-23T05:30:59.461Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.05/all/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1RrFtfy7HUf_Nl0to3PR5_Lr3B_zDywtb",
+      "size": 13501013,
+      "md5": "c8751b334290af7601cef8db39204359",
+      "modified_time": "2026-08-23T05:31:18.580Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.05/all/retained_edge/aggregate_statistics.parquet": {
+      "id": "1feXwBzPzUc6o-mN7a6Fa0NWM_JbB9FDs",
+      "size": 29064883,
+      "md5": "ad7316e8be7e14e38ec45d003e9fe703",
+      "modified_time": "2026-08-23T05:31:18.591Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.05/all/retained_edge/resolved_plot_data.parquet": {
+      "id": "1-tJMFz9KDC0MLP5MWjCFurxPQKIitk3E",
+      "size": 31288329,
+      "md5": "88aec72ce98731efa1540c1cd79907bf",
+      "modified_time": "2026-08-23T05:31:18.604Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.05/all/retained_edge/resolved_statistics.parquet": {
+      "id": "1ZlAnqp10b380rNqRRhXsBlSUT-Jg5xgW",
+      "size": 61404410,
+      "md5": "f6fe96cd7d5a4c0aa9012bdbaa1e0b99",
+      "modified_time": "2026-08-23T05:31:18.619Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.05/all/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1gIh1-JdB6MH8izzqSnmVV4qyXgGlVI6u",
+      "size": 13661918,
+      "md5": "b703950201865ad165ae2e01207fb88a",
+      "modified_time": "2026-08-23T05:31:18.865Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.05/all/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1eN4LVL5zmU5kDnAymyWstXYVKx_y_D06",
+      "size": 30778239,
+      "md5": "60a22ae7010c882cec9791e1e5b63571",
+      "modified_time": "2026-08-23T05:31:18.842Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.05/all/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1hw056D5D7ZkMB0Wa6W3I3vI9_6koa8Gq",
+      "size": 31670863,
+      "md5": "34d698f87083fad4b47dd2078161cb08",
+      "modified_time": "2026-08-23T05:31:18.872Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.05/all/standard_pruned/resolved_statistics.parquet": {
+      "id": "1dxxLPpFKkul_Mq_YF8VLmL-YJR3EsOsP",
+      "size": 61416354,
+      "md5": "7682052a35a1cd4c5c110cf5ff0b96de",
+      "modified_time": "2026-08-23T05:31:18.880Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.10/all/retained_edge/aggregate_plot_data.parquet": {
+      "id": "10NbZf19kxS1K2seDhGnRqxt9q1a0sQpB",
+      "size": 15240688,
+      "md5": "a9054e7ff75a9de80bd570171792059d",
+      "modified_time": "2026-08-23T05:31:18.668Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.10/all/retained_edge/aggregate_statistics.parquet": {
+      "id": "1kARS8NUd-x547wwU5CO_2eImVZZHlTof",
+      "size": 32271593,
+      "md5": "e261973ae6c4996274675a4c742d0709",
+      "modified_time": "2026-08-23T05:31:18.677Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.10/all/retained_edge/resolved_plot_data.parquet": {
+      "id": "18U_YZ28tYrPncjaJZZ9bSyLZZivXvFtT",
+      "size": 38093890,
+      "md5": "d37be47fb9b9ec10a189cfc4ecb49029",
+      "modified_time": "2026-08-23T05:31:18.799Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.10/all/retained_edge/resolved_statistics.parquet": {
+      "id": "1G-J1PQHDlswnKv79INaNNkOj9f_KOKbP",
+      "size": 72542158,
+      "md5": "8513c3207c51605e2c00bd7e59a6ab22",
+      "modified_time": "2026-08-23T05:31:18.836Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.10/all/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "10l6qEKlgJI0nXtaN7T8wm5S8iRWc7r6h",
+      "size": 15329854,
+      "md5": "65197ea1bbc01ed4a6765fcb8de8f1d8",
+      "modified_time": "2026-08-23T05:31:18.891Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.10/all/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1FJO3A2d2gGnE2dfgsZVgLmAAJDKj1drq",
+      "size": 33385338,
+      "md5": "393b68f0d4d53d5df47028e6e240584c",
+      "modified_time": "2026-08-23T05:31:18.902Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.10/all/standard_pruned/resolved_plot_data.parquet": {
+      "id": "12wwHLLnqJkpkHw_NtGRIHZh4Q-GAbn_X",
+      "size": 38360034,
+      "md5": "a10af15ddbc47995546d4bbbd444eaa4",
+      "modified_time": "2026-08-23T05:31:18.915Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/global/fdr_0.10/all/standard_pruned/resolved_statistics.parquet": {
+      "id": "1JpGGmEs98Se5ydue1ZqHY0e56mqtyV5Q",
+      "size": 72550092,
+      "md5": "d8ee30744fe15b1c075bf73725bf0200",
+      "modified_time": "2026-08-23T05:31:18.921Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.05/all/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1nfPBcAcIBUPoQnYSpFd7vHvKTrihFapl",
+      "size": 8444368,
+      "md5": "a14228d7b3208417ad37e7b4dcc5978e",
+      "modified_time": "2026-08-23T05:31:19.022Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.05/all/retained_edge/aggregate_statistics.parquet": {
+      "id": "12XvzSpnxXzNg19hDgNCNfGs0Ldvs4ZwB",
+      "size": 18477861,
+      "md5": "74674e4e9cea90bdaa259706d129fb40",
+      "modified_time": "2026-08-23T05:31:19.011Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.05/all/retained_edge/resolved_plot_data.parquet": {
+      "id": "1H_lrCtmfNr2nANwEL4RHgJUYZpANarQQ",
+      "size": 20658246,
+      "md5": "ffc0257fd2f537343e4399a72db4a000",
+      "modified_time": "2026-08-23T05:31:19.037Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.05/all/retained_edge/resolved_statistics.parquet": {
+      "id": "1a6axGx8ZNPD-Kn8sgOrRZ5qy_F9j1tOH",
+      "size": 39925165,
+      "md5": "ebf331a12ffddd86d4ec207a4bf3f945",
+      "modified_time": "2026-08-23T05:31:19.044Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.05/all/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1DTRDJfxqESPwgqquo28WlJlzUZ6zgikv",
+      "size": 8619380,
+      "md5": "eea39d8c7d8bd24b0b5378389c4f7fcb",
+      "modified_time": "2026-08-23T05:31:19.055Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.05/all/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1d7074AibSO7G8s8IbSnP4NvzEAUgoRBd",
+      "size": 19728070,
+      "md5": "9ced8058676b3f92ae969be60e4dd486",
+      "modified_time": "2026-08-23T05:31:19.064Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.05/all/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1Ng3KfxvvzbW2Qytnq1_GiDeP0fa1Dgam",
+      "size": 20936136,
+      "md5": "4e16481d81a3712df7f59b0c32bcc0d0",
+      "modified_time": "2026-08-23T05:31:19.084Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.05/all/standard_pruned/resolved_statistics.parquet": {
+      "id": "1K130EhNxcYZ9tvWOFcIJ_9WKS7qr47pm",
+      "size": 39942332,
+      "md5": "35a8e23d81ada89399af2a4d3a06416e",
+      "modified_time": "2026-08-23T05:31:19.076Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.10/all/retained_edge/aggregate_plot_data.parquet": {
+      "id": "14CX_fJMmLPvHgJC3wTGe5PTuepHmNv4_",
+      "size": 11143134,
+      "md5": "119098cd453344590cd2ffaa2accefe0",
+      "modified_time": "2026-08-23T05:31:18.933Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.10/all/retained_edge/aggregate_statistics.parquet": {
+      "id": "1THVDgaGzfmsXGtwKlFDWc5IDCQh788NB",
+      "size": 23796177,
+      "md5": "19e94a8af1b13071fd7ecaf285eb6ea6",
+      "modified_time": "2026-08-23T05:31:18.943Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.10/all/retained_edge/resolved_plot_data.parquet": {
+      "id": "1izTDlLjyTR4ERv02lFR4Uqe0dX2u2Arc",
+      "size": 28308832,
+      "md5": "de943f52bd252be6cf5d9415953c6ad5",
+      "modified_time": "2026-08-23T05:31:18.952Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.10/all/retained_edge/resolved_statistics.parquet": {
+      "id": "1CpWALXZg3_Q6COuxevJaHZAj9GJJ13Yg",
+      "size": 54023338,
+      "md5": "d23a84951fde4246f0de85160a15c4eb",
+      "modified_time": "2026-08-23T05:31:18.962Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.10/all/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1-D1K1z6Wt7wXmplXp424nz4bVeAXLRss",
+      "size": 11309775,
+      "md5": "53c7d489e3f06bec83c8c04d84f0ccba",
+      "modified_time": "2026-08-23T05:31:18.985Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.10/all/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1z8zdNBIM59_QlMnbOp1FabDABANLMsV6",
+      "size": 25339207,
+      "md5": "93add4352b5ac7c8e91134cc5db90bfa",
+      "modified_time": "2026-08-23T05:31:18.974Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.10/all/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1sxDz9o-1Bqu5C6jiRB5uwoFp1JHNVf_2",
+      "size": 28583823,
+      "md5": "41dc3f27d5a30102bd7d16cdd4555935",
+      "modified_time": "2026-08-23T05:31:18.993Z"
+    },
+    "differential/lioness/control_anchored/ad_control_discovery_fdr05/per_module/fdr_0.10/all/standard_pruned/resolved_statistics.parquet": {
+      "id": "1_I-moIEUcgtJtjMkL5HePVkV_WFcUB-6",
+      "size": 54037217,
+      "md5": "2f0c4e528ae0ee0d2d322e2e6d415f4d",
+      "modified_time": "2026-08-23T05:31:19.004Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/global/fdr_0.05/all/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1COoqc_lIjS6BXlwk1398nOKzToW9rWmg",
+      "size": 144565,
+      "md5": "a4ed2d383d69db56ab68d77caa92d870",
+      "modified_time": "2026-08-23T05:31:17.940Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/global/fdr_0.05/all/retained_edge/aggregate_statistics.parquet": {
+      "id": "16jQwyfb8-LlQ6I069eCaiQ5ppZZ4qW_1",
+      "size": 72105,
+      "md5": "075ce6bff01e455049c3a572387a7d19",
+      "modified_time": "2026-08-23T05:31:17.951Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/global/fdr_0.05/all/retained_edge/resolved_plot_data.parquet": {
+      "id": "1KGnDNhEfU0hcTsjWBkP85YNvn0Mrk1XX",
+      "size": 1494331,
+      "md5": "21c0ddd3cea6cd493ce5e9f3c26b30c9",
+      "modified_time": "2026-08-23T05:31:17.960Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/global/fdr_0.05/all/retained_edge/resolved_statistics.parquet": {
+      "id": "1O07EeNHneSgtUI8BDpyZOPo8J3pzF35h",
+      "size": 807157,
+      "md5": "cf70165351c8ee9a9e4d6be414e8fdab",
+      "modified_time": "2026-08-23T05:31:17.975Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/global/fdr_0.05/all/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1CloYwKZ5WmAdtDvzPycu8xVQt3c2BkgE",
+      "size": 158594,
+      "md5": "cfa33394aca5d18f5ea372131352b60c",
+      "modified_time": "2026-08-23T05:31:17.968Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/global/fdr_0.05/all/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1-YS8NzGNpj8uXkI92gblqq3Pq0y-b6QU",
+      "size": 585523,
+      "md5": "dd0ef3333f5c2d923c7402926cf24c63",
+      "modified_time": "2026-08-23T05:31:17.984Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/global/fdr_0.05/all/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1gULgpkrMxItzyPMCb4B4u37wkeqP6wdh",
+      "size": 1505054,
+      "md5": "949004e9b9eed994d3f963b31fde5085",
+      "modified_time": "2026-08-23T05:31:18.014Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/global/fdr_0.05/all/standard_pruned/resolved_statistics.parquet": {
+      "id": "195_6zPr-ctqINp4Sn7NHuFBO7pGPVGbS",
+      "size": 890157,
+      "md5": "87843052865b095bd055973102e557ff",
+      "modified_time": "2026-08-23T05:31:18.004Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/global/fdr_0.10/all/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1kxi9fR3oFDtlWwTGbjF5LFVRwUi0qOwH",
+      "size": 144565,
+      "md5": "c21e65f9cb4227fb3df7726532f793e7",
+      "modified_time": "2026-08-23T05:31:18.024Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/global/fdr_0.10/all/retained_edge/aggregate_statistics.parquet": {
+      "id": "1taD2Ckkm8XxOm2a5S49EuyQAXyh6qafE",
+      "size": 72105,
+      "md5": "447c41b7f80ea478087419f71cf460ec",
+      "modified_time": "2026-08-23T05:31:18.034Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/global/fdr_0.10/all/retained_edge/resolved_plot_data.parquet": {
+      "id": "1XKLXlQ4XVTtBprBBhq_zmTM3zT8AGX-8",
+      "size": 1489881,
+      "md5": "6ba50a7166e69c603ca3d3d3fd4c7a13",
+      "modified_time": "2026-08-23T05:31:18.044Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/global/fdr_0.10/all/retained_edge/resolved_statistics.parquet": {
+      "id": "1dM9QtetqEl2t80n4o0UpkYz_zwYJDM2M",
+      "size": 807157,
+      "md5": "44604838d266d8a59fa5926895e01bd4",
+      "modified_time": "2026-08-23T05:31:18.054Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/global/fdr_0.10/all/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1CN1rv8iANKa6k2ZcIQtsIgiRrIGo9Khv",
+      "size": 158594,
+      "md5": "d6c0d5799d9f6f031bdfaad24bf2c22c",
+      "modified_time": "2026-08-23T05:31:18.073Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/global/fdr_0.10/all/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1yhunOwLOeRSYhcMYg31QzP93QEsrrWrW",
+      "size": 585523,
+      "md5": "34e5f668679c223c08c3fdc926812d31",
+      "modified_time": "2026-08-23T05:31:18.081Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/global/fdr_0.10/all/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1z9L-MHG-I5Pja5PrzGS6LTvFWbiFbEoD",
+      "size": 1500604,
+      "md5": "978f712d3cc0dc83447cddb27e9b6629",
+      "modified_time": "2026-08-23T05:31:18.090Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/global/fdr_0.10/all/standard_pruned/resolved_statistics.parquet": {
+      "id": "1CG1DtDh8LaOx9OqXCyMNYL_X8oDbNarl",
+      "size": 890157,
+      "md5": "a4bd7f2825e1270db127fe36aff9a399",
+      "modified_time": "2026-08-23T05:31:18.102Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/per_module/fdr_0.05/all/retained_edge/aggregate_plot_data.parquet": {
+      "id": "11pMjGBlZi9QgNKI08qpj2K1JZ4HPS0dE",
+      "size": 268534,
+      "md5": "1c06f8308de397914c6f79354f7ff4f6",
+      "modified_time": "2026-08-23T05:31:18.458Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/per_module/fdr_0.05/all/retained_edge/aggregate_statistics.parquet": {
+      "id": "1JPxyK_41BR96xQmPQQYV2ijr_yfUKfE-",
+      "size": 72749,
+      "md5": "2404994c2feaabac98b0950c61615083",
+      "modified_time": "2026-08-23T05:31:18.477Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/per_module/fdr_0.05/all/retained_edge/resolved_plot_data.parquet": {
+      "id": "1DEbiBS21Jh7J0_D7mfllL3CIYwFArWsn",
+      "size": 1601570,
+      "md5": "5b0ce858d3e1185ff0990d0659b6cf79",
+      "modified_time": "2026-08-23T05:31:18.492Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/per_module/fdr_0.05/all/retained_edge/resolved_statistics.parquet": {
+      "id": "1fgK6UxehL2mHB8rbKgNo7EpCIQAqqSpa",
+      "size": 1142039,
+      "md5": "92aace47df51b2fb057f8d94bc21137e",
+      "modified_time": "2026-08-23T05:31:18.502Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/per_module/fdr_0.05/all/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "153UdQUsgFrRVyuAyXAd0soABi1ItSTxs",
+      "size": 294491,
+      "md5": "860ff8f4c05afd87f471a8a1a09662ec",
+      "modified_time": "2026-08-23T05:31:18.517Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/per_module/fdr_0.05/all/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1cIkywQSG4bXAsHPo1dNA8kzxGETSDnUX",
+      "size": 922566,
+      "md5": "7a41588381c543d6b81edff050d16f27",
+      "modified_time": "2026-08-23T05:31:18.536Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/per_module/fdr_0.05/all/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1-xE6ogHDQ9-6zK5HB1HDHBL4698tOGYX",
+      "size": 1625068,
+      "md5": "32ab84b33d45b0fa300ceea67c44add1",
+      "modified_time": "2026-08-23T05:31:18.551Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/per_module/fdr_0.05/all/standard_pruned/resolved_statistics.parquet": {
+      "id": "1RmqJ2lpoNL9dGNQhNK5WdNMh_6b2WzL8",
+      "size": 1220529,
+      "md5": "98edb49c5760346f489a8d9d9aeef8ed",
+      "modified_time": "2026-08-23T05:31:18.561Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/per_module/fdr_0.10/all/retained_edge/aggregate_plot_data.parquet": {
+      "id": "1wKNCC319611ghguZNLn83ifwNcprUKcs",
+      "size": 372072,
+      "md5": "5231ae4e68d77e9a6cf920d7df7bfb17",
+      "modified_time": "2026-08-23T05:31:18.110Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/per_module/fdr_0.10/all/retained_edge/aggregate_statistics.parquet": {
+      "id": "1VaOPRFLS5KuapVF5k4DwpPLQdLi7T82a",
+      "size": 377910,
+      "md5": "3626a4460b521676c413be6271c6a64c",
+      "modified_time": "2026-08-23T05:31:18.122Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/per_module/fdr_0.10/all/retained_edge/resolved_plot_data.parquet": {
+      "id": "1UF3vSL1-Z2zUO4zdArQP-wuTG57Yjsvo",
+      "size": 1698884,
+      "md5": "890d3bd51e9f3193d1097ddd07a3da9d",
+      "modified_time": "2026-08-23T05:31:18.256Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/per_module/fdr_0.10/all/retained_edge/resolved_statistics.parquet": {
+      "id": "1UK55oJ1XSr7Y_XUKRbdEEJ96a6t9LotW",
+      "size": 1379601,
+      "md5": "4eea8c0563ff10455493e3ef03ca80a4",
+      "modified_time": "2026-08-23T05:31:18.291Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/per_module/fdr_0.10/all/standard_pruned/aggregate_plot_data.parquet": {
+      "id": "1lDc4HzPKwz1tEMzX1myuTeLrVv6WBwBH",
+      "size": 402958,
+      "md5": "6a0587055b736ef5342d540714a54f21",
+      "modified_time": "2026-08-23T05:31:18.348Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/per_module/fdr_0.10/all/standard_pruned/aggregate_statistics.parquet": {
+      "id": "1xbKRXg7uMXEFPqQlpa13P2PkfzzaJ9R5",
+      "size": 1200805,
+      "md5": "559ebb7afdd55ef1e4dc4d3c9322ac24",
+      "modified_time": "2026-08-23T05:31:18.327Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/per_module/fdr_0.10/all/standard_pruned/resolved_plot_data.parquet": {
+      "id": "1ADg0iKm_SAbBONh9teedZb6jZ0zhfb8P",
+      "size": 1728870,
+      "md5": "795cc3e915f16d306ab3b03d7f6234f8",
+      "modified_time": "2026-08-23T05:31:18.371Z"
+    },
+    "differential/lioness/standard/ad_control_discovery_fdr05/per_module/fdr_0.10/all/standard_pruned/resolved_statistics.parquet": {
+      "id": "1bnRfzq1WRTdPx-ZiTU7QrYqmBOsEU97B",
+      "size": 1457732,
+      "md5": "faa1a5282c880c657eda6977effc5f85",
+      "modified_time": "2026-08-23T05:31:18.380Z"
+    },
+    "differential/volcano_bins.parquet/part-00000.parquet": {
+      "id": "1Y1etp7G0lM9vIpdk6ikV5n0LZ6xIX4RV",
+      "size": 4838401,
+      "md5": "2aa0319c6d5ece623cbb2bc892a5de5d",
+      "modified_time": "2026-08-23T05:30:59.469Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 32,
+          "max": 1806
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "standard"
+          ]
+        },
+        "fdr_scope": {
+          "values": [
+            "global",
+            "per_module"
+          ]
+        }
+      }
+    },
+    "differential/volcano_bins.parquet/part-00001.parquet": {
+      "id": "1xckO4U3XZfAO39s6GCisOZdhTCLsoU5E",
+      "size": 623674,
+      "md5": "b46d62974620a90ff8e158a81b5ef899",
+      "modified_time": "2026-08-23T05:30:59.481Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1806,
+          "max": 2394
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "standard"
+          ]
+        },
+        "fdr_scope": {
+          "values": [
+            "global",
+            "per_module"
+          ]
+        }
+      }
+    },
+    "differential/volcano_bins.parquet/part-00002.parquet": {
+      "id": "1xC-F2AraK6Lat94qHLOm5m2Y7cAMHSJF",
+      "size": 6081082,
+      "md5": "ec49e546227e185e4001dd632d4cdfd4",
+      "modified_time": "2026-08-23T05:30:59.487Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 32,
+          "max": 1806
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        },
+        "fdr_scope": {
+          "values": [
+            "global",
+            "per_module"
+          ]
+        }
+      }
+    },
+    "differential/volcano_bins.parquet/part-00003.parquet": {
+      "id": "1fHfzC0IL1kiboEv-ZRFTIUtknDyn9SlD",
+      "size": 815426,
+      "md5": "c49c8aaebfe5cb9dee91ec96300b42ca",
+      "modified_time": "2026-08-23T05:30:59.494Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1806,
+          "max": 2394
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        },
+        "fdr_scope": {
+          "values": [
+            "global",
+            "per_module"
+          ]
+        }
+      }
+    },
+    "differential/volcano_bins.parquet/part-00004.parquet": {
+      "id": "17X8HDuILdaLsw8wI_8X4F0PRSUE0J69H",
+      "size": 4537858,
+      "md5": "4d00849ff064359de27c7429bc3245d9",
+      "modified_time": "2026-08-23T05:30:59.503Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 32,
+          "max": 1806
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "fdr_scope": {
+          "values": [
+            "global",
+            "per_module"
+          ]
+        }
+      }
+    },
+    "differential/volcano_bins.parquet/part-00005.parquet": {
+      "id": "1KdQa1tMvFilnP38heyjAD4Y5r1MdRwKC",
+      "size": 589660,
+      "md5": "b32b7918393fc7dd32229734537f4fcc",
+      "modified_time": "2026-08-23T05:30:59.510Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1806,
+          "max": 2394
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "fdr_scope": {
+          "values": [
+            "global",
+            "per_module"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00000.parquet": {
+      "id": "1KcLLxr33yEPWMgZgvoH3JNvREW0a68fh",
+      "size": 10263268,
+      "md5": "0d09991d56eeba4042ca347e9598ed3f",
+      "modified_time": "2026-08-23T05:30:59.531Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 32,
+          "max": 65
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "standard"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00001.parquet": {
+      "id": "1V0_K86ZWbE3YOC7bwD894Es5XxqgFTM0",
+      "size": 10313323,
+      "md5": "f0f04dbc30232290352283c14430ec99",
+      "modified_time": "2026-08-23T05:30:59.537Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 65,
+          "max": 192
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "standard"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00002.parquet": {
+      "id": "1E-sz3J0YGE-W6VxIw2_40el0Xm8vb1A5",
+      "size": 10277801,
+      "md5": "ba9d4d8a01de4b776f94d3494f55c18e",
+      "modified_time": "2026-08-23T05:30:59.542Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 192,
+          "max": 589
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "standard"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00003.parquet": {
+      "id": "1pqQDK46jXcduZ-DbPlPZUgYxrL0hoBBU",
+      "size": 10363841,
+      "md5": "51999178bc8609104a1ca1e1aae8f951",
+      "modified_time": "2026-08-23T05:30:59.554Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 589,
+          "max": 589
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "standard"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00004.parquet": {
+      "id": "1tTjXVzFyVCRe7KeEfMmRcipq7H8t0bFh",
+      "size": 10504565,
+      "md5": "74a0a13e3eceb600aa31cd296fb38d30",
+      "modified_time": "2026-08-23T05:30:59.569Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 589,
+          "max": 644
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "standard"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00005.parquet": {
+      "id": "1jDX4J5a_fLT4R40iuEZWXKgLfUkBijW2",
+      "size": 10528566,
+      "md5": "9b2835565c08604f839507b813d69ed7",
+      "modified_time": "2026-08-23T05:30:59.611Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 644,
+          "max": 934
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "standard"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00006.parquet": {
+      "id": "1ZPY9eCdnVixicpi0WuaqOgHPYVWRm-n7",
+      "size": 10435259,
+      "md5": "758db9dbd50fb5c79b784cb12c1487eb",
+      "modified_time": "2026-08-23T05:30:59.623Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 934,
+          "max": 1269
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "standard"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00007.parquet": {
+      "id": "1hSsXiYTQrNd0ml7Ub4CVhzilA4KXW18W",
+      "size": 10443458,
+      "md5": "7836c55d3861eeb19222a698fe92017b",
+      "modified_time": "2026-08-23T05:30:59.631Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1269,
+          "max": 1317
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "standard"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00008.parquet": {
+      "id": "1NFa_oyUlEJeOlK0nEHeqXUf00a88HjBd",
+      "size": 10406141,
+      "md5": "c63c88f6e67cd1cdc43c9b8a673de541",
+      "modified_time": "2026-08-23T05:30:59.637Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1317,
+          "max": 1537
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "standard"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00009.parquet": {
+      "id": "19-Ni_srLnxQT4FzdFS38NXOWb5HHPpXf",
+      "size": 10379443,
+      "md5": "37efee018bc72f8e3a1c9c99359dbfa9",
+      "modified_time": "2026-08-23T05:30:59.680Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1537,
+          "max": 1548
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "standard"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00010.parquet": {
+      "id": "1BKchGyKr59YvehMIZTgKBV7uAW_EYRGr",
+      "size": 10452873,
+      "md5": "563841cd0e28f81b392f3fee8ae4eafc",
+      "modified_time": "2026-08-23T05:30:59.704Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1548,
+          "max": 1572
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "standard"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00011.parquet": {
+      "id": "1Asqf9kabu8hQtsqknTLM7oAz1W6e82-M",
+      "size": 10439853,
+      "md5": "18247c75c2b69af7b39d8c881fd357aa",
+      "modified_time": "2026-08-23T05:30:59.709Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1572,
+          "max": 1603
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "standard"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00012.parquet": {
+      "id": "1Ool-3DfzH1Zl78UtYa8zOoT63fGKNvrN",
+      "size": 10407769,
+      "md5": "df6d58b0dbe21a47d9b0d0b8f46db57a",
+      "modified_time": "2026-08-23T05:30:59.740Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1603,
+          "max": 1643
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "standard"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00013.parquet": {
+      "id": "1kP0PaycvDDEFijGDMUvVdSOOok3F7mh0",
+      "size": 10392939,
+      "md5": "e33f81072c5597359067ffdb22551d7c",
+      "modified_time": "2026-08-23T05:30:59.749Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1643,
+          "max": 1757
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "standard"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00014.parquet": {
+      "id": "1aLcIodQAkZq3mUfdh_K8W3LFGfQ4rB8r",
+      "size": 10292948,
+      "md5": "340b503fb2f72eb0b580bdf2c7536ed1",
+      "modified_time": "2026-08-23T05:30:59.758Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1757,
+          "max": 1907
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "standard"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00015.parquet": {
+      "id": "1xs-rCHfpmIyY5zh_zey66OFQE1Kj8yum",
+      "size": 7651335,
+      "md5": "9ea64714683826decbc91abc76734f1b",
+      "modified_time": "2026-08-23T05:30:59.767Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1907,
+          "max": 2394
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "standard"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00016.parquet": {
+      "id": "1LiPwcklM8DRpnzDgyvDDDl251gtZAb63",
+      "size": 11694223,
+      "md5": "04dd5818387d6a87c6825d316ff7addf",
+      "modified_time": "2026-08-23T05:30:59.772Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 32,
+          "max": 61
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00017.parquet": {
+      "id": "1zSfuiX09Qr2Q0RjEuNgTqGL0IC_30P2a",
+      "size": 11802042,
+      "md5": "90cde9651331a8f89507db0a607a8c12",
+      "modified_time": "2026-08-23T05:30:59.781Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 61,
+          "max": 93
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00018.parquet": {
+      "id": "1Jml01GJ1MP1huQUaXrLr7kQP-9MdUCk1",
+      "size": 11824870,
+      "md5": "a02749c95c96b5147d94c470f260cd1e",
+      "modified_time": "2026-08-23T05:30:59.787Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 93,
+          "max": 396
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00019.parquet": {
+      "id": "1QPACaMKBdvRfuDSchA7HV6Lc8mWmOLdb",
+      "size": 11949808,
+      "md5": "72999bc802923abd740244dd7a1a831a",
+      "modified_time": "2026-08-23T05:30:59.792Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 396,
+          "max": 584
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00020.parquet": {
+      "id": "1kZ8E4-MuHloHjJ5eGHLBij8W1u4cOXui",
+      "size": 12312870,
+      "md5": "bd4bbcf50c3e50e5fabe3319f75c7934",
+      "modified_time": "2026-08-23T05:30:59.800Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 584,
+          "max": 589
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00021.parquet": {
+      "id": "1p19sSBlgzM75ucxRIGZosWfkn4zglSfF",
+      "size": 12297627,
+      "md5": "0c275af8dff94e1945b796dad847cbc7",
+      "modified_time": "2026-08-23T05:30:59.806Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 589,
+          "max": 589
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00022.parquet": {
+      "id": "1ZtOAVQxk2kkNt2z8owRG9d4bJDB-NDc7",
+      "size": 12311482,
+      "md5": "5ec059056ea591955475f02c0f8695af",
+      "modified_time": "2026-08-23T05:30:59.813Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 589,
+          "max": 589
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00023.parquet": {
+      "id": "1sfuLRf6QmWavr3Z2W3F6UB0RI6cOguMg",
+      "size": 12284336,
+      "md5": "ce0ef851d1548affdc57be42a34831c3",
+      "modified_time": "2026-08-23T05:30:59.819Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 589,
+          "max": 637
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00024.parquet": {
+      "id": "1cQqFiRjppOuqjzYm2hTGLfUDH7InIXmM",
+      "size": 12154784,
+      "md5": "a1bce5a388fe3c50d53210d324b7d982",
+      "modified_time": "2026-08-23T05:30:59.824Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 637,
+          "max": 660
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00025.parquet": {
+      "id": "1ERwFpfELwroRbC5We_JtbP2DqCqvjRPJ",
+      "size": 12285053,
+      "md5": "37ed47cc6018d522557b4277f78f5d56",
+      "modified_time": "2026-08-23T05:30:59.831Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 660,
+          "max": 661
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00026.parquet": {
+      "id": "10uHh9saN8mlyZWIw7TP88pKDL75IXH45",
+      "size": 12024414,
+      "md5": "1d493b06119772041d82d7e38c1aaf8d",
+      "modified_time": "2026-08-23T05:30:59.836Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 661,
+          "max": 1175
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00027.parquet": {
+      "id": "1tmxVRI0-Ba1ocGCACMzlMpl19Gb54i53",
+      "size": 11844259,
+      "md5": "a26c87fe0914bea4a30f81c29ce7c0f2",
+      "modified_time": "2026-08-23T05:30:59.841Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1175,
+          "max": 1269
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00028.parquet": {
+      "id": "1fsazYvhkrf_TibzD-B3BoXrQNG_puKz0",
+      "size": 12109750,
+      "md5": "7a9194ce13412f0673bac7de778086f7",
+      "modified_time": "2026-08-23T05:30:59.848Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1269,
+          "max": 1313
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00029.parquet": {
+      "id": "1cvfiHW7_LaOb82HTqObcslLTfXxXlAkP",
+      "size": 12155524,
+      "md5": "435f31d1cdabeb034e5cd985e6a26a9f",
+      "modified_time": "2026-08-23T05:30:59.853Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1313,
+          "max": 1317
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00030.parquet": {
+      "id": "1JrxYC1_KaQaXo3kL8wJda5ZxaHpUtlyZ",
+      "size": 11899226,
+      "md5": "7c74e00c6249f21c927abca1523d05b1",
+      "modified_time": "2026-08-23T05:30:59.858Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1317,
+          "max": 1535
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00031.parquet": {
+      "id": "11dqzEkC2D-HBkd0Omey7GXwPiXG1kWtr",
+      "size": 12025939,
+      "md5": "185241118cab08cb1fc1bdd1a7fd4c40",
+      "modified_time": "2026-08-23T05:30:59.866Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1535,
+          "max": 1541
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00032.parquet": {
+      "id": "1qXZWpwbYNCfhhjFwWT18mcO1kboS01QE",
+      "size": 12143717,
+      "md5": "41551352fbac05ea01c3268f9b3127a5",
+      "modified_time": "2026-08-23T05:30:59.872Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1541,
+          "max": 1547
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00033.parquet": {
+      "id": "1LNAT0gl1XhN7yUXO1PD1--LK1nBo9kib",
+      "size": 12208220,
+      "md5": "f5d9ea2ad000c35aee65a6cdc20738f8",
+      "modified_time": "2026-08-23T05:30:59.878Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1547,
+          "max": 1567
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00034.parquet": {
+      "id": "1dbc6ln4guMe0qOfY28uYOCPF2H0f38lf",
+      "size": 12084915,
+      "md5": "0af4dd61d0fcb302a32e5ce6dd027653",
+      "modified_time": "2026-08-23T05:30:59.931Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1567,
+          "max": 1572
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00035.parquet": {
+      "id": "15cIq4hfyQ9ckVcIzU2MBI5ORqNs3DPn8",
+      "size": 12156442,
+      "md5": "246be6f25ed25be466de2ae50b20adc7",
+      "modified_time": "2026-08-23T05:30:59.941Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1572,
+          "max": 1572
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00036.parquet": {
+      "id": "1L1eX-hThMN0DAa0oZIyEQ8ephbsGxjpA",
+      "size": 12157101,
+      "md5": "feb92ff47e002b192c07cb8368273261",
+      "modified_time": "2026-08-23T05:30:59.948Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1572,
+          "max": 1630
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00037.parquet": {
+      "id": "14R-Fow3_JK_fab3uDofAyvmDlxpfhVRr",
+      "size": 12001960,
+      "md5": "ba2cebb81d99a08c761de06c6ad2fe95",
+      "modified_time": "2026-08-23T05:30:59.954Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1630,
+          "max": 1639
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00038.parquet": {
+      "id": "1d5xrt28wrul5inCMroDvq6MjqSLetNM9",
+      "size": 12125455,
+      "md5": "0bebfb3398fc5c677a20dd58e95058e5",
+      "modified_time": "2026-08-23T05:30:59.960Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1639,
+          "max": 1643
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00039.parquet": {
+      "id": "1TmxvzP8vdf2cH7rMEbAcuPAiTk5iyEik",
+      "size": 12005101,
+      "md5": "0e2651fac65673d11bcd783d1e609738",
+      "modified_time": "2026-08-23T05:30:59.969Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1643,
+          "max": 1710
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00040.parquet": {
+      "id": "19OLr2ShSgrFRr8EXpKUmpuybMaSQzxXs",
+      "size": 11851124,
+      "md5": "0e97299fd6e76d6d3f4c5ee51bdf0668",
+      "modified_time": "2026-08-23T05:30:59.976Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1710,
+          "max": 1831
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00041.parquet": {
+      "id": "1AiuCcAQOcbac9gEMIhSJjIZrve64xllu",
+      "size": 11948554,
+      "md5": "7ee69fe60f0faa3a0db51574de2c284c",
+      "modified_time": "2026-08-23T05:30:59.986Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1831,
+          "max": 1918
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00042.parquet": {
+      "id": "1UbKIZJVIHKneI1lzqszmylb828BxJ3GM",
+      "size": 12150500,
+      "md5": "edbc5b8857ba9e3d1068deaf1c514fa9",
+      "modified_time": "2026-08-23T05:30:59.992Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1918,
+          "max": 1982
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00043.parquet": {
+      "id": "1WxeG6v9rRYX_d2ozXBkBOTkfPK47o4Gi",
+      "size": 3142291,
+      "md5": "a795acefe7101a954bb825beab7bd195",
+      "modified_time": "2026-08-23T05:31:00.000Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1982,
+          "max": 2394
+        },
+        "estimator": {
+          "values": [
+            "lioness"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "control_anchored"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00044.parquet": {
+      "id": "1zgf3eS_v8UwTOLFzmvOjy52UF9HBRSi4",
+      "size": 10285127,
+      "md5": "626e96587a97f100f24d772023295c0b",
+      "modified_time": "2026-08-23T05:31:00.005Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 32,
+          "max": 65
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00045.parquet": {
+      "id": "16Lu_HpSl45zJJwO0VYTcvUFvNC4V9nH7",
+      "size": 10370936,
+      "md5": "c34e9f729b9b48a87f13ad0bd77593a6",
+      "modified_time": "2026-08-23T05:31:00.014Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 65,
+          "max": 192
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00046.parquet": {
+      "id": "1050rdKf0YzM9ujg5pYzO4zkx9ToexpvF",
+      "size": 10406409,
+      "md5": "79b618a994e8dbe6817feac2a2590663",
+      "modified_time": "2026-08-23T05:31:00.022Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 192,
+          "max": 589
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00047.parquet": {
+      "id": "1Vxbz2nMSG4GN3rKZbwxxGGrrb5UJ9Pk6",
+      "size": 10419619,
+      "md5": "73963215b2abe821429bf858ceb0f938",
+      "modified_time": "2026-08-23T05:31:00.036Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 589,
+          "max": 589
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00048.parquet": {
+      "id": "1iu-ufm6k6rCgKUflaw7hDHG8fwqB4zUh",
+      "size": 10561553,
+      "md5": "89503e3c50e6c646761b43b344ead5bb",
+      "modified_time": "2026-08-23T05:31:00.031Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 589,
+          "max": 660
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00049.parquet": {
+      "id": "15Fp1MsuGVi0vaosyOHnZt44getpOQZ7x",
+      "size": 10543103,
+      "md5": "b15e8438909728c6df467e4a398b933a",
+      "modified_time": "2026-08-23T05:31:00.043Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 660,
+          "max": 1012
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00050.parquet": {
+      "id": "1LBYOW74L9LtTkxLi5Do0txOtLMW6Qs-i",
+      "size": 10667349,
+      "md5": "40ce52cd57970300b038cc2c59eb7cda",
+      "modified_time": "2026-08-23T05:31:00.101Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1012,
+          "max": 1269
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00051.parquet": {
+      "id": "1b9L4SVCfe4z2c4lc9XGSgjzqBeyzlWk_",
+      "size": 10603505,
+      "md5": "616ea15278faaf354ace9123f4bdc42a",
+      "modified_time": "2026-08-23T05:31:00.123Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1269,
+          "max": 1314
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00052.parquet": {
+      "id": "174j02J2Fqypl3A1n1U0IJI6sTdZRVQA_",
+      "size": 10498718,
+      "md5": "d5d1936e20c8d035d4dba32cbe0dcf8f",
+      "modified_time": "2026-08-23T05:31:00.117Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1314,
+          "max": 1535
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00053.parquet": {
+      "id": "1QRwnJtKoLjnEOyW-j4HkFoVJGsjzpaMy",
+      "size": 10411470,
+      "md5": "8419a546a326eef9d7b3de81bab39602",
+      "modified_time": "2026-08-23T05:31:00.143Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1535,
+          "max": 1547
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00054.parquet": {
+      "id": "1C3qEwmAUhfGDWrX71__rkD3O2J1-yxHx",
+      "size": 10435965,
+      "md5": "008d50dd9056355992c4f76cee9a6c72",
+      "modified_time": "2026-08-23T05:31:00.152Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1547,
+          "max": 1572
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00055.parquet": {
+      "id": "1xs1alIa_uyyWr1FpiHLNQ30XQtgSqVPO",
+      "size": 10472853,
+      "md5": "5b8a0aaca5ee3168d0a7bee1cec37985",
+      "modified_time": "2026-08-23T05:31:00.164Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1572,
+          "max": 1630
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00056.parquet": {
+      "id": "1IpNAI0mwWMdAWBYzjz9EI0F4kj9G7ImA",
+      "size": 10453081,
+      "md5": "3bdb464a8ff13702164e110e33ba9897",
+      "modified_time": "2026-08-23T05:31:00.173Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1630,
+          "max": 1643
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00057.parquet": {
+      "id": "1dDgEoY9c5-1gmwyiPwjyArF25geUBLbO",
+      "size": 10419427,
+      "md5": "6a960b243ec67ef08c3ff402bef4c522",
+      "modified_time": "2026-08-23T05:31:00.183Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1643,
+          "max": 1757
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00058.parquet": {
+      "id": "1R2Ua9D1DTbsTqDcNX1jZ5w92-YWDbYkQ",
+      "size": 10415098,
+      "md5": "c15d420bf3f492da666701e70f06a1d9",
+      "modified_time": "2026-08-23T05:31:00.191Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1757,
+          "max": 1918
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "differential/volcano_candidates.parquet/part-00059.parquet": {
+      "id": "13Lcsfaj83lXHeXVk-5-MWWjEPM_MWaAB",
+      "size": 5702721,
+      "md5": "1e5e3d11c169eaeb4053d72f2d062a48",
+      "modified_time": "2026-08-23T05:31:00.202Z",
+      "parquet_predicates": {
+        "module": {
+          "min": 1918,
+          "max": 2394
+        },
+        "estimator": {
+          "values": [
+            "bonobo"
+          ]
+        },
+        "network_method": {
+          "values": [
+            "bonobo"
+          ]
+        }
+      }
+    },
+    "edge_summaries/bonobo__all.parquet": {
+      "id": "1bkVEApY-Wc9bYnFksy9AtAHAeXGkd3-Z",
+      "size": 24426912,
+      "md5": "81af603ef22334f3cbdb1ab5f44d4cac",
+      "modified_time": "2026-08-23T05:30:58.912Z"
+    },
+    "edge_summaries/bonobo__bh_fdr05.parquet": {
+      "id": "1TJhXAuKST1wg6ktOQrIQcSjsAXtyeMnZ",
+      "size": 4384398,
+      "md5": "5c5b59227b6109811f55dedf6b9bb5f7",
+      "modified_time": "2026-08-23T05:30:58.917Z"
+    },
+    "edge_summaries/bonobo__native_p05.parquet": {
+      "id": "1sUFodA8tqe9KFx3m7E9UC1OobTcd9SJJ",
+      "size": 9682198,
+      "md5": "860ee3104fcbe78b9d0849646bb77729",
+      "modified_time": "2026-08-23T05:30:58.921Z"
+    },
+    "edge_summaries/lioness__control_anchored.parquet": {
+      "id": "1Cez38Byj7JYFnqR1Rq1aKIfHE84_3g_b",
+      "size": 25330233,
+      "md5": "e7cf444c73ae4c034a17e4a0195f026b",
+      "modified_time": "2026-08-23T05:30:58.925Z"
+    },
+    "edge_summaries/lioness__standard.parquet": {
+      "id": "1ya5EBrFPuj5yJ18TKVNrmarNmg8KOXot",
+      "size": 25322979,
+      "md5": "090fd2613bc607d94a87e00586fec69f",
+      "modified_time": "2026-08-23T05:30:58.933Z"
+    },
+    "feature_definitions.tsv": {
+      "id": "1Fs1npvERwdqK4_91Us8F-UkSvBsFIegW",
+      "size": 2366,
+      "md5": "fd83d5c9376ae35135aa5ab662ae0041",
+      "modified_time": "2026-08-23T05:30:58.058Z"
+    },
+    "kegg_tissue_expanded_full.parquet": {
+      "id": "1zceuR0VvRY3SOtsL92ihI4ye-8kAL3Xm",
+      "size": 667709,
+      "md5": "df02273e52f3b19917b7b63953938a3f",
+      "modified_time": "2026-08-23T05:30:58.066Z"
+    },
+    "kegg_tissue_expanded_full.tsv": {
+      "id": "1nR_xDOHkc1-gMvF2gG1t4LtVhxcJWrkJ",
+      "size": 3914269,
+      "md5": "85402abd9bd4904fbaeafa82978b3cc9",
+      "modified_time": "2026-08-23T05:30:58.071Z"
+    },
+    "mdc_ad_vs_control_summary.tsv": {
+      "id": "1e_o2152yw1b2rO5M0Xisv4Yi_ZKucRkU",
+      "size": 36615,
+      "md5": "7c5ea9b12011ebe80b22012fd5110bcc",
+      "modified_time": "2026-08-23T05:30:58.076Z"
+    },
+    "mdc_resolved_ad_vs_control.tsv": {
+      "id": "1FzXQL9b_DoCPwJ1CYecO4IZmgjgzCYe0",
+      "size": 252069,
+      "md5": "c0a4b7b58a673ad559f13671cd41d4bc",
+      "modified_time": "2026-08-23T05:30:58.084Z"
+    },
+    "module_details.tsv": {
+      "id": "1Lh7D7SmnIkKV2FNbD1U722E6AfDGVdVZ",
+      "size": 15888,
+      "md5": "918b753570c1e38cd46553e3380520a3",
+      "modified_time": "2026-08-23T05:30:58.090Z"
+    },
+    "module_kegg_annotations.tsv": {
+      "id": "1mjMn-8oHb7Zix6IA0gobWmZzd7Fm9gmr",
+      "size": 54181,
+      "md5": "36c721be8c2c4f5cb585fbaf412e7276",
+      "modified_time": "2026-08-23T05:30:58.096Z"
+    },
+    "resolved_plot_data.parquet": {
+      "id": "1XyO9-IsPMkZlvtxlYTlFQvLhaxdmFyR7",
+      "size": 97599403,
+      "md5": "c120a84de4cfee71ea8e95ff32f5935e",
+      "modified_time": "2026-08-23T05:30:58.102Z"
+    },
+    "resolved_statistics.parquet": {
+      "id": "1u299uh8nR_A08zfO1Ydb50hCCjN6Txbf",
+      "size": 66232073,
+      "md5": "7a18a42e017b8fac1ec44f7c9ed35c0e",
+      "modified_time": "2026-08-23T05:30:58.111Z"
+    },
+    "sample_metadata.parquet": {
+      "id": "1L_wf7h8VBZaG_dqOqFlmYoH8E5TeKoLL",
+      "size": 37195,
+      "md5": "d7fe5e834f0ebb960034a2df7acdfd65",
+      "modified_time": "2026-08-23T05:30:58.120Z"
+    },
+    "tissue_mapping.tsv": {
+      "id": "1L_-pnAkwbjLZ-sciAKgXmeUP2PDkKou-",
+      "size": 66,
+      "md5": "00c3d01ab40e96bc8db20b18d513b7f6",
+      "modified_time": "2026-08-23T05:30:58.127Z"
+    }
+  }
+}
