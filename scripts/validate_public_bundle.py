@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.compute as pc
+import pyarrow.dataset as ds
 import pyarrow.parquet as pq
 
 
@@ -315,7 +316,7 @@ def validate_differential_module_set(
                 edge_rows += expected_edge_rows
 
     candidates = root / "volcano_candidates.parquet"
-    candidate_schema = set(pq.read_schema(candidates).names)
+    candidate_schema = set(ds.dataset(candidates, format="parquet").schema.names)
     required_q = {
         "discovery_fdr_global",
         "discovery_fdr_per_module",
@@ -324,8 +325,8 @@ def validate_differential_module_set(
     }
     if not required_q.issubset(candidate_schema):
         raise ValueError(f"{key}: volcano candidates omit one or more BH columns")
-    bins = pq.read_table(
-        root / "volcano_bins.parquet", columns=["fdr_scope", "counts", "n_edges"]
+    bins = ds.dataset(root / "volcano_bins.parquet", format="parquet").to_table(
+        columns=["fdr_scope", "counts", "n_edges"]
     )
     if set(pc.unique(bins["fdr_scope"]).cast(pa.string()).to_pylist()) != set(
         DIFFERENTIAL_FDR_SCOPES

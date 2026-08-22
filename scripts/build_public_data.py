@@ -1503,7 +1503,9 @@ def validate_public_module_set(output: Path, expected_sample_ids: set[str]) -> N
     """Reject identifiers or internal tissue labels in a deploy module bundle."""
     forbidden_columns = {"donor", "projid"}
     internal_labels = ("MFBA9BA46", "MFBA9/BA46")
-    parquet_paths = sorted(output.rglob("*.parquet"))
+    parquet_paths = sorted(
+        path for path in output.rglob("*.parquet") if path.is_file()
+    )
     for path in parquet_paths:
         parquet = pq.ParquetFile(path)
         names = set(parquet.schema_arrow.names)
