@@ -37,6 +37,20 @@ BONOBO_EDGE_RULE_LABELS = {
     "native_p05": "Native posterior p < 0.05",
     "bh_fdr05": "Within donor-module BH FDR < 0.05",
 }
+DIFFERENTIAL_EDGE_RULE_LABELS = {
+    "all": "All edges",
+    "ad_control_discovery_fdr05": "Discovery AD–Control BH FDR < 0.05",
+}
+SCORE_NORMALIZATION_LABELS = {
+    "standard_pruned": "Standard pruned network",
+    "retained_edge": "Retained-edge normalized",
+}
+ANALYSIS_SUBSET_LABELS = {
+    "all_donors": "All donors (exploratory)",
+    "discovery_ad_control": "Discovery AD + Control",
+    "validation_ad_control": "Held-out validation AD + Control",
+    "mci_external": "MCI (external to edge selection)",
+}
 
 KEGG_REGION_FDR_COLUMNS = {
     "AC": "fdr_AC",
@@ -190,6 +204,43 @@ def estimator_path(
     return module_set_data_dir(module_set) / "bonobo" / edge_rule / filename
 
 
+def differential_estimator_path(
+    filename: str,
+    module_set: str,
+    estimator: str,
+    method: str,
+    edge_rule: str,
+    differential_edge_rule: str,
+    score_normalization: str,
+) -> Path:
+    """Return a filtered-score path while preserving legacy all-edge paths."""
+
+    if differential_edge_rule == "all":
+        return estimator_path(filename, module_set, estimator, edge_rule)
+    if differential_edge_rule not in DIFFERENTIAL_EDGE_RULE_LABELS:
+        raise ValueError(f"Unknown differential edge rule: {differential_edge_rule}")
+    if score_normalization not in SCORE_NORMALIZATION_LABELS:
+        raise ValueError(f"Unknown score normalization: {score_normalization}")
+    return (
+        module_set_data_dir(module_set)
+        / "differential"
+        / estimator
+        / method
+        / differential_edge_rule
+        / edge_rule
+        / score_normalization
+        / filename
+    )
+
+
+def differential_data_available(module_set: str = "full_cohort") -> bool:
+    return (
+        module_set_data_dir(module_set)
+        / "differential"
+        / "volcano_candidates.parquet"
+    ).exists()
+
+
 def require_data_files() -> None:
     """Raise a useful error if the GitHub data bundle was not built."""
     required = [
@@ -256,6 +307,8 @@ def load_aggregate(
     module_set: str = "full_cohort",
     estimator: str = "lioness",
     edge_rule: str = "all",
+    differential_edge_rule: str = "all",
+    score_normalization: str = "standard_pruned",
 ) -> pd.DataFrame:
     columns = [
         "sample_id",
@@ -272,8 +325,9 @@ def load_aggregate(
         "lioness_method",
     ]
     return _read_filtered(
-        estimator_path(
-            "aggregate_plot_data.parquet", module_set, estimator, edge_rule
+        differential_estimator_path(
+            "aggregate_plot_data.parquet", module_set, estimator, method, edge_rule,
+            differential_edge_rule, score_normalization,
         ),
         [
             ("lioness_method", "=", method),
@@ -291,6 +345,8 @@ def load_aggregate_scope(
     module_set: str = "full_cohort",
     estimator: str = "lioness",
     edge_rule: str = "all",
+    differential_edge_rule: str = "all",
+    score_normalization: str = "standard_pruned",
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
@@ -308,8 +364,9 @@ def load_aggregate_scope(
         "lioness_method",
     ]
     return _read_filtered(
-        estimator_path(
-            "aggregate_plot_data.parquet", module_set, estimator, edge_rule
+        differential_estimator_path(
+            "aggregate_plot_data.parquet", module_set, estimator, method, edge_rule,
+            differential_edge_rule, score_normalization,
         ), filters, columns
     )
 
@@ -321,6 +378,8 @@ def load_resolved(
     module_set: str = "full_cohort",
     estimator: str = "lioness",
     edge_rule: str = "all",
+    differential_edge_rule: str = "all",
+    score_normalization: str = "standard_pruned",
 ) -> pd.DataFrame:
     columns = [
         "sample_id",
@@ -337,8 +396,9 @@ def load_resolved(
         "lioness_method",
     ]
     return _read_filtered(
-        estimator_path(
-            "resolved_plot_data.parquet", module_set, estimator, edge_rule
+        differential_estimator_path(
+            "resolved_plot_data.parquet", module_set, estimator, method, edge_rule,
+            differential_edge_rule, score_normalization,
         ),
         [
             ("lioness_method", "=", method),
@@ -357,6 +417,8 @@ def load_resolved_scope(
     module_set: str = "full_cohort",
     estimator: str = "lioness",
     edge_rule: str = "all",
+    differential_edge_rule: str = "all",
+    score_normalization: str = "standard_pruned",
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
@@ -378,8 +440,9 @@ def load_resolved_scope(
         "lioness_method",
     ]
     return _read_filtered(
-        estimator_path(
-            "resolved_plot_data.parquet", module_set, estimator, edge_rule
+        differential_estimator_path(
+            "resolved_plot_data.parquet", module_set, estimator, method, edge_rule,
+            differential_edge_rule, score_normalization,
         ), filters, columns
     )
 
@@ -392,6 +455,9 @@ def load_aggregate_statistics(
     module_set: str = "full_cohort",
     estimator: str = "lioness",
     edge_rule: str = "all",
+    differential_edge_rule: str = "all",
+    score_normalization: str = "standard_pruned",
+    analysis_subset: str = "all_donors",
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
@@ -400,9 +466,12 @@ def load_aggregate_statistics(
         filters.append(("phenotype", "=", phenotype))
     if metric_family is not None:
         filters.append(("metric_family", "=", metric_family))
+    if differential_edge_rule != "all":
+        filters.append(("analysis_subset", "=", analysis_subset))
     return _read_filtered(
-        estimator_path(
-            "aggregate_statistics.parquet", module_set, estimator, edge_rule
+        differential_estimator_path(
+            "aggregate_statistics.parquet", module_set, estimator, method, edge_rule,
+            differential_edge_rule, score_normalization,
         ), filters
     )
 
@@ -415,6 +484,9 @@ def load_resolved_statistics(
     module_set: str = "full_cohort",
     estimator: str = "lioness",
     edge_rule: str = "all",
+    differential_edge_rule: str = "all",
+    score_normalization: str = "standard_pruned",
+    analysis_subset: str = "all_donors",
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
@@ -423,9 +495,12 @@ def load_resolved_statistics(
         filters.append(("phenotype", "=", phenotype))
     if metric_family is not None:
         filters.append(("metric_family", "=", metric_family))
+    if differential_edge_rule != "all":
+        filters.append(("analysis_subset", "=", analysis_subset))
     return _read_filtered(
-        estimator_path(
-            "resolved_statistics.parquet", module_set, estimator, edge_rule
+        differential_estimator_path(
+            "resolved_statistics.parquet", module_set, estimator, method, edge_rule,
+            differential_edge_rule, score_normalization,
         ), filters
     )
 
@@ -501,8 +576,16 @@ def load_edge_summaries(
     module: int,
     module_set: str = "full_cohort",
     edge_rule: str = "all",
+    differential_edge_rule: str = "all",
 ) -> pd.DataFrame:
-    if estimator == "lioness":
+    if differential_edge_rule != "all":
+        path = (
+            module_set_data_dir(module_set)
+            / "differential"
+            / "edge_summaries"
+            / f"{estimator}__{method}__{edge_rule}.parquet"
+        )
+    elif estimator == "lioness":
         path = module_set_data_dir(module_set) / "edge_summaries" / f"lioness__{method}.parquet"
     elif estimator == "bonobo":
         path = module_set_data_dir(module_set) / "edge_summaries" / f"bonobo__{edge_rule}.parquet"
@@ -515,6 +598,40 @@ def load_edge_summaries(
         )
         frame["scope_label"] = frame["scope"].map(EDGE_SCOPE_LABELS)
     return frame
+
+
+def load_volcano_candidates(
+    module_set: str,
+    estimator: str,
+    method: str,
+    module: int,
+) -> pd.DataFrame:
+    path = module_set_data_dir(module_set) / "differential" / "volcano_candidates.parquet"
+    return _read_filtered(
+        path,
+        [
+            ("estimator", "=", estimator),
+            ("network_method", "=", method),
+            ("module", "=", int(module)),
+        ],
+    )
+
+
+def load_volcano_bins(
+    module_set: str,
+    estimator: str,
+    method: str,
+    module: int,
+) -> pd.DataFrame:
+    path = module_set_data_dir(module_set) / "differential" / "volcano_bins.parquet"
+    return _read_filtered(
+        path,
+        [
+            ("estimator", "=", estimator),
+            ("network_method", "=", method),
+            ("module", "=", int(module)),
+        ],
+    )
 
 
 def load_data_manifest() -> dict[str, object]:

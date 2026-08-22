@@ -24,6 +24,7 @@ from app_helpers.charts import (
     correlation_heatmap_figure,
     distribution_figure,
     distribution_summary,
+    edge_volcano_figure,
     edge_summary_figure,
     mdc_module_figure,
     mdc_overview_figure,
@@ -36,11 +37,13 @@ from app_helpers.charts import (
 )
 from app_helpers.correlations import calculate_correlations
 from app_helpers.data import (
+    ANALYSIS_SUBSET_LABELS,
     BONOBO_EDGE_RULE_LABELS,
     BONOBO_FEATURE_LABELS,
     COLOR_LABELS,
     COMPONENT_ORDER,
     DATA_DIR,
+    DIFFERENTIAL_EDGE_RULE_LABELS,
     DIAGNOSIS_ORDER,
     FEATURE_LABELS,
     HOVER_LABELS,
@@ -52,8 +55,10 @@ from app_helpers.data import (
     OUTCOME_LABELS,
     PHENOTYPE_LABELS,
     SCALE_LABELS,
+    SCORE_NORMALIZATION_LABELS,
     association_kegg_subtitles,
     dataframe_to_tsv_bytes,
+    differential_data_available,
     filter_kegg_enrichments,
     load_aggregate,
     load_aggregate_scope,
@@ -71,6 +76,8 @@ from app_helpers.data import (
     load_resolved_statistics,
     load_sample_metadata,
     load_tissue_mapping,
+    load_volcano_bins,
+    load_volcano_candidates,
     module_label,
     module_set_path,
     require_data_files,
@@ -116,10 +123,14 @@ def cached_aggregate(
     module: int,
     feature: str,
     edge_rule: str,
+    differential_edge_rule: str = "all",
+    score_normalization: str = "standard_pruned",
 ) -> pd.DataFrame:
     return load_aggregate(
         method, module, feature, module_set=module_set,
         estimator=estimator, edge_rule=edge_rule,
+        differential_edge_rule=differential_edge_rule,
+        score_normalization=score_normalization,
     )
 
 
@@ -131,10 +142,14 @@ def cached_resolved(
     module: int,
     feature: str,
     edge_rule: str,
+    differential_edge_rule: str = "all",
+    score_normalization: str = "standard_pruned",
 ) -> pd.DataFrame:
     return load_resolved(
         method, module, feature, module_set=module_set,
         estimator=estimator, edge_rule=edge_rule,
+        differential_edge_rule=differential_edge_rule,
+        score_normalization=score_normalization,
     )
 
 
@@ -160,9 +175,11 @@ def cached_edge_summaries(
     method: str,
     module: int,
     edge_rule: str,
+    differential_edge_rule: str = "all",
 ) -> pd.DataFrame:
     return load_edge_summaries(
-        estimator, method, module, module_set=module_set, edge_rule=edge_rule
+        estimator, method, module, module_set=module_set, edge_rule=edge_rule,
+        differential_edge_rule=differential_edge_rule,
     )
 
 
@@ -180,10 +197,16 @@ def cached_aggregate_stats(
     phenotype: str | None,
     feature: str | None,
     edge_rule: str,
+    differential_edge_rule: str = "all",
+    score_normalization: str = "standard_pruned",
+    analysis_subset: str = "all_donors",
 ) -> pd.DataFrame:
     return load_aggregate_statistics(
         method, module, phenotype, feature, module_set=module_set,
         estimator=estimator, edge_rule=edge_rule,
+        differential_edge_rule=differential_edge_rule,
+        score_normalization=score_normalization,
+        analysis_subset=analysis_subset,
     )
 
 
@@ -196,11 +219,31 @@ def cached_resolved_stats(
     phenotype: str,
     feature: str,
     edge_rule: str,
+    differential_edge_rule: str = "all",
+    score_normalization: str = "standard_pruned",
+    analysis_subset: str = "all_donors",
 ) -> pd.DataFrame:
     return load_resolved_statistics(
         method, module, phenotype, feature, module_set=module_set,
         estimator=estimator, edge_rule=edge_rule,
+        differential_edge_rule=differential_edge_rule,
+        score_normalization=score_normalization,
+        analysis_subset=analysis_subset,
     )
+
+
+@st.cache_data(show_spinner=False, max_entries=48)
+def cached_volcano_candidates(
+    module_set: str, estimator: str, method: str, module: int
+) -> pd.DataFrame:
+    return load_volcano_candidates(module_set, estimator, method, module)
+
+
+@st.cache_data(show_spinner=False, max_entries=48)
+def cached_volcano_bins(
+    module_set: str, estimator: str, method: str, module: int
+) -> pd.DataFrame:
+    return load_volcano_bins(module_set, estimator, method, module)
 
 
 @st.cache_data(show_spinner=False, max_entries=48)
@@ -247,20 +290,34 @@ def cached_module_correlations(
     module: int,
     resolved: bool,
     edge_rule: str,
+    differential_edge_rule: str = "all",
+    score_normalization: str = "standard_pruned",
+    analysis_subset: str = "all_donors",
 ) -> pd.DataFrame:
     if resolved:
         source = load_resolved_scope(
             method, module=module, module_set=module_set,
             estimator=estimator, edge_rule=edge_rule,
+            differential_edge_rule=differential_edge_rule,
+            score_normalization=score_normalization,
         )
         long = resolved_to_long(source, "rint")
     else:
         source = load_aggregate_scope(
             method, module=module, module_set=module_set,
             estimator=estimator, edge_rule=edge_rule,
+            differential_edge_rule=differential_edge_rule,
+            score_normalization=score_normalization,
         )
         long = aggregate_to_long(source, "rint")
     long = attach_metadata(long)
+    if differential_edge_rule != "all" and analysis_subset != "all_donors":
+        split_value = {
+            "discovery_ad_control": "Discovery",
+            "validation_ad_control": "Validation",
+            "mci_external": "MCI_external",
+        }[analysis_subset]
+        long = long.loc[long["ad_control_split"].eq(split_value)]
     all_donors = long.copy()
     all_donors["diagnosis_group"] = "All donors"
     long = pd.concat([long, all_donors], ignore_index=True)
@@ -288,6 +345,9 @@ def cached_all_module_correlations(
     component: str,
     diagnosis: str,
     edge_rule: str,
+    differential_edge_rule: str = "all",
+    score_normalization: str = "standard_pruned",
+    analysis_subset: str = "all_donors",
 ) -> pd.DataFrame:
     if resolved:
         source = load_resolved_scope(
@@ -297,16 +357,27 @@ def cached_all_module_correlations(
             module_set=module_set,
             estimator=estimator,
             edge_rule=edge_rule,
+            differential_edge_rule=differential_edge_rule,
+            score_normalization=score_normalization,
         )
         long = resolved_to_long(source, "rint")
     else:
         source = load_aggregate_scope(
             method, metric_family=feature, module_set=module_set,
             estimator=estimator, edge_rule=edge_rule,
+            differential_edge_rule=differential_edge_rule,
+            score_normalization=score_normalization,
         )
         long = aggregate_to_long(source, "rint")
         long = long.loc[long["component"].eq(component)]
     long = attach_metadata(long)
+    if differential_edge_rule != "all" and analysis_subset != "all_donors":
+        split_value = {
+            "discovery_ad_control": "Discovery",
+            "validation_ad_control": "Validation",
+            "mci_external": "MCI_external",
+        }[analysis_subset]
+        long = long.loc[long["ad_control_split"].eq(split_value)]
     if diagnosis != "All donors":
         long = long.loc[long["diagnosis_group"].eq(diagnosis)]
     else:
@@ -432,7 +503,7 @@ with st.sidebar:
         options=list(OUTCOME_LABELS),
         format_func=lambda value: OUTCOME_LABELS[value],
     )
-    active_feature_labels = (
+    active_feature_labels = dict(
         FEATURE_LABELS if estimator == "lioness" else BONOBO_FEATURE_LABELS
     )
     feature = st.selectbox(
@@ -460,6 +531,47 @@ with st.sidebar:
     else:
         bonobo_edge_subset = "All edges"
         edge_rule = "all"
+    differential_available = differential_data_available(module_set)
+    differential_edge_rule = st.radio(
+        "AD–Control edge subset",
+        options=list(DIFFERENTIAL_EDGE_RULE_LABELS) if differential_available else ["all"],
+        format_func=lambda value: DIFFERENTIAL_EDGE_RULE_LABELS[value],
+        help=(
+            "The differential mask is learned only in the diagnosis-and-sex-stratified "
+            "discovery donors. BH FDR is corrected across every undirected edge in the "
+            "selected module."
+        ),
+    )
+    if not differential_available:
+        st.caption("AD–Control filtered scores are not present in this deployed bundle.")
+    if differential_edge_rule == "all":
+        score_normalization = "standard_pruned"
+        analysis_subset = "all_donors"
+    else:
+        score_normalization = st.radio(
+            "Score handling",
+            options=list(SCORE_NORMALIZATION_LABELS),
+            format_func=lambda value: SCORE_NORMALIZATION_LABELS[value],
+            help=(
+                "Standard pruning preserves the module-gene denominator. Retained-edge "
+                "normalization divides edge sums by the number of retained edges."
+            ),
+        )
+        analysis_subset = st.selectbox(
+            "Evaluation cohort",
+            options=list(ANALYSIS_SUBSET_LABELS),
+            format_func=lambda value: ANALYSIS_SUBSET_LABELS[value],
+            index=list(ANALYSIS_SUBSET_LABELS).index("validation_ad_control"),
+        )
+        if score_normalization == "retained_edge":
+            active_feature_labels.update(
+                {
+                    "connectivity": "Mean retained signed edge weight",
+                    "abs_sum": "Mean retained absolute edge weight",
+                    "positive_abs_sum": "Positive contribution per retained edge",
+                    "negative_abs_sum": "Negative contribution per retained edge",
+                }
+            )
     resolution = st.radio("Resolution", ["Aggregate CT / TS", "Tissue resolved"])
     scale = st.selectbox(
         "Feature scale",
@@ -500,9 +612,13 @@ with st.sidebar:
 
 st.caption(
     f"Module definition: **{module_set_label}** · Estimator: "
-    f"**{ESTIMATOR_LABELS[estimator]}**"
+    f"**{ESTIMATOR_LABELS[estimator]}** · Edge subset: "
+    f"**{DIFFERENTIAL_EDGE_RULE_LABELS[differential_edge_rule]}**"
 )
-download_prefix = f"{module_set}__{estimator}__{edge_rule}__"
+download_prefix = (
+    f"{module_set}__{estimator}__{edge_rule}__{differential_edge_rule}__"
+    f"{score_normalization}__"
+)
 
 if not diagnoses:
     st.warning("Select at least one diagnosis group in the sidebar.")
@@ -511,24 +627,42 @@ if not diagnoses:
 with st.spinner("Loading the selected module…"):
     if resolution == "Aggregate CT / TS":
         plot_data = cached_aggregate(
-            module_set, estimator, method, module, feature, edge_rule
+            module_set, estimator, method, module, feature, edge_rule,
+            differential_edge_rule, score_normalization,
         )
         plot_data = aggregate_to_long(plot_data, scale)
         statistics = cached_aggregate_stats(
-            module_set, estimator, method, module, phenotype, feature, edge_rule
+            module_set, estimator, method, module, phenotype, feature, edge_rule,
+            differential_edge_rule, score_normalization, analysis_subset,
         )
         resolved = False
     else:
         plot_data = cached_resolved(
-            module_set, estimator, method, module, feature, edge_rule
+            module_set, estimator, method, module, feature, edge_rule,
+            differential_edge_rule, score_normalization,
         )
         plot_data = resolved_to_long(plot_data, scale)
         statistics = cached_resolved_stats(
-            module_set, estimator, method, module, phenotype, feature, edge_rule
+            module_set, estimator, method, module, phenotype, feature, edge_rule,
+            differential_edge_rule, score_normalization, analysis_subset,
         )
         resolved = True
 
 plot_data = attach_metadata(plot_data)
+if differential_edge_rule != "all" and analysis_subset != "all_donors":
+    selected_split = {
+        "discovery_ad_control": "Discovery",
+        "validation_ad_control": "Validation",
+        "mci_external": "MCI_external",
+    }[analysis_subset]
+    plot_data = plot_data.loc[plot_data["ad_control_split"].eq(selected_split)].copy()
+if differential_edge_rule != "all":
+    st.warning(
+        "The AD–Control edge mask was selected in the discovery donors. Use the held-out "
+        "validation view for diagnostic-group evaluation. This validates edge selection, "
+        "not a fully external network model: Control-referenced LIONESS still uses its "
+        "established Control reference."
+    )
 
 available_components = (
     plot_data[["component", "component_label"]]
@@ -691,6 +825,7 @@ with st.expander(
     correlation_tab,
     screen_tab,
     edge_tab,
+    volcano_tab,
     mdc_tab,
     statistics_tab,
     kegg_tab,
@@ -703,6 +838,7 @@ with st.expander(
         "Correlation heatmaps",
         "CT–TS screen",
         "Edge summaries",
+        "Edge volcano",
         "MDC",
         "Statistics",
         "KEGG enrichment",
@@ -834,7 +970,8 @@ with correlation_tab:
 
     if heatmap_mode.startswith("Selected module"):
         correlation_table = cached_module_correlations(
-            module_set, estimator, method, module, resolved, edge_rule
+            module_set, estimator, method, module, resolved, edge_rule,
+            differential_edge_rule, score_normalization, analysis_subset,
         )
         heatmap_data = correlation_table.loc[
             correlation_table["diagnosis_group"].eq(heatmap_diagnosis)
@@ -889,6 +1026,9 @@ with correlation_tab:
             all_component,
             heatmap_diagnosis,
             edge_rule,
+            differential_edge_rule,
+            score_normalization,
+            analysis_subset,
         )
         heatmap_data = correlation_table.copy()
         module_order = sorted(heatmap_data["module"].astype(int).unique())
@@ -1033,7 +1173,8 @@ with screen_tab:
         key="screen_diagnosis",
     )
     screen = cached_aggregate_stats(
-        module_set, estimator, method, None, phenotype, feature, edge_rule
+        module_set, estimator, method, None, phenotype, feature, edge_rule,
+        differential_edge_rule, score_normalization, analysis_subset,
     )
     screen = screen.loc[screen["diagnosis_group"].eq(screen_diagnosis)].copy()
     if correlation_method == "Spearman":
@@ -1167,9 +1308,12 @@ with edge_tab:
     )
     edge_data = attach_metadata(
         cached_edge_summaries(
-            module_set, estimator, method, module, edge_rule
+            module_set, estimator, method, module, edge_rule,
+            differential_edge_rule,
         )
     )
+    if differential_edge_rule != "all" and analysis_subset != "all_donors":
+        edge_data = edge_data.loc[edge_data["ad_control_split"].eq(selected_split)]
     edge_data = edge_data.loc[edge_data["diagnosis_group"].isin(diagnoses)].copy()
     edge_scope_options = edge_data["scope"].drop_duplicates().tolist()
     selected_edge_scopes = st.multiselect(
@@ -1252,6 +1396,185 @@ with edge_tab:
                 file_name=f"{download_prefix}M{module}_donor_edge_summaries.tsv",
                 mime="text/tab-separated-values",
             )
+
+with volcano_tab:
+    st.subheader("AD–Control differential edges")
+    st.caption(
+        "Each point is one undirected module edge. The mask is discovered with a "
+        "two-sided Welch test in 117 AD and 114 Control donors; Hedges’ g and mean "
+        "difference are AD minus Control. BH FDR is corrected within the selected "
+        "module across all of its edges, not separately by tissue component. The "
+        "validation view uses the held-out 50 AD and 50 Control donors and never "
+        "changes the discovery mask."
+    )
+    if not differential_available:
+        st.info("The differential-edge volcano bundle is not available in this deployment.")
+    else:
+        volcano_candidates = cached_volcano_candidates(
+            module_set, estimator, method, module
+        )
+        volcano_bins = cached_volcano_bins(module_set, estimator, method, module)
+        volcano_left, volcano_middle, volcano_right = st.columns(3)
+        with volcano_left:
+            volcano_analysis_set = st.radio(
+                "Edge-test cohort",
+                options=["Discovery", "Validation"],
+                horizontal=True,
+                key=f"volcano_set_{module_set}_{estimator}_{method}_{module}",
+            )
+            volcano_x_metric = st.selectbox(
+                "Effect axis",
+                options=["hedges_g", "mean_difference"],
+                format_func=lambda value: {
+                    "hedges_g": "Hedges’ g",
+                    "mean_difference": "Mean edge-weight difference",
+                }[value],
+            )
+        with volcano_middle:
+            volcano_y_metric = st.selectbox(
+                "Significance axis",
+                options=["fdr", "p_value"],
+                format_func=lambda value: {
+                    "fdr": "BH FDR",
+                    "p_value": "Welch p-value",
+                }[value],
+            )
+            volcano_threshold = st.selectbox(
+                "Significance threshold", options=[0.05, 0.10], index=0
+            )
+        with volcano_right:
+            volcano_scope_options = volcano_bins["scope"].drop_duplicates().tolist()
+            volcano_scope = st.selectbox(
+                "Edge scope",
+                options=volcano_scope_options,
+                format_func=lambda value: {
+                    "total": "Total",
+                    "TS": "TS pooled",
+                    "CT": "CT pooled",
+                    "TS_AC": "TS: AC",
+                    "TS_DLPFC": "TS: DLPFC",
+                    "TS_PCGBA23": "TS: PCG",
+                    "CT_AC__DLPFC": "CT: AC - DLPFC",
+                    "CT_AC__PCGBA23": "CT: AC - PCG",
+                    "CT_DLPFC__PCGBA23": "CT: DLPFC - PCG",
+                }.get(value, value),
+            )
+            volcano_direction = st.selectbox(
+                "Effect direction", ["Either", "Higher in AD", "Higher in Control"]
+            )
+        significant_only = st.checkbox(
+            "Hide nonsignificant edges",
+            value=False,
+            help=(
+                "When selected, nonsignificant edges are removed from the display. Their "
+                "effect sizes are never replaced by zero."
+            ),
+        )
+        prevalence_column = None
+        minimum_prevalence = 0.0
+        if estimator == "bonobo":
+            prevalence_cols = st.columns(3)
+            with prevalence_cols[0]:
+                prevalence_rule = st.selectbox(
+                    "BONOBO prevalence rule",
+                    options=["native_p05", "bh_fdr05"],
+                    format_func=lambda value: BONOBO_EDGE_RULE_LABELS[value],
+                )
+            with prevalence_cols[1]:
+                prevalence_group = st.selectbox(
+                    "Prevalence donor group",
+                    options=["all", "control", "mci", "ad"],
+                    format_func=lambda value: {
+                        "all": "All donors",
+                        "control": "Control",
+                        "mci": "MCI",
+                        "ad": "AD",
+                    }[value],
+                )
+            with prevalence_cols[2]:
+                minimum_prevalence = st.slider(
+                    "Minimum native significance prevalence",
+                    min_value=0.0,
+                    max_value=1.0,
+                    value=0.0,
+                    step=0.05,
+                    format="%.0f%%",
+                )
+            prevalence_column = (
+                f"bonobo_{prevalence_rule}_prevalence_{prevalence_group}"
+            )
+
+        volcano = edge_volcano_figure(
+            volcano_candidates,
+            volcano_bins,
+            module=module,
+            scope=volcano_scope,
+            analysis_set=volcano_analysis_set,
+            x_metric=volcano_x_metric,
+            y_metric=volcano_y_metric,
+            significant_only=significant_only,
+            significance_threshold=volcano_threshold,
+            direction=volcano_direction,
+            prevalence_column=prevalence_column,
+            minimum_prevalence=minimum_prevalence,
+            module_definition=module_set_label,
+        )
+        st.plotly_chart(
+            volcano,
+            width="stretch",
+            config={
+                "displaylogo": False,
+                "toImageButtonOptions": {
+                    "format": "png",
+                    "filename": f"{download_prefix}M{module}_edge_volcano",
+                    "scale": 3,
+                },
+            },
+        )
+        st.caption(
+            "The density background includes every edge in the selected scope. Exact "
+            "hoverable rows include all discovery/validation FDR≤0.10 or p≤0.05 edges "
+            "plus the top 500 remaining edges per resolved component."
+        )
+        prefix = volcano_analysis_set.lower()
+        probability_column = f"{prefix}_{volcano_y_metric}"
+        displayed_edges = volcano_candidates.copy()
+        if volcano_scope in {"CT", "TS"}:
+            displayed_edges = displayed_edges.loc[
+                displayed_edges["component_class"].eq(volcano_scope)
+            ]
+        elif volcano_scope != "total":
+            displayed_edges = displayed_edges.loc[
+                displayed_edges["component"].eq(volcano_scope)
+            ]
+        if volcano_direction == "Higher in AD":
+            displayed_edges = displayed_edges.loc[
+                displayed_edges[f"{prefix}_mean_difference"].gt(0)
+            ]
+        elif volcano_direction == "Higher in Control":
+            displayed_edges = displayed_edges.loc[
+                displayed_edges[f"{prefix}_mean_difference"].lt(0)
+            ]
+        if significant_only:
+            displayed_edges = displayed_edges.loc[
+                displayed_edges[probability_column].le(volcano_threshold)
+            ]
+        if prevalence_column:
+            displayed_edges = displayed_edges.loc[
+                displayed_edges[prevalence_column].ge(minimum_prevalence)
+            ]
+        displayed_edges = displayed_edges.sort_values(
+            [probability_column, f"{prefix}_hedges_g"],
+            ascending=[True, False],
+            kind="stable",
+        )
+        st.dataframe(displayed_edges, width="stretch", hide_index=True, height=460)
+        st.download_button(
+            "Download displayed exact edge rows (TSV)",
+            data=dataframe_to_tsv_bytes(displayed_edges),
+            file_name=f"{download_prefix}M{module}_displayed_edge_statistics.tsv",
+            mime="text/tab-separated-values",
+        )
 
 with mdc_tab:
     st.subheader("Module differential connectivity (MDC)")

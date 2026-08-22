@@ -249,6 +249,20 @@ def parse_args() -> argparse.Namespace:
         / "out/mdc_resolved_rosmap/20260821_ad_reference_control_target_200perms",
     )
     parser.add_argument(
+        "--differential-analysis-root",
+        type=Path,
+        default=repo_root
+        / "out/lioness_app_expansion/20260822_ad_control_differential_edges_all_networks",
+        help="Completed upstream AD-Control differential-edge analysis.",
+    )
+    parser.add_argument(
+        "--differential-app-data-root",
+        type=Path,
+        default=repo_root
+        / "out/lioness_app_expansion/20260822_ad_control_differential_edges_all_networks/app_data",
+        help="Transformed differential-edge app data.",
+    )
+    parser.add_argument(
         "--mdc-only",
         action="store_true",
         help="Refresh only the module-level MDC summary and existing data manifest.",
@@ -321,6 +335,7 @@ def write_sample_metadata(
     phenotype_source: Path,
     output: Path,
     sample_map: dict[str, str],
+    split_source: Path | None = None,
 ) -> int:
     source_columns = [
         "donor",
@@ -331,7 +346,18 @@ def write_sample_metadata(
         "adnc",
     ]
     frame = pd.read_parquet(phenotype_source, columns=source_columns)
-    frame.insert(0, "sample_id", frame.pop("donor").astype(str).map(sample_map))
+    frame["donor"] = frame["donor"].astype(str)
+    if split_source is not None:
+        split = pd.read_csv(split_source, sep="\t", dtype={"donor": str})
+        frame = frame.merge(
+            split[["donor", "ad_control_split"]],
+            on="donor",
+            how="left",
+            validate="one_to_one",
+        )
+        if frame["ad_control_split"].isna().any():
+            raise ValueError("Public AD-Control split mapping failed")
+    frame.insert(0, "sample_id", frame.pop("donor").map(sample_map))
     if frame["sample_id"].isna().any() or frame["sample_id"].nunique() != 450:
         raise ValueError("Sample metadata did not map cleanly to all 450 pseudonyms")
     frame = frame.rename(columns=METADATA_RENAME)
@@ -635,6 +661,154 @@ def write_expanded_module_bundle(
         },
         "resolved_mdc_rows": len(resolved_mdc),
         "entropy_rows": len(entropy),
+    }
+
+
+def _write_public_edge_dataset(
+    sources: list[Path],
+    output_directory: Path,
+    *,
+    rows_per_file: int = 100_000,
+) -> int:
+    """Write identifier-free edge tables as bounded Parquet dataset parts."""
+
+    output_directory.mkdir(parents=True, exist_ok=True)
+    total_rows = 0
+    part = 0
+    for source in sources:
+        parquet = pq.ParquetFile(source)
+        for batch in parquet.iter_batches(batch_size=rows_per_file):
+            frame = normalize_public_tissue_labels(batch.to_pandas())
+            forbidden = {"donor", "projid"}.intersection(frame.columns)
+            if forbidden:
+                raise ValueError(f"Public edge dataset contains identifiers: {forbidden}")
+            destination = output_directory / f"part-{part:05d}.parquet"
+            frame.to_parquet(
+                destination,
+                index=False,
+                compression="zstd",
+                row_group_size=min(rows_per_file, len(frame)),
+            )
+            if destination.stat().st_size >= 95 * 1024 * 1024:
+                raise ValueError(f"Differential edge part exceeds 95 MiB: {destination}")
+            total_rows += len(frame)
+            part += 1
+    return total_rows
+
+
+def write_differential_module_bundle(
+    config: DatasetConfig,
+    sample_map: dict[str, str],
+    *,
+    analysis_root: Path,
+    app_data_root: Path,
+) -> dict[str, object]:
+    """Package filtered scores, edge summaries, and scalable volcano data."""
+
+    output_root = config.output / "differential"
+    method_catalog = {
+        "lioness": config.methods,
+        "bonobo": ("bonobo",),
+    }
+    variant_rows: dict[str, dict[str, int]] = {}
+    candidate_sources: list[Path] = []
+    bin_sources: list[Path] = []
+    edge_summary_rows: dict[str, int] = {}
+    for estimator, methods in method_catalog.items():
+        edge_rules = ("all",) if estimator == "lioness" else (
+            "all",
+            "native_p05",
+            "bh_fdr05",
+        )
+        for method in methods:
+            source_method = analysis_root / config.key / estimator / method
+            candidate_sources.append(source_method / "volcano_candidates.parquet")
+            bin_sources.append(source_method / "volcano_bins.parquet")
+            edge_source = source_method / "filtered_edge_summaries.parquet"
+            for edge_rule in edge_rules:
+                edge_output = (
+                    output_root
+                    / "edge_summaries"
+                    / f"{estimator}__{method}__{edge_rule}.parquet"
+                )
+                edge_summary_rows[f"{estimator}/{method}/{edge_rule}"] = (
+                    write_sanitized_edge_data(
+                        edge_source, edge_output, sample_map, edge_rule=edge_rule
+                    )
+                )
+                for normalization in ("standard_pruned", "retained_edge"):
+                    source = (
+                        app_data_root
+                        / config.key
+                        / estimator
+                        / method
+                        / "ad_control_discovery_fdr05"
+                        / edge_rule
+                        / normalization
+                    )
+                    output = (
+                        output_root
+                        / estimator
+                        / method
+                        / "ad_control_discovery_fdr05"
+                        / edge_rule
+                        / normalization
+                    )
+                    output.mkdir(parents=True, exist_ok=True)
+                    rows = {
+                        "aggregate_plot_rows": write_sanitized_plot_data(
+                            [source / "aggregate_plot_data.parquet"],
+                            output / "aggregate_plot_data.parquet",
+                            sample_map,
+                            resolved=False,
+                        ),
+                        "resolved_plot_rows": write_sanitized_plot_data(
+                            [source / "resolved_plot_data.parquet"],
+                            output / "resolved_plot_data.parquet",
+                            sample_map,
+                            resolved=True,
+                        ),
+                        "aggregate_stat_rows": write_combined_statistics(
+                            [source / "aggregate_statistics.parquet"],
+                            output / "aggregate_statistics.parquet",
+                        ),
+                        "resolved_stat_rows": write_combined_statistics(
+                            [source / "resolved_statistics.parquet"],
+                            output / "resolved_statistics.parquet",
+                            resolved=True,
+                        ),
+                    }
+                    variant_rows[
+                        f"{estimator}/{method}/{edge_rule}/{normalization}"
+                    ] = rows
+
+    missing = [path for path in [*candidate_sources, *bin_sources] if not path.exists()]
+    if missing:
+        raise FileNotFoundError(f"Differential volcano sources are missing: {missing}")
+    candidate_rows = _write_public_edge_dataset(
+        candidate_sources, output_root / "volcano_candidates.parquet"
+    )
+    bin_rows = _write_public_edge_dataset(
+        bin_sources, output_root / "volcano_bins.parquet", rows_per_file=20_000
+    )
+    return {
+        "split": {
+            "discovery": {"AD": 117, "Control": 114},
+            "validation": {"AD": 50, "Control": 50},
+            "mci_external": 119,
+            "stratification": "diagnosis and sex; 70/30; seed 42",
+        },
+        "test": "two-sided Welch t-test on raw signedAlt donor-edge weights",
+        "effect": "Hedges g and AD-minus-Control mean difference",
+        "fdr": (
+            "BH within each module across all undirected edges, separately by "
+            "module definition, estimator, network method, and analysis set"
+        ),
+        "feature_mask": "discovery BH FDR < 0.05",
+        "variants": variant_rows,
+        "edge_summary_rows": edge_summary_rows,
+        "volcano_candidate_rows": candidate_rows,
+        "volcano_bin_rows": bin_rows,
     }
 
 
@@ -1892,6 +2066,49 @@ def main() -> None:
                 / "mdc_resolved_ad_vs_control.tsv",
             ]
         )
+        differential_methods = {
+            "lioness": config.methods,
+            "bonobo": ("bonobo",),
+        }
+        for estimator, methods in differential_methods.items():
+            edge_rules = ("all",) if estimator == "lioness" else (
+                "all", "native_p05", "bh_fdr05"
+            )
+            for method in methods:
+                differential_source = (
+                    args.differential_analysis_root.resolve()
+                    / config.key
+                    / estimator
+                    / method
+                )
+                mandatory.extend(
+                    differential_source / filename
+                    for filename in (
+                        "filtered_edge_summaries.parquet",
+                        "volcano_candidates.parquet",
+                        "volcano_bins.parquet",
+                    )
+                )
+                for edge_rule in edge_rules:
+                    for normalization in ("standard_pruned", "retained_edge"):
+                        app_source = (
+                            args.differential_app_data_root.resolve()
+                            / config.key
+                            / estimator
+                            / method
+                            / "ad_control_discovery_fdr05"
+                            / edge_rule
+                            / normalization
+                        )
+                        mandatory.extend(
+                            app_source / filename
+                            for filename in (
+                                "aggregate_plot_data.parquet",
+                                "resolved_plot_data.parquet",
+                                "aggregate_statistics.parquet",
+                                "resolved_statistics.parquet",
+                            )
+                        )
         for edge_rule in ("all", "native_p05", "bh_fdr05"):
             mandatory.extend(
                 args.bonobo_app_data_root.resolve()
@@ -1961,6 +2178,8 @@ def main() -> None:
         configs[0].analysis_root / "standard" / "data" / "phenotypes.parquet",
         output / "sample_metadata.parquet",
         sample_map,
+        args.differential_analysis_root.resolve()
+        / "ad_control_discovery_validation_split.tsv",
     )
     module_set_manifests = {
         config.key: build_module_set(config, sample_map) for config in configs
@@ -1978,6 +2197,13 @@ def main() -> None:
         )
         expansion_manifests[config.key] = expansion
         module_manifest = module_set_manifests[config.key]
+        differential = write_differential_module_bundle(
+            config,
+            sample_map,
+            analysis_root=args.differential_analysis_root.resolve(),
+            app_data_root=args.differential_app_data_root.resolve(),
+        )
+        module_manifest["ad_control_differential_edges"] = differential
         module_manifest["outcomes"] = list(
             (*PHENOTYPES, "age_at_death", "education_years", "cogdx", "braak_stage", "cerad_score", "adnc", "parkinsonism")
         )

@@ -73,6 +73,159 @@ def resolved_to_long(frame: pd.DataFrame, scale: str) -> pd.DataFrame:
     return result
 
 
+def edge_volcano_figure(
+    candidates: pd.DataFrame,
+    bins: pd.DataFrame,
+    *,
+    module: int,
+    scope: str,
+    analysis_set: str = "Discovery",
+    x_metric: str = "hedges_g",
+    y_metric: str = "fdr",
+    significant_only: bool = False,
+    significance_threshold: float = 0.05,
+    direction: str = "Either",
+    prevalence_column: str | None = None,
+    minimum_prevalence: float = 0.0,
+    module_definition: str | None = None,
+) -> go.Figure:
+    """Build a scalable edge-level volcano from density bins and exact candidates."""
+
+    prefix = analysis_set.lower()
+    x_column = f"{prefix}_{x_metric}"
+    probability_column = f"{prefix}_{y_metric}"
+    if scope == "total":
+        points = candidates.copy()
+    elif scope in {"CT", "TS"}:
+        points = candidates.loc[candidates["component_class"].eq(scope)].copy()
+    else:
+        points = candidates.loc[candidates["component"].eq(scope)].copy()
+    if direction == "Higher in AD":
+        points = points.loc[points[f"{prefix}_mean_difference"].gt(0)]
+    elif direction == "Higher in Control":
+        points = points.loc[points[f"{prefix}_mean_difference"].lt(0)]
+    if significant_only:
+        points = points.loc[points[probability_column].le(significance_threshold)]
+    if prevalence_column and prevalence_column in points:
+        points = points.loc[points[prevalence_column].ge(float(minimum_prevalence))]
+
+    figure = go.Figure()
+    matching_bins = bins.loc[
+        bins["analysis_set"].eq(analysis_set)
+        & bins["scope"].eq(scope)
+        & bins["x_metric"].eq(x_metric)
+        & bins["y_metric"].eq(y_metric)
+    ]
+    if not significant_only and not matching_bins.empty:
+        row = matching_bins.iloc[0]
+        x_edges = np.asarray(row["x_edges"], dtype=float)
+        y_edges = np.asarray(row["y_edges"], dtype=float)
+        counts = np.asarray(row["counts"], dtype=float).reshape(
+            len(x_edges) - 1, len(y_edges) - 1
+        )
+        figure.add_trace(
+            go.Heatmap(
+                x=(x_edges[:-1] + x_edges[1:]) / 2,
+                y=(y_edges[:-1] + y_edges[1:]) / 2,
+                z=counts.T,
+                colorscale="Blues",
+                colorbar={"title": "Edge count"},
+                hovertemplate=(
+                    "Effect bin: %{x:.3g}<br>−log10 significance bin: %{y:.3g}"
+                    "<br>Edges: %{z:,.0f}<extra></extra>"
+                ),
+                name="All edges",
+            )
+        )
+
+    if not points.empty:
+        probability = pd.to_numeric(points[probability_column], errors="coerce")
+        y_values = -np.log10(np.clip(probability, np.finfo(float).tiny, 1.0))
+        direction_values = np.where(
+            points[f"{prefix}_mean_difference"].ge(0), "Higher in AD", "Higher in Control"
+        )
+        if prevalence_column and prevalence_column in points:
+            marker = {
+                "color": points[prevalence_column],
+                "colorscale": "Viridis",
+                "cmin": 0,
+                "cmax": 1,
+                "colorbar": {"title": "BONOBO prevalence"},
+                "size": 7,
+                "opacity": 0.78,
+                "line": {"width": 0.4, "color": "white"},
+            }
+        else:
+            marker = {
+                "color": [MDC_DIRECTION_COLORS[value] for value in direction_values],
+                "size": 7,
+                "opacity": 0.78,
+                "line": {"width": 0.4, "color": "white"},
+            }
+        hover_columns = [
+            "tissue_a",
+            "gene_a",
+            "tissue_b",
+            "gene_b",
+            "component",
+            f"{prefix}_mean_ad",
+            f"{prefix}_mean_control",
+            f"{prefix}_mean_difference",
+            f"{prefix}_hedges_g",
+            f"{prefix}_p_value",
+            f"{prefix}_fdr",
+            "validation_direction_concordant",
+        ]
+        if prevalence_column and prevalence_column in points:
+            hover_columns.append(prevalence_column)
+        custom = points[hover_columns].astype(object).to_numpy()
+        template = (
+            "%{customdata[0]}:%{customdata[1]} ↔ %{customdata[2]}:%{customdata[3]}"
+            "<br>Component: %{customdata[4]}"
+            "<br>AD mean: %{customdata[5]:.4g}; Control mean: %{customdata[6]:.4g}"
+            "<br>AD−Control: %{customdata[7]:.4g}; Hedges g: %{customdata[8]:.4g}"
+            "<br>p=%{customdata[9]:.3g}; FDR=%{customdata[10]:.3g}"
+            "<br>Validation direction concordant: %{customdata[11]}"
+        )
+        if prevalence_column and prevalence_column in points:
+            template += "<br>BONOBO significance prevalence: %{customdata[12]:.1%}"
+        template += "<extra></extra>"
+        figure.add_trace(
+            go.Scattergl(
+                x=points[x_column],
+                y=y_values,
+                mode="markers",
+                marker=marker,
+                customdata=custom,
+                hovertemplate=template,
+                name="Exact candidate edges",
+            )
+        )
+
+    figure.add_hline(
+        y=-math.log10(significance_threshold),
+        line_dash="dash",
+        line_color="#A33A2B",
+        annotation_text=f"{y_metric.upper()}={significance_threshold:g}",
+    )
+    figure.add_vline(x=0, line_color="#6E7A86", line_width=1)
+    x_label = "Hedges’ g (AD − Control)" if x_metric == "hedges_g" else "Mean edge-weight difference (AD − Control)"
+    y_label = "−log10(BH FDR)" if y_metric == "fdr" else "−log10(Welch p-value)"
+    title = f"Module M{int(module)}: {analysis_set} AD–Control edge volcano"
+    if module_definition:
+        title += f"<br><sup>{module_definition}</sup>"
+    figure.update_layout(
+        title={"text": title, "x": 0.01},
+        xaxis_title=x_label,
+        yaxis_title=y_label,
+        template="plotly_white",
+        height=650,
+        margin={"l": 65, "r": 35, "t": 95, "b": 60},
+        hoverlabel={"font_size": 13},
+    )
+    return figure
+
+
 def _clean_xy(frame: pd.DataFrame, x: str, y: str) -> pd.DataFrame:
     clean = frame.dropna(subset=[x, y]).copy()
     if clean.empty:
