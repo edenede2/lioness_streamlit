@@ -505,8 +505,16 @@ def _synchronize_bundle_cache() -> str:
     return manifest_sha256
 
 
-_synchronize_bundle_cache()
-data_manifest = cached_data_manifest()
+try:
+    _synchronize_bundle_cache()
+    data_manifest = cached_data_manifest()
+except (FileNotFoundError, RuntimeError, ValueError) as error:
+    st.error(f"Could not initialize the Google Drive data bundle: {error}")
+    st.info(
+        "Check the `[google_drive]` Streamlit Secrets entry, paste the complete "
+        "service-account JSON without editing its `private_key`, save, and reboot the app."
+    )
+    st.stop()
 
 st.title("ROSMAP Single-Sample Network Explorer")
 st.markdown(

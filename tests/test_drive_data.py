@@ -100,3 +100,26 @@ def test_streamlit_secrets_example_is_valid_toml() -> None:
     parsed = toml.loads(example.read_text(encoding="utf-8"))
     assert parsed["google_drive"]["folder_id"]
     assert '"type": "service_account"' in parsed["google_drive"]["credentials_json"]
+
+
+def test_private_key_normalization_repairs_escaping_whitespace_and_padding() -> None:
+    escaped = (
+        "-----BEGIN PRIVATE KEY-----\\n"
+        "QU JD RA\\n"
+        "-----END PRIVATE KEY-----\\n"
+    )
+    assert drive_data._normalize_private_key(escaped) == (
+        "-----BEGIN PRIVATE KEY-----\n"
+        "QUJDRA==\n"
+        "-----END PRIVATE KEY-----\n"
+    )
+
+
+def test_service_account_normalization_reports_missing_fields() -> None:
+    try:
+        drive_data._normalize_service_account_info({"type": "service_account"})
+    except RuntimeError as error:
+        assert "credentials are incomplete" in str(error)
+        assert "private_key" in str(error)
+    else:
+        raise AssertionError("Incomplete service-account data should fail clearly")

@@ -10,7 +10,9 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import tempfile
+import textwrap
 import threading
 from functools import lru_cache
 from pathlib import Path
@@ -22,6 +24,8 @@ LOCAL_DATA_DIR = APP_ROOT / "data"
 DRIVE_INDEX_PATH = APP_ROOT / "drive_file_index.json"
 DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.readonly"
 DRIVE_MEDIA_URL = "https://www.googleapis.com/drive/v3/files/{file_id}"
+PEM_BEGIN = "-----BEGIN PRIVATE KEY-----"
+PEM_END = "-----END PRIVATE KEY-----"
 
 
 def _selected_data_dir() -> Path:
@@ -89,10 +93,52 @@ def data_path_available(path: Path) -> bool:
     return path.exists() or bool(_indexed_entries(path))
 
 
+def _normalize_private_key(value: object) -> str:
+    """Normalize common TOML/JSON copy-paste variants of a PKCS#8 PEM key."""
+    key = str(value).strip()
+    for _ in range(3):
+        normalized = (
+            key.replace("\\r\\n", "\n")
+            .replace("\\n", "\n")
+            .replace("\\r", "\n")
+        )
+        if normalized == key:
+            break
+        key = normalized
+    begin = key.find(PEM_BEGIN)
+    end = key.find(PEM_END)
+    if begin < 0 or end < 0 or end <= begin:
+        raise RuntimeError(
+            "The Google Drive private_key is missing its BEGIN/END PRIVATE KEY markers."
+        )
+    body = key[begin + len(PEM_BEGIN) : end]
+    body = re.sub(r"\s+", "", body).rstrip("=")
+    if not body or re.search(r"[^A-Za-z0-9+/]", body):
+        raise RuntimeError(
+            "The Google Drive private_key contains invalid characters. Paste the complete "
+            "private_key value from the service-account JSON."
+        )
+    body += "=" * (-len(body) % 4)
+    return f"{PEM_BEGIN}\n{textwrap.fill(body, 64)}\n{PEM_END}\n"
+
+
+def _normalize_service_account_info(info: dict[str, object]) -> dict[str, object]:
+    required = {"type", "project_id", "private_key", "client_email", "token_uri"}
+    missing = sorted(key for key in required if not str(info.get(key, "")).strip())
+    if missing:
+        raise RuntimeError(
+            "The [google_drive] credentials are incomplete; missing: " + ", ".join(missing)
+        )
+    normalized = dict(info)
+    normalized["private_key"] = _normalize_private_key(normalized["private_key"])
+    return normalized
+
+
 def _secret_mapping() -> dict[str, object]:
     credential_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
     if credential_path:
-        return json.loads(Path(credential_path).expanduser().read_text(encoding="utf-8"))
+        info = json.loads(Path(credential_path).expanduser().read_text(encoding="utf-8"))
+        return _normalize_service_account_info(info)
 
     try:
         import streamlit as st
@@ -110,10 +156,7 @@ def _secret_mapping() -> dict[str, object]:
     else:
         ignored = {"folder_id", "cache_dir"}
         info = {key: value for key, value in dict(section).items() if key not in ignored}
-    private_key = info.get("private_key")
-    if isinstance(private_key, str):
-        info["private_key"] = private_key.replace("\\n", "\n")
-    return info
+    return _normalize_service_account_info(info)
 
 
 def _configured_folder_id() -> str | None:
@@ -141,9 +184,16 @@ def _authorized_session():
             "The Google Drive folder_id in Streamlit Secrets does not match "
             "drive_file_index.json."
         )
-    credentials = service_account.Credentials.from_service_account_info(
-        _secret_mapping(), scopes=[DRIVE_SCOPE]
-    )
+    try:
+        credentials = service_account.Credentials.from_service_account_info(
+            _secret_mapping(), scopes=[DRIVE_SCOPE]
+        )
+    except (TypeError, ValueError) as error:
+        raise RuntimeError(
+            "Google Drive authentication could not read the service-account private key. "
+            "Paste the complete JSON key into [google_drive].credentials_json, preserving "
+            "the private_key field, then reboot the Streamlit app."
+        ) from error
     return AuthorizedSession(credentials)
 
 
