@@ -82,6 +82,7 @@ from app_helpers.data import (
     load_feature_definitions,
     load_edge_summaries,
     load_kegg,
+    load_kegg_tsv_bytes,
     load_mdc_summary,
     load_mdc_resolved,
     load_module_annotations,
@@ -94,7 +95,6 @@ from app_helpers.data import (
     load_volcano_bins,
     load_volcano_candidates,
     module_label,
-    module_set_path,
     require_data_files,
     selected_annotation,
     summarize_pathway_mdc_rows,
@@ -307,8 +307,7 @@ def cached_kegg(module_set: str, module: int | None) -> pd.DataFrame:
 
 @st.cache_data(show_spinner=False)
 def cached_kegg_tsv(module_set: str) -> bytes:
-    path = ensure_data_path(module_set_path("kegg_tissue_expanded_full.tsv", module_set))
-    return path.read_bytes()
+    return load_kegg_tsv_bytes(module_set)
 
 
 @st.cache_data(show_spinner=False)
@@ -1721,7 +1720,16 @@ with volcano_tab:
             ascending=[True, False],
             kind="stable",
         )
-        st.dataframe(displayed_edges, use_container_width=True, hide_index=True, height=460)
+        st.dataframe(
+            displayed_edges,
+            use_container_width=True,
+            hide_index=True,
+            height=460,
+            column_config={
+                "gene_a": "Gene A symbol",
+                "gene_b": "Gene B symbol",
+            },
+        )
         st.download_button(
             "Download displayed exact edge rows (TSV)",
             data=dataframe_to_tsv_bytes(displayed_edges),
@@ -2357,6 +2365,7 @@ with mdc_tab:
                 use_container_width=True,
                 hide_index=True,
                 height=480,
+                column_config={"overlap_genes": "Overlap gene symbols"},
             )
             download_columns = [
                 "pathway_id",
@@ -2723,6 +2732,7 @@ with kegg_tab:
                     "PCG FDR", format="%.3e"
                 ),
                 "significant_PCGBA23": "PCG significant",
+                "overlap_genes": "Overlap gene symbols",
             },
         )
         st.download_button(

@@ -12,6 +12,7 @@ import pandas as pd
 import pyarrow.parquet as pq
 
 from app_helpers.drive_data import DATA_DIR, data_path_available, ensure_data_path
+from app_helpers.gene_symbols import public_gene_labels
 
 
 APP_ROOT = Path(__file__).resolve().parents[1]
@@ -714,7 +715,7 @@ def load_volcano_candidates(
     module: int,
 ) -> pd.DataFrame:
     path = module_set_data_dir(module_set) / "differential" / "volcano_candidates.parquet"
-    return _read_filtered(
+    frame = _read_filtered(
         path,
         [
             ("estimator", "=", estimator),
@@ -722,6 +723,7 @@ def load_volcano_candidates(
             ("module", "=", int(module)),
         ],
     )
+    return public_gene_labels(frame, gene_columns=("gene_a", "gene_b"))
 
 
 def load_volcano_bins(
@@ -752,9 +754,15 @@ def load_kegg(
     module: int | None = None, module_set: str = "full_cohort"
 ) -> pd.DataFrame:
     filters = [("cluster_id", "=", int(module))] if module is not None else []
-    return _read_filtered(
+    frame = _read_filtered(
         module_set_path("kegg_tissue_expanded_full.parquet", module_set), filters
     )
+    return public_gene_labels(frame, text_columns=("overlap_genes",))
+
+
+def load_kegg_tsv_bytes(module_set: str = "full_cohort") -> bytes:
+    """Return the complete KEGG table with official symbols in every gene list."""
+    return dataframe_to_tsv_bytes(load_kegg(module_set=module_set))
 
 
 def filter_kegg_enrichments(

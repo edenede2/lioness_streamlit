@@ -40,14 +40,16 @@ The app includes two explicitly separated module definitions:
   FDR cutoffs. The original all-edge analyses remain the default.
 - An edge-volcano view with Hedges' g or mean-difference effects, nominal p-value
   or either BH FDR scope, held-out validation statistics, and BONOBO significance
-  prevalence.
+  prevalence. Edge hovers, tables, and downloads use official gene symbols rather
+  than Ensembl identifiers.
 - Full raw, robust, RINT, leave-one-out, CT-vs-TS, and FDR statistics.
 - A descriptive CT-vs-TS screen across all modules.
 - Every row and column of the tissue-expanded KEGG enrichment table, filterable
   and downloadable for the selected module or all modules, with module, FDR,
   significance, statistical scope, category, sub-category, pathway, and gene-search
   filters. Each row includes the whole expanded-tissue p/FDR and separate AC,
-  DLPFC, and PCG p/FDR values.
+  DLPFC, and PCG p/FDR values. Overlap-gene lists use official gene symbols in the
+  app and in every app-generated download.
 - Level-4 module composition from the SE2 details file: total module size,
   represented tissues, dominant tissue, per-tissue gene counts, and proportions.
 - Raw and normalized Shannon tissue-mixing entropy as continuous complements to
