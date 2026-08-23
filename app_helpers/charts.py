@@ -104,6 +104,40 @@ def _mdc_scale_settings(scale: str) -> tuple[str, str, float]:
     raise ValueError(f"Unknown MDC display scale: {scale}")
 
 
+def _mdc_heatmap_color_settings(
+    log2_values: np.ndarray,
+    *,
+    scale: str,
+    log2_title: str,
+) -> dict[str, object]:
+    """Return a reciprocal color scale centered on MDC=1 for MDC heatmaps.
+
+    Heatmap color always uses log2 MDC so reciprocal raw ratios have equal visual
+    distance from the neutral value. In raw mode, colorbar ticks are converted
+    back to MDC ratios, while cells and hovers continue to show raw values.
+    """
+
+    numeric = np.asarray(log2_values, dtype=float)
+    finite = numeric[np.isfinite(numeric)]
+    extent = max(0.05, float(np.max(np.abs(finite)))) if finite.size else 1.0
+    colorbar: dict[str, object] = {"title": log2_title}
+    if scale == "raw":
+        tick_values = np.linspace(-extent, extent, 5)
+        colorbar = {
+            "title": "MDC ratio<br>(log-symmetric)",
+            "tickvals": tick_values.tolist(),
+            "ticktext": [f"{float(np.exp2(value)):.3g}" for value in tick_values],
+        }
+    elif scale != "log2":
+        raise ValueError(f"Unknown MDC display scale: {scale}")
+    return {
+        "zmin": -extent,
+        "zmax": extent,
+        "zmid": 0.0,
+        "colorbar": colorbar,
+    }
+
+
 def aggregate_to_long(frame: pd.DataFrame, scale: str) -> pd.DataFrame:
     """Convert CT/TS wide values into the same component schema as resolved data."""
     value_columns = {"CT": f"CT_{scale}", "TS": f"TS_{scale}"}
@@ -1344,9 +1378,7 @@ def pathway_mdc_heatmap_figure(
     resolution_singular, resolution_plural = MDC_ENRICHMENT_RESOLUTION_TITLES[
         resolution
     ]
-    _, _, reference = _mdc_scale_settings(scale)
     value_column = "mean_log2_mdc" if scale == "log2" else "geometric_mean_mdc"
-    axis_title = "Mean log2 MDC" if scale == "log2" else "Geometric mean MDC"
     data = frame.dropna(subset=[value_column]).copy()
     data["absolute_log2_effect"] = pd.to_numeric(
         data["mean_log2_mdc"], errors="coerce"
@@ -1388,6 +1420,12 @@ def pathway_mdc_heatmap_figure(
     pivot = data.pivot(
         index="pathway_id", columns="component_label", values=value_column
     ).reindex(index=pathway_order, columns=component_order)
+    raw_mdc = data.pivot(
+        index="pathway_id", columns="component_label", values="geometric_mean_mdc"
+    ).reindex(index=pathway_order, columns=component_order)
+    mean_log2_mdc = data.pivot(
+        index="pathway_id", columns="component_label", values="mean_log2_mdc"
+    ).reindex(index=pathway_order, columns=component_order)
     n_modules = data.pivot(
         index="pathway_id", columns="component_label", values="n_modules"
     ).reindex(index=pathway_order, columns=component_order)
@@ -1427,6 +1465,8 @@ def pathway_mdc_heatmap_figure(
             mdc_significant.to_numpy(),
             minimum_mdc_fdr.to_numpy(),
             n_pathways.to_numpy(),
+            raw_mdc.to_numpy(),
+            mean_log2_mdc.to_numpy(),
         ],
         axis=-1,
     )
@@ -1440,31 +1480,41 @@ def pathway_mdc_heatmap_figure(
                 if pd.isna(value)
                 else f"{float(value):.2f}<br>n={int(support)}"
             )
+    color_settings = _mdc_heatmap_color_settings(
+        mean_log2_mdc.to_numpy(),
+        scale=scale,
+        log2_title="Mean log2 MDC",
+    )
     figure = go.Figure(
         go.Heatmap(
-            z=pivot.to_numpy(),
+            z=mean_log2_mdc.to_numpy(),
             x=component_order,
             y=display_labels,
             colorscale="RdBu_r",
-            zmid=reference,
             text=text,
             texttemplate="%{text}",
             customdata=customdata,
             hovertemplate=(
                 resolution_singular
                 + ": %{y}<br>Component: %{x}<br>"
-                + axis_title
-                + ": %{z:.4f}<br>Enriched modules: %{customdata[0]:.0f}<br>"
+                "MDC ratio: %{customdata[5]:.4f}<br>"
+                "Mean log2 MDC: %{customdata[6]:.4f}<br>"
+                "Enriched modules: %{customdata[0]:.0f}<br>"
                 "Supporting pathways: %{customdata[4]:.0f}<br>"
                 "Minimum KEGG FDR: %{customdata[1]:.4g}<br>"
                 "MDC-significant module proportion: %{customdata[2]:.1%}<br>"
                 "Minimum directional MDC FDR: %{customdata[3]:.4g}"
                 "<extra></extra>"
             ),
-            colorbar={"title": axis_title},
+            hoverongaps=False,
+            **color_settings,
         )
     )
-    scale_text = "mean log2 MDC" if scale == "log2" else "geometric mean MDC ratio"
+    scale_text = (
+        "mean log2 MDC"
+        if scale == "log2"
+        else "raw geometric mean MDC ratio · log-symmetric colors centered at MDC=1"
+    )
     title = (
         f"{resolution_singular}-annotated MDC across regions and tissue pairs"
         f"<br><sup>Top {len(pathway_order)} {resolution_plural} by maximum absolute mean log2 MDC · "
@@ -1701,14 +1751,13 @@ def mdc_resolved_heatmap_figure(
     """All-module resolved MDC heatmap with FDR significance markers."""
 
     data = frame.copy()
-    value_column, axis_title, reference = _mdc_scale_settings(scale)
+    value_column, _, _ = _mdc_scale_settings(scale)
     pivot = data.pivot(index="module", columns="component_label", values=value_column)
     raw = data.pivot(index="module", columns="component_label", values="mdc")
     log2 = data.pivot(index="module", columns="component_label", values="log2_mdc")
     fdr = data.pivot(index="module", columns="component_label", values="directional_fdr")
     module_order = (
-        pivot.sub(reference).abs().max(axis=1).sort_values(ascending=False)
-        .index.astype(int).tolist()
+        log2.abs().max(axis=1).sort_values(ascending=False).index.astype(int).tolist()
     )
     if int(selected_module) in module_order:
         module_order.remove(int(selected_module))
@@ -1735,13 +1784,17 @@ def mdc_resolved_heatmap_figure(
                 if pd.isna(value)
                 else f"{float(value):.2f}" + (" ★" if pd.notna(q) and q < threshold else "")
             )
+    color_settings = _mdc_heatmap_color_settings(
+        log2.to_numpy(),
+        scale=scale,
+        log2_title="log2 MDC",
+    )
     figure = go.Figure(
         go.Heatmap(
-            z=pivot.to_numpy(),
+            z=log2.to_numpy(),
             x=component_order,
             y=[f"M{value}" for value in module_order],
             colorscale="RdBu_r",
-            zmid=reference,
             text=text,
             texttemplate="%{text}",
             customdata=np.stack(
@@ -1752,12 +1805,17 @@ def mdc_resolved_heatmap_figure(
                 "log2 MDC: %{customdata[1]:.4f}<br>"
                 "Directional FDR: %{customdata[2]:.4g}<extra></extra>"
             ),
-            colorbar={"title": axis_title},
+            hoverongaps=False,
+            **color_settings,
         )
     )
     title = "Resolved MDC across modules"
+    subtitle_parts = [f"★ FDR &lt; {threshold:.2f}"]
+    if scale == "raw":
+        subtitle_parts.append("raw MDC labels · log-symmetric colors centered at MDC=1")
     if module_definition:
-        title += f"<br><sup>{module_definition} · ★ FDR &lt; {threshold:.2f}</sup>"
+        subtitle_parts.insert(0, module_definition)
+    title += f"<br><sup>{' · '.join(subtitle_parts)}</sup>"
     figure.update_layout(
         title={"text": title, "x": 0.01},
         template="plotly_white",

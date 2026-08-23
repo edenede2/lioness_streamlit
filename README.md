@@ -446,7 +446,10 @@ the larger of the sample-permutation and tissue-count-preserving gene-permutatio
 values, corrected across modules where that component structurally exists.
 Structurally absent components remain unavailable rather than being encoded as zero.
 Every MDC chart can be displayed either as the raw AD/Control ratio (equality at 1)
-or as `log2(MDC)` (equality at 0). The MDC tab also joins each module to its normalized
+or as `log2(MDC)` (equality at 0). Raw MDC heatmaps retain raw ratios in their labels
+and hovers but use log2 MDC for
+color mapping, making reciprocal ratios such as 0.5 and 2 equally intense around the
+neutral MDC ratio of 1. The MDC tab also joins each module to its normalized
 Shannon tissue-mixing entropy and shows separate TS-MDC-versus-entropy and
 CT-MDC-versus-entropy scatter plots, with selected-module highlighting, directional
 FDR status, an OLS visual guide, and a Spearman association summary.

@@ -2606,6 +2606,12 @@ if active_view == "MDC":
             horizontal=True,
             key="mdc_display_scale",
         )
+    if mdc_scale == "raw":
+        st.caption(
+            "Raw heatmap cells and hovers show MDC ratios. Heatmap colors are "
+            "log-symmetric around MDC=1, so reciprocal changes such as 0.5 and 2 "
+            "have equal color intensity in opposite directions."
+        )
 
     mdc_view = mdc_summary.copy()
     mdc_view.insert(0, "module_definition", module_set_label)

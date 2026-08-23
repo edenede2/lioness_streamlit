@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 
@@ -496,6 +497,7 @@ def test_pathway_resolved_mdc_heatmap_and_detail_charts() -> None:
     ]
     summary = summarize_pathway_mdc_rows(rows, minimum_modules=1)
     selected_pathway = str(summary.iloc[0]["pathway_id"])
+    heatmap_colors = {}
     for scale, expected_reference in (("log2", 0.0), ("raw", 1.0)):
         heatmap = pathway_mdc_heatmap_figure(
             summary,
@@ -507,6 +509,16 @@ def test_pathway_resolved_mdc_heatmap_and_detail_charts() -> None:
         assert len(heatmap.data) == 1
         assert len(heatmap.data[0].y) == 20
         assert any(str(label).startswith("★") for label in heatmap.data[0].y)
+        heatmap_colors[scale] = np.asarray(heatmap.data[0].z, dtype=float)
+        assert float(heatmap.data[0].zmid) == 0.0
+        np.testing.assert_allclose(
+            heatmap_colors[scale],
+            np.asarray(heatmap.data[0].customdata[:, :, 6], dtype=float),
+            equal_nan=True,
+        )
+        if scale == "raw":
+            assert "log-symmetric" in heatmap.data[0].colorbar.title.text
+            assert "1" in list(heatmap.data[0].colorbar.ticktext)
         detail = pathway_mdc_detail_figure(
             rows,
             pathway_id=selected_pathway,
@@ -521,6 +533,9 @@ def test_pathway_resolved_mdc_heatmap_and_detail_charts() -> None:
             if shape.y0 == shape.y1 == expected_reference
         ]
         assert horizontal_lines
+    np.testing.assert_allclose(
+        heatmap_colors["raw"], heatmap_colors["log2"], equal_nan=True
+    )
 
     for resolution, expected_title in (
         ("subcategory", "KEGG sub-category-annotated MDC"),
@@ -614,7 +629,14 @@ def test_resolved_mdc_and_edge_summary_charts() -> None:
     raw_overview = mdc_resolved_heatmap_figure(
         resolved, threshold=0.05, selected_module=1918, scale="raw"
     )
-    assert raw_overview.data[0].colorbar.title.text == "MDC ratio (AD / Control)"
+    assert "log-symmetric" in raw_overview.data[0].colorbar.title.text
+    assert float(raw_overview.data[0].zmid) == 0.0
+    np.testing.assert_allclose(
+        np.asarray(raw_overview.data[0].z, dtype=float),
+        np.asarray(raw_overview.data[0].customdata[:, :, 1], dtype=float),
+        equal_nan=True,
+    )
+    assert "raw MDC labels" in raw_overview.layout.title.text
 
     edges = load_edge_summaries("lioness", "control_anchored", 935)
     edge_figure = edge_summary_figure(
