@@ -40,6 +40,7 @@ from app_helpers.correlations import calculate_correlations  # noqa: E402
 from app_helpers.data import (  # noqa: E402
     association_kegg_subtitles,
     build_pathway_mdc_rows,
+    collapse_pathway_mdc_rows,
     load_aggregate,
     load_aggregate_statistics,
     load_kegg,
@@ -520,6 +521,34 @@ def test_pathway_resolved_mdc_heatmap_and_detail_charts() -> None:
             if shape.y0 == shape.y1 == expected_reference
         ]
         assert horizontal_lines
+
+    for resolution, expected_title in (
+        ("subcategory", "KEGG sub-category-annotated MDC"),
+        ("category", "KEGG category-annotated MDC"),
+    ):
+        grouped_rows = collapse_pathway_mdc_rows(rows, resolution=resolution)
+        grouped_summary = summarize_pathway_mdc_rows(
+            rows, minimum_modules=1, resolution=resolution
+        )
+        selected_group = str(grouped_summary.iloc[0]["pathway_id"])
+        heatmap = pathway_mdc_heatmap_figure(
+            grouped_summary,
+            top_n=20,
+            selected_pathway_id=selected_group,
+            resolution=resolution,
+        )
+        assert expected_title in heatmap.layout.title.text
+        assert any(str(label).startswith("★") for label in heatmap.data[0].y)
+        detail = pathway_mdc_detail_figure(
+            grouped_rows,
+            pathway_id=selected_group,
+            selected_module=935,
+            threshold=0.05,
+            resolution=resolution,
+        )
+        assert f"annotated to {expected_title.removesuffix('-annotated MDC')}" in (
+            detail.layout.title.text
+        )
 
 
 def test_module_size_and_region_composition_charts_filter_and_sort() -> None:

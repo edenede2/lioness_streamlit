@@ -87,6 +87,11 @@ CONTINUOUS_COLOR_SCALES = {
     "RdBu": "RdBu",
     "Spectral": "Spectral",
 }
+MDC_ENRICHMENT_RESOLUTION_TITLES = {
+    "pathway": ("Pathway", "pathways"),
+    "subcategory": ("KEGG sub-category", "KEGG sub-categories"),
+    "category": ("KEGG category", "KEGG categories"),
+}
 
 
 def _mdc_scale_settings(scale: str) -> tuple[str, str, float]:
@@ -1328,11 +1333,17 @@ def pathway_mdc_heatmap_figure(
     top_n: int = 25,
     selected_pathway_id: str | None = None,
     module_definition: str | None = None,
+    resolution: str = "pathway",
 ) -> go.Figure:
-    """Summarize pathway-annotated module MDC across tissue components."""
+    """Summarize KEGG-annotated module MDC across tissue components."""
 
     if frame.empty:
         return go.Figure()
+    if resolution not in MDC_ENRICHMENT_RESOLUTION_TITLES:
+        raise ValueError(f"Unknown MDC enrichment resolution: {resolution}")
+    resolution_singular, resolution_plural = MDC_ENRICHMENT_RESOLUTION_TITLES[
+        resolution
+    ]
     _, _, reference = _mdc_scale_settings(scale)
     value_column = "mean_log2_mdc" if scale == "log2" else "geometric_mean_mdc"
     axis_title = "Mean log2 MDC" if scale == "log2" else "Geometric mean MDC"
@@ -1391,6 +1402,12 @@ def pathway_mdc_heatmap_figure(
     minimum_mdc_fdr = data.pivot(
         index="pathway_id", columns="component_label", values="minimum_mdc_fdr"
     ).reindex(index=pathway_order, columns=component_order)
+    if "n_pathways" in data:
+        n_pathways = data.pivot(
+            index="pathway_id", columns="component_label", values="n_pathways"
+        ).reindex(index=pathway_order, columns=component_order)
+    else:
+        n_pathways = n_modules.copy()
     pathway_labels = (
         data[["pathway_id", "pathway_label"]]
         .drop_duplicates("pathway_id")
@@ -1409,6 +1426,7 @@ def pathway_mdc_heatmap_figure(
             enrichment_fdr.to_numpy(),
             mdc_significant.to_numpy(),
             minimum_mdc_fdr.to_numpy(),
+            n_pathways.to_numpy(),
         ],
         axis=-1,
     )
@@ -1433,9 +1451,11 @@ def pathway_mdc_heatmap_figure(
             texttemplate="%{text}",
             customdata=customdata,
             hovertemplate=(
-                "Pathway: %{y}<br>Component: %{x}<br>"
+                resolution_singular
+                + ": %{y}<br>Component: %{x}<br>"
                 + axis_title
                 + ": %{z:.4f}<br>Enriched modules: %{customdata[0]:.0f}<br>"
+                "Supporting pathways: %{customdata[4]:.0f}<br>"
                 "Minimum KEGG FDR: %{customdata[1]:.4g}<br>"
                 "MDC-significant module proportion: %{customdata[2]:.1%}<br>"
                 "Minimum directional MDC FDR: %{customdata[3]:.4g}"
@@ -1446,8 +1466,8 @@ def pathway_mdc_heatmap_figure(
     )
     scale_text = "mean log2 MDC" if scale == "log2" else "geometric mean MDC ratio"
     title = (
-        "Pathway-annotated MDC across regions and tissue pairs"
-        f"<br><sup>Top {len(pathway_order)} pathways by maximum absolute mean log2 MDC · "
+        f"{resolution_singular}-annotated MDC across regions and tissue pairs"
+        f"<br><sup>Top {len(pathway_order)} {resolution_plural} by maximum absolute mean log2 MDC · "
         f"cells show {scale_text} and enriched-module n"
     )
     if module_definition:
@@ -1472,9 +1492,13 @@ def pathway_mdc_detail_figure(
     threshold: float,
     scale: str = "log2",
     module_definition: str | None = None,
+    resolution: str = "pathway",
 ) -> go.Figure:
-    """Show module-level MDC values for one KEGG pathway across components."""
+    """Show module-level MDC values for one selected KEGG group."""
 
+    if resolution not in MDC_ENRICHMENT_RESOLUTION_TITLES:
+        raise ValueError(f"Unknown MDC enrichment resolution: {resolution}")
+    resolution_singular, _ = MDC_ENRICHMENT_RESOLUTION_TITLES[resolution]
     value_column = "log2_mdc" if scale == "log2" else "mdc"
     _, axis_title, reference = _mdc_scale_settings(scale)
     data = frame.loc[frame["pathway_id"].astype(str).eq(str(pathway_id))].copy()
@@ -1502,6 +1526,13 @@ def pathway_mdc_detail_figure(
                 group["enrichment_scope"],
                 group["n_edges"],
                 group["mdc_significant"].map(lambda value: "Yes" if value else "No"),
+                group.get(
+                    "supporting_pathway_count", pd.Series(1, index=group.index)
+                ),
+                group.get(
+                    "supporting_pathway_names",
+                    group.get("pathway_label", pd.Series("", index=group.index)),
+                ),
             ]
         )
         figure.add_trace(
@@ -1527,7 +1558,9 @@ def pathway_mdc_detail_figure(
                     "Directional MDC FDR: %{customdata[3]:.4g}<br>"
                     "KEGG FDR for component: %{customdata[4]:.4g}<br>"
                     "KEGG scope: %{customdata[5]}<br>Edges: %{customdata[6]:,}<br>"
-                    f"MDC significant at FDR &lt; {threshold:.2f}: %{{customdata[7]}}"
+                    f"MDC significant at FDR &lt; {threshold:.2f}: %{{customdata[7]}}<br>"
+                    "Supporting pathways: %{customdata[8]:.0f}<br>"
+                    "Pathway names: %{customdata[9]}"
                     "<extra></extra>"
                 ),
             )
@@ -1560,7 +1593,10 @@ def pathway_mdc_detail_figure(
     pathway_name = (
         str(data["pathway_label"].iloc[0]) if not data.empty else str(pathway_id)
     )
-    title = f"Module MDCs annotated to {html.escape(pathway_name)}"
+    title = (
+        f"Module MDCs annotated to {resolution_singular}: "
+        f"{html.escape(pathway_name)}"
+    )
     if module_definition:
         title += f"<br><sup>{module_definition}</sup>"
     yaxis: dict[str, object] = {"title": axis_title, "zeroline": False}

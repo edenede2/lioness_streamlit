@@ -64,6 +64,11 @@ from app_helpers.correlations import calculate_correlations
 from app_helpers.module_finder import FINDER_CRITERIA, build_module_finder_table
 from app_helpers.table_controls import filterable_dataframe
 from app_helpers.drive_data import data_source_label, ensure_data_path
+from app_helpers import data as _data_helpers
+
+if not hasattr(_data_helpers, "collapse_pathway_mdc_rows"):
+    _data_helpers = importlib.reload(_data_helpers)
+
 from app_helpers.data import (
     ANALYSIS_SUBSET_LABELS,
     BONOBO_EDGE_RULE_LABELS,
@@ -76,6 +81,7 @@ from app_helpers.data import (
     FEATURE_LABELS,
     HOVER_LABELS,
     METHOD_LABELS,
+    MDC_ENRICHMENT_RESOLUTION_LABELS,
     ESTIMATOR_LABELS,
     FDR_SCOPE_LABELS,
     FDR_THRESHOLD_LABELS,
@@ -93,6 +99,7 @@ from app_helpers.data import (
     SCALE_LABELS,
     SCORE_NORMALIZATION_LABELS,
     build_pathway_mdc_rows,
+    collapse_pathway_mdc_rows,
     association_kegg_subtitles,
     dataframe_to_tsv_bytes,
     differential_data_available,
@@ -2963,8 +2970,15 @@ if active_view == "MDC":
             "threshold; the displayed pair FDR is the larger regional FDR and is not a new "
             "combined p-value."
         )
-        pathway_control_columns = st.columns(3)
+        pathway_control_columns = st.columns(4)
         with pathway_control_columns[0]:
+            pathway_mdc_resolution = st.selectbox(
+                "MDC enrichment resolution",
+                options=list(MDC_ENRICHMENT_RESOLUTION_LABELS),
+                format_func=MDC_ENRICHMENT_RESOLUTION_LABELS.get,
+                key=f"pathway_mdc_resolution_{module_set}",
+            )
+        with pathway_control_columns[1]:
             pathway_kegg_threshold = st.radio(
                 "KEGG enrichment threshold",
                 options=[0.05, 0.10],
@@ -2975,7 +2989,7 @@ if active_view == "MDC":
                 horizontal=True,
                 key=f"pathway_mdc_kegg_threshold_{module_set}",
             )
-        with pathway_control_columns[1]:
+        with pathway_control_columns[2]:
             minimum_pathway_modules = st.slider(
                 "Minimum enriched modules per cell",
                 min_value=1,
@@ -2983,7 +2997,7 @@ if active_view == "MDC":
                 value=1,
                 key=f"pathway_mdc_minimum_modules_{module_set}",
             )
-        with pathway_control_columns[2]:
+        with pathway_control_columns[3]:
             pathway_mdc_row_scope = st.radio(
                 "Module MDC rows",
                 options=["All", "MDC FDR-significant only"],
@@ -3067,17 +3081,24 @@ if active_view == "MDC":
                 )
             ].copy()
 
-        pathway_summary = summarize_pathway_mdc_rows(
+        pathway_group_rows = collapse_pathway_mdc_rows(
             pathway_rows,
+            resolution=pathway_mdc_resolution,
+        )
+        pathway_summary = summarize_pathway_mdc_rows(
+            pathway_group_rows,
             mdc_fdr_threshold=mdc_threshold,
             minimum_modules=minimum_pathway_modules,
+            resolution=pathway_mdc_resolution,
         )
         if pathway_summary.empty:
-            st.info("No pathway-MDC cells remain under the current filters.")
+            st.info("No KEGG-annotated MDC cells remain under the current filters.")
         else:
             retained_pathway_ids = set(pathway_summary["pathway_id"].astype(str))
-            pathway_rows = pathway_rows.loc[
-                pathway_rows["pathway_id"].astype(str).isin(retained_pathway_ids)
+            pathway_group_rows = pathway_group_rows.loc[
+                pathway_group_rows["pathway_id"]
+                .astype(str)
+                .isin(retained_pathway_ids)
             ].copy()
             pathway_ranking = (
                 pathway_summary.assign(
@@ -3104,17 +3125,27 @@ if active_view == "MDC":
                 )
             )
             pathway_metric_columns = st.columns(4)
+            resolution_singular = MDC_ENRICHMENT_RESOLUTION_LABELS[
+                pathway_mdc_resolution
+            ]
+            resolution_plural = {
+                "pathway": "Pathways",
+                "subcategory": "KEGG sub-categories",
+                "category": "KEGG categories",
+            }[pathway_mdc_resolution]
             pathway_metric_columns[0].metric(
-                "Pathways", f"{pathway_summary['pathway_id'].nunique():,}"
+                resolution_plural,
+                f"{pathway_summary['pathway_id'].nunique():,}",
             )
             pathway_metric_columns[1].metric(
-                "Modules", f"{pathway_rows['module'].nunique():,}"
+                "Modules", f"{pathway_group_rows['module'].nunique():,}"
             )
             pathway_metric_columns[2].metric(
-                "Region/pathway cells", f"{len(pathway_summary):,}"
+                f"Region/{resolution_singular.lower()} cells",
+                f"{len(pathway_summary):,}",
             )
             pathway_metric_columns[3].metric(
-                "Module-component annotations", f"{len(pathway_rows):,}"
+                "Module-component annotations", f"{len(pathway_group_rows):,}"
             )
             pathway_options = pathway_ranking["pathway_id"].astype(str).tolist()
             pathway_label_map = pathway_ranking.set_index("pathway_id")[
@@ -3122,18 +3153,28 @@ if active_view == "MDC":
             ].to_dict()
             pathway_selection_columns = st.columns([2, 1])
             selected_pathway_id = pathway_selection_columns[0].selectbox(
-                "Pathway detail",
+                f"{resolution_singular} detail",
                 options=pathway_options,
-                format_func=lambda value: f"{pathway_label_map[value]} ({value})",
-                key=f"pathway_mdc_selected_{module_set}",
+                format_func=lambda value: (
+                    f"{pathway_label_map[value]} ({value})"
+                    if pathway_mdc_resolution == "pathway"
+                    else pathway_label_map[value]
+                ),
+                key=(
+                    f"pathway_mdc_selected_{module_set}_"
+                    f"{pathway_mdc_resolution}"
+                ),
             )
             maximum_top_pathways = min(60, len(pathway_options))
             top_pathways = pathway_selection_columns[1].slider(
-                "Pathways in heatmap",
+                f"{resolution_plural} in heatmap",
                 min_value=1,
                 max_value=maximum_top_pathways,
                 value=min(25, maximum_top_pathways),
-                key=f"pathway_mdc_top_n_{module_set}",
+                key=(
+                    f"pathway_mdc_top_n_{module_set}_"
+                    f"{pathway_mdc_resolution}"
+                ),
             )
             st.plotly_chart(
                 pathway_mdc_heatmap_figure(
@@ -3142,17 +3183,23 @@ if active_view == "MDC":
                     top_n=top_pathways,
                     selected_pathway_id=selected_pathway_id,
                     module_definition=module_set_label,
+                    resolution=pathway_mdc_resolution,
                 ),
                 use_container_width=True,
                 config={"displaylogo": False, "scrollZoom": True},
             )
             st.caption(
                 "Each heatmap cell gives equal weight to every qualifying enriched module. "
+                "At category and sub-category resolution, a module with several supporting "
+                "pathways is counted once and uses its smallest component-matched KEGG FDR. "
                 "On log2 scale it is the arithmetic mean log2 MDC; on raw scale it is the "
-                "equivalent geometric mean MDC ratio. Cell n is the number of enriched modules."
+                "equivalent geometric mean MDC ratio. Cell n is the number of enriched modules; "
+                "hover also reports the number of distinct supporting pathways."
             )
-            selected_pathway_rows = pathway_rows.loc[
-                pathway_rows["pathway_id"].astype(str).eq(selected_pathway_id)
+            selected_pathway_rows = pathway_group_rows.loc[
+                pathway_group_rows["pathway_id"]
+                .astype(str)
+                .eq(selected_pathway_id)
             ].copy()
             st.plotly_chart(
                 pathway_mdc_detail_figure(
@@ -3162,15 +3209,22 @@ if active_view == "MDC":
                     threshold=mdc_threshold,
                     scale=mdc_scale,
                     module_definition=module_set_label,
+                    resolution=pathway_mdc_resolution,
                 ),
                 use_container_width=True,
                 config={"displaylogo": False},
             )
             pathway_detail_columns = [
-                "pathway_id",
+                "enrichment_resolution_label",
                 "pathway_label",
                 "category_level1",
                 "category_level2",
+                "supporting_pathway_count",
+                "supporting_pathway_ids",
+                "supporting_pathway_names",
+                "supporting_subcategories",
+                "best_supporting_pathway_id",
+                "best_supporting_pathway_name",
                 "module",
                 "component_label",
                 "enrichment_scope",
@@ -3185,23 +3239,34 @@ if active_view == "MDC":
                 "direction",
                 "directional_fdr",
                 "n_edges",
-                "overlap_k",
-                "overlap_genes",
             ]
+            if pathway_mdc_resolution == "pathway":
+                pathway_detail_columns[1:1] = ["pathway_id"]
+                pathway_detail_columns.extend(["overlap_k", "overlap_genes"])
             selected_pathway_rows = selected_pathway_rows.sort_values(
                 ["component_label", "directional_fdr", "enrichment_fdr"],
                 kind="stable",
             )
             filterable_dataframe(
                 selected_pathway_rows[pathway_detail_columns],
-                table_key="pathway_mdc_detail",
-                table_name="Pathway-resolved MDC detail",
+                table_key=f"pathway_mdc_detail_{pathway_mdc_resolution}",
+                table_name=f"{resolution_singular}-resolved MDC detail",
                 use_container_width=True,
                 hide_index=True,
                 height=480,
-                column_config={"overlap_genes": "Overlap gene symbols"},
+                column_config={
+                    **(
+                        {"overlap_genes": "Overlap gene symbols"}
+                        if pathway_mdc_resolution == "pathway"
+                        else {}
+                    ),
+                    "supporting_pathway_names": "Supporting pathway names",
+                    "best_supporting_pathway_name": "Best-FDR supporting pathway",
+                },
             )
             download_columns = [
+                "enrichment_resolution",
+                "enrichment_resolution_label",
                 "pathway_id",
                 "pathway_label",
                 "category_level1",
@@ -3210,6 +3275,7 @@ if active_view == "MDC":
                 "component_label",
                 "enrichment_scope",
                 "n_modules",
+                "n_pathways",
                 "mean_log2_mdc",
                 "geometric_mean_mdc",
                 "median_mdc",
@@ -3225,18 +3291,22 @@ if active_view == "MDC":
             ]
             pathway_download_columns = st.columns(2)
             pathway_download_columns[0].download_button(
-                "Download pathway-component summary (TSV)",
+                f"Download {resolution_singular.lower()}-component summary (TSV)",
                 data=dataframe_to_tsv_bytes(pathway_summary[download_columns]),
-                file_name=f"{download_prefix}pathway_resolved_MDC_summary.tsv",
+                file_name=(
+                    f"{download_prefix}{pathway_mdc_resolution}_resolved_"
+                    "MDC_summary.tsv"
+                ),
                 mime="text/tab-separated-values",
             )
             pathway_download_columns[1].download_button(
-                "Download selected pathway module rows (TSV)",
+                f"Download selected {resolution_singular.lower()} module rows (TSV)",
                 data=dataframe_to_tsv_bytes(
                     selected_pathway_rows[pathway_detail_columns]
                 ),
                 file_name=(
-                    f"{download_prefix}{selected_pathway_id}_regional_MDC_modules.tsv"
+                    f"{download_prefix}selected_{pathway_mdc_resolution}_"
+                    "regional_MDC_modules.tsv"
                 ),
                 mime="text/tab-separated-values",
             )

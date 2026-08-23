@@ -455,6 +455,11 @@ The MDC tab contains separate **Region-resolved MDC** and **Pathway-resolved MDC
 views. Pathway-resolved MDC is an annotation-level summary rather than a new
 edge-level MDC calculation: each module-component MDC is linked to KEGG pathways
 enriched in its matching region, and pathway cells summarize the qualifying modules.
+The view can aggregate at the individual pathway, KEGG sub-category, or KEGG category
+level. At the broader two levels, each module-component contributes once even when
+several pathways support the same group; the module's smallest component-matched
+KEGG FDR represents that group, while the distinct supporting pathway count and names
+remain visible in hover details and downloads.
 Within-tissue components use the corresponding regional KEGG FDR. Cross-tissue pairs
 require both regions to pass the selected KEGG threshold and use the larger regional
 FDR as conservative pair support; this maximum is not treated as a combined p-value.

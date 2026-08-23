@@ -1098,20 +1098,148 @@ def build_pathway_mdc_rows(
     return rows.sort_values(sort_columns, kind="stable").reset_index(drop=True)
 
 
+MDC_ENRICHMENT_RESOLUTION_LABELS = {
+    "pathway": "Pathway",
+    "subcategory": "KEGG sub-category",
+    "category": "KEGG category",
+}
+
+
+def collapse_pathway_mdc_rows(
+    rows: pd.DataFrame,
+    *,
+    resolution: str = "pathway",
+) -> pd.DataFrame:
+    """Collapse pathway annotations to one module-component row per KEGG group.
+
+    At category and sub-category resolution, a module can support the group through
+    several enriched pathways. Such a module is counted once; its group-level KEGG
+    FDR is the smallest component-matched FDR among its supporting pathways.
+    """
+
+    if resolution not in MDC_ENRICHMENT_RESOLUTION_LABELS:
+        raise ValueError(
+            "resolution must be one of "
+            f"{sorted(MDC_ENRICHMENT_RESOLUTION_LABELS)}"
+        )
+    if rows.empty:
+        return rows.copy()
+
+    required = {
+        "module",
+        "component",
+        "pathway_id",
+        "pathway_label",
+        "category_level1",
+        "category_level2",
+        "enrichment_fdr",
+    }
+    missing = required.difference(rows.columns)
+    if missing:
+        raise ValueError(f"Pathway MDC rows are missing columns: {sorted(missing)}")
+
+    data = rows.copy()
+    data["source_pathway_id"] = data["pathway_id"].astype("string")
+    data["source_pathway_label"] = data["pathway_label"].astype("string")
+    category = data["category_level1"].fillna("Unclassified").astype(str)
+    subcategory = data["category_level2"].fillna("Unclassified").astype(str)
+    if resolution == "pathway":
+        data["enrichment_group_id"] = data["source_pathway_id"].astype(str)
+        data["enrichment_group_label"] = data["source_pathway_label"].astype(str)
+    elif resolution == "subcategory":
+        data["enrichment_group_id"] = "subcategory::" + category + "::" + subcategory
+        data["enrichment_group_label"] = subcategory
+    else:
+        data["enrichment_group_id"] = "category::" + category
+        data["enrichment_group_label"] = category
+
+    data["enrichment_resolution"] = resolution
+    data["enrichment_resolution_label"] = MDC_ENRICHMENT_RESOLUTION_LABELS[
+        resolution
+    ]
+    group_keys = ["enrichment_group_id", "module", "component"]
+
+    def _joined_unique(values: pd.Series) -> str:
+        cleaned = sorted(
+            {
+                str(value).strip()
+                for value in values.dropna()
+                if str(value).strip()
+            }
+        )
+        return "; ".join(cleaned)
+
+    support = (
+        data.groupby(group_keys, observed=True, dropna=False)
+        .agg(
+            supporting_pathway_count=("source_pathway_id", "nunique"),
+            supporting_pathway_ids=("source_pathway_id", _joined_unique),
+            supporting_pathway_names=("source_pathway_label", _joined_unique),
+            supporting_subcategories=("category_level2", _joined_unique),
+        )
+        .reset_index()
+    )
+    representative = (
+        data.sort_values(
+            ["enrichment_fdr", "source_pathway_id"],
+            na_position="last",
+            kind="stable",
+        )
+        .drop_duplicates(group_keys, keep="first")
+        .copy()
+    )
+    representative = representative.drop(
+        columns=[
+            "supporting_pathway_count",
+            "supporting_pathway_ids",
+            "supporting_pathway_names",
+            "supporting_subcategories",
+        ],
+        errors="ignore",
+    ).merge(support, on=group_keys, how="left", validate="one_to_one")
+    representative["best_supporting_pathway_id"] = representative[
+        "source_pathway_id"
+    ]
+    representative["best_supporting_pathway_name"] = representative[
+        "source_pathway_label"
+    ]
+    representative["pathway_id"] = representative["enrichment_group_id"]
+    representative["pathway_label"] = representative["enrichment_group_label"]
+    representative["pathway_name"] = representative["enrichment_group_label"]
+    if resolution == "category":
+        representative["category_level2"] = "All sub-categories"
+    return representative.sort_values(
+        ["enrichment_fdr", "pathway_label", "module", "component"],
+        kind="stable",
+        na_position="last",
+    ).reset_index(drop=True)
+
+
 def summarize_pathway_mdc_rows(
     rows: pd.DataFrame,
     *,
     mdc_fdr_threshold: float = 0.05,
     minimum_modules: int = 1,
+    resolution: str = "pathway",
 ) -> pd.DataFrame:
-    """Summarize pathway-annotated module MDC within each edge component."""
+    """Summarize KEGG-annotated module MDC within each edge component."""
 
     if rows.empty:
         return pd.DataFrame()
     minimum_modules = int(minimum_modules)
     if minimum_modules < 1:
         raise ValueError("minimum_modules must be at least 1")
-    data = rows.copy()
+    if "enrichment_resolution" in rows.columns:
+        existing_resolutions = set(
+            rows["enrichment_resolution"].dropna().astype(str).unique()
+        )
+        if existing_resolutions != {resolution}:
+            raise ValueError(
+                "Collapsed pathway MDC rows do not match the requested resolution"
+            )
+        data = rows.copy()
+    else:
+        data = collapse_pathway_mdc_rows(rows, resolution=resolution)
     data["mdc_significant"] = pd.to_numeric(
         data["directional_fdr"], errors="coerce"
     ).lt(float(mdc_fdr_threshold))
@@ -1125,6 +1253,8 @@ def summarize_pathway_mdc_rows(
         "component_label",
         "component_class",
         "enrichment_scope",
+        "enrichment_resolution",
+        "enrichment_resolution_label",
     ]
     summary = (
         data.groupby(group_columns, observed=True, dropna=False)
@@ -1138,9 +1268,33 @@ def summarize_pathway_mdc_rows(
             n_mdc_significant=("mdc_significant", "sum"),
             minimum_mdc_fdr=("directional_fdr", "min"),
             total_edges=("n_edges", "sum"),
+            n_pathways=("supporting_pathway_count", "sum"),
         )
         .reset_index()
     )
+    pathway_counts = (
+        data.groupby(group_columns, observed=True, dropna=False)[
+            "supporting_pathway_ids"
+        ]
+        .apply(
+            lambda values: len(
+                {
+                    pathway_id
+                    for value in values.dropna().astype(str)
+                    for pathway_id in value.split("; ")
+                    if pathway_id
+                }
+            )
+        )
+        .rename("n_distinct_pathways")
+        .reset_index()
+    )
+    summary = summary.drop(columns="n_pathways").merge(
+        pathway_counts,
+        on=group_columns,
+        how="left",
+        validate="one_to_one",
+    ).rename(columns={"n_distinct_pathways": "n_pathways"})
     summary["geometric_mean_mdc"] = np.exp2(summary["mean_log2_mdc"])
     summary["proportion_mdc_significant"] = (
         summary["n_mdc_significant"] / summary["n_modules"]

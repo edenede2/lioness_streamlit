@@ -181,7 +181,16 @@ def test_streamlit_pathway_resolved_mdc_controls_both_module_sets() -> None:
     assert_app_clean(app)
     assert any(tab.label == "Region-resolved MDC" for tab in app.tabs)
     assert any(tab.label == "Pathway-resolved MDC" for tab in app.tabs)
+    assert widget_with_label(app.selectbox, "MDC enrichment resolution").value == (
+        "pathway"
+    )
     assert widget_with_label(app.selectbox, "Pathway detail").value
+
+    widget_with_label(app.selectbox, "MDC enrichment resolution").set_value(
+        "subcategory"
+    ).run()
+    assert_app_clean(app)
+    assert widget_with_label(app.selectbox, "KEGG sub-category detail").value
 
     widget_with_label(app.radio, "KEGG enrichment threshold").set_value(0.10).run()
     widget_with_label(app.radio, "Module MDC rows").set_value(
@@ -193,4 +202,11 @@ def test_streamlit_pathway_resolved_mdc_controls_both_module_sets() -> None:
         "control_derived"
     ).run()
     assert_app_clean(app)
-    assert widget_with_label(app.selectbox, "Pathway detail").value
+    assert widget_with_label(app.selectbox, "MDC enrichment resolution").value == (
+        "pathway"
+    )
+    widget_with_label(app.selectbox, "MDC enrichment resolution").set_value(
+        "category"
+    ).run()
+    assert_app_clean(app)
+    assert widget_with_label(app.selectbox, "KEGG category detail").value

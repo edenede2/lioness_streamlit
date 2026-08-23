@@ -208,6 +208,35 @@ def test_pathway_mdc_join_uses_component_matched_kegg_fdrs() -> None:
         )
         assert summary["proportion_mdc_significant"].between(0.0, 1.0).all()
 
+        resolution_counts = {}
+        for resolution in ("pathway", "subcategory", "category"):
+            collapsed = data.collapse_pathway_mdc_rows(
+                rows, resolution=resolution
+            )
+            assert not collapsed.duplicated(
+                ["pathway_id", "module", "component"]
+            ).any()
+            assert collapsed["supporting_pathway_count"].ge(1).all()
+            resolution_summary = data.summarize_pathway_mdc_rows(
+                rows,
+                mdc_fdr_threshold=0.05,
+                minimum_modules=1,
+                resolution=resolution,
+            )
+            assert not resolution_summary.empty
+            assert set(resolution_summary["enrichment_resolution"]) == {
+                resolution
+            }
+            assert resolution_summary["n_pathways"].ge(1).all()
+            resolution_counts[resolution] = resolution_summary[
+                "pathway_id"
+            ].nunique()
+        assert (
+            resolution_counts["category"]
+            <= resolution_counts["subcategory"]
+            <= resolution_counts["pathway"]
+        )
+
 
 def test_legacy_module_details_reconstruct_tissue_entropy() -> None:
     legacy = pd.DataFrame(
