@@ -50,6 +50,10 @@ The app includes two explicitly separated module definitions:
   identifiers.
 - Full raw, robust, RINT, leave-one-out, CT-vs-TS, and FDR statistics.
 - A descriptive CT-vs-TS screen across all modules.
+- A module finder that ranks the selected phenotype–feature association by CT-vs-TS
+  divergence, Control-vs-AD divergence, or a balanced combination of both, with
+  effect-size and FDR filters, an interactive two-criterion map, KEGG context, and
+  downloadable complete rankings.
 - Every row and column of the tissue-expanded KEGG enrichment table, filterable
   and downloadable for the selected module or all modules, with module, FDR,
   significance, statistical scope, category, sub-category, pathway, and gene-search

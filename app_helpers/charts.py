@@ -294,6 +294,147 @@ def edge_volcano_figure(
     return figure
 
 
+def module_finder_figure(
+    frame: pd.DataFrame,
+    *,
+    phenotype_label: str,
+    feature_label: str,
+    correlation_method: str,
+    ct_ts_diagnosis: str,
+    criterion_label: str,
+    selected_module: int | None = None,
+    label_count: int = 10,
+    minimum_ct_ts_difference: float = 0.0,
+    minimum_ad_control_difference: float = 0.0,
+) -> go.Figure:
+    """Map CT–TS divergence against Control–AD association divergence."""
+
+    points = frame.copy()
+    points["module_label"] = points["module"].map(lambda value: f"M{int(value)}")
+    points["top_label"] = np.where(
+        points["display_rank"].le(int(label_count)), points["module_label"], ""
+    )
+    hover_columns = [
+        "module_label",
+        "finder_score",
+        "ct_ts_correlation_CT",
+        "ct_ts_correlation_TS",
+        "ct_ts_delta_correlation",
+        "ct_ts_fdr_within_phenotype",
+        "correlation_CT_control",
+        "correlation_CT_ad",
+        "ad_control_delta_correlation_CT",
+        "ad_control_fdr_CT",
+        "correlation_TS_control",
+        "correlation_TS_ad",
+        "ad_control_delta_correlation_TS",
+        "ad_control_fdr_TS",
+        "ad_control_best_component",
+        "displayed_pathway",
+        "displayed_fdr",
+    ]
+    for column in hover_columns:
+        if column not in points:
+            points[column] = np.nan
+    correlation_symbol = "ρ" if correlation_method == "Spearman" else "r"
+    figure = go.Figure()
+    figure.add_trace(
+        go.Scattergl(
+            x=points["ct_ts_abs_delta_correlation"],
+            y=points["ad_control_max_abs_delta_correlation"],
+            mode="markers+text",
+            text=points["top_label"],
+            textposition="top center",
+            textfont={"size": 11, "color": "#263746"},
+            marker={
+                "color": points["finder_score"],
+                "colorscale": "Cividis",
+                "cmin": 0,
+                "cmax": 1,
+                "colorbar": {"title": "Rank score"},
+                "size": 9,
+                "opacity": 0.78,
+                "line": {"width": 0.5, "color": "white"},
+            },
+            customdata=points[hover_columns].astype(object).to_numpy(),
+            hovertemplate=(
+                "%{customdata[0]} · rank score=%{customdata[1]:.3f}"
+                f"<br>{ct_ts_diagnosis} CT {correlation_symbol}=%{{customdata[2]:.3f}}; "
+                f"TS {correlation_symbol}=%{{customdata[3]:.3f}}"
+                f"<br>CT−TS Δ{correlation_symbol}=%{{customdata[4]:.3f}}; "
+                "FDR=%{customdata[5]:.3g}"
+                f"<br>Control/AD CT {correlation_symbol}=%{{customdata[6]:.3f}}/"
+                "%{customdata[7]:.3f}"
+                f"<br>AD−Control CT Δ{correlation_symbol}=%{{customdata[8]:.3f}}; "
+                "FDR=%{customdata[9]:.3g}"
+                f"<br>Control/AD TS {correlation_symbol}=%{{customdata[10]:.3f}}/"
+                "%{customdata[11]:.3f}"
+                f"<br>AD−Control TS Δ{correlation_symbol}=%{{customdata[12]:.3f}}; "
+                "FDR=%{customdata[13]:.3g}"
+                "<br>Stronger diagnosis contrast: %{customdata[14]}"
+                "<br>KEGG: %{customdata[15]} · FDR=%{customdata[16]:.3g}"
+                "<extra></extra>"
+            ),
+            name="Modules",
+            showlegend=False,
+        )
+    )
+    if selected_module is not None:
+        selected = points.loc[points["module"].astype(int).eq(int(selected_module))]
+        if not selected.empty:
+            figure.add_trace(
+                go.Scattergl(
+                    x=selected["ct_ts_abs_delta_correlation"],
+                    y=selected["ad_control_max_abs_delta_correlation"],
+                    mode="markers",
+                    marker={
+                        "symbol": "circle-open",
+                        "size": 18,
+                        "color": "#2C7FB8",
+                        "line": {"width": 3, "color": "#2C7FB8"},
+                    },
+                    hoverinfo="skip",
+                    name=f"Selected M{int(selected_module)}",
+                )
+            )
+    if minimum_ct_ts_difference > 0:
+        figure.add_vline(
+            x=float(minimum_ct_ts_difference),
+            line_dash="dash",
+            line_color="#6E7A86",
+        )
+    if minimum_ad_control_difference > 0:
+        figure.add_hline(
+            y=float(minimum_ad_control_difference),
+            line_dash="dash",
+            line_color="#6E7A86",
+        )
+    figure.update_layout(
+        title={
+            "text": (
+                "Module association-difference map"
+                f"<br><sup>{phenotype_label} · {feature_label} · {correlation_method} · "
+                f"ranking: {criterion_label}</sup>"
+            ),
+            "x": 0.01,
+        },
+        xaxis={
+            "title": f"Absolute CT−TS correlation difference ({ct_ts_diagnosis})",
+            "rangemode": "tozero",
+        },
+        yaxis={
+            "title": "Maximum absolute Control−AD correlation difference (CT or TS)",
+            "rangemode": "tozero",
+        },
+        template="plotly_white",
+        height=690,
+        margin={"l": 80, "r": 45, "t": 95, "b": 75},
+        hoverlabel={"font_size": 13},
+        legend={"orientation": "h", "y": 1.02, "x": 1.0, "xanchor": "right"},
+    )
+    return figure
+
+
 def _clean_xy(frame: pd.DataFrame, x: str, y: str) -> pd.DataFrame:
     clean = frame.dropna(subset=[x, y]).copy()
     if clean.empty:

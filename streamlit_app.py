@@ -20,6 +20,7 @@ if not all(
         "CONTINUOUS_COLOR_SCALES",
         "EDGE_COMPONENT_LABELS",
         "edge_volcano_figure",
+        "module_finder_figure",
         "mdc_entropy_figure",
         "pathway_mdc_heatmap_figure",
     )
@@ -41,6 +42,7 @@ from app_helpers.charts import (
     mdc_overview_figure,
     mdc_resolved_heatmap_figure,
     mdc_resolved_module_figure,
+    module_finder_figure,
     module_entropy_figure,
     module_region_composition_figure,
     module_size_distribution_figure,
@@ -49,6 +51,7 @@ from app_helpers.charts import (
     resolved_to_long,
 )
 from app_helpers.correlations import calculate_correlations
+from app_helpers.module_finder import FINDER_CRITERIA, build_module_finder_table
 from app_helpers.drive_data import data_source_label, ensure_data_path
 from app_helpers.data import (
     ANALYSIS_SUBSET_LABELS,
@@ -938,6 +941,7 @@ view_options = [
     "Associations",
     "Feature distributions",
     "Correlation heatmaps",
+    "Module finder",
     "CT–TS screen",
     "Edge summaries",
     "Edge volcano",
@@ -1412,6 +1416,281 @@ if active_view == "CT–TS screen":
             "network method, component family, and BONOBO edge rule."
         )
     st.info(fdr_text(module_manifest, module_count))
+
+if active_view == "Module finder":
+    st.subheader("Find modules with contrasting association patterns")
+    st.caption(
+        "Rank modules by the difference between CT and TS correlations within one "
+        "diagnosis, by the difference between Control and AD correlations, or by both. "
+        "All comparisons use the selected phenotype, feature, estimator, network method, "
+        "edge rule, and Spearman/Pearson setting. These are association-pattern "
+        "differences; they do not test a raw mean difference in the module score."
+    )
+    finder_statistics = cached_aggregate_stats(
+        module_set, estimator, method, None, phenotype, feature, edge_rule,
+        differential_edge_rule, differential_fdr_scope,
+        differential_fdr_threshold, score_normalization, analysis_subset,
+    )
+    available_finder_diagnoses = [
+        diagnosis
+        for diagnosis in DIAGNOSIS_ORDER
+        if diagnosis in set(finder_statistics["diagnosis_group"].dropna().astype(str))
+    ]
+    if not {"Control", "AD"}.issubset(available_finder_diagnoses):
+        st.warning(
+            "This evaluation cohort does not contain both Control and AD association "
+            "statistics. Choose All donors, Discovery AD/Control, or Held-out validation "
+            "AD/Control in the sidebar."
+        )
+        st.stop()
+
+    finder_controls = st.columns([1.2, 1.0, 1.0, 0.8])
+    with finder_controls[0]:
+        finder_criterion = st.radio(
+            "Ranking criterion",
+            options=list(FINDER_CRITERIA),
+            format_func=lambda value: FINDER_CRITERIA[value],
+            horizontal=True,
+        )
+    with finder_controls[1]:
+        finder_ct_ts_diagnosis = st.selectbox(
+            "Diagnosis for CT–TS comparison",
+            options=available_finder_diagnoses,
+            index=(
+                available_finder_diagnoses.index("AD")
+                if "AD" in available_finder_diagnoses
+                else 0
+            ),
+        )
+    with finder_controls[2]:
+        finder_fdr_filter = st.selectbox(
+            "Association-difference FDR filter",
+            options=[None, 0.10, 0.05],
+            format_func=lambda value: (
+                "No FDR filter" if value is None else f"FDR ≤ {value:.2f}"
+            ),
+            help=(
+                "For Both criteria, the selected cutoff must be met by both the CT–TS "
+                "test and at least one Control–AD component comparison."
+            ),
+        )
+    with finder_controls[3]:
+        finder_rows = st.slider(
+            "Top modules",
+            min_value=10,
+            max_value=module_count,
+            value=min(30, module_count),
+            step=10,
+        )
+
+    finder_effect_controls = st.columns(2)
+    with finder_effect_controls[0]:
+        minimum_ct_ts_difference = st.slider(
+            "Minimum absolute CT–TS Δ correlation",
+            min_value=0.0,
+            max_value=2.0,
+            value=0.0,
+            step=0.05,
+            disabled=finder_criterion == "ad_control",
+        )
+    with finder_effect_controls[1]:
+        minimum_ad_control_difference = st.slider(
+            "Minimum absolute Control–AD Δ correlation",
+            min_value=0.0,
+            max_value=2.0,
+            value=0.0,
+            step=0.05,
+            disabled=finder_criterion == "ct_ts",
+        )
+
+    finder = build_module_finder_table(
+        finder_statistics,
+        ct_ts_diagnosis=finder_ct_ts_diagnosis,
+        correlation_method=correlation_method,
+        criterion=finder_criterion,
+    )
+    finder = finder.merge(
+        annotations[
+            [
+                "module",
+                "displayed_category",
+                "displayed_subcategory",
+                "displayed_pathway",
+                "displayed_fdr",
+            ]
+        ],
+        on="module",
+        how="left",
+        validate="one_to_one",
+    ).merge(
+        module_details[
+            [
+                "module",
+                "module_size",
+                "cluster_type",
+                "tissue_entropy_normalized",
+            ]
+        ],
+        on="module",
+        how="left",
+        validate="one_to_one",
+    )
+    finder.insert(1, "module_definition", module_set_label)
+    finder.insert(2, "phenotype", phenotype)
+    finder.insert(3, "metric_family", feature)
+    finder_filtered = finder.copy()
+    if finder_criterion in {"ct_ts", "both"}:
+        finder_filtered = finder_filtered.loc[
+            finder_filtered["ct_ts_abs_delta_correlation"].ge(
+                minimum_ct_ts_difference
+            )
+        ]
+    if finder_criterion in {"ad_control", "both"}:
+        finder_filtered = finder_filtered.loc[
+            finder_filtered["ad_control_max_abs_delta_correlation"].ge(
+                minimum_ad_control_difference
+            )
+        ]
+    if finder_fdr_filter is not None:
+        ct_ts_significant = finder_filtered["ct_ts_fdr_within_phenotype"].le(
+            finder_fdr_filter
+        )
+        ad_control_significant = finder_filtered["ad_control_min_fdr"].le(
+            finder_fdr_filter
+        )
+        if finder_criterion == "ct_ts":
+            finder_filtered = finder_filtered.loc[ct_ts_significant]
+        elif finder_criterion == "ad_control":
+            finder_filtered = finder_filtered.loc[ad_control_significant]
+        else:
+            finder_filtered = finder_filtered.loc[
+                ct_ts_significant & ad_control_significant
+            ]
+    finder_filtered = finder_filtered.sort_values(
+        "finder_rank", kind="stable"
+    ).reset_index(drop=True)
+    finder_filtered.insert(0, "display_rank", np.arange(1, len(finder_filtered) + 1))
+
+    if finder_filtered.empty:
+        st.warning(
+            "No modules meet the current effect-size and FDR filters. Relax one or more "
+            "filters to restore the exploratory ranking."
+        )
+    else:
+        top_finder = finder_filtered.iloc[0]
+        finder_summary = st.columns(4)
+        finder_summary[0].metric("Modules retained", f"{len(finder_filtered):,}")
+        finder_summary[1].metric("Top module", f"M{int(top_finder['module'])}")
+        finder_summary[2].metric(
+            "Top CT–TS |Δr|",
+            f"{top_finder['ct_ts_abs_delta_correlation']:.3f}",
+        )
+        finder_summary[3].metric(
+            "Top Control–AD |Δr|",
+            f"{top_finder['ad_control_max_abs_delta_correlation']:.3f}",
+        )
+        finder_figure = module_finder_figure(
+            finder_filtered,
+            phenotype_label=OUTCOME_LABELS[phenotype],
+            feature_label=active_feature_labels[feature],
+            correlation_method=correlation_method,
+            ct_ts_diagnosis=finder_ct_ts_diagnosis,
+            criterion_label=FINDER_CRITERIA[finder_criterion],
+            selected_module=module,
+            label_count=min(10, finder_rows),
+            minimum_ct_ts_difference=minimum_ct_ts_difference,
+            minimum_ad_control_difference=minimum_ad_control_difference,
+        )
+        st.plotly_chart(
+            finder_figure,
+            use_container_width=True,
+            config={
+                "displaylogo": False,
+                "toImageButtonOptions": {
+                    "format": "png",
+                    "filename": f"{download_prefix}{phenotype}_{feature}_module_finder",
+                    "scale": 3,
+                },
+            },
+        )
+        finder_columns = [
+            "display_rank",
+            "module_definition",
+            "module",
+            "finder_criterion",
+            "finder_score",
+            "correlation_method",
+            "ct_ts_diagnosis",
+            "ct_ts_n",
+            "ct_ts_correlation_CT",
+            "ct_ts_correlation_TS",
+            "ct_ts_delta_correlation",
+            "ct_ts_abs_delta_correlation",
+            "ct_ts_test_statistic",
+            "ct_ts_p_value",
+            "ct_ts_fdr_within_phenotype",
+            "ct_ts_fdr_all12_global",
+            "n_control",
+            "n_ad",
+            "correlation_CT_control",
+            "correlation_CT_ad",
+            "ad_control_delta_correlation_CT",
+            "ad_control_fisher_z_CT",
+            "ad_control_p_value_CT",
+            "ad_control_fdr_CT",
+            "correlation_TS_control",
+            "correlation_TS_ad",
+            "ad_control_delta_correlation_TS",
+            "ad_control_fisher_z_TS",
+            "ad_control_p_value_TS",
+            "ad_control_fdr_TS",
+            "ad_control_best_component",
+            "ad_control_max_abs_delta_correlation",
+            "ad_control_min_fdr",
+            "module_size",
+            "cluster_type",
+            "tissue_entropy_normalized",
+            "displayed_category",
+            "displayed_subcategory",
+            "displayed_pathway",
+            "displayed_fdr",
+        ]
+        finder_columns = [
+            column for column in finder_columns if column in finder_filtered.columns
+        ]
+        st.dataframe(
+            finder_filtered[finder_columns].head(finder_rows),
+            use_container_width=True,
+            hide_index=True,
+            height=560,
+            column_config={
+                "module": st.column_config.NumberColumn(format="M%d"),
+                "finder_score": st.column_config.ProgressColumn(
+                    "Ranking score", min_value=0.0, max_value=1.0, format="%.3f"
+                ),
+                "tissue_entropy_normalized": st.column_config.ProgressColumn(
+                    "Normalized tissue entropy", min_value=0.0, max_value=1.0,
+                    format="%.3f",
+                ),
+            },
+        )
+        st.download_button(
+            "Download current module-finder ranking (TSV)",
+            data=dataframe_to_tsv_bytes(finder_filtered[finder_columns]),
+            file_name=(
+                f"{download_prefix}{phenotype}_{feature}_{correlation_method.lower()}_"
+                f"{finder_criterion}_module_finder.tsv"
+            ),
+            mime="text/tab-separated-values",
+        )
+    st.info(
+        "CT–TS FDR uses the existing dependent-component test corrected across modules "
+        "within the selected phenotype. Control–AD differences use an approximate "
+        "independent-groups Fisher-z test for CT and TS correlations, with BH across "
+        f"both components and all {module_count} displayed modules. The Both score is "
+        "the lower of the two percentile scores, so a module must rank well on both "
+        "criteria rather than excelling on only one."
+    )
 
 if active_view == "Edge summaries":
     st.subheader("Donor- and diagnosis-level edge summaries")

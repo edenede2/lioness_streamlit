@@ -90,6 +90,22 @@ def test_streamlit_differential_filter_can_switch_bh_scope_and_cutoff() -> None:
     assert_app_clean(app)
 
 
+def test_streamlit_module_finder_supports_each_ranking_criterion() -> None:
+    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = select_view(app, "Module finder")
+    assert_app_clean(app)
+    criterion = widget_with_label(app.radio, "Ranking criterion")
+    assert criterion.value == "ct_ts"
+    criterion.set_value("ad_control").run()
+    assert_app_clean(app)
+    widget_with_label(app.radio, "Ranking criterion").set_value("both").run()
+    assert_app_clean(app)
+    widget_with_label(app.selectbox, "Association-difference FDR filter").set_value(
+        0.10
+    ).run()
+    assert_app_clean(app)
+
+
 def test_streamlit_mdc_can_switch_to_raw_scale() -> None:
     app = AppTest.from_file(APP, default_timeout=180).run()
     assert_app_clean(app)
