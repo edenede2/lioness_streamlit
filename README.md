@@ -9,6 +9,10 @@ The app includes two explicitly separated module definitions:
   Control-referenced LIONESS results.
 - **Control-derived L4 modules (186)** with Control-referenced LIONESS results.
   Identically numbered modules in the two sets are not interchangeable.
+- A compact repository hot cache for aggregate views and shared metadata. Large
+  tissue-resolved, edge-level, BONOBO, and differential tables remain in Google
+  Drive and are fetched only when their analysis view needs them. The view pills
+  are lazy, so hidden views do not execute or perform I/O on every rerun.
 - Standard and Control-referenced LIONESS, plus all-donor empirical-Bayes
   BONOBO for both module definitions.
 - Twelve numeric outcomes: five cognitive/motor phenotypes, age, education,

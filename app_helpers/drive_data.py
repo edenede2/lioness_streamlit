@@ -21,6 +21,7 @@ from typing import Iterable
 
 APP_ROOT = Path(__file__).resolve().parents[1]
 LOCAL_DATA_DIR = APP_ROOT / "data"
+REPOSITORY_BOOTSTRAP_MARKER = LOCAL_DATA_DIR / ".repo_bootstrap"
 DRIVE_INDEX_PATH = APP_ROOT / "drive_file_index.json"
 DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.readonly"
 DRIVE_MEDIA_URL = "https://www.googleapis.com/drive/v3/files/{file_id}"
@@ -317,4 +318,8 @@ def ensure_data_path(
 
 
 def data_source_label() -> str:
-    return "local bundle" if DATA_DIR == LOCAL_DATA_DIR.resolve() else "Google Drive (lazy cache)"
+    if DATA_DIR == LOCAL_DATA_DIR.resolve():
+        if REPOSITORY_BOOTSTRAP_MARKER.is_file():
+            return "Repository hot cache + Google Drive on demand"
+        return "local bundle"
+    return "Google Drive (lazy cache)"

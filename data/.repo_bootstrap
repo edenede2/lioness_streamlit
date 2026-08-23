@@ -1,0 +1,4 @@
+This directory contains the small, frequently reused public-data hot cache.
+
+Large tissue-resolved, edge-level, and differential datasets remain in Google Drive
+and are downloaded lazily only when their analysis view is selected.

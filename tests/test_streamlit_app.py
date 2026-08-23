@@ -19,11 +19,25 @@ def assert_app_clean(app: AppTest) -> None:
     assert not [error for error in app.error if "Traceback" in str(error.value)]
 
 
+def select_view(app: AppTest, label: str) -> AppTest:
+    return widget_with_label(app.pills, "Analysis view").set_value(label).run()
+
+
 def test_streamlit_hot_reload_recovers_stale_chart_helper(monkeypatch) -> None:
     monkeypatch.delattr(chart_helpers, "CONTINUOUS_COLOR_SCALES")
     app = AppTest.from_file(APP, default_timeout=180).run()
     assert_app_clean(app)
     assert hasattr(chart_helpers, "CONTINUOUS_COLOR_SCALES")
+
+
+def test_every_lazy_analysis_view_renders_cleanly() -> None:
+    app = AppTest.from_file(APP, default_timeout=180).run()
+    assert_app_clean(app)
+    view_selector = widget_with_label(app.pills, "Analysis view")
+    assert view_selector.value == "Associations"
+    for view in view_selector.options:
+        app = select_view(app, view)
+        assert_app_clean(app)
 
 
 def test_streamlit_smoke_lioness_and_bonobo_module_definitions() -> None:
@@ -79,6 +93,8 @@ def test_streamlit_differential_filter_can_switch_bh_scope_and_cutoff() -> None:
 def test_streamlit_mdc_can_switch_to_raw_scale() -> None:
     app = AppTest.from_file(APP, default_timeout=180).run()
     assert_app_clean(app)
+    app = select_view(app, "MDC")
+    assert_app_clean(app)
 
     scale = widget_with_label(app.radio, "MDC display scale")
     assert scale.value == "log2"
@@ -95,6 +111,8 @@ def test_streamlit_mdc_can_switch_to_raw_scale() -> None:
 
 def test_streamlit_pathway_resolved_mdc_controls_both_module_sets() -> None:
     app = AppTest.from_file(APP, default_timeout=180).run()
+    assert_app_clean(app)
+    app = select_view(app, "MDC")
     assert_app_clean(app)
     assert any(tab.label == "Region-resolved MDC" for tab in app.tabs)
     assert any(tab.label == "Pathway-resolved MDC" for tab in app.tabs)

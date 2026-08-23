@@ -932,35 +932,33 @@ with st.expander(
         "in cross-tissue (CT) edges."
     )
 
-(
-    association_tab,
-    distribution_tab,
-    correlation_tab,
-    screen_tab,
-    edge_tab,
-    volcano_tab,
-    mdc_tab,
-    statistics_tab,
-    kegg_tab,
-    module_details_tab,
-    about_tab,
-) = st.tabs(
-    [
-        "Associations",
-        "Feature distributions",
-        "Correlation heatmaps",
-        "CT–TS screen",
-        "Edge summaries",
-        "Edge volcano",
-        "MDC",
-        "Statistics",
-        "KEGG enrichment",
-        "Module details",
-        "Methods & data",
-    ]
+view_options = [
+    "Associations",
+    "Feature distributions",
+    "Correlation heatmaps",
+    "CT–TS screen",
+    "Edge summaries",
+    "Edge volcano",
+    "MDC",
+    "Statistics",
+    "KEGG enrichment",
+    "Module details",
+    "Methods & data",
+]
+active_view = st.pills(
+    "Analysis view",
+    options=view_options,
+    default="Associations",
+    selection_mode="single",
+    help=(
+        "Only the selected view is calculated. This avoids loading unrelated large "
+        "tables from Google Drive on every interaction."
+    ),
 )
+if active_view is None:
+    active_view = "Associations"
 
-with association_tab:
+if active_view == "Associations":
     st.subheader("Phenotype association")
     st.caption(
         f"Diagnosis-specific points with {correlation_method} correlation annotations and "
@@ -1038,7 +1036,7 @@ with association_tab:
         mime="text/tab-separated-values",
     )
 
-with correlation_tab:
+if active_view == "Correlation heatmaps":
     st.subheader("Network-score correlations across phenotypes and outcomes")
     st.caption(
         "Heatmaps use donor-level Z-scored module features. Nominal fields such as sex code "
@@ -1227,7 +1225,7 @@ with correlation_tab:
             ),
             mime="text/tab-separated-values",
         )
-with distribution_tab:
+if active_view == "Feature distributions":
     st.subheader("Donor-level feature distributions")
     st.caption(
         "These views use only the selected module feature; no phenotype is on an axis. "
@@ -1274,7 +1272,7 @@ with distribution_tab:
             mime="text/tab-separated-values",
         )
 
-with screen_tab:
+if active_view == "CT–TS screen":
     st.subheader("Descriptive CT–TS pattern screen")
     st.caption(
         f"Ranks all {module_count} modules for the selected phenotype, feature, diagnosis, "
@@ -1413,7 +1411,7 @@ with screen_tab:
         )
     st.info(fdr_text(module_manifest, module_count))
 
-with edge_tab:
+if active_view == "Edge summaries":
     st.subheader("Donor- and diagnosis-level edge summaries")
     st.caption(
         "Each undirected edge is counted once and the diagonal is excluded. LIONESS sign "
@@ -1515,7 +1513,7 @@ with edge_tab:
                 mime="text/tab-separated-values",
             )
 
-with volcano_tab:
+if active_view == "Edge volcano":
     st.subheader("AD–Control differential edges")
     st.caption(
         "Each point is one undirected module edge. The mask is discovered with a "
@@ -1737,7 +1735,7 @@ with volcano_tab:
             mime="text/tab-separated-values",
         )
 
-with mdc_tab:
+if active_view == "MDC":
     st.subheader("Module differential connectivity (MDC)")
     st.caption(
         "MDC compares the mean absolute signedAlt adjacency in AD with Control. "
@@ -2407,7 +2405,7 @@ with mdc_tab:
                 mime="text/tab-separated-values",
             )
 
-with statistics_tab:
+if active_view == "Statistics":
     st.subheader("Robust association statistics")
     st.caption(
         f"The primary table follows the sidebar selection: {correlation_method}. The "
@@ -2494,7 +2492,7 @@ with statistics_tab:
     )
     st.info(fdr_text(module_manifest, module_count))
 
-with kegg_tab:
+if active_view == "KEGG enrichment":
     st.subheader("Tissue-expanded KEGG enrichments")
     kegg_scope = st.radio(
         "Enrichment table scope",
@@ -2763,7 +2761,7 @@ with kegg_tab:
         "recalculated by this app."
     )
 
-with module_details_tab:
+if active_view == "Module details":
     st.subheader("Level-4 module composition")
     st.caption(
         "Module size, represented tissues, per-tissue gene counts, and proportions from "
@@ -2964,7 +2962,7 @@ with module_details_tab:
         "gene pair, so its tissue-specific feature is unavailable."
     )
 
-with about_tab:
+if active_view == "Methods & data":
     st.subheader("Analysis methods and deploy data")
     st.markdown(
         f"**Selected module definition:** {module_set_label}. Module IDs are scoped to "
