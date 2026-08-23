@@ -1,0 +1,279 @@
+{
+  "assignment_policy": "Prediction only: 30 exact duplicate tissue-gene rows removed from the full-cohort assignments; all 154 and 186 modules retained.",
+  "bootstrap_resamples": 2000,
+  "created_utc": "2026-08-23T12:51:17.954014+00:00",
+  "development_counts": {
+    "AD": 117,
+    "Control": 114,
+    "MCI": 83
+  },
+  "edge_mask_provenance": {
+    "development_frozen": "Welch AD-versus-Control tests use development donors and the development-frozen LIONESS scores.",
+    "existing_sensitivity": "Welch AD-versus-Control tests still use development labels only, but use the existing all-donor/all-Control-reference LIONESS scores."
+  },
+  "edge_masks": [
+    "all",
+    "global_fdr05",
+    "global_fdr10",
+    "per_module_fdr05",
+    "per_module_fdr10"
+  ],
+  "files": {
+    "prediction_confusion.parquet": {
+      "bytes": 29482,
+      "columns": [
+        "reference_provenance",
+        "module_definition",
+        "network_method",
+        "predictor_design",
+        "edge_mask",
+        "score_normalization",
+        "predictor_block",
+        "outcome",
+        "model_variant",
+        "actual",
+        "predicted_class",
+        "n"
+      ],
+      "rows": 31314,
+      "sha256": "7b32fc34658eff945a18ec5da4626e1f829b67c7bdcf64ecc0e6be52ce35ab3a"
+    },
+    "prediction_ct_ts_bootstrap.parquet": {
+      "bytes": 82736,
+      "columns": [
+        "reference_provenance",
+        "module_definition",
+        "network_method",
+        "predictor_design",
+        "edge_mask",
+        "score_normalization",
+        "outcome",
+        "model_variant",
+        "comparison",
+        "ct_predictor_block",
+        "ts_predictor_block",
+        "metric",
+        "n_held_out",
+        "performance_difference",
+        "ci_low",
+        "ci_high",
+        "p_value",
+        "valid_resamples",
+        "fdr_global",
+        "fdr_within_outcome"
+      ],
+      "rows": 2496,
+      "sha256": "ebebeacc1e48abf79de0a9000879b0a7a01acd81fdd732e91e45ba978bd59774"
+    },
+    "prediction_curves.parquet": {
+      "bytes": 20356835,
+      "columns": [
+        "curve",
+        "class_label",
+        "x",
+        "y",
+        "threshold",
+        "n",
+        "reference_provenance",
+        "module_definition",
+        "network_method",
+        "predictor_design",
+        "edge_mask",
+        "score_normalization",
+        "predictor_block",
+        "outcome",
+        "model_variant"
+      ],
+      "rows": 2333212,
+      "sha256": "e8c74cc28c2508ad3349de5ee895d53baa76a222fe3b4337df06af0ee00d161d"
+    },
+    "prediction_diagnostics.parquet": {
+      "columns": [
+        "sample_id",
+        "prediction_split",
+        "diagnosis_group",
+        "target",
+        "predicted",
+        "probability_1",
+        "probability_2",
+        "probability_3",
+        "probability_4",
+        "probability_5",
+        "predicted_expected",
+        "reference_provenance",
+        "module_definition",
+        "network_method",
+        "predictor_design",
+        "edge_mask",
+        "score_normalization",
+        "predictor_block",
+        "outcome",
+        "model_variant",
+        "probability_Control",
+        "probability_AD",
+        "probability_MCI",
+        "probability_0"
+      ],
+      "files": {
+        "development_frozen__control_derived__control_anchored.parquet": {
+          "bytes": 6394908,
+          "rows": 337680,
+          "sha256": "0a1108882c796cb4af7baba839ec11fde24f0d8c846287db4881722dd0aff9ec"
+        },
+        "development_frozen__full_cohort__control_anchored.parquet": {
+          "bytes": 6320821,
+          "rows": 337680,
+          "sha256": "4b2aca11cbf7401e8985da8e60830acd7b1173e6f3b711ab3d0fff20c93a250d"
+        },
+        "development_frozen__full_cohort__standard.parquet": {
+          "bytes": 2342405,
+          "rows": 185724,
+          "sha256": "0a18a8cd6c8e16c0980802abff08eecb477b56e97ab272da6b7c0015866e8711"
+        },
+        "existing_sensitivity__control_derived__control_anchored.parquet": {
+          "bytes": 6288023,
+          "rows": 337680,
+          "sha256": "c578534e2b6bf3ef703c7b3bfc55ee76878fdd840ca54c08013e04af6fa18d19"
+        },
+        "existing_sensitivity__full_cohort__control_anchored.parquet": {
+          "bytes": 6201597,
+          "rows": 337680,
+          "sha256": "70fe0c50602930eae728f507e6503e48dfd02c74949fd720516c9318f716bf4f"
+        },
+        "existing_sensitivity__full_cohort__standard.parquet": {
+          "bytes": 2243085,
+          "rows": 191352,
+          "sha256": "b77e2ef2865476816ed3806863fba64bc0059f8da0cfa14677774f17dcfb2790"
+        }
+      },
+      "rows": 1727796,
+      "shards": 6
+    },
+    "prediction_performance.parquet": {
+      "bytes": 592538,
+      "columns": [
+        "reference_provenance",
+        "module_definition",
+        "network_method",
+        "predictor_design",
+        "edge_mask",
+        "score_normalization",
+        "predictor_block",
+        "outcome",
+        "model_variant",
+        "n_development",
+        "n_held_out",
+        "primary_metric",
+        "higher_is_better",
+        "status",
+        "metric",
+        "value",
+        "reason"
+      ],
+      "rows": 218653,
+      "sha256": "a97c75a00ab340dc9357af609d73ae718a15004a433d3d2a236d205505a51181"
+    },
+    "prediction_top_coefficients.parquet": {
+      "bytes": 16937300,
+      "columns": [
+        "coefficient_label",
+        "feature_name",
+        "standardized_coefficient",
+        "abs_standardized_coefficient",
+        "reference_provenance",
+        "module_definition",
+        "network_method",
+        "predictor_design",
+        "edge_mask",
+        "score_normalization",
+        "predictor_block",
+        "outcome",
+        "model_variant",
+        "module",
+        "display_feature",
+        "kegg_annotation",
+        "kegg_fdr"
+      ],
+      "rows": 636739,
+      "sha256": "a2d8f0bf52e644e2e5e958862caf327ef888e031d664524738825b4045960032"
+    },
+    "prediction_whole_network_features.parquet": {
+      "bytes": 3904943,
+      "columns": [
+        "sample_id",
+        "reference_provenance",
+        "module_definition",
+        "network_method",
+        "scope",
+        "differential_edge_rule",
+        "differential_fdr_scope",
+        "differential_fdr_threshold",
+        "prediction_split",
+        "signed_weight_sum",
+        "positive_weight_sum",
+        "negative_weight_magnitude",
+        "absolute_weight_sum",
+        "n_retained_edges",
+        "edge_mask"
+      ],
+      "rows": 121500,
+      "sha256": "5eb4dbe22cede3cc87f96081d101e4752e2efbafb35fbddf557be9dae41afaa2"
+    }
+  },
+  "held_out_counts": {
+    "AD": 50,
+    "Control": 50,
+    "MCI": 36
+  },
+  "limitations": [
+    "Module discovery used the broader cohort, so this is not fully external validation.",
+    "Diagnosis is essentially a grouped version of CogDx and is not an independent replication."
+  ],
+  "primary_default": "per_module_fdr10",
+  "privacy": "donor and projid excluded; prediction-only random pseudonyms",
+  "random_prediction_ids": {
+    "count": 450,
+    "mapping_and_salt_exported": false,
+    "prefix": "P-"
+  },
+  "reference_provenance": {
+    "exploratory_sensitivity": "existing_sensitivity",
+    "primary": "development_frozen"
+  },
+  "schema_version": 1,
+  "split_strategy": "Diagnosis-and-sex-stratified 70/30 development/held-out split with seed 42; AD/Control reuse the locked discovery/validation assignment and MCI is split independently by sex.",
+  "target_sample_counts": {
+    "cogdx": {
+      "n_development": 304,
+      "n_held_out": 131
+    },
+    "cogng_demog_slope": {
+      "n_development": 289,
+      "n_held_out": 122
+    },
+    "cogng_path_slope": {
+      "n_development": 229,
+      "n_held_out": 84
+    },
+    "diagnosis_binary": {
+      "n_development": 231,
+      "n_held_out": 100
+    },
+    "diagnosis_three_class": {
+      "n_development": 314,
+      "n_held_out": 136
+    },
+    "motor10_demog_slope": {
+      "n_development": 270,
+      "n_held_out": 114
+    },
+    "parkinsonism": {
+      "n_development": 304,
+      "n_held_out": 131
+    },
+    "sqrt_parksc_demog_slope": {
+      "n_development": 285,
+      "n_held_out": 120
+    }
+  }
+}

@@ -327,7 +327,9 @@ python ../../scripts/python/validate_lioness_prediction_outputs.py \
 
 The compact metrics, bootstrap, curve, confusion, and top-coefficient files are suitable
 for the repository hot cache. Donor-level prediction diagnostics are partitioned for
-predicate reads and should remain in the indexed Google Drive prediction directory.
+predicate reads and can either remain in the indexed Google Drive prediction directory or
+be kept in the repository as a sanitized local fallback (all current shards are well below
+GitHub's 100-MiB per-file limit).
 
 Upload only new or changed prediction files, using one Drive listing request before the
 media uploads, then rebuild the static index:
@@ -343,6 +345,13 @@ python scripts/build_drive_index.py \
   --local-data data \
   --output drive_file_index.json
 ```
+
+Google service accounts have no personal Drive storage quota. Creating new files with the
+uploader therefore requires a Shared Drive, Workspace domain-wide delegation to a user, or
+user-owned placeholder files that the service account can update. A folder merely shared
+from a user's My Drive is readable but does not give the service account upload quota. When
+none of those options is available, commit the privacy-validated prediction shards locally;
+the app always prefers a local file and uses Drive only as a lazy fallback.
 
 Validate a staged or deployed bundle, including privacy, hashes, schemas, row counts,
 sample consistency, edge identities, entropy ranges, resolved MDC, and the 95-MiB cap:

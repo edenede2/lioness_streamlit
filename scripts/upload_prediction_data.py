@@ -20,6 +20,21 @@ DRIVE_FILES_URL = "https://www.googleapis.com/drive/v3/files"
 DRIVE_UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3/files"
 
 
+def raise_drive_error(response, operation: str) -> None:
+    """Expose Drive's structured error reason without leaking credentials."""
+
+    if response.ok:
+        return
+    try:
+        detail = response.json()
+    except ValueError:
+        detail = response.text[:2_000]
+    raise RuntimeError(
+        f"Google Drive {operation} failed with HTTP {response.status_code}: "
+        f"{json.dumps(detail, sort_keys=True)}"
+    )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--credentials", type=Path, required=True)
@@ -43,7 +58,7 @@ def create_folder(session: AuthorizedSession, name: str, parent_id: str) -> dict
         json={"name": name, "mimeType": DRIVE_FOLDER_MIME, "parents": [parent_id]},
         timeout=60,
     )
-    response.raise_for_status()
+    raise_drive_error(response, "folder creation")
     return response.json()
 
 
@@ -61,7 +76,7 @@ def create_file(
             },
             timeout=(30, 600),
         )
-    response.raise_for_status()
+    raise_drive_error(response, f"file creation for {name}")
     return response.json()
 
 
@@ -75,7 +90,7 @@ def update_file(session: AuthorizedSession, path: Path, file_id: str) -> dict[st
             data=handle,
             timeout=(30, 600),
         )
-    response.raise_for_status()
+    raise_drive_error(response, f"file update for {path.name}")
     return response.json()
 
 
