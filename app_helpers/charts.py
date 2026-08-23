@@ -2212,6 +2212,13 @@ def prediction_performance_figure(
         "network_only": "#2C7FB8",
         "covariates_plus_network": "#E66101",
     }
+    n_column = "n_held_out" if "n_held_out" in selected else "n_oof"
+    status = (
+        selected["status"].astype(str)
+        if "status" in selected
+        else pd.Series("available", index=selected.index)
+    )
+    selected = selected.assign(_display_status=status)
     for variant, subset in selected.groupby("model_variant", observed=True):
         figure.add_trace(
             go.Bar(
@@ -2219,7 +2226,7 @@ def prediction_performance_figure(
                 x=[block_labels.get(str(value), str(value)) for value in subset["predictor_block"]],
                 y=subset["value"],
                 marker_color=colors.get(str(variant), "#526273"),
-                customdata=np.column_stack([subset["n_held_out"], subset["status"]]),
+                customdata=np.column_stack([subset[n_column], subset["_display_status"]]),
                 hovertemplate=(
                     "%{x}<br>Held-out " + metric + ": %{y:.3f}<br>n=%{customdata[0]}"
                     "<br>Status=%{customdata[1]}<extra>%{fullData.name}</extra>"
@@ -2234,6 +2241,147 @@ def prediction_performance_figure(
         legend={"orientation": "h", "y": 1.12},
         margin={"l": 70, "r": 30, "t": 100, "b": 150},
         xaxis={"tickangle": -35},
+        yaxis_title=metric,
+    )
+    return figure
+
+
+def targeted_primary_comparison_figure(
+    frame: pd.DataFrame,
+    *,
+    title: str,
+) -> go.Figure:
+    """Forest plot for the three prespecified repeated-CV primary hypotheses."""
+
+    labels = {
+        "targeted_CT_minus_all_module_CT": "Targeted CT − all-module CT",
+        "targeted_CT_plus_covariates_minus_covariates": "Targeted CT − covariates only",
+        "tissue_neutral_targeted_CT_minus_TS": "Tissue-neutral targeted CT − TS",
+    }
+    selected = frame.loc[frame["performance_difference"].notna()].copy()
+    selected["display"] = selected["comparison"].map(labels).fillna(selected["comparison"])
+    selected = selected.sort_values("performance_difference")
+    fdr_column = (
+        "fdr_primary_family" if "fdr_primary_family" in selected else "fdr_global"
+    )
+    custom = np.column_stack(
+        [
+            selected["ci_low"], selected["ci_high"], selected["p_value"],
+            selected[fdr_column], selected["n_oof"],
+        ]
+    )
+    figure = go.Figure(
+        go.Scatter(
+            x=selected["performance_difference"],
+            y=selected["display"],
+            mode="markers",
+            marker={"size": 11, "color": "#2C7FB8"},
+            error_x={
+                "type": "data",
+                "symmetric": False,
+                "array": selected["ci_high"] - selected["performance_difference"],
+                "arrayminus": selected["performance_difference"] - selected["ci_low"],
+            },
+            customdata=custom,
+            hovertemplate=(
+                "%{y}<br>ROC-AUC difference: %{x:.3f}<br>95% CI: "
+                "%{customdata[0]:.3f} to %{customdata[1]:.3f}<br>p=%{customdata[2]:.3g}"
+                "<br>Primary-family FDR=%{customdata[3]:.3g}<br>OOF n=%{customdata[4]:.0f}"
+                "<extra></extra>"
+            ),
+        )
+    )
+    figure.add_vline(x=0, line_dash="dash", line_color="#526273")
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"},
+        template="plotly_white",
+        height=max(430, 130 + 70 * len(selected)),
+        margin={"l": 275, "r": 35, "t": 80, "b": 65},
+        xaxis_title="Paired ROC-AUC difference (positive favors the first model)",
+    )
+    return figure
+
+
+def targeted_selection_frequency_figure(
+    frame: pd.DataFrame,
+    *,
+    title: str,
+    limit: int = 40,
+) -> go.Figure:
+    """Show outer-fold stability of the display-only consensus panel."""
+
+    selected = frame.copy()
+    selected["module_label"] = selected["module"].map(lambda value: f"M{int(value)}")
+    selected = selected.sort_values(
+        ["outer_selection_frequency", "mean_stable_rank"],
+        ascending=[False, True],
+    ).head(int(limit)).sort_values("outer_selection_frequency")
+    custom_columns = ["mean_stable_rank", "median_incremental_score"]
+    if "kegg_annotation" in selected:
+        custom_columns.append("kegg_annotation")
+    custom = selected[custom_columns].fillna("Unavailable").to_numpy(object)
+    hover = (
+        "Module %{y}<br>Outer-fold selection frequency: %{x:.1%}"
+        "<br>Mean stable rank: %{customdata[0]}"
+        "<br>Median incremental score: %{customdata[1]}"
+    )
+    if len(custom_columns) == 3:
+        hover += "<br>%{customdata[2]}"
+    hover += "<extra></extra>"
+    figure = go.Figure(
+        go.Bar(
+            x=selected["outer_selection_frequency"],
+            y=selected["module_label"],
+            orientation="h",
+            marker_color=np.where(selected["consensus_selected"], "#E66101", "#2C7FB8"),
+            customdata=custom,
+            hovertemplate=hover,
+        )
+    )
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"},
+        template="plotly_white",
+        height=max(500, 145 + 24 * len(selected)),
+        margin={"l": 90, "r": 35, "t": 80, "b": 65},
+        xaxis={"title": "Outer-fold selection frequency", "tickformat": ".0%", "range": [0, 1.02]},
+        yaxis_title="Module",
+    )
+    return figure
+
+
+def targeted_fold_robustness_figure(
+    frame: pd.DataFrame,
+    *,
+    metric: str,
+    block_labels: dict[str, str],
+    title: str,
+) -> go.Figure:
+    """Repeat/fold metric distributions for selected targeted models."""
+
+    selected = frame.loc[frame["metric"].eq(metric) & frame["value"].notna()].copy()
+    figure = go.Figure()
+    for block, subset in selected.groupby("predictor_block", observed=True):
+        figure.add_trace(
+            go.Box(
+                name=block_labels.get(str(block), str(block)),
+                y=subset["value"],
+                boxpoints="all",
+                jitter=0.28,
+                pointpos=0,
+                customdata=np.column_stack([subset["outer_repeat"], subset["outer_fold"]]),
+                hovertemplate=(
+                    "%{fullData.name}<br>" + metric + ": %{y:.3f}"
+                    "<br>Repeat %{customdata[0]}, fold %{customdata[1]}<extra></extra>"
+                ),
+            )
+        )
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"},
+        template="plotly_white",
+        height=540,
+        showlegend=False,
+        margin={"l": 70, "r": 35, "t": 80, "b": 150},
+        xaxis={"tickangle": -30},
         yaxis_title=metric,
     )
     return figure

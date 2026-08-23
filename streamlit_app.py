@@ -24,6 +24,9 @@ if not all(
         "mdc_entropy_figure",
         "pathway_mdc_heatmap_figure",
         "prediction_performance_figure",
+        "targeted_primary_comparison_figure",
+        "targeted_selection_frequency_figure",
+        "targeted_fold_robustness_figure",
     )
 ):
     _chart_helpers = importlib.reload(_chart_helpers)
@@ -58,6 +61,9 @@ from app_helpers.charts import (
     prediction_error_figure,
     prediction_performance_figure,
     prediction_threshold_figure,
+    targeted_fold_robustness_figure,
+    targeted_primary_comparison_figure,
+    targeted_selection_frequency_figure,
     resolved_to_long,
 )
 from app_helpers.correlations import calculate_correlations
@@ -96,6 +102,9 @@ from app_helpers.data import (
     PREDICTION_MODEL_LABELS,
     PREDICTION_OUTCOME_LABELS,
     PREDICTION_REFERENCE_LABELS,
+    TARGETED_PANEL_LABELS,
+    TARGETED_PREDICTION_MODE_LABELS,
+    TARGETED_TIER_LABELS,
     SCALE_LABELS,
     SCORE_NORMALIZATION_LABELS,
     build_pathway_mdc_rows,
@@ -129,10 +138,13 @@ from app_helpers.data import (
     load_prediction_manifest,
     load_prediction_performance,
     load_prediction_whole_network_features,
+    load_targeted_prediction_manifest,
+    load_targeted_prediction_table,
     load_volcano_bins,
     load_volcano_candidates,
     module_label,
     prediction_data_available,
+    targeted_prediction_data_available,
     require_data_files,
     selected_annotation,
     summarize_pathway_mdc_rows,
@@ -410,6 +422,14 @@ def cached_prediction_whole_network(**filters: str | None) -> pd.DataFrame:
     return load_prediction_whole_network_features(**filters)
 
 
+@st.cache_data(show_spinner=False, max_entries=48)
+def cached_targeted_prediction_table(
+    table: str,
+    filters: tuple[tuple[str, object], ...] = (),
+) -> pd.DataFrame:
+    return load_targeted_prediction_table(table, **dict(filters))
+
+
 @st.cache_data(show_spinner=False)
 def cached_tissue_mapping() -> pd.DataFrame:
     return load_tissue_mapping()
@@ -575,8 +595,397 @@ def fdr_text(module_manifest: dict[str, object], module_count: int) -> str:
     )
 
 
+def _targeted_filters(**values: object | None) -> tuple[tuple[str, object], ...]:
+    return tuple((key, value) for key, value in values.items() if value is not None)
+
+
+def render_targeted_prediction_view() -> None:
+    """Render repeated nested-CV targeted-module results without touching the benchmark."""
+
+    manifest = load_targeted_prediction_manifest()
+    performance_catalog = cached_targeted_prediction_table("oof_performance")
+    if performance_catalog.empty:
+        st.info("The targeted-prediction manifest is present, but no completed OOF results exist.")
+        return
+    st.subheader("Fully nested targeted-module LIONESS prediction")
+    st.warning(
+        "Repeated nested cross-validation is internal validation conditional on fixed module "
+        "definitions. The earlier 70/30 cohort has already been inspected and is shown only "
+        "as sensitivity evidence; it is not independent validation."
+    )
+    with st.sidebar:
+        st.header("Targeted prediction controls")
+        tier_order = [
+            value for value in ("primary", "secondary", "exploratory")
+            if value in set(performance_catalog["evidence_tier"])
+        ]
+        evidence_tier = st.selectbox(
+            "Evidence tier",
+            options=tier_order,
+            format_func=lambda value: TARGETED_TIER_LABELS.get(value, value),
+            key="targeted_evidence_tier",
+        )
+        tier_catalog = performance_catalog.loc[
+            performance_catalog["evidence_tier"].eq(evidence_tier)
+        ]
+        module_options = tier_catalog["module_definition"].drop_duplicates().tolist()
+        module_definition = st.selectbox(
+            "Targeted module definition",
+            options=module_options,
+            format_func=lambda value: MODULE_SET_LABELS.get(value, value),
+            index=module_options.index("control_derived") if "control_derived" in module_options else 0,
+            key="targeted_module_definition",
+        )
+        module_catalog = tier_catalog.loc[
+            tier_catalog["module_definition"].eq(module_definition)
+        ]
+        methods = module_catalog["network_method"].drop_duplicates().tolist()
+        network_method = st.selectbox(
+            "Targeted LIONESS method",
+            options=methods,
+            format_func=readable_method,
+            key="targeted_network_method",
+        )
+        method_catalog = module_catalog.loc[
+            module_catalog["network_method"].eq(network_method)
+        ]
+        outcome_options = method_catalog["model_outcome"].drop_duplicates().tolist()
+        outcome = st.selectbox(
+            "Targeted prediction outcome",
+            options=outcome_options,
+            format_func=lambda value: PREDICTION_OUTCOME_LABELS.get(value, value),
+            index=outcome_options.index("diagnosis_binary") if "diagnosis_binary" in outcome_options else 0,
+            key="targeted_outcome",
+        )
+        outcome_catalog = method_catalog.loc[method_catalog["model_outcome"].eq(outcome)]
+        panel_options = outcome_catalog["panel_strategy"].drop_duplicates().tolist()
+        panel_strategy = st.selectbox(
+            "Module panel",
+            options=panel_options,
+            format_func=lambda value: TARGETED_PANEL_LABELS.get(value, value),
+            index=panel_options.index("tissue_neutral_ad") if "tissue_neutral_ad" in panel_options else 0,
+            key="targeted_panel_strategy",
+        )
+
+    selected = performance_catalog.loc[
+        performance_catalog["evidence_tier"].eq(evidence_tier)
+        & performance_catalog["module_definition"].eq(module_definition)
+        & performance_catalog["network_method"].eq(network_method)
+        & performance_catalog["model_outcome"].eq(outcome)
+        & performance_catalog["panel_strategy"].eq(panel_strategy)
+    ].copy()
+    if selected.empty:
+        st.warning("No repeated-CV models match the selected targeted analysis.")
+        return
+    primary_metric = str(
+        selected.loc[selected["metric"].notna(), "metric"].iloc[0]
+        if "primary_metric" not in selected
+        else selected["primary_metric"].dropna().iloc[0]
+    )
+    if "primary_metric" not in selected:
+        preferred = {
+            "diagnosis_binary": "roc_auc",
+            "diagnosis_three_class": "roc_auc_macro_ovr",
+            "cogdx": "mae",
+            "parkinsonism": "roc_auc",
+        }.get(outcome, "r2")
+        if preferred in set(selected["metric"]):
+            primary_metric = preferred
+    repeats = int(manifest.get("selection", {}).get("outer_repeats", 5))
+    folds = int(manifest.get("selection", {}).get("outer_folds", 5))
+    metrics = st.columns(4)
+    metrics[0].metric("Evaluation", f"{repeats} × {folds} nested CV")
+    metrics[1].metric("OOF donors", int(selected["n_oof"].max()))
+    metrics[2].metric("Primary metric", primary_metric)
+    metrics[3].metric("Edge set", "All edges" if set(selected["edge_mask"]) == {"all"} else "Sensitivity mask")
+
+    summary_tab, comparison_tab, panel_tab, diagnostic_tab, coefficient_tab, tables_tab, methods_tab = st.tabs(
+        [
+            "Summary", "CT versus TS", "Panel selection", "OOF diagnostics",
+            "Coefficients & KEGG", "Tables", "Methods",
+        ]
+    )
+    with summary_tab:
+        st.caption(
+            "Performance is calculated from fold-specific panels and outer-test predictions. "
+            "The consensus panel below is display-only and is never used to estimate performance."
+        )
+        st.plotly_chart(
+            prediction_performance_figure(
+                selected,
+                metric=primary_metric,
+                block_labels=PREDICTION_BLOCK_LABELS,
+                model_labels=PREDICTION_MODEL_LABELS,
+                title=f"Nested-CV OOF performance: {PREDICTION_OUTCOME_LABELS.get(outcome, outcome)}",
+            ),
+            use_container_width=True,
+            config={"displaylogo": False},
+        )
+        if evidence_tier == "primary" and outcome == "diagnosis_binary":
+            comparisons = cached_targeted_prediction_table("primary_comparisons")
+            if not comparisons.empty:
+                st.plotly_chart(
+                    targeted_primary_comparison_figure(
+                        comparisons,
+                        title="Three prespecified primary paired hypotheses",
+                    ),
+                    use_container_width=True,
+                    config={"displaylogo": False},
+                )
+                st.caption(
+                    "Positive differences favor the first model. BH FDR is corrected across "
+                    "exactly these three primary hypotheses."
+                )
+
+    with comparison_tab:
+        adjusted = selected.loc[
+            selected["model_variant"].isin(["network_only", "covariates_plus_network"])
+        ].copy()
+        if adjusted.empty:
+            st.info("No CT/TS comparison is available for this selection.")
+        else:
+            st.plotly_chart(
+                prediction_performance_figure(
+                    adjusted,
+                    metric=primary_metric,
+                    block_labels=PREDICTION_BLOCK_LABELS,
+                    model_labels=PREDICTION_MODEL_LABELS,
+                    title="CT, TS, and resolved-component OOF comparison",
+                ),
+                use_container_width=True,
+                config={"displaylogo": False},
+            )
+            fold_performance = cached_targeted_prediction_table(
+                "fold_performance",
+                _targeted_filters(
+                    evidence_tier=evidence_tier,
+                    module_definition=module_definition,
+                    network_method=network_method,
+                    panel_strategy=panel_strategy,
+                    model_outcome=outcome,
+                    model_variant="covariates_plus_network",
+                ),
+            )
+            if not fold_performance.empty:
+                st.plotly_chart(
+                    targeted_fold_robustness_figure(
+                        fold_performance,
+                        metric=primary_metric,
+                        block_labels=PREDICTION_BLOCK_LABELS,
+                        title="Outer-fold robustness",
+                    ),
+                    use_container_width=True,
+                    config={"displaylogo": False},
+                )
+
+    with panel_tab:
+        if panel_strategy == "all_modules":
+            st.info("All-module benchmark uses no data-derived targeted panel.")
+        else:
+            panel_filters = _targeted_filters(
+                module_definition=module_definition,
+                network_method=network_method,
+                panel_strategy=panel_strategy,
+                selection_outcome=str(outcome_catalog.loc[
+                    outcome_catalog["panel_strategy"].eq(panel_strategy), "selection_outcome"
+                ].iloc[0]),
+            )
+            consensus = cached_targeted_prediction_table("consensus_panels", panel_filters)
+            selection = cached_targeted_prediction_table("panel_selection", panel_filters)
+            if consensus.empty:
+                st.info("Consensus selection results are unavailable for this panel.")
+            else:
+                st.plotly_chart(
+                    targeted_selection_frequency_figure(
+                        consensus,
+                        title="Display-only consensus panel stability",
+                    ),
+                    use_container_width=True,
+                    config={"displaylogo": False},
+                )
+                st.caption(
+                    "KEGG annotations were joined only after selection and are interpretive only."
+                )
+                filterable_dataframe(
+                    consensus,
+                    table_key="targeted_consensus_panel",
+                    table_name="Targeted consensus panel",
+                    use_container_width=True,
+                    hide_index=True,
+                )
+            if not selection.empty:
+                k_distribution = (
+                    selection[["outer_repeat", "outer_fold", "selected_k"]]
+                    .drop_duplicates()
+                    .value_counts("selected_k")
+                    .rename("outer_folds")
+                    .reset_index()
+                )
+                filterable_dataframe(
+                    k_distribution,
+                    table_key="targeted_k_distribution",
+                    table_name="One-standard-error K distribution",
+                    use_container_width=True,
+                    hide_index=True,
+                )
+
+    with diagnostic_tab:
+        blocks = selected["predictor_block"].drop_duplicates().tolist()
+        diagnostic_block = st.selectbox(
+            "OOF diagnostic predictor block",
+            options=blocks,
+            format_func=lambda value: PREDICTION_BLOCK_LABELS.get(value, value),
+            key="targeted_diagnostic_block",
+        )
+        variants = selected.loc[
+            selected["predictor_block"].eq(diagnostic_block), "model_variant"
+        ].drop_duplicates().tolist()
+        diagnostic_variant = st.selectbox(
+            "OOF diagnostic model",
+            options=variants,
+            format_func=lambda value: PREDICTION_MODEL_LABELS.get(value, value),
+            index=variants.index("covariates_plus_network") if "covariates_plus_network" in variants else 0,
+            key="targeted_diagnostic_variant",
+        )
+        diagnostics = cached_targeted_prediction_table(
+            "oof_predictions",
+            _targeted_filters(
+                evidence_tier=evidence_tier,
+                module_definition=module_definition,
+                network_method=network_method,
+                panel_strategy=panel_strategy,
+                model_outcome=outcome,
+                predictor_block=diagnostic_block,
+                model_variant=diagnostic_variant,
+            ),
+        )
+        if diagnostics.empty:
+            st.info("OOF donor diagnostics are unavailable for this model.")
+        elif outcome in {"diagnosis_binary", "diagnosis_three_class", "parkinsonism"}:
+            confusion = (
+                diagnostics.groupby(["target", "predicted"], observed=True)
+                .size().rename("n").reset_index()
+                .rename(columns={"target": "actual", "predicted": "predicted_class"})
+            )
+            st.plotly_chart(
+                prediction_confusion_figure(confusion, title="Donor-averaged OOF confusion matrix"),
+                use_container_width=True,
+                config={"displaylogo": False},
+            )
+            if len([column for column in diagnostics if column.startswith("probability_")]) == 2:
+                st.plotly_chart(
+                    prediction_threshold_figure(diagnostics, title="Donor-averaged OOF threshold diagnostics"),
+                    use_container_width=True,
+                    config={"displaylogo": False},
+                )
+        else:
+            st.plotly_chart(
+                prediction_observed_figure(
+                    diagnostics,
+                    title="Observed versus donor-averaged OOF prediction",
+                ),
+                use_container_width=True,
+                config={"displaylogo": False},
+            )
+            st.plotly_chart(
+                prediction_error_figure(diagnostics, title="OOF residual diagnostics"),
+                use_container_width=True,
+                config={"displaylogo": False},
+            )
+        if not diagnostics.empty:
+            filterable_dataframe(
+                diagnostics,
+                table_key="targeted_oof_diagnostics",
+                table_name="Sanitized donor-averaged OOF predictions",
+                use_container_width=True,
+                hide_index=True,
+            )
+
+    with coefficient_tab:
+        coefficients = cached_targeted_prediction_table(
+            "coefficients",
+            _targeted_filters(
+                evidence_tier=evidence_tier,
+                module_definition=module_definition,
+                network_method=network_method,
+                panel_strategy=panel_strategy,
+                model_outcome=outcome,
+            ),
+        )
+        if coefficients.empty:
+            st.info("No nonzero coefficients are available for this model family.")
+        else:
+            coefficient_block = st.selectbox(
+                "Targeted coefficient block",
+                options=coefficients["predictor_block"].drop_duplicates().tolist(),
+                format_func=lambda value: PREDICTION_BLOCK_LABELS.get(value, value),
+                key="targeted_coefficient_block",
+            )
+            shown = coefficients.loc[
+                coefficients["predictor_block"].eq(coefficient_block)
+            ].copy()
+            st.plotly_chart(
+                prediction_coefficient_figure(
+                    shown,
+                    title="Largest standardized outer-fold coefficients",
+                ),
+                use_container_width=True,
+                config={"displaylogo": False},
+            )
+            st.caption("KEGG enrichment is interpretive only and never enters ranking or fitting.")
+            filterable_dataframe(
+                shown,
+                table_key="targeted_coefficients",
+                table_name="Fold coefficients with post-selection KEGG annotations",
+                use_container_width=True,
+                hide_index=True,
+            )
+
+    with tables_tab:
+        filterable_dataframe(
+            selected,
+            table_key="targeted_oof_performance",
+            table_name="Donor-averaged OOF performance",
+            use_container_width=True,
+            hide_index=True,
+        )
+        st.download_button(
+            "Download selected OOF metrics (TSV)",
+            data=dataframe_to_tsv_bytes(selected),
+            file_name="targeted_lioness_nested_cv_metrics.tsv",
+            mime="text/tab-separated-values",
+        )
+
+    with methods_tab:
+        st.markdown(
+            "Each outer-test fold is excluded from the LIONESS reference, panel ranking, "
+            "redundancy pruning, K selection, preprocessing, and elastic-net tuning. Standard "
+            "LIONESS uses outer-training donors; Control-referenced LIONESS uses outer-training "
+            "Controls. Test donors are add-one scored against the frozen reference. Panel size "
+            "and regularization are selected inside the outer-training partition."
+        )
+        st.caption(
+            "The current fixed 70/30 held-out results are previously inspected sensitivity "
+            "data and cannot sort, tune, or modify a targeted panel. Module discovery used the "
+            "broader cohort, so this is not external validation."
+        )
+        st.json(manifest, expanded=False)
+
+
 def render_prediction_view() -> None:
     """Render the leakage-reduced LIONESS held-out prediction catalog lazily."""
+
+    if targeted_prediction_data_available():
+        prediction_mode = st.radio(
+            "Prediction mode",
+            options=["targeted", "benchmark"],
+            format_func=lambda value: TARGETED_PREDICTION_MODE_LABELS[value],
+            horizontal=True,
+            key="prediction_mode",
+        )
+        if prediction_mode == "targeted":
+            render_targeted_prediction_view()
+            return
 
     st.subheader("Leakage-reduced LIONESS prediction")
     st.caption(
@@ -1009,6 +1418,14 @@ def _synchronize_bundle_cache() -> str:
         try:
             prediction_manifest_path = ensure_data_path(DATA_DIR / "prediction/prediction_public_manifest.json")
             digest.update(prediction_manifest_path.read_bytes())
+        except (FileNotFoundError, RuntimeError):
+            pass
+    if targeted_prediction_data_available():
+        try:
+            targeted_manifest_path = ensure_data_path(
+                DATA_DIR / "prediction_targeted/targeted_prediction_public_manifest.json"
+            )
+            digest.update(targeted_manifest_path.read_bytes())
         except (FileNotFoundError, RuntimeError):
             pass
     manifest_sha256 = digest.hexdigest()

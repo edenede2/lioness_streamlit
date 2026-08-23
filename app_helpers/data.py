@@ -107,6 +107,20 @@ PREDICTION_CONFUSION = PREDICTION_DIR / "prediction_confusion.parquet"
 PREDICTION_COEFFICIENTS = PREDICTION_DIR / "prediction_top_coefficients.parquet"
 PREDICTION_PREDICTIONS = PREDICTION_DIR / "prediction_diagnostics.parquet"
 PREDICTION_WHOLE_NETWORK = PREDICTION_DIR / "prediction_whole_network_features.parquet"
+TARGETED_PREDICTION_DIR = DATA_DIR / "prediction_targeted"
+TARGETED_PREDICTION_MANIFEST = (
+    TARGETED_PREDICTION_DIR / "targeted_prediction_public_manifest.json"
+)
+TARGETED_PREDICTION_FILES = {
+    "fold_performance": TARGETED_PREDICTION_DIR / "targeted_fold_performance.parquet",
+    "oof_performance": TARGETED_PREDICTION_DIR / "targeted_oof_performance.parquet",
+    "primary_comparisons": TARGETED_PREDICTION_DIR / "targeted_primary_comparisons.parquet",
+    "panel_selection": TARGETED_PREDICTION_DIR / "targeted_panel_selection.parquet",
+    "consensus_panels": TARGETED_PREDICTION_DIR / "targeted_consensus_panels.parquet",
+    "inner_k_scores": TARGETED_PREDICTION_DIR / "targeted_inner_k_scores.parquet",
+    "coefficients": TARGETED_PREDICTION_DIR / "targeted_top_coefficients.parquet",
+    "oof_predictions": TARGETED_PREDICTION_DIR / "targeted_oof_predictions.parquet",
+}
 
 PREDICTION_OUTCOME_LABELS = {
     "diagnosis_binary": "Diagnosis: AD versus Control",
@@ -152,6 +166,21 @@ PREDICTION_BLOCK_LABELS = {
     "CT_resolved": "All three CT tissue pairs",
     "TS_resolved": "All three TS tissues",
     "all_resolved": "All six resolved components",
+}
+TARGETED_PREDICTION_MODE_LABELS = {
+    "benchmark": "All-module benchmark",
+    "targeted": "Targeted modules",
+}
+TARGETED_PANEL_LABELS = {
+    "tissue_neutral_ad": "Tissue-neutral stable AD panel",
+    "ct_specific_ad": "CT-specific stable AD panel",
+    "outcome_specific": "Outcome-specific stable panel",
+    "all_modules": "All modules",
+}
+TARGETED_TIER_LABELS = {
+    "primary": "Primary",
+    "secondary": "Secondary",
+    "exploratory": "Exploratory",
 }
 
 MODULE_SET_FILENAMES = (
@@ -1425,6 +1454,36 @@ def prediction_data_available() -> bool:
     return data_path_available(PREDICTION_MANIFEST) and data_path_available(
         PREDICTION_PERFORMANCE
     )
+
+
+def targeted_prediction_data_available() -> bool:
+    """Return whether the repeated nested-CV targeted catalog is available."""
+
+    return data_path_available(TARGETED_PREDICTION_MANIFEST) and data_path_available(
+        TARGETED_PREDICTION_FILES["oof_performance"]
+    )
+
+
+def load_targeted_prediction_manifest() -> dict[str, object]:
+    return json.loads(
+        ensure_data_path(TARGETED_PREDICTION_MANIFEST).read_text(encoding="utf-8")
+    )
+
+
+def load_targeted_prediction_table(
+    table: str,
+    **filters: object | None,
+) -> pd.DataFrame:
+    """Load one targeted-prediction table with Parquet predicate pushdown."""
+
+    if table not in TARGETED_PREDICTION_FILES:
+        raise KeyError(f"Unknown targeted-prediction table: {table}")
+    predicates = [
+        (column, "=", value)
+        for column, value in filters.items()
+        if value is not None
+    ]
+    return _read_filtered(TARGETED_PREDICTION_FILES[table], predicates)
 
 
 def load_prediction_manifest() -> dict[str, object]:
