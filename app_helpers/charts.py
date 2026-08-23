@@ -2098,3 +2098,306 @@ def correlation_heatmap_figure(
         yaxis={"autorange": "reversed", "tickfont": {"size": 10}},
     )
     return figure
+
+
+def prediction_performance_figure(
+    frame: pd.DataFrame,
+    *,
+    metric: str,
+    block_labels: dict[str, str],
+    model_labels: dict[str, str],
+    title: str,
+) -> go.Figure:
+    """Held-out performance across predictor blocks and model variants."""
+
+    selected = frame.loc[frame["metric"].eq(metric) & frame["value"].notna()].copy()
+    figure = go.Figure()
+    colors = {
+        "dummy": "#9AA5B1",
+        "covariates": "#6A51A3",
+        "network_only": "#2C7FB8",
+        "covariates_plus_network": "#E66101",
+    }
+    for variant, subset in selected.groupby("model_variant", observed=True):
+        figure.add_trace(
+            go.Bar(
+                name=model_labels.get(str(variant), str(variant)),
+                x=[block_labels.get(str(value), str(value)) for value in subset["predictor_block"]],
+                y=subset["value"],
+                marker_color=colors.get(str(variant), "#526273"),
+                customdata=np.column_stack([subset["n_held_out"], subset["status"]]),
+                hovertemplate=(
+                    "%{x}<br>Held-out " + metric + ": %{y:.3f}<br>n=%{customdata[0]}"
+                    "<br>Status=%{customdata[1]}<extra>%{fullData.name}</extra>"
+                ),
+            )
+        )
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"},
+        template="plotly_white",
+        barmode="group",
+        height=560,
+        legend={"orientation": "h", "y": 1.12},
+        margin={"l": 70, "r": 30, "t": 100, "b": 150},
+        xaxis={"tickangle": -35},
+        yaxis_title=metric,
+    )
+    return figure
+
+
+def prediction_ct_ts_figure(
+    frame: pd.DataFrame,
+    *,
+    outcome_labels: dict[str, str],
+    title: str,
+) -> go.Figure:
+    """Forest plot of held-out CT-minus-TS primary-metric differences."""
+
+    selected = frame.loc[frame["performance_difference"].notna()].copy()
+    selected["display"] = selected["outcome"].map(outcome_labels).fillna(selected["outcome"])
+    selected["display"] += " · " + selected["comparison"].str.replace("_", " ")
+    selected = selected.sort_values("performance_difference")
+    figure = go.Figure(
+        go.Scatter(
+            x=selected["performance_difference"],
+            y=selected["display"],
+            mode="markers",
+            marker={"size": 10, "color": "#2C7FB8"},
+            error_x={
+                "type": "data",
+                "symmetric": False,
+                "array": selected["ci_high"] - selected["performance_difference"],
+                "arrayminus": selected["performance_difference"] - selected["ci_low"],
+            },
+            customdata=np.column_stack(
+                [
+                    selected["ci_low"],
+                    selected["ci_high"],
+                    selected["p_value"],
+                    selected["fdr_global"],
+                    selected["fdr_within_outcome"],
+                ]
+            ),
+            hovertemplate=(
+                "%{y}<br>CT advantage: %{x:.3f}<br>95% CI: %{customdata[0]:.3f} to "
+                "%{customdata[1]:.3f}<br>p=%{customdata[2]:.3g}<br>global FDR=%{customdata[3]:.3g}"
+                "<br>within-outcome FDR=%{customdata[4]:.3g}<extra></extra>"
+            ),
+        )
+    )
+    figure.add_vline(x=0, line_dash="dash", line_color="#526273")
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"},
+        template="plotly_white",
+        height=max(480, 70 + 36 * len(selected)),
+        margin={"l": 260, "r": 30, "t": 80, "b": 70},
+        xaxis_title="CT minus TS performance (positive favors CT)",
+    )
+    return figure
+
+
+def prediction_heatmap_figure(
+    frame: pd.DataFrame,
+    *,
+    metric: str,
+    block_labels: dict[str, str],
+    outcome_labels: dict[str, str],
+    title: str,
+) -> go.Figure:
+    selected = frame.loc[frame["metric"].eq(metric) & frame["value"].notna()].copy()
+    pivot = selected.pivot_table(
+        index="predictor_block", columns="outcome", values="value", aggfunc="first"
+    )
+    figure = go.Figure(
+        go.Heatmap(
+            z=pivot.to_numpy(),
+            x=[outcome_labels.get(str(value), str(value)) for value in pivot.columns],
+            y=[block_labels.get(str(value), str(value)) for value in pivot.index],
+            colorscale="Viridis",
+            colorbar={"title": metric},
+            hovertemplate="Block: %{y}<br>Outcome: %{x}<br>Performance: %{z:.3f}<extra></extra>",
+        )
+    )
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"},
+        template="plotly_white",
+        height=max(520, 150 + 34 * len(pivot)),
+        margin={"l": 220, "r": 35, "t": 80, "b": 170},
+        xaxis={"tickangle": -35},
+    )
+    return figure
+
+
+def prediction_curve_figure(frame: pd.DataFrame, *, curve: str, title: str) -> go.Figure:
+    selected = frame.loc[frame["curve"].eq(curve)].copy()
+    figure = go.Figure()
+    for label, subset in selected.groupby("class_label", observed=True):
+        figure.add_trace(
+            go.Scatter(
+                x=subset["x"], y=subset["y"], mode="lines+markers",
+                name=str(label), marker={"size": 5},
+                hovertemplate="x=%{x:.3f}<br>y=%{y:.3f}<extra>%{fullData.name}</extra>",
+            )
+        )
+    if curve in {"ROC", "Calibration"}:
+        figure.add_trace(
+            go.Scatter(x=[0, 1], y=[0, 1], mode="lines", line={"dash": "dash", "color": "#9AA5B1"}, name="Reference")
+        )
+    axis = {
+        "ROC": ("False-positive rate", "True-positive rate"),
+        "Precision-recall": ("Recall", "Precision"),
+        "Calibration": ("Predicted probability", "Observed fraction"),
+    }.get(curve, ("x", "y"))
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"}, template="plotly_white",
+        height=520, xaxis_title=axis[0], yaxis_title=axis[1],
+        legend={"orientation": "h", "y": 1.1},
+    )
+    return figure
+
+
+def prediction_observed_figure(frame: pd.DataFrame, *, title: str) -> go.Figure:
+    value_column = "predicted_expected" if "predicted_expected" in frame and frame["predicted_expected"].notna().any() else "predicted"
+    truth = pd.to_numeric(frame["target"], errors="coerce")
+    estimate = pd.to_numeric(frame[value_column], errors="coerce")
+    sample_ids = frame.get("sample_id", pd.Series("Anonymous", index=frame.index)).astype(str)
+    figure = go.Figure(
+        go.Scatter(
+            x=truth, y=estimate, mode="markers", marker={"size": 8, "opacity": 0.75, "color": "#2C7FB8"},
+            customdata=sample_ids.to_numpy()[:, None],
+            hovertemplate=(
+                "Sample=%{customdata[0]}<br>Observed=%{x:.3f}<br>"
+                "Predicted=%{y:.3f}<extra></extra>"
+            ),
+        )
+    )
+    finite = np.r_[truth[np.isfinite(truth)], estimate[np.isfinite(estimate)]]
+    if finite.size:
+        bounds = [float(np.min(finite)), float(np.max(finite))]
+        figure.add_trace(go.Scatter(x=bounds, y=bounds, mode="lines", line={"dash": "dash", "color": "#9AA5B1"}, name="Identity"))
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"}, template="plotly_white",
+        height=520, xaxis_title="Observed", yaxis_title="Held-out prediction",
+    )
+    return figure
+
+
+def prediction_error_figure(frame: pd.DataFrame, *, title: str) -> go.Figure:
+    """Held-out residual versus fitted and error-distribution diagnostics."""
+
+    value_column = "predicted_expected" if "predicted_expected" in frame and frame["predicted_expected"].notna().any() else "predicted"
+    truth = pd.to_numeric(frame["target"], errors="coerce")
+    estimate = pd.to_numeric(frame[value_column], errors="coerce")
+    residual = truth - estimate
+    sample_ids = frame.get("sample_id", pd.Series("Anonymous", index=frame.index)).astype(str)
+    figure = make_subplots(rows=1, cols=2, subplot_titles=("Residual versus predicted", "Error distribution"))
+    figure.add_trace(
+        go.Scatter(
+            x=estimate, y=residual, mode="markers",
+            marker={"size": 7, "opacity": 0.7, "color": "#2C7FB8"},
+            customdata=sample_ids.to_numpy()[:, None],
+            hovertemplate=(
+                "Sample=%{customdata[0]}<br>Predicted=%{x:.3f}<br>"
+                "Residual=%{y:.3f}<extra></extra>"
+            ),
+            showlegend=False,
+        ),
+        row=1, col=1,
+    )
+    figure.add_hline(y=0, line_dash="dash", line_color="#9AA5B1", row=1, col=1)
+    figure.add_trace(
+        go.Histogram(x=residual, nbinsx=24, marker_color="#E66101", showlegend=False),
+        row=1, col=2,
+    )
+    figure.update_xaxes(title_text="Held-out prediction", row=1, col=1)
+    figure.update_yaxes(title_text="Observed − predicted", row=1, col=1)
+    figure.update_xaxes(title_text="Observed − predicted", row=1, col=2)
+    figure.update_yaxes(title_text="Donors", row=1, col=2)
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"},
+        template="plotly_white", height=480, margin={"l": 70, "r": 30, "t": 90, "b": 60},
+    )
+    return figure
+
+
+def prediction_confusion_figure(frame: pd.DataFrame, *, title: str) -> go.Figure:
+    matrix = frame.pivot_table(index="actual", columns="predicted_class", values="n", aggfunc="sum", fill_value=0)
+    figure = go.Figure(
+        go.Heatmap(
+            z=matrix.to_numpy(), x=matrix.columns.astype(str), y=matrix.index.astype(str),
+            colorscale="Blues", text=matrix.to_numpy(), texttemplate="%{text}",
+            hovertemplate="Actual=%{y}<br>Predicted=%{x}<br>n=%{z}<extra></extra>",
+            colorbar={"title": "Donors"},
+        )
+    )
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"}, template="plotly_white",
+        height=460, xaxis_title="Predicted", yaxis_title="Actual",
+        margin={"l": 80, "r": 30, "t": 80, "b": 70},
+    )
+    return figure
+
+
+def prediction_threshold_figure(frame: pd.DataFrame, *, title: str) -> go.Figure:
+    """Binary held-out sensitivity/specificity across probability thresholds."""
+
+    probability_columns = [column for column in frame if column.startswith("probability_")]
+    if len(probability_columns) != 2:
+        return go.Figure()
+    positive_column = probability_columns[-1]
+    positive_label = positive_column.removeprefix("probability_")
+    score = pd.to_numeric(frame[positive_column], errors="coerce").to_numpy()
+    numeric_truth = pd.to_numeric(frame["target"], errors="coerce")
+    try:
+        numeric_positive = float(positive_label)
+    except ValueError:
+        truth = frame["target"].astype(str).eq(positive_label).to_numpy()
+    else:
+        truth = numeric_truth.eq(numeric_positive).to_numpy()
+    thresholds = np.linspace(0, 1, 101)
+    sensitivity, specificity, balanced = [], [], []
+    for threshold in thresholds:
+        predicted = score >= threshold
+        tp = np.sum(predicted & truth)
+        fn = np.sum((~predicted) & truth)
+        tn = np.sum((~predicted) & (~truth))
+        fp = np.sum(predicted & (~truth))
+        sens = tp / (tp + fn) if tp + fn else np.nan
+        spec = tn / (tn + fp) if tn + fp else np.nan
+        sensitivity.append(sens)
+        specificity.append(spec)
+        balanced.append((sens + spec) / 2)
+    figure = go.Figure()
+    for label, values, color in (
+        ("Sensitivity", sensitivity, "#E66101"),
+        ("Specificity", specificity, "#2C7FB8"),
+        ("Balanced accuracy", balanced, "#6A51A3"),
+    ):
+        figure.add_trace(
+            go.Scatter(x=thresholds, y=values, mode="lines", name=label, line={"color": color})
+        )
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"}, template="plotly_white",
+        height=460, xaxis_title=f"Threshold for {positive_label}", yaxis_title="Held-out rate",
+        yaxis={"range": [0, 1]}, legend={"orientation": "h", "y": 1.1},
+    )
+    return figure
+
+
+def prediction_coefficient_figure(frame: pd.DataFrame, *, title: str, limit: int = 30) -> go.Figure:
+    selected = frame.nlargest(limit, "abs_standardized_coefficient").sort_values("standardized_coefficient")
+    labels = selected.get("display_feature", selected["feature_name"])
+    figure = go.Figure(
+        go.Bar(
+            x=selected["standardized_coefficient"], y=labels, orientation="h",
+            marker_color=np.where(selected["standardized_coefficient"] >= 0, "#E66101", "#2C7FB8"),
+            customdata=np.column_stack([selected.get("kegg_annotation", pd.Series([""] * len(selected)))]),
+            hovertemplate="%{y}<br>Coefficient=%{x:.3g}<br>%{customdata[0]}<extra></extra>",
+        )
+    )
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"}, template="plotly_white",
+        height=max(520, 100 + 24 * len(selected)), margin={"l": 260, "r": 30, "t": 80, "b": 60},
+        xaxis_title="Standardized elastic-net coefficient",
+    )
+    return figure

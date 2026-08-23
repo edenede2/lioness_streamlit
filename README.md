@@ -69,6 +69,13 @@ The app includes two explicitly separated module definitions:
   with persistent per-table choices and one-click reset.
 - Interactive module-size distributions and size-ranked AC/DLPFC/PCG composition
   bars, filterable to CT modules, TS modules, or both.
+- A separate leakage-reduced **Prediction** view for LIONESS. It compares pooled CT,
+  pooled TS, individual tissues/pairs, resolved CT/TS blocks, and combined blocks for
+  eight prespecified targets using dummy, demographics/APOE, network-only, and adjusted
+  elastic-net models. The view includes held-out metrics, 2,000-resample paired CT-minus-TS
+  bootstrap intervals, classification and regression diagnostics, standardized coefficients,
+  and KEGG annotations. Per-module BH FDR < 0.10 is the clearly labeled exploratory default;
+  unfiltered and global/per-module 0.05/0.10 masks remain selectable.
 
 ## Important public-release check
 
@@ -82,6 +89,9 @@ data. Before making the GitHub repository public, confirm that the ROSMAP data-u
 agreement and your institutional approval allow public sharing of these derived
 individual-level values. If they do not, deploy from a private repository or replace
 the donor-level Parquet files with aggregate-only data.
+
+Prediction diagnostics use a separate random `P-…` mapping. That mapping and its salt
+are also discarded; it cannot be joined back to the explorer's older sample mapping.
 
 ## Run locally
 
@@ -139,8 +149,9 @@ credentials_json = '''
 5. Deploy. The first access to a view downloads only its required indexed files to
    Streamlit's ephemeral cache; later reruns in the same process reuse them.
 
-`requirements.txt` pins the exact direct dependency versions validated with a clean
-resolver install, `pip check`, the complete test suite, and a Streamlit app execution.
+`requirements.txt` pins the direct dependency versions validated by resolving the
+complete dependency graph with binary-only CPython 3.12 Linux wheels, followed by the
+app data/chart suite and Streamlit 1.61 smoke tests.
 
 ### Google Drive data backend
 
@@ -177,8 +188,9 @@ sizes, and checksums against the local bundle, and writes no credential fields.
 ### Required Python version
 
 Select **Python 3.12** in Streamlit Community Cloud's Advanced settings. Do not use
-Python 3.14 with this dependency set: PyArrow 21 does not publish a CPython 3.14
-wheel, so the platform attempts an unsupported source build and reports
+Python 3.14 with this dependency set: the app deliberately pins the verified
+PyArrow 20.0.0 CPython 3.12 Linux wheel. A mismatched Python runtime may attempt an
+unsupported source build and report
 `Failed to build pyarrow`.
 
 If the app was already created with Python 3.14, changing `requirements.txt` is not
@@ -256,6 +268,81 @@ python scripts/build_public_data.py --kegg-only
 The build is intentionally one-way: donor/projid columns and the pseudonym salt are
 not written. `data/data_manifest.json` records separate module-set row counts,
 source hashes, correction-family sizes, unavailable CT modules, and deploy-file hashes.
+
+Build the leakage-reduced and exploratory prediction inputs. The exploratory
+existing-reference branch is also deduplicated for prediction: its already-computed
+distinct-node edge statistics are retained, artificial repeated-node edges are removed,
+and per-module/global BH are recalculated.
+
+```bash
+python ../../scripts/python/run_ad_control_differential_edges_rosmap.py \
+  --reference-design development_frozen \
+  --deduplicate-assignments \
+  --lioness-only \
+  --output-root ../../out/lioness_prediction_rosmap/20260823_leakage_reduced_lioness_prediction/networks
+python ../../scripts/python/build_deduplicated_existing_prediction_edge_tests.py
+python ../../scripts/python/prepare_lioness_prediction_features.py \
+  --network-root ../../out/lioness_prediction_rosmap/20260823_leakage_reduced_lioness_prediction/networks \
+  --output-root ../../out/lioness_prediction_rosmap/20260823_leakage_reduced_lioness_prediction/prediction_features \
+  --reference-provenance development_frozen
+python ../../scripts/python/prepare_lioness_prediction_features.py \
+  --network-root ../../out/lioness_prediction_rosmap/20260823_leakage_reduced_lioness_prediction/networks_existing_deduplicated \
+  --output-root ../../out/lioness_prediction_rosmap/20260823_leakage_reduced_lioness_prediction/prediction_features_existing_sensitivity \
+  --reference-provenance existing_sensitivity
+python ../../scripts/python/fit_lioness_prediction_models.py \
+  --feature-root ../../out/lioness_prediction_rosmap/20260823_leakage_reduced_lioness_prediction/prediction_features \
+  --output-root ../../out/lioness_prediction_rosmap/20260823_leakage_reduced_lioness_prediction/models_final \
+  --reference-provenance development_frozen
+python ../../scripts/python/fit_lioness_prediction_models.py \
+  --feature-root ../../out/lioness_prediction_rosmap/20260823_leakage_reduced_lioness_prediction/prediction_features_existing_sensitivity \
+  --output-root ../../out/lioness_prediction_rosmap/20260823_leakage_reduced_lioness_prediction/models_existing_sensitivity_final \
+  --reference-provenance existing_sensitivity
+```
+
+Then combine, sanitize, package, and validate the prediction-only public sub-bundle:
+
+```bash
+python ../../scripts/python/fit_lioness_prediction_models.py \
+  --output-root ../../out/lioness_prediction_rosmap/20260823_leakage_reduced_lioness_prediction/models_final \
+  --combine-only
+python ../../scripts/python/fit_lioness_prediction_models.py \
+  --output-root ../../out/lioness_prediction_rosmap/20260823_leakage_reduced_lioness_prediction/models_existing_sensitivity_final \
+  --combine-only
+python ../../scripts/python/merge_lioness_prediction_model_roots.py \
+  --primary ../../out/lioness_prediction_rosmap/20260823_leakage_reduced_lioness_prediction/models_final \
+  --sensitivity ../../out/lioness_prediction_rosmap/20260823_leakage_reduced_lioness_prediction/models_existing_sensitivity_final \
+  --output ../../out/lioness_prediction_rosmap/20260823_leakage_reduced_lioness_prediction/models_combined
+python ../../scripts/python/enforce_sparse_prediction_failures.py \
+  --model-root ../../out/lioness_prediction_rosmap/20260823_leakage_reduced_lioness_prediction/models_combined
+python ../../scripts/python/recalculate_lioness_prediction_metrics.py \
+  --model-root ../../out/lioness_prediction_rosmap/20260823_leakage_reduced_lioness_prediction/models_combined
+python ../../scripts/python/compare_lioness_prediction_ct_ts.py \
+  --model-root ../../out/lioness_prediction_rosmap/20260823_leakage_reduced_lioness_prediction/models_combined
+python ../../scripts/python/build_lioness_prediction_public_bundle.py \
+  --model-root ../../out/lioness_prediction_rosmap/20260823_leakage_reduced_lioness_prediction/models_combined
+python ../../scripts/python/validate_lioness_prediction_outputs.py \
+  --root ../../out/lioness_prediction_rosmap/20260823_leakage_reduced_lioness_prediction \
+  --public-root data/prediction
+```
+
+The compact metrics, bootstrap, curve, confusion, and top-coefficient files are suitable
+for the repository hot cache. Donor-level prediction diagnostics are partitioned for
+predicate reads and should remain in the indexed Google Drive prediction directory.
+
+Upload only new or changed prediction files, using one Drive listing request before the
+media uploads, then rebuild the static index:
+
+```bash
+python scripts/upload_prediction_data.py \
+  --credentials /path/to/service-account.json \
+  --root-folder-id 1dTj5SkLxuDIvII5LayLViqOzjKQt-dos \
+  --local-prediction data/prediction
+python scripts/build_drive_index.py \
+  --credentials /path/to/service-account.json \
+  --root-folder-id 1dTj5SkLxuDIvII5LayLViqOzjKQt-dos \
+  --local-data data \
+  --output drive_file_index.json
+```
 
 Validate a staged or deployed bundle, including privacy, hashes, schemas, row counts,
 sample consistency, edge identities, entropy ranges, resolved MDC, and the 95-MiB cap:

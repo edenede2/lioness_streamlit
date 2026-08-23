@@ -98,6 +98,61 @@ SAMPLE_METADATA = DATA_DIR / "sample_metadata.parquet"
 MDC_SUMMARY = DATA_DIR / "mdc_ad_vs_control_summary.tsv"
 MDC_RESOLVED = DATA_DIR / "mdc_resolved_ad_vs_control.tsv"
 DATA_MANIFEST = DATA_DIR / "data_manifest.json"
+PREDICTION_DIR = DATA_DIR / "prediction"
+PREDICTION_MANIFEST = PREDICTION_DIR / "prediction_public_manifest.json"
+PREDICTION_PERFORMANCE = PREDICTION_DIR / "prediction_performance.parquet"
+PREDICTION_BOOTSTRAP = PREDICTION_DIR / "prediction_ct_ts_bootstrap.parquet"
+PREDICTION_CURVES = PREDICTION_DIR / "prediction_curves.parquet"
+PREDICTION_CONFUSION = PREDICTION_DIR / "prediction_confusion.parquet"
+PREDICTION_COEFFICIENTS = PREDICTION_DIR / "prediction_top_coefficients.parquet"
+PREDICTION_PREDICTIONS = PREDICTION_DIR / "prediction_diagnostics.parquet"
+PREDICTION_WHOLE_NETWORK = PREDICTION_DIR / "prediction_whole_network_features.parquet"
+
+PREDICTION_OUTCOME_LABELS = {
+    "diagnosis_binary": "Diagnosis: AD versus Control",
+    "diagnosis_three_class": "Diagnosis: Control / MCI / AD",
+    "cogdx": "Final cognitive diagnosis code (CogDx 1–5)",
+    "cogng_demog_slope": "Demographic-adjusted cognitive slope",
+    "cogng_path_slope": "Pathology-adjusted cognitive slope",
+    "motor10_demog_slope": "Demographic-adjusted motor slope",
+    "sqrt_parksc_demog_slope": "Demographic-adjusted Parkinsonian-score slope",
+    "parkinsonism": "Parkinsonism",
+}
+PREDICTION_DESIGN_LABELS = {
+    "edge_sums": "Whole-network retained-edge sums",
+    "module_connectivity": "Module connectivity",
+}
+PREDICTION_MASK_LABELS = {
+    "all": "All edges",
+    "global_fdr05": "Global BH FDR < 0.05",
+    "global_fdr10": "Global BH FDR < 0.10",
+    "per_module_fdr05": "Per-module BH FDR < 0.05",
+    "per_module_fdr10": "Per-module BH FDR < 0.10 (exploratory)",
+}
+PREDICTION_MODEL_LABELS = {
+    "dummy": "Dummy / intercept baseline",
+    "covariates": "Demographics + APOE baseline",
+    "network_only": "Network only",
+    "covariates_plus_network": "Demographics + APOE + network",
+}
+PREDICTION_REFERENCE_LABELS = {
+    "development_frozen": "Leakage-reduced frozen development reference",
+    "existing_sensitivity": "Exploratory existing all-donor/all-Control reference",
+}
+PREDICTION_BLOCK_LABELS = {
+    "CT_pooled": "CT pooled",
+    "TS_pooled": "TS pooled",
+    "CT_TS_pooled": "CT + TS pooled",
+    "AC": "AC",
+    "DLPFC": "DLPFC",
+    "PCG": "PCG",
+    "AC_DLPFC": "AC–DLPFC",
+    "AC_PCG": "AC–PCG",
+    "DLPFC_PCG": "DLPFC–PCG",
+    "CT_resolved": "All three CT tissue pairs",
+    "TS_resolved": "All three TS tissues",
+    "all_resolved": "All six resolved components",
+}
 
 MODULE_SET_FILENAMES = (
     "aggregate_plot_data.parquet",
@@ -1208,3 +1263,90 @@ def dataframe_to_tsv_bytes(frame: pd.DataFrame) -> bytes:
     buffer = StringIO()
     frame.to_csv(buffer, sep="\t", index=False)
     return buffer.getvalue().encode("utf-8")
+
+
+def prediction_data_available() -> bool:
+    """Return whether the compact prediction catalog is local or Drive-indexed."""
+
+    return data_path_available(PREDICTION_MANIFEST) and data_path_available(
+        PREDICTION_PERFORMANCE
+    )
+
+
+def load_prediction_manifest() -> dict[str, object]:
+    return json.loads(ensure_data_path(PREDICTION_MANIFEST).read_text(encoding="utf-8"))
+
+
+def load_prediction_performance(
+    reference_provenance: str | None = None,
+    module_definition: str | None = None,
+    network_method: str | None = None,
+    predictor_design: str | None = None,
+    edge_mask: str | None = None,
+    score_normalization: str | None = None,
+    outcome: str | None = None,
+) -> pd.DataFrame:
+    filters = [
+        (column, "=", value)
+        for column, value in (
+            ("reference_provenance", reference_provenance),
+            ("module_definition", module_definition),
+            ("network_method", network_method),
+            ("predictor_design", predictor_design),
+            ("edge_mask", edge_mask),
+            ("score_normalization", score_normalization),
+            ("outcome", outcome),
+        )
+        if value is not None
+    ]
+    return _read_filtered(PREDICTION_PERFORMANCE, filters or None)
+
+
+def load_prediction_bootstrap(
+    reference_provenance: str | None = None,
+    module_definition: str | None = None,
+    network_method: str | None = None,
+    predictor_design: str | None = None,
+    edge_mask: str | None = None,
+    score_normalization: str | None = None,
+    outcome: str | None = None,
+) -> pd.DataFrame:
+    filters = [
+        (column, "=", value)
+        for column, value in (
+            ("reference_provenance", reference_provenance),
+            ("module_definition", module_definition),
+            ("network_method", network_method),
+            ("predictor_design", predictor_design),
+            ("edge_mask", edge_mask),
+            ("score_normalization", score_normalization),
+            ("outcome", outcome),
+        )
+        if value is not None
+    ]
+    return _read_filtered(PREDICTION_BOOTSTRAP, filters or None)
+
+
+def load_prediction_curves(**filters: str | None) -> pd.DataFrame:
+    predicates = [(column, "=", value) for column, value in filters.items() if value is not None]
+    return _read_filtered(PREDICTION_CURVES, predicates or None)
+
+
+def load_prediction_confusion(**filters: str | None) -> pd.DataFrame:
+    predicates = [(column, "=", value) for column, value in filters.items() if value is not None]
+    return _read_filtered(PREDICTION_CONFUSION, predicates or None)
+
+
+def load_prediction_coefficients(**filters: str | None) -> pd.DataFrame:
+    predicates = [(column, "=", value) for column, value in filters.items() if value is not None]
+    return _read_filtered(PREDICTION_COEFFICIENTS, predicates or None)
+
+
+def load_prediction_diagnostics(**filters: str | None) -> pd.DataFrame:
+    predicates = [(column, "=", value) for column, value in filters.items() if value is not None]
+    return _read_filtered(PREDICTION_PREDICTIONS, predicates or None)
+
+
+def load_prediction_whole_network_features(**filters: str | None) -> pd.DataFrame:
+    predicates = [(column, "=", value) for column, value in filters.items() if value is not None]
+    return _read_filtered(PREDICTION_WHOLE_NETWORK, predicates or None)

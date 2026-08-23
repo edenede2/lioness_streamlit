@@ -23,6 +23,7 @@ if not all(
         "module_finder_figure",
         "mdc_entropy_figure",
         "pathway_mdc_heatmap_figure",
+        "prediction_performance_figure",
     )
 ):
     _chart_helpers = importlib.reload(_chart_helpers)
@@ -48,6 +49,15 @@ from app_helpers.charts import (
     module_size_distribution_figure,
     pathway_mdc_detail_figure,
     pathway_mdc_heatmap_figure,
+    prediction_coefficient_figure,
+    prediction_confusion_figure,
+    prediction_ct_ts_figure,
+    prediction_curve_figure,
+    prediction_heatmap_figure,
+    prediction_observed_figure,
+    prediction_error_figure,
+    prediction_performance_figure,
+    prediction_threshold_figure,
     resolved_to_long,
 )
 from app_helpers.correlations import calculate_correlations
@@ -74,6 +84,12 @@ from app_helpers.data import (
     NUMERIC_OUTCOMES,
     OUTCOME_LABELS,
     PHENOTYPE_LABELS,
+    PREDICTION_BLOCK_LABELS,
+    PREDICTION_DESIGN_LABELS,
+    PREDICTION_MASK_LABELS,
+    PREDICTION_MODEL_LABELS,
+    PREDICTION_OUTCOME_LABELS,
+    PREDICTION_REFERENCE_LABELS,
     SCALE_LABELS,
     SCORE_NORMALIZATION_LABELS,
     build_pathway_mdc_rows,
@@ -98,9 +114,18 @@ from app_helpers.data import (
     load_resolved_statistics,
     load_sample_metadata,
     load_tissue_mapping,
+    load_prediction_bootstrap,
+    load_prediction_coefficients,
+    load_prediction_confusion,
+    load_prediction_curves,
+    load_prediction_diagnostics,
+    load_prediction_manifest,
+    load_prediction_performance,
+    load_prediction_whole_network_features,
     load_volcano_bins,
     load_volcano_candidates,
     module_label,
+    prediction_data_available,
     require_data_files,
     selected_annotation,
     summarize_pathway_mdc_rows,
@@ -321,6 +346,63 @@ def cached_feature_definitions() -> pd.DataFrame:
     return load_feature_definitions()
 
 
+@st.cache_data(show_spinner=False, max_entries=32)
+def cached_prediction_performance(
+    reference_provenance: str,
+    module_definition: str,
+    network_method: str,
+    predictor_design: str,
+    edge_mask: str,
+    score_normalization: str,
+    outcome: str | None = None,
+) -> pd.DataFrame:
+    return load_prediction_performance(
+        reference_provenance, module_definition, network_method, predictor_design, edge_mask,
+        score_normalization, outcome,
+    )
+
+
+@st.cache_data(show_spinner=False, max_entries=32)
+def cached_prediction_bootstrap(
+    reference_provenance: str,
+    module_definition: str,
+    network_method: str,
+    predictor_design: str,
+    edge_mask: str,
+    score_normalization: str,
+    outcome: str | None = None,
+) -> pd.DataFrame:
+    return load_prediction_bootstrap(
+        reference_provenance, module_definition, network_method, predictor_design, edge_mask,
+        score_normalization, outcome,
+    )
+
+
+@st.cache_data(show_spinner=False, max_entries=32)
+def cached_prediction_curves(**filters: str | None) -> pd.DataFrame:
+    return load_prediction_curves(**filters)
+
+
+@st.cache_data(show_spinner=False, max_entries=32)
+def cached_prediction_confusion(**filters: str | None) -> pd.DataFrame:
+    return load_prediction_confusion(**filters)
+
+
+@st.cache_data(show_spinner=False, max_entries=32)
+def cached_prediction_coefficients(**filters: str | None) -> pd.DataFrame:
+    return load_prediction_coefficients(**filters)
+
+
+@st.cache_data(show_spinner=False, max_entries=32)
+def cached_prediction_diagnostics(**filters: str | None) -> pd.DataFrame:
+    return load_prediction_diagnostics(**filters)
+
+
+@st.cache_data(show_spinner=False, max_entries=24)
+def cached_prediction_whole_network(**filters: str | None) -> pd.DataFrame:
+    return load_prediction_whole_network_features(**filters)
+
+
 @st.cache_data(show_spinner=False)
 def cached_tissue_mapping() -> pd.DataFrame:
     return load_tissue_mapping()
@@ -486,6 +568,419 @@ def fdr_text(module_manifest: dict[str, object], module_count: int) -> str:
     )
 
 
+def render_prediction_view() -> None:
+    """Render the leakage-reduced LIONESS held-out prediction catalog lazily."""
+
+    st.subheader("Leakage-reduced LIONESS prediction")
+    st.caption(
+        "The module definitions are fixed from the prior analysis, but reference networks, "
+        "AD–Control edge masks, preprocessing, and elastic-net tuning use development data "
+        "only. Held-out donors are add-one scored against frozen references. This is therefore "
+        "leakage-reduced conditional on the module definitions, not a fully external validation."
+    )
+    if not prediction_data_available():
+        st.info(
+            "Prediction results have not yet been added to this deployed data bundle. "
+            "The rest of the network explorer remains available."
+        )
+        return
+    manifest = load_prediction_manifest()
+    with st.sidebar:
+        st.header("Prediction controls")
+        reference_provenance = st.selectbox(
+            "Prediction reference design",
+            options=list(PREDICTION_REFERENCE_LABELS),
+            format_func=lambda value: PREDICTION_REFERENCE_LABELS[value],
+            index=0,
+            key="prediction_reference_provenance",
+        )
+        module_definition = st.selectbox(
+            "Prediction module definition",
+            options=list(MODULE_SET_LABELS),
+            format_func=lambda value: MODULE_SET_LABELS[value],
+            key="prediction_module_definition",
+        )
+        methods = MODULE_SET_METHODS[module_definition]
+        network_method = st.selectbox(
+            "LIONESS method",
+            options=methods,
+            format_func=lambda value: (
+                (
+                    "Development-standard LIONESS (314-donor frozen reference)"
+                    if value == "standard"
+                    else "Development-Control LIONESS (114-Control frozen reference)"
+                )
+                if reference_provenance == "development_frozen"
+                else readable_method(value)
+            ),
+            key="prediction_network_method",
+        )
+        predictor_design = st.radio(
+            "Predictor design",
+            options=list(PREDICTION_DESIGN_LABELS),
+            format_func=lambda value: PREDICTION_DESIGN_LABELS[value],
+            key="prediction_design",
+        )
+        edge_mask = st.selectbox(
+            "Development AD–Control edge mask",
+            options=list(PREDICTION_MASK_LABELS),
+            format_func=lambda value: PREDICTION_MASK_LABELS[value],
+            index=list(PREDICTION_MASK_LABELS).index("per_module_fdr10"),
+            key="prediction_edge_mask",
+        )
+        if predictor_design == "module_connectivity":
+            score_normalization = st.radio(
+                "Connectivity score",
+                options=["standard_pruned", "retained_edge"],
+                format_func=lambda value: SCORE_NORMALIZATION_LABELS[value],
+                key="prediction_normalization",
+            )
+        else:
+            score_normalization = "not_applicable"
+        outcome = st.selectbox(
+            "Prediction target",
+            options=list(PREDICTION_OUTCOME_LABELS),
+            format_func=lambda value: PREDICTION_OUTCOME_LABELS[value],
+            key="prediction_outcome",
+        )
+
+    performance = cached_prediction_performance(
+        reference_provenance, module_definition, network_method, predictor_design, edge_mask,
+        score_normalization, None,
+    )
+    if performance.empty:
+        st.warning("No fitted models are available for these prediction controls.")
+        return
+    if reference_provenance == "existing_sensitivity":
+        st.warning(
+            "Exploratory sensitivity only: these scores use the previously established "
+            "all-donor Standard reference or all-Control Control reference. Held-out donor "
+            "expression therefore contributed to the unsupervised reference construction; "
+            "do not interpret this option as the primary leakage-reduced evaluation."
+        )
+    selected_performance = performance.loc[performance["outcome"].eq(outcome)].copy()
+    if selected_performance.empty:
+        st.warning("The selected target is unavailable for this predictor configuration.")
+        return
+    primary_metric = str(selected_performance["primary_metric"].dropna().iloc[0])
+    unavailable = selected_performance.loc[selected_performance["status"].ne("available")]
+    if not unavailable.empty:
+        st.warning(
+            f"{len(unavailable)} model result(s) are unavailable because the selected "
+            "edge mask left no variable development predictors or fitting was not estimable."
+        )
+    st.info(
+        "CogDx and diagnosis are not independent replications: diagnosis is essentially a "
+        "grouped version of CogDx in this cohort. Outcomes with missing values are evaluated "
+        "only in donors with an observed target; outcomes are never imputed."
+    )
+    summary_columns = st.columns(4)
+    summary_columns[0].metric("Development donors", int(selected_performance["n_development"].max()))
+    summary_columns[1].metric("Held-out donors", int(selected_performance["n_held_out"].max()))
+    summary_columns[2].metric("Primary metric", primary_metric)
+    summary_columns[3].metric("Edge mask", PREDICTION_MASK_LABELS[edge_mask])
+
+    overview_tab, comparison_tab, diagnostics_tab, coefficient_tab, tables_tab, methods_tab = st.tabs(
+        ["Performance", "CT versus TS", "Diagnostics", "Coefficients", "Tables", "Methods"]
+    )
+    with overview_tab:
+        figure = prediction_performance_figure(
+            selected_performance,
+            metric=primary_metric,
+            block_labels=PREDICTION_BLOCK_LABELS,
+            model_labels=PREDICTION_MODEL_LABELS,
+            title=f"Held-out {PREDICTION_OUTCOME_LABELS[outcome]} performance",
+        )
+        st.plotly_chart(figure, use_container_width=True, config={"displaylogo": False})
+        st.caption(
+            "Lower is better for CogDx MAE. Higher is better for all other primary "
+            "metrics; held-out R² may be negative when a model performs worse than "
+            "predicting the held-out outcome mean."
+        )
+        adjusted = performance.loc[
+            performance["model_variant"].eq("covariates_plus_network")
+            & performance["status"].eq("available")
+            & performance["metric"].eq(performance["primary_metric"])
+        ].copy()
+        adjusted.loc[~adjusted["higher_is_better"].astype(bool), "value"] *= -1
+        adjusted["metric"] = "primary_performance"
+        if not adjusted.empty:
+            st.plotly_chart(
+                prediction_heatmap_figure(
+                    adjusted,
+                    metric="primary_performance",
+                    block_labels=PREDICTION_BLOCK_LABELS,
+                    outcome_labels=PREDICTION_OUTCOME_LABELS,
+                    title="Covariate-adjusted held-out primary performance by outcome and component block",
+                ),
+                use_container_width=True,
+                config={"displaylogo": False},
+            )
+            st.caption(
+                "Cells use each outcome's prespecified primary metric. CogDx is displayed as "
+                "negative MAE so that larger values consistently mean better performance; the "
+                "numerical scales are still not directly interchangeable across columns."
+            )
+        if predictor_design == "edge_sums":
+            with st.expander("Whole-network retained-edge sums", expanded=False):
+                whole_network = cached_prediction_whole_network(
+                    reference_provenance=reference_provenance,
+                    module_definition=module_definition,
+                    network_method=network_method,
+                    edge_mask=edge_mask,
+                )
+                st.caption(
+                    "Positive and negative magnitudes are the two independent model inputs. "
+                    "Signed and absolute sums are retained here for interpretation and download. "
+                    "These totals aggregate only retained within-module edges; no between-module "
+                    "edges are introduced."
+                )
+                filterable_dataframe(
+                    whole_network,
+                    table_key="prediction_whole_network_features",
+                    table_name="Whole-network edge-sum predictors",
+                    use_container_width=True,
+                    hide_index=True,
+                )
+                st.download_button(
+                    "Download whole-network predictor values (TSV)",
+                    data=dataframe_to_tsv_bytes(whole_network),
+                    file_name="lioness_prediction_whole_network_edge_sums.tsv",
+                    mime="text/tab-separated-values",
+                )
+
+    with comparison_tab:
+        bootstrap = cached_prediction_bootstrap(
+            reference_provenance, module_definition, network_method, predictor_design, edge_mask,
+            score_normalization, None,
+        )
+        if bootstrap.empty:
+            st.info("CT-versus-TS bootstrap comparisons are unavailable for this selection.")
+        else:
+            st.plotly_chart(
+                prediction_ct_ts_figure(
+                    bootstrap,
+                    outcome_labels=PREDICTION_OUTCOME_LABELS,
+                    title="Paired held-out CT-minus-TS performance with 95% bootstrap intervals",
+                ),
+                use_container_width=True,
+                config={"displaylogo": False},
+            )
+            st.caption(
+                "Positive values favor CT. For CogDx, the sign is reversed after calculating "
+                "MAE so that positive still means better CT performance. Global BH covers all "
+                "displayed prediction comparisons; within-outcome BH is also retained."
+            )
+            filterable_dataframe(
+                bootstrap,
+                table_key="prediction_bootstrap",
+                table_name="CT versus TS bootstrap comparisons",
+                use_container_width=True,
+                hide_index=True,
+            )
+
+    with diagnostics_tab:
+        available_blocks = [
+            block for block in PREDICTION_BLOCK_LABELS
+            if block in set(selected_performance["predictor_block"])
+        ]
+        diagnostic_block = st.selectbox(
+            "Diagnostic predictor block",
+            options=available_blocks,
+            format_func=lambda value: PREDICTION_BLOCK_LABELS[value],
+        )
+        diagnostic_variant = st.radio(
+            "Diagnostic model",
+            options=["network_only", "covariates_plus_network"],
+            format_func=lambda value: PREDICTION_MODEL_LABELS[value],
+            horizontal=True,
+        )
+        filters = {
+            "reference_provenance": reference_provenance,
+            "module_definition": module_definition,
+            "network_method": network_method,
+            "predictor_design": predictor_design,
+            "edge_mask": edge_mask,
+            "score_normalization": score_normalization,
+            "outcome": outcome,
+            "predictor_block": diagnostic_block,
+            "model_variant": diagnostic_variant,
+        }
+        diagnostics = cached_prediction_diagnostics(**filters)
+        if outcome in {"diagnosis_binary", "diagnosis_three_class", "parkinsonism"}:
+            curves = cached_prediction_curves(**filters)
+            confusion = cached_prediction_confusion(**filters)
+            if curves.empty:
+                st.info("Classification curves are unavailable for this fitted model.")
+            else:
+                curve_columns = st.columns(3)
+                for column, curve_name in zip(
+                    curve_columns, ["ROC", "Precision-recall", "Calibration"], strict=True
+                ):
+                    column.plotly_chart(
+                        prediction_curve_figure(
+                            curves, curve=curve_name,
+                            title=curve_name,
+                        ),
+                        use_container_width=True,
+                        config={"displaylogo": False},
+                    )
+            if not confusion.empty:
+                st.plotly_chart(
+                    prediction_confusion_figure(
+                        confusion, title="Held-out confusion matrix"
+                    ),
+                    use_container_width=True,
+                    config={"displaylogo": False},
+                )
+            if outcome in {"diagnosis_binary", "parkinsonism"} and not diagnostics.empty:
+                st.plotly_chart(
+                    prediction_threshold_figure(
+                        diagnostics, title="Held-out threshold diagnostics"
+                    ),
+                    use_container_width=True,
+                    config={"displaylogo": False},
+                )
+        elif diagnostics.empty:
+            st.info("Held-out donor diagnostics are unavailable in the local cache.")
+        else:
+            st.plotly_chart(
+                prediction_observed_figure(
+                    diagnostics,
+                    title=f"Observed versus held-out prediction: {PREDICTION_OUTCOME_LABELS[outcome]}",
+                ),
+                use_container_width=True,
+                config={"displaylogo": False},
+            )
+            st.plotly_chart(
+                prediction_error_figure(
+                    diagnostics,
+                    title="Held-out residual and error diagnostics",
+                ),
+                use_container_width=True,
+                config={"displaylogo": False},
+            )
+        if not diagnostics.empty:
+            filterable_dataframe(
+                diagnostics,
+                table_key="prediction_diagnostics",
+                table_name="Held-out prediction diagnostics",
+                use_container_width=True,
+                hide_index=True,
+            )
+            st.download_button(
+                "Download selected held-out diagnostics (TSV)",
+                data=dataframe_to_tsv_bytes(diagnostics),
+                file_name="lioness_prediction_heldout_diagnostics.tsv",
+                mime="text/tab-separated-values",
+            )
+
+    with coefficient_tab:
+        coefficient_filters = {
+            "reference_provenance": reference_provenance,
+            "module_definition": module_definition,
+            "network_method": network_method,
+            "predictor_design": predictor_design,
+            "edge_mask": edge_mask,
+            "score_normalization": score_normalization,
+            "outcome": outcome,
+        }
+        coefficients = cached_prediction_coefficients(**coefficient_filters)
+        coefficients = coefficients.loc[
+            coefficients["model_variant"].isin(["network_only", "covariates_plus_network"])
+        ]
+        if coefficients.empty:
+            st.info("No nonzero influential coefficients are available for this selection.")
+        else:
+            coefficient_block = st.selectbox(
+                "Coefficient predictor block",
+                options=sorted(coefficients["predictor_block"].unique()),
+                format_func=lambda value: PREDICTION_BLOCK_LABELS.get(value, value),
+            )
+            coefficient_variant = st.radio(
+                "Coefficient model",
+                options=sorted(coefficients["model_variant"].unique()),
+                format_func=lambda value: PREDICTION_MODEL_LABELS.get(value, value),
+                horizontal=True,
+                key="prediction_coefficient_variant",
+            )
+            shown = coefficients.loc[
+                coefficients["predictor_block"].eq(coefficient_block)
+                & coefficients["model_variant"].eq(coefficient_variant)
+            ]
+            st.plotly_chart(
+                prediction_coefficient_figure(
+                    shown,
+                    title="Largest standardized module/component coefficients",
+                ),
+                use_container_width=True,
+                config={"displaylogo": False},
+            )
+            filterable_dataframe(
+                shown,
+                table_key="prediction_coefficients",
+                table_name="Prediction coefficients and KEGG annotations",
+                use_container_width=True,
+                hide_index=True,
+            )
+            module_coefficients = shown.loc[shown["module"].notna()].copy()
+            if not module_coefficients.empty:
+                module_coefficients["component"] = (
+                    module_coefficients["feature_name"].astype(str)
+                    .str.split("__", n=1).str[1]
+                    .str.replace("MFBA9BA46", "DLPFC", regex=False)
+                )
+                component_summary = module_coefficients.groupby(
+                    ["coefficient_label", "component"], observed=True
+                ).agg(
+                    modules_shown=("module", "nunique"),
+                    coefficient_sum=("standardized_coefficient", "sum"),
+                    absolute_coefficient_sum=("abs_standardized_coefficient", "sum"),
+                    median_absolute_coefficient=("abs_standardized_coefficient", "median"),
+                ).reset_index()
+                filterable_dataframe(
+                    component_summary,
+                    table_key="prediction_component_coefficients",
+                    table_name="Component-level coefficient summary",
+                    use_container_width=True,
+                    hide_index=True,
+                )
+
+    with tables_tab:
+        filterable_dataframe(
+            selected_performance,
+            table_key="prediction_performance",
+            table_name="Held-out model metrics",
+            use_container_width=True,
+            hide_index=True,
+        )
+        st.download_button(
+            "Download selected held-out metrics (TSV)",
+            data=dataframe_to_tsv_bytes(selected_performance),
+            file_name="lioness_prediction_heldout_metrics.tsv",
+            mime="text/tab-separated-values",
+        )
+
+    with methods_tab:
+        st.markdown(
+            "Development-standard LIONESS uses all 314 development donors as its frozen "
+            "reference. Development donors are leave-one-out scored and held-out donors are "
+            "add-one scored. Development-Control LIONESS uses the 114 development Controls; "
+            "all other donors are add-one scored without using their outcome label. Differential "
+            "edge masks use only the 117 development AD and 114 development Controls. Models "
+            "use elastic-net regularization with five-fold development-only cross-validation "
+            "before one held-out evaluation. Logistic models use a 50/50 L1/L2 mix and tune "
+            "three regularization strengths; continuous models tune both the mixing fraction "
+            "and regularization strength."
+        )
+        st.caption(
+            "For prediction only, 30 exact repeated full-cohort tissue–gene assignment "
+            "rows were removed before scoring in both reference designs. Existing "
+            "association analyses elsewhere in the app were not changed."
+        )
+        st.json(manifest, expanded=False)
+
+
 try:
     require_data_files()
 except FileNotFoundError as error:
@@ -502,7 +997,14 @@ def _bundle_cache_state() -> dict[str, str | None]:
 def _synchronize_bundle_cache() -> str:
     """Clear cached tables exactly once when a new deploy manifest appears."""
     manifest_path = ensure_data_path(DATA_DIR / "data_manifest.json")
-    manifest_sha256 = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+    digest = hashlib.sha256(manifest_path.read_bytes())
+    if prediction_data_available():
+        try:
+            prediction_manifest_path = ensure_data_path(DATA_DIR / "prediction/prediction_public_manifest.json")
+            digest.update(prediction_manifest_path.read_bytes())
+        except (FileNotFoundError, RuntimeError):
+            pass
+    manifest_sha256 = digest.hexdigest()
     state = _bundle_cache_state()
     if state["manifest_sha256"] != manifest_sha256:
         st.cache_data.clear()
@@ -526,6 +1028,37 @@ st.markdown(
     "Explore donor-level LIONESS and BONOBO module features, including aggregate "
     "CT/TS and tissue-resolved components."
 )
+
+view_options = [
+    "Associations",
+    "Feature distributions",
+    "Correlation heatmaps",
+    "Prediction",
+    "Module finder",
+    "CT–TS screen",
+    "Edge summaries",
+    "Edge volcano",
+    "MDC",
+    "Statistics",
+    "KEGG enrichment",
+    "Module details",
+    "Methods & data",
+]
+active_view = st.pills(
+    "Analysis view",
+    options=view_options,
+    default="Associations",
+    selection_mode="single",
+    help=(
+        "Only the selected view is calculated. This avoids loading unrelated large "
+        "tables from Google Drive on every interaction."
+    ),
+)
+if active_view is None:
+    active_view = "Associations"
+if active_view == "Prediction":
+    render_prediction_view()
+    st.stop()
 
 with st.sidebar:
     st.header("Plot controls")
@@ -939,33 +1472,6 @@ with st.expander(
         "least two module genes for a within-tissue (TS) edge; one gene can still participate "
         "in cross-tissue (CT) edges."
     )
-
-view_options = [
-    "Associations",
-    "Feature distributions",
-    "Correlation heatmaps",
-    "Module finder",
-    "CT–TS screen",
-    "Edge summaries",
-    "Edge volcano",
-    "MDC",
-    "Statistics",
-    "KEGG enrichment",
-    "Module details",
-    "Methods & data",
-]
-active_view = st.pills(
-    "Analysis view",
-    options=view_options,
-    default="Associations",
-    selection_mode="single",
-    help=(
-        "Only the selected view is calculated. This avoids loading unrelated large "
-        "tables from Google Drive on every interaction."
-    ),
-)
-if active_view is None:
-    active_view = "Associations"
 
 if active_view == "Associations":
     st.subheader("Phenotype association")

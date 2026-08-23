@@ -29,6 +29,11 @@ from app_helpers.charts import (  # noqa: E402
     module_size_distribution_figure,
     pathway_mdc_detail_figure,
     pathway_mdc_heatmap_figure,
+    prediction_confusion_figure,
+    prediction_ct_ts_figure,
+    prediction_error_figure,
+    prediction_observed_figure,
+    prediction_threshold_figure,
     resolved_to_long,
 )
 from app_helpers.correlations import calculate_correlations  # noqa: E402
@@ -587,3 +592,56 @@ def test_resolved_mdc_and_edge_summary_charts() -> None:
         edges, "absolute_weight_sum", "Absolute weight sum", 935
     )
     assert len(edge_figure.data) == 3
+
+
+def test_prediction_diagnostic_charts_use_sanitized_rows() -> None:
+    diagnostics = pd.DataFrame(
+        {
+            "sample_id": ["P-A", "P-B", "P-C", "P-D"],
+            "target": ["Control", "Control", "AD", "AD"],
+            "predicted": ["Control", "AD", "AD", "AD"],
+            "probability_Control": [0.8, 0.4, 0.2, 0.1],
+            "probability_AD": [0.2, 0.6, 0.8, 0.9],
+        }
+    )
+    threshold = prediction_threshold_figure(diagnostics, title="Threshold")
+    assert len(threshold.data) == 3
+    confusion = prediction_confusion_figure(
+        pd.DataFrame(
+            {
+                "actual": ["Control", "Control", "AD", "AD"],
+                "predicted_class": ["Control", "AD", "Control", "AD"],
+                "n": [1, 1, 0, 2],
+            }
+        ),
+        title="Confusion",
+    )
+    assert int(confusion.data[0].z.sum()) == 4
+    continuous = pd.DataFrame(
+        {"sample_id": ["P-A", "P-B"], "target": [1.0, 2.0], "predicted": [1.2, 1.8]}
+    )
+    assert len(prediction_observed_figure(continuous, title="Observed").data) == 2
+    assert len(prediction_error_figure(continuous, title="Errors").data) == 2
+
+
+def test_prediction_ct_ts_forest_uses_absolute_confidence_limits_in_hover() -> None:
+    frame = pd.DataFrame(
+        {
+            "outcome": ["motor10_demog_slope"],
+            "comparison": ["pooled_CT_minus_TS"],
+            "performance_difference": [0.12],
+            "ci_low": [0.03],
+            "ci_high": [0.21],
+            "p_value": [0.01],
+            "fdr_global": [0.04],
+            "fdr_within_outcome": [0.02],
+        }
+    )
+    figure = prediction_ct_ts_figure(
+        frame,
+        outcome_labels={"motor10_demog_slope": "Motor slope"},
+        title="CT versus TS",
+    )
+    assert figure.data[0].customdata[0, 0] == 0.03
+    assert figure.data[0].customdata[0, 1] == 0.21
+    assert "error_x" not in figure.data[0].hovertemplate

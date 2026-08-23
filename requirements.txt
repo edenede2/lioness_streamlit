@@ -1,9 +1,9 @@
 # Validated for Streamlit Community Cloud with CPython 3.12.
-# PyArrow 21 has no CPython 3.14 wheel; do not deploy this set with Python 3.14.
+# PyArrow 20 has a prebuilt CPython 3.12 Linux wheel; deploy this set with Python 3.12.
 streamlit==1.61.1
-pandas==2.3.3
+pandas==2.3.2
 numpy==2.2.6
-pyarrow==21.0.0
+pyarrow==20.0.0
 plotly==6.9.0
 scipy==1.15.3
 google-auth==2.36.0

@@ -18,7 +18,20 @@ from google.oauth2 import service_account
 DRIVE_LIST_URL = "https://www.googleapis.com/drive/v3/files"
 DRIVE_FOLDER_MIME = "application/vnd.google-apps.folder"
 DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.readonly"
-PREDICATE_COLUMNS = ("module", "estimator", "network_method", "fdr_scope")
+PREDICATE_COLUMNS = (
+    "module",
+    "estimator",
+    "network_method",
+    "fdr_scope",
+    "reference_provenance",
+    "module_definition",
+    "predictor_design",
+    "edge_mask",
+    "score_normalization",
+    "outcome",
+    "predictor_block",
+    "model_variant",
+)
 
 
 def parse_args() -> argparse.Namespace:
