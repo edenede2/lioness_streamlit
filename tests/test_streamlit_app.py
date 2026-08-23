@@ -30,19 +30,34 @@ def test_streamlit_hot_reload_recovers_stale_chart_helper(monkeypatch) -> None:
     assert hasattr(chart_helpers, "CONTINUOUS_COLOR_SCALES")
 
 
-def test_streamlit_table_column_picker_filters_and_resets() -> None:
+def test_streamlit_table_value_filter_filters_rows_and_resets() -> None:
     assert "st.dataframe(" not in APP.read_text(encoding="utf-8")
     app = AppTest.from_file(APP, default_timeout=180).run()
     assert_app_clean(app)
-    picker = widget_with_label(app.multiselect, "Module composition columns")
-    all_columns = list(picker.value)
-    app = picker.set_value(["Tissue", "Genes"]).run()
+    all_rows = len(app.dataframe[0].value)
+    picker = widget_with_label(
+        app.multiselect, "Module composition filter columns"
+    )
+    app = picker.set_value(["Tissue"]).run()
     assert_app_clean(app)
-    assert list(app.dataframe[0].value.columns) == ["Tissue", "Genes"]
-    reset = next(button for button in app.button if button.label == "Reset to all columns")
+    values = widget_with_label(app.multiselect, "Tissue values")
+    app = values.set_value(["AC"]).run()
+    assert_app_clean(app)
+    assert len(app.dataframe[0].value) == 1
+    assert app.dataframe[0].value.iloc[0]["Tissue"] == "AC"
+    reset = next(button for button in app.button if button.label == "Reset row filters")
     app = reset.click().run()
     assert_app_clean(app)
-    assert list(app.dataframe[0].value.columns) == all_columns
+    assert len(app.dataframe[0].value) == all_rows
+    picker = widget_with_label(
+        app.multiselect, "Module composition filter columns"
+    )
+    app = picker.set_value(["Genes"]).run()
+    minimum = widget_with_label(app.number_input, "Genes minimum")
+    app = minimum.set_value(1).run()
+    assert_app_clean(app)
+    assert app.dataframe[0].value["Genes"].ge(1).all()
+    assert len(app.dataframe[0].value) < all_rows
 
 
 def test_every_lazy_analysis_view_renders_cleanly() -> None:
