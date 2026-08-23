@@ -89,6 +89,35 @@ def test_prediction_view_uses_leakage_reduced_exploratory_default() -> None:
     )
 
 
+def test_targeted_prediction_view_defaults_to_primary_control_derived_analysis() -> None:
+    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = select_view(app, "Prediction")
+    assert_app_clean(app)
+
+    assert widget_with_label(app.radio, "Prediction mode").value == "targeted"
+    assert widget_with_label(app.selectbox, "Targeted edge set").value == "all"
+    assert widget_with_label(
+        app.selectbox, "Targeted module definition"
+    ).value == "control_derived"
+    assert widget_with_label(
+        app.selectbox, "Targeted LIONESS method"
+    ).value == "control_anchored"
+    assert widget_with_label(
+        app.selectbox, "Targeted prediction outcome"
+    ).value == "diagnosis_binary"
+    assert {tab.label for tab in app.tabs}.issuperset(
+        {
+            "Summary",
+            "CT versus TS",
+            "Panel selection",
+            "OOF diagnostics",
+            "Coefficients & KEGG",
+            "Tables",
+            "Methods",
+        }
+    )
+
+
 def test_streamlit_smoke_lioness_and_bonobo_module_definitions() -> None:
     app = AppTest.from_file(APP, default_timeout=180).run()
     assert_app_clean(app)
