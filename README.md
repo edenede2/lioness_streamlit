@@ -44,8 +44,10 @@ The app includes two explicitly separated module definitions:
   FDR cutoffs. The original all-edge analyses remain the default.
 - An edge-volcano view with Hedges' g or mean-difference effects, nominal p-value
   or either BH FDR scope, held-out validation statistics, and BONOBO significance
-  prevalence. Edge hovers, tables, and downloads use official gene symbols rather
-  than Ensembl identifiers.
+  prevalence. Exact dots are colored by AC, DLPFC, PCG, or their cross-tissue pair;
+  circles indicate within-tissue edges and diamonds indicate cross-tissue edges.
+  Edge hovers, tables, and downloads use official gene symbols rather than Ensembl
+  identifiers.
 - Full raw, robust, RINT, leave-one-out, CT-vs-TS, and FDR statistics.
 - A descriptive CT-vs-TS screen across all modules.
 - Every row and column of the tissue-expanded KEGG enrichment table, filterable

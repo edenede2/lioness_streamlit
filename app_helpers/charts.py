@@ -37,6 +37,30 @@ REGION_COLORS = {
     "DLPFC": "#D8A500",
     "PCG": "#E66101",
 }
+EDGE_COMPONENT_ORDER = [
+    "TS_AC",
+    "TS_DLPFC",
+    "TS_PCGBA23",
+    "CT_AC__DLPFC",
+    "CT_AC__PCGBA23",
+    "CT_DLPFC__PCGBA23",
+]
+EDGE_COMPONENT_LABELS = {
+    "TS_AC": "AC",
+    "TS_DLPFC": "DLPFC",
+    "TS_PCGBA23": "PCG",
+    "CT_AC__DLPFC": "AC vs DLPFC",
+    "CT_AC__PCGBA23": "AC vs PCG",
+    "CT_DLPFC__PCGBA23": "DLPFC vs PCG",
+}
+EDGE_COMPONENT_COLORS = {
+    "TS_AC": "#2C7FB8",
+    "TS_DLPFC": "#D8A500",
+    "TS_PCGBA23": "#E66101",
+    "CT_AC__DLPFC": "#6A51A3",
+    "CT_AC__PCGBA23": "#2A9D8F",
+    "CT_DLPFC__PCGBA23": "#C44E8A",
+}
 MDC_COMPONENT_LABEL_ORDER = [
     "Total",
     "TS pooled",
@@ -156,8 +180,9 @@ def edge_volcano_figure(
                 x=(x_edges[:-1] + x_edges[1:]) / 2,
                 y=(y_edges[:-1] + y_edges[1:]) / 2,
                 z=counts.T,
-                colorscale="Blues",
-                colorbar={"title": "Edge count"},
+                colorscale="Greys",
+                opacity=0.55,
+                colorbar={"title": "All-edge density"},
                 hovertemplate=(
                     "Effect bin: %{x:.3g}<br>−log10 significance bin: %{y:.3g}"
                     "<br>Edges: %{z:,.0f}<extra></extra>"
@@ -168,34 +193,20 @@ def edge_volcano_figure(
 
     if not points.empty:
         probability = pd.to_numeric(points[probability_column], errors="coerce")
-        y_values = -np.log10(np.clip(probability, np.finfo(float).tiny, 1.0))
-        direction_values = np.where(
-            points[f"{prefix}_mean_difference"].ge(0), "Higher in AD", "Higher in Control"
+        points = points.assign(
+            _volcano_y=-np.log10(
+                np.clip(probability, np.finfo(float).tiny, 1.0)
+            ),
+            _component_label=points["component"].map(EDGE_COMPONENT_LABELS).fillna(
+                points["component"].astype(str)
+            ),
         )
-        if prevalence_column and prevalence_column in points:
-            marker = {
-                "color": points[prevalence_column],
-                "colorscale": "Viridis",
-                "cmin": 0,
-                "cmax": 1,
-                "colorbar": {"title": "BONOBO prevalence"},
-                "size": 7,
-                "opacity": 0.78,
-                "line": {"width": 0.4, "color": "white"},
-            }
-        else:
-            marker = {
-                "color": [MDC_DIRECTION_COLORS[value] for value in direction_values],
-                "size": 7,
-                "opacity": 0.78,
-                "line": {"width": 0.4, "color": "white"},
-            }
         hover_columns = [
             "tissue_a",
             "gene_a",
             "tissue_b",
             "gene_b",
-            "component",
+            "_component_label",
             f"{prefix}_mean_ad",
             f"{prefix}_mean_control",
             f"{prefix}_mean_difference",
@@ -207,7 +218,6 @@ def edge_volcano_figure(
         ]
         if prevalence_column and prevalence_column in points:
             hover_columns.append(prevalence_column)
-        custom = points[hover_columns].astype(object).to_numpy()
         template = (
             "%{customdata[0]}:%{customdata[1]} ↔ %{customdata[2]}:%{customdata[3]}"
             "<br>Component: %{customdata[4]}"
@@ -220,17 +230,35 @@ def edge_volcano_figure(
         if prevalence_column and prevalence_column in points:
             template += "<br>BONOBO significance prevalence: %{customdata[13]:.1%}"
         template += "<extra></extra>"
-        figure.add_trace(
-            go.Scattergl(
-                x=points[x_column],
-                y=y_values,
-                mode="markers",
-                marker=marker,
-                customdata=custom,
-                hovertemplate=template,
-                name="Exact candidate edges",
+        observed_components = points["component"].dropna().astype(str).unique().tolist()
+        ordered_components = [
+            component for component in EDGE_COMPONENT_ORDER if component in observed_components
+        ] + [
+            component
+            for component in observed_components
+            if component not in EDGE_COMPONENT_ORDER
+        ]
+        for component in ordered_components:
+            component_points = points.loc[points["component"].eq(component)]
+            marker = {
+                "color": EDGE_COMPONENT_COLORS.get(component, "#7A8793"),
+                "symbol": "circle" if component.startswith("TS_") else "diamond",
+                "size": 7,
+                "opacity": 0.82,
+                "line": {"width": 0.4, "color": "white"},
+            }
+            figure.add_trace(
+                go.Scattergl(
+                    x=component_points[x_column],
+                    y=component_points["_volcano_y"],
+                    mode="markers",
+                    marker=marker,
+                    customdata=component_points[hover_columns].astype(object).to_numpy(),
+                    hovertemplate=template,
+                    name=EDGE_COMPONENT_LABELS.get(component, component),
+                    legendgroup=component,
+                )
             )
-        )
 
     figure.add_hline(
         y=-math.log10(significance_threshold),
@@ -252,7 +280,15 @@ def edge_volcano_figure(
         yaxis_title=y_label,
         template="plotly_white",
         height=650,
-        margin={"l": 65, "r": 35, "t": 95, "b": 60},
+        margin={"l": 65, "r": 35, "t": 95, "b": 115},
+        legend={
+            "title": {"text": "Tissue component"},
+            "orientation": "h",
+            "yanchor": "top",
+            "y": -0.16,
+            "xanchor": "left",
+            "x": 0.0,
+        },
         hoverlabel={"font_size": 13},
     )
     return figure

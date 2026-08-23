@@ -18,6 +18,7 @@ if not all(
     hasattr(_chart_helpers, name)
     for name in (
         "CONTINUOUS_COLOR_SCALES",
+        "EDGE_COMPONENT_LABELS",
         "edge_volcano_figure",
         "mdc_entropy_figure",
         "pathway_mdc_heatmap_figure",
@@ -27,6 +28,7 @@ if not all(
 
 from app_helpers.charts import (
     CONTINUOUS_COLOR_SCALES,
+    EDGE_COMPONENT_LABELS,
     aggregate_to_long,
     association_figure,
     correlation_heatmap_figure,
@@ -1678,9 +1680,11 @@ if active_view == "Edge volcano":
             },
         )
         st.caption(
-            "The density background includes every edge in the selected scope. Exact "
-            "hoverable rows include all discovery/validation FDR≤0.10 or p≤0.05 edges "
-            "plus the top 500 remaining edges per resolved component."
+            "Exact dots are colored by tissue component: circles are within-tissue "
+            "edges and diamonds are cross-tissue pairs. The gray density background "
+            "includes every edge in the selected scope. Exact hoverable rows include "
+            "all discovery/validation FDR≤0.10 or p≤0.05 edges plus the top 500 "
+            "remaining edges per resolved component."
         )
         prefix = volcano_analysis_set.lower()
         probability_column = (
@@ -1718,6 +1722,13 @@ if active_view == "Edge volcano":
             ascending=[True, False],
             kind="stable",
         )
+        displayed_edges.insert(
+            displayed_edges.columns.get_loc("component") + 1,
+            "tissue_component",
+            displayed_edges["component"].map(EDGE_COMPONENT_LABELS).fillna(
+                displayed_edges["component"].astype(str)
+            ),
+        )
         st.dataframe(
             displayed_edges,
             use_container_width=True,
@@ -1726,6 +1737,7 @@ if active_view == "Edge volcano":
             column_config={
                 "gene_a": "Gene A symbol",
                 "gene_b": "Gene B symbol",
+                "tissue_component": "Tissue component",
             },
         )
         st.download_button(

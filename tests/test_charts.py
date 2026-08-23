@@ -11,6 +11,8 @@ sys.path.insert(0, str(APP_ROOT))
 
 from app_helpers.charts import (  # noqa: E402
     CONTINUOUS_COLOR_SCALES,
+    EDGE_COMPONENT_COLORS,
+    EDGE_COMPONENT_LABELS,
     aggregate_to_long,
     association_figure,
     correlation_heatmap_figure,
@@ -79,6 +81,35 @@ def test_edge_volcano_switches_between_global_and_per_module_bh() -> None:
             "Global BH FDR" in str(trace.hovertemplate)
             and "Per-module BH FDR" in str(trace.hovertemplate)
             for trace in figure.data
+        )
+
+
+def test_edge_volcano_colors_exact_dots_by_tissue_component() -> None:
+    candidates = load_volcano_candidates(
+        "control_derived", "lioness", "control_anchored", 935
+    )
+    bins = load_volcano_bins(
+        "control_derived", "lioness", "control_anchored", 935, "global"
+    )
+    figure = edge_volcano_figure(
+        candidates,
+        bins,
+        module=935,
+        scope="total",
+        module_definition="Control-derived L4 modules (186)",
+    )
+    exact_traces = [trace for trace in figure.data if trace.type == "scattergl"]
+    expected_components = set(candidates["component"].astype(str))
+    assert {trace.name for trace in exact_traces} == {
+        EDGE_COMPONENT_LABELS[component] for component in expected_components
+    }
+    for trace in exact_traces:
+        component = next(
+            key for key, label in EDGE_COMPONENT_LABELS.items() if label == trace.name
+        )
+        assert trace.marker.color == EDGE_COMPONENT_COLORS[component]
+        assert trace.marker.symbol == (
+            "circle" if component.startswith("TS_") else "diamond"
         )
 
 
