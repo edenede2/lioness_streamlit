@@ -64,6 +64,8 @@ The app includes two explicitly separated module definitions:
   represented tissues, dominant tissue, per-tissue gene counts, and proportions.
 - Raw and normalized Shannon tissue-mixing entropy as continuous complements to
   the discrete CT/TS module class.
+- Searchable per-table column selectors with persistent choices and one-click reset
+  are available for every interactive table in the app.
 - Interactive module-size distributions and size-ranked AC/DLPFC/PCG composition
   bars, filterable to CT modules, TS modules, or both.
 

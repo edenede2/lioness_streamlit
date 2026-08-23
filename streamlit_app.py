@@ -52,6 +52,7 @@ from app_helpers.charts import (
 )
 from app_helpers.correlations import calculate_correlations
 from app_helpers.module_finder import FINDER_CRITERIA, build_module_finder_table
+from app_helpers.table_controls import filterable_dataframe
 from app_helpers.drive_data import data_source_label, ensure_data_path
 from app_helpers.data import (
     ANALYSIS_SUBSET_LABELS,
@@ -919,8 +920,10 @@ with st.expander(
     detail_cols[1].metric("Tissues represented", f"{int(selected_details['n_tissues'])} of 3")
     detail_cols[2].metric("Module type", str(selected_details["cluster_type"]))
     detail_cols[3].metric("Dominant tissue", str(selected_details["dominant_tissue"]))
-    st.dataframe(
+    filterable_dataframe(
         tissue_composition,
+        table_key="module_composition",
+        table_name="Module composition",
         use_container_width=True,
         hide_index=True,
         column_config={
@@ -1217,8 +1220,10 @@ if active_view == "Correlation heatmaps":
         "spearman_fdr_displayed_family",
     ]
     with st.expander("Complete correlation table", expanded=False):
-        st.dataframe(
+        filterable_dataframe(
             correlation_table[correlation_columns],
+            table_key="complete_correlation_table",
+            table_name="Complete correlation table",
             use_container_width=True,
             hide_index=True,
         )
@@ -1268,7 +1273,13 @@ if active_view == "Feature distributions":
     summary = distribution_summary(plot_data)
     summary.insert(0, "module_definition", module_set_label)
     with st.expander("Distribution summary table", expanded=False):
-        st.dataframe(summary, use_container_width=True, hide_index=True)
+        filterable_dataframe(
+            summary,
+            table_key="distribution_summary",
+            table_name="Distribution summary",
+            use_container_width=True,
+            hide_index=True,
+        )
         st.download_button(
             "Download distribution summary (TSV)",
             data=dataframe_to_tsv_bytes(summary),
@@ -1394,8 +1405,10 @@ if active_view == "CT–TS screen":
         "fdr_CT_vs_TS_within_phenotype",
         "fdr_CT_vs_TS_global",
     ]
-    st.dataframe(
+    filterable_dataframe(
         screen[screen_columns].head(n_screen),
+        table_key="ct_ts_screen",
+        table_name="CT–TS screen",
         use_container_width=True,
         hide_index=True,
         column_config={"module": st.column_config.NumberColumn(format="M%d")},
@@ -1658,8 +1671,10 @@ if active_view == "Module finder":
         finder_columns = [
             column for column in finder_columns if column in finder_filtered.columns
         ]
-        st.dataframe(
+        filterable_dataframe(
             finder_filtered[finder_columns].head(finder_rows),
+            table_key="module_finder",
+            table_name="Module finder ranking",
             use_container_width=True,
             hide_index=True,
             height=560,
@@ -1778,7 +1793,13 @@ if active_view == "Edge summaries":
         edge_group_summary.insert(1, "estimator", ESTIMATOR_LABELS[estimator])
         edge_group_summary.insert(2, "network_method", readable_method(method))
         edge_group_summary.insert(3, "edge_rule", edge_rule)
-        st.dataframe(edge_group_summary, use_container_width=True, hide_index=True)
+        filterable_dataframe(
+            edge_group_summary,
+            table_key="edge_group_summary",
+            table_name="Diagnosis-group edge summary",
+            use_container_width=True,
+            hide_index=True,
+        )
         st.download_button(
             "Download diagnosis-group summary (TSV)",
             data=dataframe_to_tsv_bytes(edge_group_summary),
@@ -1786,7 +1807,14 @@ if active_view == "Edge summaries":
             mime="text/tab-separated-values",
         )
         with st.expander("Donor-level edge-summary rows", expanded=False):
-            st.dataframe(edge_data, use_container_width=True, hide_index=True, height=480)
+            filterable_dataframe(
+                edge_data,
+                table_key="donor_edge_summary",
+                table_name="Donor-level edge summary",
+                use_container_width=True,
+                hide_index=True,
+                height=480,
+            )
             st.download_button(
                 "Download donor-level edge summaries (TSV)",
                 data=dataframe_to_tsv_bytes(edge_data),
@@ -2008,8 +2036,10 @@ if active_view == "Edge volcano":
                 displayed_edges["component"].astype(str)
             ),
         )
-        st.dataframe(
+        filterable_dataframe(
             displayed_edges,
+            table_key="volcano_edges",
+            table_name="Displayed volcano edges",
             use_container_width=True,
             hide_index=True,
             height=460,
@@ -2294,8 +2324,10 @@ if active_view == "MDC":
         "n_ts_edges",
         "n_ct_edges",
     ]
-    st.dataframe(
+    filterable_dataframe(
         displayed_mdc[mdc_columns],
+        table_key="mdc_summary",
+        table_name="MDC summary",
         use_container_width=True,
         hide_index=True,
         column_config={
@@ -2401,8 +2433,13 @@ if active_view == "MDC":
                 config={"displaylogo": False, "scrollZoom": True},
             )
             resolved_mdc.insert(0, "module_definition_label", module_set_label)
-            st.dataframe(
-                resolved_mdc, use_container_width=True, hide_index=True, height=520
+            filterable_dataframe(
+                resolved_mdc,
+                table_key="resolved_mdc",
+                table_name="Resolved MDC",
+                use_container_width=True,
+                hide_index=True,
+                height=520,
             )
             st.download_button(
                 "Download displayed resolved MDC rows (TSV)",
@@ -2649,8 +2686,10 @@ if active_view == "MDC":
                 ["component_label", "directional_fdr", "enrichment_fdr"],
                 kind="stable",
             )
-            st.dataframe(
+            filterable_dataframe(
                 selected_pathway_rows[pathway_detail_columns],
+                table_key="pathway_mdc_detail",
+                table_name="Pathway-resolved MDC detail",
                 use_container_width=True,
                 hide_index=True,
                 height=480,
@@ -2769,8 +2808,12 @@ if active_view == "Statistics":
         ]
     statistics = statistics.copy()
     statistics.insert(0, "module_definition", module_set_label)
-    st.dataframe(
-        statistics[display_columns], use_container_width=True, hide_index=True
+    filterable_dataframe(
+        statistics[display_columns],
+        table_key="robust_statistics",
+        table_name="Robust statistics",
+        use_container_width=True,
+        hide_index=True,
     )
     st.download_button(
         "Download all selected robust-statistics columns (TSV)",
@@ -2990,8 +3033,10 @@ if active_view == "KEGG enrichment":
                 if column not in kegg_priority_columns
             ]
         ]
-        st.dataframe(
+        filterable_dataframe(
             displayed_kegg,
+            table_key="kegg_enrichments",
+            table_name="KEGG enrichments",
             use_container_width=True,
             hide_index=True,
             height=650,
@@ -3186,8 +3231,10 @@ if active_view == "Module details":
     module_details = module_details.copy()
     module_details.insert(0, "module_definition", module_set_label)
     st.markdown(f"#### Selected module: {module_label(module)}")
-    st.dataframe(
+    filterable_dataframe(
         module_details.loc[module_details["module"].astype(int).eq(int(module)), detail_columns],
+        table_key="selected_module_details",
+        table_name="Selected module details",
         use_container_width=True,
         hide_index=True,
         column_config={
@@ -3214,8 +3261,10 @@ if active_view == "Module details":
         },
     )
     st.markdown(f"#### All {module_count} modules")
-    st.dataframe(
+    filterable_dataframe(
         module_details[detail_columns],
+        table_key="all_module_details",
+        table_name="All module details",
         use_container_width=True,
         hide_index=True,
         height=520,
@@ -3326,9 +3375,21 @@ if active_view == "Methods & data":
     )
 
     st.markdown("#### Module feature definitions")
-    st.dataframe(cached_feature_definitions(), use_container_width=True, hide_index=True)
+    filterable_dataframe(
+        cached_feature_definitions(),
+        table_key="feature_definitions",
+        table_name="Module feature definitions",
+        use_container_width=True,
+        hide_index=True,
+    )
     st.markdown("#### Tissue labels")
-    st.dataframe(cached_tissue_mapping(), use_container_width=True, hide_index=True)
+    filterable_dataframe(
+        cached_tissue_mapping(),
+        table_key="tissue_labels",
+        table_name="Tissue labels",
+        use_container_width=True,
+        hide_index=True,
+    )
     st.markdown("#### Public deploy safeguards")
     st.markdown(
         "The deploy Parquet files do not contain `projid`, the source donor identifier, "
