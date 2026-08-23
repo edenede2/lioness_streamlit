@@ -93,6 +93,35 @@ def test_targeted_prediction_loader_uses_predicates_and_preserves_privacy(
     assert {"donor", "projid"}.isdisjoint(selected.columns)
 
 
+def test_targeted_masked_sensitivity_packages_all_requested_outcomes() -> None:
+    expected = {
+        "diagnosis_binary",
+        "cogdx",
+        "cogn_global",
+        "cogng_demog_slope",
+        "cogng_path_slope",
+        "motor10_demog_slope",
+        "sqrt_parksc_demog_slope",
+        "parkinsonism",
+    }
+    manifest = data.load_targeted_prediction_manifest()
+    assert manifest["complete"] is True
+    assert manifest["masked_sensitivity"]["all_edge_nested_analysis_rerun"] is False
+    assert set(manifest["masked_sensitivity"]["outcomes"]) == expected
+    performance = data.load_targeted_prediction_table("masked_oof_performance")
+    assert set(performance["model_outcome"]) == expected
+    assert set(performance["edge_mask"]) == {
+        "global_fdr05",
+        "global_fdr10",
+        "per_module_fdr05",
+        "per_module_fdr10",
+    }
+    assert set(performance["score_normalization"]) == {
+        "standard_pruned",
+        "retained_edge",
+    }
+
+
 def test_all_modules_and_m1918_are_packaged() -> None:
     annotations = data.load_module_annotations()
     assert annotations["module"].nunique() == 154

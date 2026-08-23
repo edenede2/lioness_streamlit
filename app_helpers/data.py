@@ -131,6 +131,7 @@ PREDICTION_OUTCOME_LABELS = {
     "diagnosis_binary": "Diagnosis: AD versus Control",
     "diagnosis_three_class": "Diagnosis: Control / MCI / AD",
     "cogdx": "Final cognitive diagnosis code (CogDx 1–5)",
+    "cogn_global": "Global cognition",
     "cogng_demog_slope": "Demographic-adjusted cognitive slope",
     "cogng_path_slope": "Pathology-adjusted cognitive slope",
     "motor10_demog_slope": "Demographic-adjusted motor slope",

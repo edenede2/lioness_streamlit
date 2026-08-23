@@ -640,7 +640,11 @@ def render_targeted_prediction_view() -> None:
     if performance_catalog.empty:
         st.info("The targeted-prediction manifest is present, but no completed OOF results exist.")
         return
-    st.subheader("Fully nested targeted-module LIONESS prediction")
+    st.subheader(
+        "Targeted differential-edge sensitivity"
+        if masked_selection
+        else "Fully nested targeted-module LIONESS prediction"
+    )
     st.warning(
         "Repeated nested cross-validation is internal validation conditional on fixed module "
         "definitions. The earlier 70/30 cohort has already been inspected and is shown only "
@@ -711,6 +715,15 @@ def render_targeted_prediction_view() -> None:
             key="targeted_panel_strategy",
         )
 
+    if masked_selection and outcome == "cogn_global":
+        st.info(
+            "Global cognition was not an outcome in the completed all-edge prediction "
+            "catalog. Its diagnosis-derived module panel and K remain frozen; only "
+            "elastic-net regularization was calibrated by inner CV within each "
+            "outer-training fold on all-edge scores. Outer-test outcomes and masked scores "
+            "were not used for that calibration."
+        )
+
     selected = performance_catalog.loc[
         performance_catalog["evidence_tier"].eq(evidence_tier)
         & performance_catalog["module_definition"].eq(module_definition)
@@ -737,10 +750,17 @@ def render_targeted_prediction_view() -> None:
         }.get(outcome, "r2")
         if preferred in set(selected["metric"]):
             primary_metric = preferred
-    repeats = int(manifest.get("selection", {}).get("outer_repeats", 5))
+    repeats = (
+        1 if masked_selection else int(manifest.get("selection", {}).get("outer_repeats", 5))
+    )
     folds = int(manifest.get("selection", {}).get("outer_folds", 5))
     metrics = st.columns(4)
-    metrics[0].metric("Evaluation", f"{repeats} × {folds} nested CV")
+    metrics[0].metric(
+        "Evaluation",
+        f"{repeats} × {folds} outer CV sensitivity"
+        if masked_selection
+        else f"{repeats} × {folds} nested CV",
+    )
     metrics[1].metric("OOF donors", int(selected["n_oof"].max()))
     metrics[2].metric("Primary metric", primary_metric)
     metrics[3].metric("Edge set", "All edges" if set(selected["edge_mask"]) == {"all"} else "Sensitivity mask")
