@@ -93,6 +93,15 @@ the donor-level Parquet files with aggregate-only data.
 Prediction diagnostics use a separate random `P-…` mapping. That mapping and its salt
 are also discarded; it cannot be joined back to the explorer's older sample mapping.
 
+The Prediction view also supports a separate **Targeted modules** mode. Its primary
+analysis uses the 186 Control-derived modules and Control-referenced LIONESS for AD versus
+Control. Performance comes from five repeats of five fully nested outer folds; reference
+networks, stability ranking, redundancy pruning, panel size, preprocessing, and elastic-net
+tuning are all learned without the outer-test fold. The previous 70/30 results remain
+available as visibly labeled, previously inspected sensitivity evidence. KEGG annotations
+are joined after selection and are interpretive only. Public targeted diagnostics use a
+new random `T-…` mapping whose secret salt is never exported.
+
 ## Run locally
 
 From this directory:
@@ -273,6 +282,39 @@ Build the leakage-reduced and exploratory prediction inputs. The exploratory
 existing-reference branch is also deduplicated for prediction: its already-computed
 distinct-node edge statistics are retained, artificial repeated-node edges are removed,
 and per-module/global BH are recalculated.
+
+For the fully nested targeted catalog, run the checkpointed feature and model stages from
+the repository root:
+
+```bash
+python scripts/python/prepare_targeted_lioness_cv_features.py --workers 8
+python scripts/python/run_targeted_lioness_nested_models.py
+python scripts/python/build_targeted_prediction_public_bundle.py --replace
+python scripts/python/validate_targeted_lioness_prediction.py
+```
+
+The output root is
+`out/lioness_prediction_rosmap/20260823_fully_nested_targeted_lioness_prediction`.
+The feature command can be restricted by module definition, method, repeat, fold, or
+module; completed module checkpoints are reused automatically. The model command can
+similarly be run by evidence tier and outer fold. Do not publish an incomplete bundle
+except for staging with `--allow-incomplete`; the app labels such a bundle as interim and
+not reportable.
+
+After validation, the same incremental Drive uploader can publish the targeted directory
+without relisting Drive for every file:
+
+```bash
+python scripts/upload_prediction_data.py \
+  --credentials /path/to/service-account.json \
+  --root-folder-id YOUR_ROOT_FOLDER_ID \
+  --local-prediction data/prediction_targeted \
+  --remote-directory prediction_targeted \
+  --manifest-name targeted_prediction_public_manifest.json
+python scripts/build_drive_index.py \
+  --credentials /path/to/service-account.json \
+  --root-folder-id YOUR_ROOT_FOLDER_ID
+```
 
 ```bash
 python ../../scripts/python/run_ad_control_differential_edges_rosmap.py \

@@ -62,6 +62,37 @@ def test_public_plot_files_have_expected_rows_and_no_identifiers() -> None:
     assert pq.ParquetFile(data.SAMPLE_METADATA).metadata.num_rows == 450
 
 
+def test_targeted_prediction_loader_uses_predicates_and_preserves_privacy(
+    tmp_path: Path, monkeypatch
+) -> None:
+    directory = tmp_path / "prediction_targeted"
+    directory.mkdir()
+    table = pd.DataFrame(
+        {
+            "evidence_tier": ["primary", "secondary"],
+            "module_definition": ["control_derived", "full_cohort"],
+            "model_outcome": ["diagnosis_binary", "cogdx"],
+            "sample_id": ["T-AAA", "T-BBB"],
+            "value": [0.71, 1.25],
+        }
+    )
+    path = directory / "targeted_oof_performance.parquet"
+    table.to_parquet(path, index=False)
+    manifest = directory / "targeted_prediction_public_manifest.json"
+    manifest.write_text('{"complete": true}\n', encoding="utf-8")
+    files = dict(data.TARGETED_PREDICTION_FILES)
+    files["oof_performance"] = path
+    monkeypatch.setattr(data, "TARGETED_PREDICTION_DIR", directory)
+    monkeypatch.setattr(data, "TARGETED_PREDICTION_MANIFEST", manifest)
+    monkeypatch.setattr(data, "TARGETED_PREDICTION_FILES", files)
+    assert data.targeted_prediction_data_available()
+    selected = data.load_targeted_prediction_table(
+        "oof_performance", evidence_tier="primary"
+    )
+    assert selected["sample_id"].tolist() == ["T-AAA"]
+    assert {"donor", "projid"}.isdisjoint(selected.columns)
+
+
 def test_all_modules_and_m1918_are_packaged() -> None:
     annotations = data.load_module_annotations()
     assert annotations["module"].nunique() == 154

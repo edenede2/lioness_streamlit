@@ -115,11 +115,16 @@ TARGETED_PREDICTION_FILES = {
     "fold_performance": TARGETED_PREDICTION_DIR / "targeted_fold_performance.parquet",
     "oof_performance": TARGETED_PREDICTION_DIR / "targeted_oof_performance.parquet",
     "primary_comparisons": TARGETED_PREDICTION_DIR / "targeted_primary_comparisons.parquet",
+    "tier_comparisons": TARGETED_PREDICTION_DIR / "targeted_tier_comparisons.parquet",
     "panel_selection": TARGETED_PREDICTION_DIR / "targeted_panel_selection.parquet",
     "consensus_panels": TARGETED_PREDICTION_DIR / "targeted_consensus_panels.parquet",
     "inner_k_scores": TARGETED_PREDICTION_DIR / "targeted_inner_k_scores.parquet",
     "coefficients": TARGETED_PREDICTION_DIR / "targeted_top_coefficients.parquet",
     "oof_predictions": TARGETED_PREDICTION_DIR / "targeted_oof_predictions.parquet",
+    "masked_fold_performance": TARGETED_PREDICTION_DIR / "targeted_masked_fold_performance.parquet",
+    "masked_oof_performance": TARGETED_PREDICTION_DIR / "targeted_masked_oof_performance.parquet",
+    "masked_coefficients": TARGETED_PREDICTION_DIR / "targeted_masked_top_coefficients.parquet",
+    "masked_oof_predictions": TARGETED_PREDICTION_DIR / "targeted_masked_oof_predictions.parquet",
 }
 
 PREDICTION_OUTCOME_LABELS = {

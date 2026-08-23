@@ -603,7 +603,40 @@ def render_targeted_prediction_view() -> None:
     """Render repeated nested-CV targeted-module results without touching the benchmark."""
 
     manifest = load_targeted_prediction_manifest()
-    performance_catalog = cached_targeted_prediction_table("oof_performance")
+    masked_available = bool(manifest.get("masked_sensitivity_available", False))
+    with st.sidebar:
+        edge_options = ["all"]
+        if masked_available:
+            edge_options.extend(
+                ["global_fdr05", "global_fdr10", "per_module_fdr05", "per_module_fdr10"]
+            )
+        edge_mask = st.selectbox(
+            "Targeted edge set",
+            options=edge_options,
+            format_func=lambda value: PREDICTION_MASK_LABELS.get(value, value),
+            key="targeted_edge_mask",
+        )
+        if edge_mask == "all":
+            score_normalization = "standard_pruned"
+        else:
+            score_normalization = st.radio(
+                "Targeted score normalization",
+                options=["standard_pruned", "retained_edge"],
+                format_func=lambda value: SCORE_NORMALIZATION_LABELS[value],
+                key="targeted_score_normalization",
+            )
+    masked_selection = edge_mask != "all"
+    performance_table = "masked_oof_performance" if masked_selection else "oof_performance"
+    fold_table = "masked_fold_performance" if masked_selection else "fold_performance"
+    coefficient_table = "masked_coefficients" if masked_selection else "coefficients"
+    diagnostic_table = "masked_oof_predictions" if masked_selection else "oof_predictions"
+    performance_catalog = cached_targeted_prediction_table(
+        performance_table,
+        _targeted_filters(
+            edge_mask=edge_mask,
+            score_normalization=score_normalization,
+        ),
+    )
     if performance_catalog.empty:
         st.info("The targeted-prediction manifest is present, but no completed OOF results exist.")
         return
@@ -613,6 +646,17 @@ def render_targeted_prediction_view() -> None:
         "definitions. The earlier 70/30 cohort has already been inspected and is shown only "
         "as sensitivity evidence; it is not independent validation."
     )
+    if not bool(manifest.get("complete", False)):
+        st.warning(
+            "This is a checkpointed staging catalog. Some folds or evidence tiers are still "
+            "running; do not report these interim performance estimates."
+        )
+    if masked_selection:
+        st.warning(
+            "Exploratory differential-edge sensitivity: masks are learned from outer-training "
+            "AD/Control donors in one five-fold outer cycle. The fold-specific all-edge panel "
+            "and regularization settings are frozen; no new selection search is performed."
+        )
     with st.sidebar:
         st.header("Targeted prediction controls")
         tier_order = [
@@ -673,6 +717,8 @@ def render_targeted_prediction_view() -> None:
         & performance_catalog["network_method"].eq(network_method)
         & performance_catalog["model_outcome"].eq(outcome)
         & performance_catalog["panel_strategy"].eq(panel_strategy)
+        & performance_catalog["edge_mask"].eq(edge_mask)
+        & performance_catalog["score_normalization"].eq(score_normalization)
     ].copy()
     if selected.empty:
         st.warning("No repeated-CV models match the selected targeted analysis.")
@@ -685,7 +731,7 @@ def render_targeted_prediction_view() -> None:
     if "primary_metric" not in selected:
         preferred = {
             "diagnosis_binary": "roc_auc",
-            "diagnosis_three_class": "roc_auc_macro_ovr",
+            "diagnosis_three_class": "macro_roc_auc",
             "cogdx": "mae",
             "parkinsonism": "roc_auc",
         }.get(outcome, "r2")
@@ -710,6 +756,34 @@ def render_targeted_prediction_view() -> None:
             "Performance is calculated from fold-specific panels and outer-test predictions. "
             "The consensus panel below is display-only and is never used to estimate performance."
         )
+        if (
+            not masked_selection
+            and evidence_tier == "primary"
+            and module_definition == "control_derived"
+            and outcome == "diagnosis_binary"
+        ):
+            absolute = performance_catalog.loc[
+                performance_catalog["module_definition"].eq("control_derived")
+                & performance_catalog["network_method"].eq("control_anchored")
+                & performance_catalog["model_outcome"].eq("diagnosis_binary")
+                & performance_catalog["predictor_block"].eq("CT_pooled")
+                & performance_catalog["metric"].eq("roc_auc")
+            ]
+            absolute_metrics = st.columns(3)
+            absolute_specs = (
+                ("Targeted CT ROC-AUC", "tissue_neutral_ad", "covariates_plus_network"),
+                ("All-module CT ROC-AUC", "all_modules", "covariates_plus_network"),
+                ("Covariate ROC-AUC", "tissue_neutral_ad", "covariates"),
+            )
+            for column, (label, strategy, variant) in zip(
+                absolute_metrics, absolute_specs, strict=True
+            ):
+                value = absolute.loc[
+                    absolute["panel_strategy"].eq(strategy)
+                    & absolute["model_variant"].eq(variant),
+                    "value",
+                ]
+                column.metric(label, f"{float(value.iloc[0]):.3f}" if len(value) else "NA")
         st.plotly_chart(
             prediction_performance_figure(
                 selected,
@@ -721,7 +795,7 @@ def render_targeted_prediction_view() -> None:
             use_container_width=True,
             config={"displaylogo": False},
         )
-        if evidence_tier == "primary" and outcome == "diagnosis_binary":
+        if not masked_selection and evidence_tier == "primary" and outcome == "diagnosis_binary":
             comparisons = cached_targeted_prediction_table("primary_comparisons")
             if not comparisons.empty:
                 st.plotly_chart(
@@ -735,6 +809,19 @@ def render_targeted_prediction_view() -> None:
                 st.caption(
                     "Positive differences favor the first model. BH FDR is corrected across "
                     "exactly these three primary hypotheses."
+                )
+                filterable_dataframe(
+                    comparisons,
+                    table_key="targeted_primary_comparisons",
+                    table_name="Three primary paired comparisons",
+                    use_container_width=True,
+                    hide_index=True,
+                )
+                st.download_button(
+                    "Download primary comparisons (TSV)",
+                    data=dataframe_to_tsv_bytes(comparisons),
+                    file_name="targeted_lioness_primary_comparisons.tsv",
+                    mime="text/tab-separated-values",
                 )
 
     with comparison_tab:
@@ -756,7 +843,7 @@ def render_targeted_prediction_view() -> None:
                 config={"displaylogo": False},
             )
             fold_performance = cached_targeted_prediction_table(
-                "fold_performance",
+                fold_table,
                 _targeted_filters(
                     evidence_tier=evidence_tier,
                     module_definition=module_definition,
@@ -764,6 +851,8 @@ def render_targeted_prediction_view() -> None:
                     panel_strategy=panel_strategy,
                     model_outcome=outcome,
                     model_variant="covariates_plus_network",
+                    edge_mask=edge_mask,
+                    score_normalization=score_normalization,
                 ),
             )
             if not fold_performance.empty:
@@ -777,6 +866,34 @@ def render_targeted_prediction_view() -> None:
                     use_container_width=True,
                     config={"displaylogo": False},
                 )
+            if not masked_selection and evidence_tier in {"secondary", "exploratory"}:
+                tier_comparisons = cached_targeted_prediction_table(
+                    "tier_comparisons",
+                    _targeted_filters(
+                        evidence_tier=evidence_tier,
+                        module_definition=module_definition,
+                        network_method=network_method,
+                        model_outcome=outcome,
+                    ),
+                )
+                if not tier_comparisons.empty:
+                    st.caption(
+                        "Secondary and exploratory paired comparisons use separate BH families; "
+                        "exploratory rows retain both global-tier and within-outcome FDR."
+                    )
+                    filterable_dataframe(
+                        tier_comparisons,
+                        table_key="targeted_tier_comparisons",
+                        table_name="Nested-CV paired performance comparisons",
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+                    st.download_button(
+                        "Download paired comparisons (TSV)",
+                        data=dataframe_to_tsv_bytes(tier_comparisons),
+                        file_name="targeted_lioness_nested_cv_paired_comparisons.tsv",
+                        mime="text/tab-separated-values",
+                    )
 
     with panel_tab:
         if panel_strategy == "all_modules":
@@ -813,6 +930,12 @@ def render_targeted_prediction_view() -> None:
                     use_container_width=True,
                     hide_index=True,
                 )
+                st.download_button(
+                    "Download consensus panel (TSV)",
+                    data=dataframe_to_tsv_bytes(consensus),
+                    file_name="targeted_lioness_consensus_panel.tsv",
+                    mime="text/tab-separated-values",
+                )
             if not selection.empty:
                 k_distribution = (
                     selection[["outer_repeat", "outer_fold", "selected_k"]]
@@ -848,7 +971,7 @@ def render_targeted_prediction_view() -> None:
             key="targeted_diagnostic_variant",
         )
         diagnostics = cached_targeted_prediction_table(
-            "oof_predictions",
+            diagnostic_table,
             _targeted_filters(
                 evidence_tier=evidence_tier,
                 module_definition=module_definition,
@@ -857,6 +980,8 @@ def render_targeted_prediction_view() -> None:
                 model_outcome=outcome,
                 predictor_block=diagnostic_block,
                 model_variant=diagnostic_variant,
+                edge_mask=edge_mask,
+                score_normalization=score_normalization,
             ),
         )
         if diagnostics.empty:
@@ -900,16 +1025,24 @@ def render_targeted_prediction_view() -> None:
                 use_container_width=True,
                 hide_index=True,
             )
+            st.download_button(
+                "Download selected OOF predictions (TSV)",
+                data=dataframe_to_tsv_bytes(diagnostics),
+                file_name="targeted_lioness_oof_predictions.tsv",
+                mime="text/tab-separated-values",
+            )
 
     with coefficient_tab:
         coefficients = cached_targeted_prediction_table(
-            "coefficients",
+            coefficient_table,
             _targeted_filters(
                 evidence_tier=evidence_tier,
                 module_definition=module_definition,
                 network_method=network_method,
                 panel_strategy=panel_strategy,
                 model_outcome=outcome,
+                edge_mask=edge_mask,
+                score_normalization=score_normalization,
             ),
         )
         if coefficients.empty:
@@ -939,6 +1072,34 @@ def render_targeted_prediction_view() -> None:
                 table_name="Fold coefficients with post-selection KEGG annotations",
                 use_container_width=True,
                 hide_index=True,
+            )
+            module_coefficients = shown.loc[shown["module"].notna()].copy()
+            if not module_coefficients.empty:
+                module_coefficients["component"] = (
+                    module_coefficients["feature_name"].astype(str)
+                    .str.split("__", n=1).str[1]
+                    .str.replace("MFBA9BA46", "DLPFC", regex=False)
+                )
+                component_summary = module_coefficients.groupby(
+                    ["coefficient_label", "component"], observed=True
+                ).agg(
+                    outer_fold_coefficients=("standardized_coefficient", "size"),
+                    coefficient_sum=("standardized_coefficient", "sum"),
+                    absolute_coefficient_sum=("abs_standardized_coefficient", "sum"),
+                    median_absolute_coefficient=("abs_standardized_coefficient", "median"),
+                ).reset_index()
+                filterable_dataframe(
+                    component_summary,
+                    table_key="targeted_component_coefficients",
+                    table_name="Component-level coefficient summary",
+                    use_container_width=True,
+                    hide_index=True,
+                )
+            st.download_button(
+                "Download selected coefficients (TSV)",
+                data=dataframe_to_tsv_bytes(shown),
+                file_name="targeted_lioness_coefficients.tsv",
+                mime="text/tab-separated-values",
             )
 
     with tables_tab:
@@ -975,7 +1136,8 @@ def render_targeted_prediction_view() -> None:
 def render_prediction_view() -> None:
     """Render the leakage-reduced LIONESS held-out prediction catalog lazily."""
 
-    if targeted_prediction_data_available():
+    targeted_available = targeted_prediction_data_available()
+    if targeted_available:
         prediction_mode = st.radio(
             "Prediction mode",
             options=["targeted", "benchmark"],
@@ -988,6 +1150,12 @@ def render_prediction_view() -> None:
             return
 
     st.subheader("Leakage-reduced LIONESS prediction")
+    if targeted_available:
+        st.warning(
+            "Previously inspected sensitivity data: this benchmark catalog remains useful for "
+            "comparison, but it is not independent validation and cannot define or tune a "
+            "targeted module panel."
+        )
     st.caption(
         "The module definitions are fixed from the prior analysis, but reference networks, "
         "AD–Control edge masks, preprocessing, and elastic-net tuning use development data "

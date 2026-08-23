@@ -40,6 +40,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--credentials", type=Path, required=True)
     parser.add_argument("--root-folder-id", required=True)
     parser.add_argument("--local-prediction", type=Path, default=Path("data/prediction"))
+    parser.add_argument(
+        "--remote-directory",
+        default="prediction",
+        help="Directory below the configured Drive root (for example prediction_targeted).",
+    )
+    parser.add_argument(
+        "--manifest-name",
+        default="prediction_public_manifest.json",
+        help="Required manifest filename in the local prediction directory.",
+    )
     return parser.parse_args()
 
 
@@ -97,8 +107,11 @@ def update_file(session: AuthorizedSession, path: Path, file_id: str) -> dict[st
 def main() -> None:
     args = parse_args()
     local_root = args.local_prediction.resolve()
-    if not (local_root / "prediction_public_manifest.json").is_file():
+    if not (local_root / args.manifest_name).is_file():
         raise FileNotFoundError("Prediction public manifest is missing from the local bundle")
+    remote_directory = str(args.remote_directory).strip("/")
+    if not remote_directory or ".." in Path(remote_directory).parts:
+        raise ValueError("--remote-directory must be a safe path below the Drive root")
     credentials = service_account.Credentials.from_service_account_info(
         json.loads(args.credentials.read_text(encoding="utf-8")), scopes=[DRIVE_SCOPE]
     )
@@ -116,7 +129,7 @@ def main() -> None:
     uploaded = updated = reused = created_folders = 0
     for local in sorted(path for path in local_root.rglob("*") if path.is_file()):
         local_relative = local.relative_to(local_root).as_posix()
-        remote_relative = f"prediction/{local_relative}"
+        remote_relative = f"{remote_directory}/{local_relative}"
         parent_relative = Path(remote_relative).parent.as_posix()
         if parent_relative == ".":
             parent_relative = ""

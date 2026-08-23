@@ -31,6 +31,10 @@ PREDICATE_COLUMNS = (
     "outcome",
     "predictor_block",
     "model_variant",
+    "evidence_tier",
+    "panel_strategy",
+    "selection_outcome",
+    "model_outcome",
 )
 
 

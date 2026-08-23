@@ -36,6 +36,9 @@ from app_helpers.charts import (  # noqa: E402
     prediction_observed_figure,
     prediction_threshold_figure,
     resolved_to_long,
+    targeted_fold_robustness_figure,
+    targeted_primary_comparison_figure,
+    targeted_selection_frequency_figure,
 )
 from app_helpers.correlations import calculate_correlations  # noqa: E402
 from app_helpers.data import (  # noqa: E402
@@ -696,3 +699,54 @@ def test_prediction_ct_ts_forest_uses_absolute_confidence_limits_in_hover() -> N
     assert figure.data[0].customdata[0, 0] == 0.03
     assert figure.data[0].customdata[0, 1] == 0.21
     assert "error_x" not in figure.data[0].hovertemplate
+
+
+def test_targeted_prediction_charts_render_nested_cv_contract() -> None:
+    comparisons = pd.DataFrame(
+        {
+            "comparison": [
+                "targeted_CT_minus_all_module_CT",
+                "targeted_CT_plus_covariates_minus_covariates",
+                "tissue_neutral_targeted_CT_minus_TS",
+            ],
+            "performance_difference": [0.04, 0.08, 0.02],
+            "ci_low": [-0.01, 0.03, -0.02],
+            "ci_high": [0.09, 0.13, 0.06],
+            "p_value": [0.10, 0.01, 0.30],
+            "fdr_primary_family": [0.15, 0.03, 0.30],
+            "n_oof": [331, 331, 331],
+        }
+    )
+    comparison = targeted_primary_comparison_figure(comparisons, title="Primary")
+    assert len(comparison.data) == 1
+    assert len(comparison.data[0].x) == 3
+
+    consensus = pd.DataFrame(
+        {
+            "module": [935, 1918],
+            "outer_selection_frequency": [0.88, 0.64],
+            "mean_stable_rank": [2.0, 6.0],
+            "median_incremental_score": [0.03, 0.01],
+            "consensus_selected": [True, False],
+            "kegg_annotation": ["KEGG enrichment: A", "KEGG enrichment: B"],
+        }
+    )
+    stability = targeted_selection_frequency_figure(consensus, title="Stability")
+    assert set(stability.data[0].y) == {"M935", "M1918"}
+
+    folds = pd.DataFrame(
+        {
+            "metric": ["roc_auc"] * 4,
+            "value": [0.66, 0.70, 0.62, 0.69],
+            "predictor_block": ["CT_pooled", "CT_pooled", "TS_pooled", "TS_pooled"],
+            "outer_repeat": [0, 1, 0, 1],
+            "outer_fold": [0, 0, 0, 0],
+        }
+    )
+    robustness = targeted_fold_robustness_figure(
+        folds,
+        metric="roc_auc",
+        block_labels={"CT_pooled": "CT pooled", "TS_pooled": "TS pooled"},
+        title="Robustness",
+    )
+    assert len(robustness.data) == 2

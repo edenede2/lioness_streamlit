@@ -2586,7 +2586,14 @@ def prediction_threshold_figure(frame: pd.DataFrame, *, title: str) -> go.Figure
     probability_columns = [column for column in frame if column.startswith("probability_")]
     if len(probability_columns) != 2:
         return go.Figure()
-    positive_column = probability_columns[-1]
+    positive_column = next(
+        (
+            column
+            for column in ("probability_AD", "probability_1", "probability_1.0")
+            if column in probability_columns
+        ),
+        probability_columns[-1],
+    )
     positive_label = positive_column.removeprefix("probability_")
     score = pd.to_numeric(frame[positive_column], errors="coerce").to_numpy()
     numeric_truth = pd.to_numeric(frame["target"], errors="coerce")
