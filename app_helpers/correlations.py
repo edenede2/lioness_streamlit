@@ -26,6 +26,52 @@ def benjamini_hochberg(values: pd.Series) -> pd.Series:
     return result
 
 
+def add_across_module_fdr(
+    frame: pd.DataFrame,
+    *,
+    family_columns: Iterable[str],
+    module_column: str = "module",
+) -> pd.DataFrame:
+    """Adjust Pearson and Spearman p-values across modules within fixed strata.
+
+    Each family must contain at most one row per module. Missing p-values are retained
+    as missing and are excluded from the BH denominator, as no correlation was tested.
+    """
+
+    family_columns = list(family_columns)
+    required = {
+        module_column,
+        *family_columns,
+        "pearson_p",
+        "spearman_p",
+    }
+    missing = required.difference(frame.columns)
+    if missing:
+        raise ValueError(
+            "Across-module FDR input is missing columns: " + ", ".join(sorted(missing))
+        )
+    result = frame.copy()
+    duplicate = result.duplicated([*family_columns, module_column], keep=False)
+    if duplicate.any():
+        example = result.loc[
+            duplicate, [*family_columns, module_column]
+        ].head(5)
+        raise ValueError(
+            "Across-module FDR requires one correlation per module and family; "
+            f"duplicate keys include {example.to_dict(orient='records')}"
+        )
+    grouped = result.groupby(family_columns, observed=True, dropna=False, sort=False)
+    for method in ("pearson", "spearman"):
+        p_column = f"{method}_p"
+        result[f"{method}_fdr_across_modules"] = grouped[p_column].transform(
+            benjamini_hochberg
+        )
+        result[f"{method}_fdr_module_family_n"] = grouped[p_column].transform(
+            lambda values: int(pd.to_numeric(values, errors="coerce").notna().sum())
+        ).astype(int)
+    return result
+
+
 def calculate_correlations(
     frame: pd.DataFrame,
     group_columns: list[str],
@@ -67,4 +113,3 @@ def calculate_correlations(
     result["pearson_fdr_displayed_family"] = benjamini_hochberg(result["pearson_p"])
     result["spearman_fdr_displayed_family"] = benjamini_hochberg(result["spearman_p"])
     return result
-

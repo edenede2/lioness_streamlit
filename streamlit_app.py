@@ -72,7 +72,7 @@ from app_helpers.charts import (
     targeted_transform_heatmap_figure,
     resolved_to_long,
 )
-from app_helpers.correlations import calculate_correlations
+from app_helpers.correlations import add_across_module_fdr, calculate_correlations
 from app_helpers.module_finder import FINDER_CRITERIA, build_module_finder_table
 from app_helpers.table_controls import filterable_dataframe
 from app_helpers.drive_data import data_source_label, ensure_data_path
@@ -453,6 +453,180 @@ def attach_metadata(frame: pd.DataFrame) -> pd.DataFrame:
     return frame.merge(metadata[additional], on="sample_id", how="left", validate="many_to_one")
 
 
+def standardize_stored_associations(
+    statistics: pd.DataFrame,
+    *,
+    resolved: bool,
+    scale: str,
+    components: tuple[str, ...],
+    phenotype: str,
+) -> pd.DataFrame:
+    """Convert stored group statistics to one row per module and component."""
+
+    if resolved:
+        result = statistics.loc[statistics["component"].isin(components)].copy()
+        result["pearson_r"] = result[f"r_{scale}"]
+        result["pearson_p"] = result[f"p_{scale}"]
+        result["spearman_rho"] = result["rho"]
+        result["spearman_p"] = result["p_spearman"]
+    else:
+        parts: list[pd.DataFrame] = []
+        for component in components:
+            part = statistics.copy()
+            part["component"] = component
+            part["component_label"] = f"{component} aggregate"
+            part["pearson_r"] = part[f"r_{scale}_{component}"]
+            part["pearson_p"] = part[f"p_{scale}_{component}"]
+            part["spearman_rho"] = part[f"rho_{component}"]
+            part["spearman_p"] = part[f"p_spearman_{component}"]
+            parts.append(part)
+        result = pd.concat(parts, ignore_index=True)
+    result["outcome"] = phenotype
+    columns = [
+        "module",
+        "metric_family",
+        "component",
+        "component_label",
+        "diagnosis_group",
+        "outcome",
+        "n",
+        "pearson_r",
+        "pearson_p",
+        "spearman_rho",
+        "spearman_p",
+    ]
+    return result[columns]
+
+
+@st.cache_data(
+    show_spinner="Calculating association FDR across the selected module set…",
+    max_entries=48,
+)
+def cached_module_set_associations(
+    module_set: str,
+    module_count: int,
+    estimator: str,
+    method: str,
+    resolved: bool,
+    feature: str,
+    phenotype: str,
+    scale: str,
+    components: tuple[str, ...],
+    diagnoses: tuple[str, ...],
+    include_pooled: bool,
+    edge_rule: str,
+    differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
+    differential_fdr_threshold: float = 0.05,
+    score_normalization: str = "standard_pruned",
+    analysis_subset: str = "all_donors",
+) -> pd.DataFrame:
+    """Return Pearson/Spearman statistics with BH applied across modules only."""
+
+    statistic_arguments = {
+        "method": method,
+        "module": None,
+        "phenotype": phenotype,
+        "metric_family": feature,
+        "module_set": module_set,
+        "estimator": estimator,
+        "edge_rule": edge_rule,
+        "differential_edge_rule": differential_edge_rule,
+        "differential_fdr_scope": differential_fdr_scope,
+        "differential_fdr_threshold": differential_fdr_threshold,
+        "score_normalization": score_normalization,
+        "analysis_subset": analysis_subset,
+    }
+    if resolved:
+        stored = load_resolved_statistics(**statistic_arguments)
+    else:
+        stored = load_aggregate_statistics(**statistic_arguments)
+    group_statistics = standardize_stored_associations(
+        stored,
+        resolved=resolved,
+        scale=scale,
+        components=components,
+        phenotype=phenotype,
+    )
+    group_statistics = group_statistics.loc[
+        group_statistics["diagnosis_group"].isin(diagnoses)
+    ].copy()
+    group_statistics = add_across_module_fdr(
+        group_statistics,
+        family_columns=["component", "diagnosis_group", "outcome"],
+    )
+
+    families = group_statistics.groupby(
+        ["component", "diagnosis_group", "outcome"],
+        observed=True,
+        sort=False,
+    )["module"].nunique()
+    if not families.empty and not families.eq(int(module_count)).all():
+        raise ValueError(
+            "Stored association families do not contain every module in the selected "
+            f"definition ({module_count} expected): {families.to_dict()}"
+        )
+    if not include_pooled:
+        return group_statistics
+
+    scope_arguments = {
+        "method": method,
+        "module": None,
+        "metric_family": feature,
+        "module_set": module_set,
+        "estimator": estimator,
+        "edge_rule": edge_rule,
+        "differential_edge_rule": differential_edge_rule,
+        "differential_fdr_scope": differential_fdr_scope,
+        "differential_fdr_threshold": differential_fdr_threshold,
+        "score_normalization": score_normalization,
+    }
+    if resolved:
+        source = load_resolved_scope(**scope_arguments)
+        source = source.loc[source["component"].isin(components)]
+        long = resolved_to_long(source, scale)
+    else:
+        source = load_aggregate_scope(**scope_arguments)
+        long = aggregate_to_long(source, scale)
+        long = long.loc[long["component"].isin(components)]
+    long = attach_metadata(long)
+    if differential_edge_rule != "all" and analysis_subset != "all_donors":
+        split_value = {
+            "discovery_ad_control": "Discovery",
+            "validation_ad_control": "Validation",
+            "mci_external": "MCI_external",
+        }[analysis_subset]
+        long = long.loc[long["ad_control_split"].eq(split_value)]
+    long = long.loc[long["diagnosis_group"].isin(diagnoses)].copy()
+    long["diagnosis_group"] = "All donors"
+    pooled_statistics = calculate_correlations(
+        long,
+        group_columns=[
+            "module",
+            "metric_family",
+            "component",
+            "component_label",
+            "diagnosis_group",
+        ],
+        outcomes=[phenotype],
+    )
+    pooled_statistics = add_across_module_fdr(
+        pooled_statistics,
+        family_columns=["component", "diagnosis_group", "outcome"],
+    )
+    pooled_families = pooled_statistics.groupby(
+        ["component", "diagnosis_group", "outcome"],
+        observed=True,
+        sort=False,
+    )["module"].nunique()
+    if not pooled_families.empty and not pooled_families.eq(int(module_count)).all():
+        raise ValueError(
+            "Pooled association families do not contain every module in the selected "
+            f"definition ({module_count} expected): {pooled_families.to_dict()}"
+        )
+    return pd.concat([group_statistics, pooled_statistics], ignore_index=True)
+
+
 def add_correlation_labels(frame: pd.DataFrame) -> pd.DataFrame:
     result = frame.copy()
     result["outcome_label"] = result["outcome"].map(OUTCOME_LABELS)
@@ -596,12 +770,13 @@ def readable_method(method: str) -> str:
 
 def fdr_text(module_manifest: dict[str, object], module_count: int) -> str:
     return (
-        "Association FDR values use Benjamini–Hochberg correction separately by module "
-        "definition, estimator/network method, aggregate versus resolved component family, "
-        "correlation test, and BONOBO edge rule. Expanded global columns cover all 12 numeric "
-        "outcomes; primary-five columns are retained for backward comparison, and "
-        "within-outcome columns correct the selected outcome family. KEGG FDR is independent "
-        "and comes from the supplied enrichment analysis."
+        f"Association-plot module-set FDR uses Benjamini–Hochberg across the {module_count} "
+        "modules only, separately for every fixed phenotype, feature, component, diagnosis/"
+        "cohort, estimator/network method, edge rule, score scale, and Pearson/Spearman test. "
+        "Missing or constant correlations are excluded from the tested-hypothesis count. "
+        "The robust-statistics downloads retain the older all-12, primary-five, and broad "
+        "within-outcome correction columns for provenance and backward comparison. KEGG FDR "
+        "is independent and comes from the supplied enrichment analysis."
     )
 
 
@@ -2277,37 +2452,48 @@ with st.expander(
     )
 
 if active_view == "Associations":
-    if show_pooled_association:
-        pooled_input = plot_data.copy()
-        pooled_input["diagnosis_group"] = "All donors"
-        pooled_statistics = calculate_correlations(
-            pooled_input,
-            group_columns=[
-                "module",
-                "metric_family",
-                "component",
-                "component_label",
-                "diagnosis_group",
-            ],
-            outcomes=[phenotype],
-        )
-        pooled_label = (
-            "All donors (pooled)"
-            if set(diagnoses) == set(DIAGNOSIS_ORDER)
-            and analysis_subset == "all_donors"
-            else "All displayed donors (pooled)"
-        )
-    else:
-        pooled_statistics = pd.DataFrame()
-        pooled_label = "All donors (pooled)"
+    module_set_associations = cached_module_set_associations(
+        module_set,
+        module_count,
+        estimator,
+        method,
+        resolved,
+        feature,
+        phenotype,
+        scale,
+        tuple(selected_components),
+        tuple(diagnoses),
+        show_pooled_association,
+        edge_rule,
+        differential_edge_rule,
+        differential_fdr_scope,
+        differential_fdr_threshold,
+        score_normalization,
+        analysis_subset,
+    )
+    displayed_association_statistics = module_set_associations.loc[
+        module_set_associations["module"].astype(int).eq(int(module))
+    ].copy()
+    pooled_label = (
+        "All donors (pooled)"
+        if set(diagnoses) == set(DIAGNOSIS_ORDER)
+        and analysis_subset == "all_donors"
+        else "All displayed donors (pooled)"
+    )
+    pooled_statistics = displayed_association_statistics.loc[
+        displayed_association_statistics["diagnosis_group"].eq("All donors")
+    ].copy()
     st.subheader("Phenotype association")
     st.caption(
         f"Diagnosis-specific points with {correlation_method} correlation annotations and "
         "ordinary least-squares trend lines. By default, a dashed pooled line and pooled "
         "correlation summarize all displayed donors in addition to the within-diagnosis "
         "associations. The pooled result is descriptive and can reflect between-diagnosis "
-        "separation; its panel FDR adjusts only across the currently displayed component "
-        "panels. Click a diagnosis "
+        f"separation. Every Pearson and Spearman FDR is BH-adjusted only across the "
+        f"{module_count} modules in the selected module definition, while holding the "
+        "phenotype, feature, tissue component, diagnosis/cohort, estimator, network method, "
+        "edge rule, score scale, and correlation method fixed. Modules without a valid "
+        "correlation are not counted as tested hypotheses. Click a diagnosis "
         "in the legend to hide or show its points and trend together. Point shape identifies "
         "diagnosis; point color follows the selected color variable. Gray points have a missing "
         "value for a continuous color variable. The OLS lines are visual guides and do not "
@@ -2338,6 +2524,7 @@ if active_view == "Associations":
         kegg_subtitles=association_subtitles,
         pooled_statistics=pooled_statistics,
         pooled_label=pooled_label,
+        module_fdr_statistics=displayed_association_statistics,
     )
     st.plotly_chart(
         figure,
@@ -2382,6 +2569,45 @@ if active_view == "Associations":
         ),
         mime="text/tab-separated-values",
     )
+    association_table = displayed_association_statistics.copy()
+    association_table["diagnosis_group"] = association_table[
+        "diagnosis_group"
+    ].replace({"All donors": pooled_label})
+    association_table.insert(0, "module_definition", module_set_label)
+    association_columns = [
+        "module_definition",
+        "module",
+        "metric_family",
+        "component_label",
+        "diagnosis_group",
+        "outcome",
+        "n",
+        "pearson_r",
+        "pearson_p",
+        "pearson_fdr_across_modules",
+        "pearson_fdr_module_family_n",
+        "spearman_rho",
+        "spearman_p",
+        "spearman_fdr_across_modules",
+        "spearman_fdr_module_family_n",
+    ]
+    with st.expander("Pearson and Spearman statistics · BH across modules", expanded=False):
+        filterable_dataframe(
+            association_table[association_columns],
+            table_key="association_module_set_fdr",
+            table_name="Association statistics",
+            use_container_width=True,
+            hide_index=True,
+        )
+        st.download_button(
+            "Download displayed association statistics (TSV)",
+            data=dataframe_to_tsv_bytes(association_table[association_columns]),
+            file_name=(
+                f"{download_prefix}M{module}_{phenotype}_{feature}_{method}_"
+                "association_module_set_fdr.tsv"
+            ),
+            mime="text/tab-separated-values",
+        )
 
 if active_view == "Correlation heatmaps":
     st.subheader("Network-score correlations across phenotypes and outcomes")

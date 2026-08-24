@@ -77,6 +77,24 @@ def test_association_view_defaults_to_pooled_all_donor_association() -> None:
         app.checkbox, "Show pooled association across displayed donors"
     )
     assert pooled.value is True
+    assert any(
+        "BH-adjusted only across the 154 modules" in str(caption.value)
+        for caption in app.caption
+    )
+    association_table = next(
+        dataframe.value
+        for dataframe in app.dataframe
+        if "spearman_fdr_across_modules" in dataframe.value.columns
+    )
+    assert len(association_table) == 8
+    assert set(association_table["diagnosis_group"]) == {
+        "Control",
+        "MCI",
+        "AD",
+        "All donors (pooled)",
+    }
+    assert association_table["pearson_fdr_module_family_n"].between(1, 154).all()
+    assert association_table["spearman_fdr_module_family_n"].between(1, 154).all()
 
 
 def test_prediction_view_uses_leakage_reduced_exploratory_default() -> None:

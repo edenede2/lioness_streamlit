@@ -2313,6 +2313,15 @@ def main() -> None:
                 "method, aggregate or resolved component family, correlation test, "
                 "and BONOBO edge rule"
             ),
+            "association_across_modules": {
+                "definition": (
+                    "For each fixed phenotype, feature, component, diagnosis/cohort, "
+                    "score scale, estimator/network method, edge rule, and correlation "
+                    "test, BH is calculated across modules only; missing or constant "
+                    "correlations are excluded from the tested-hypothesis count"
+                ),
+                "module_rows_per_family": config.module_count,
+            },
             "lioness": {
                 "all12_aggregate_global": config.module_count * 6 * 12 * 3,
                 "primary5_aggregate_global": config.module_count * 6 * 5 * 3,

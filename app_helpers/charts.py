@@ -515,6 +515,7 @@ def _stat_text(
     scale: str,
     resolved: bool,
     correlation_method: str,
+    module_fdr_row: pd.Series | None = None,
 ) -> str:
     if row is None:
         return "statistics unavailable"
@@ -568,6 +569,13 @@ def _stat_text(
     )
     if q_available:
         text += f"; FDR={_format_number(q)}"
+    if module_fdr_row is not None:
+        module_fdr = module_fdr_row.get(
+            f"{correlation_method}_fdr_across_modules"
+        )
+        if pd.notna(module_fdr):
+            text = text.rsplit("; FDR=", 1)[0] if "; FDR=" in text else text
+            text += f"; module-set FDR={_format_number(module_fdr)}"
     return text
 
 
@@ -583,12 +591,18 @@ def _pooled_stat_text(
     if correlation_method == "spearman":
         coefficient = row.get("spearman_rho")
         p = row.get("spearman_p")
-        q = row.get("spearman_fdr_displayed_family")
+        q = row.get(
+            "spearman_fdr_across_modules",
+            row.get("spearman_fdr_displayed_family"),
+        )
         coefficient_label = "ρ"
     elif correlation_method == "pearson":
         coefficient = row.get("pearson_r")
         p = row.get("pearson_p")
-        q = row.get("pearson_fdr_displayed_family")
+        q = row.get(
+            "pearson_fdr_across_modules",
+            row.get("pearson_fdr_displayed_family"),
+        )
         coefficient_label = "r"
     else:
         raise ValueError(f"Unsupported correlation method: {correlation_method}")
@@ -598,7 +612,12 @@ def _pooled_stat_text(
         f"p={_format_number(p)}"
     )
     if pd.notna(q):
-        text += f"; panel FDR={_format_number(q)}"
+        fdr_label = (
+            "module-set FDR"
+            if f"{correlation_method}_fdr_across_modules" in row.index
+            else "panel FDR"
+        )
+        text += f"; {fdr_label}={_format_number(q)}"
     return text
 
 
@@ -655,6 +674,7 @@ def association_figure(
     kegg_subtitles: dict[str, str] | None = None,
     pooled_statistics: pd.DataFrame | None = None,
     pooled_label: str = "All donors (pooled)",
+    module_fdr_statistics: pd.DataFrame | None = None,
 ) -> go.Figure:
     """Build faceted scatter plots with diagnosis and optional pooled associations."""
     diagnoses = list(diagnoses)
@@ -669,6 +689,11 @@ def association_figure(
     kegg_subtitles = kegg_subtitles or {}
     pooled_statistics = (
         pooled_statistics if pooled_statistics is not None else pd.DataFrame()
+    )
+    module_fdr_statistics = (
+        module_fdr_statistics
+        if module_fdr_statistics is not None
+        else pd.DataFrame()
     )
     subplot_titles = []
     for component, component_label in component_pairs:
@@ -784,9 +809,12 @@ def association_figure(
                     col=col,
                 )
             stat_row = _statistics_lookup(statistics, component, diagnosis, resolved)
+            module_fdr_row = _statistics_lookup(
+                module_fdr_statistics, component, diagnosis, resolved=True
+            )
             stat_lines.append(
                 f"<b>{diagnosis}</b>: "
-                f"{_stat_text(stat_row, scale, resolved, correlation_method)}"
+                f"{_stat_text(stat_row, scale, resolved, correlation_method, module_fdr_row)}"
             )
 
         if not pooled_statistics.empty:
