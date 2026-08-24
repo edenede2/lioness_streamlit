@@ -74,6 +74,8 @@ def test_prediction_view_uses_leakage_reduced_exploratory_default() -> None:
     app = AppTest.from_file(APP, default_timeout=180).run()
     app = select_view(app, "Prediction")
     assert_app_clean(app)
+    app = widget_with_label(app.radio, "Prediction mode").set_value("benchmark").run()
+    assert_app_clean(app)
     assert widget_with_label(app.selectbox, "Prediction reference design").value == (
         "development_frozen"
     )
