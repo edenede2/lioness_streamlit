@@ -70,6 +70,15 @@ def test_every_lazy_analysis_view_renders_cleanly() -> None:
         assert_app_clean(app)
 
 
+def test_association_view_defaults_to_pooled_all_donor_association() -> None:
+    app = AppTest.from_file(APP, default_timeout=180).run()
+    assert_app_clean(app)
+    pooled = widget_with_label(
+        app.checkbox, "Show pooled association across displayed donors"
+    )
+    assert pooled.value is True
+
+
 def test_prediction_view_uses_leakage_reduced_exploratory_default() -> None:
     app = AppTest.from_file(APP, default_timeout=180).run()
     app = select_view(app, "Prediction")

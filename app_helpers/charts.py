@@ -571,6 +571,37 @@ def _stat_text(
     return text
 
 
+def _pooled_stat_text(
+    row: pd.Series | None,
+    correlation_method: str,
+) -> str:
+    """Format statistics recalculated across the currently displayed donors."""
+
+    if row is None:
+        return "statistics unavailable"
+    correlation_method = correlation_method.lower()
+    if correlation_method == "spearman":
+        coefficient = row.get("spearman_rho")
+        p = row.get("spearman_p")
+        q = row.get("spearman_fdr_displayed_family")
+        coefficient_label = "ρ"
+    elif correlation_method == "pearson":
+        coefficient = row.get("pearson_r")
+        p = row.get("pearson_p")
+        q = row.get("pearson_fdr_displayed_family")
+        coefficient_label = "r"
+    else:
+        raise ValueError(f"Unsupported correlation method: {correlation_method}")
+    text = (
+        f"n={int(row.get('n', 0))}; "
+        f"{coefficient_label}={_format_number(coefficient)}; "
+        f"p={_format_number(p)}"
+    )
+    if pd.notna(q):
+        text += f"; panel FDR={_format_number(q)}"
+    return text
+
+
 def _statistics_lookup(
     statistics: pd.DataFrame,
     component: str,
@@ -589,6 +620,18 @@ def _statistics_lookup(
     if not resolved:
         row["_display_component"] = component
     return row
+
+
+def _pooled_statistics_lookup(
+    statistics: pd.DataFrame,
+    component: str,
+) -> pd.Series | None:
+    if statistics.empty or "component" not in statistics:
+        return None
+    match = statistics.loc[statistics["component"].eq(component)]
+    if match.empty:
+        return None
+    return match.iloc[0]
 
 
 def association_figure(
@@ -610,8 +653,10 @@ def association_figure(
     continuous_colorscale: str = "Blue–white–orange",
     reverse_colorscale: bool = False,
     kegg_subtitles: dict[str, str] | None = None,
+    pooled_statistics: pd.DataFrame | None = None,
+    pooled_label: str = "All donors (pooled)",
 ) -> go.Figure:
-    """Build faceted scatter plots with selected correlation annotations and OLS lines."""
+    """Build faceted scatter plots with diagnosis and optional pooled associations."""
     diagnoses = list(diagnoses)
     components = (
         frame[["component", "component_label"]]
@@ -622,6 +667,9 @@ def association_figure(
     ncols = 2 if len(component_pairs) <= 2 else 3
     nrows = math.ceil(len(component_pairs) / ncols)
     kegg_subtitles = kegg_subtitles or {}
+    pooled_statistics = (
+        pooled_statistics if pooled_statistics is not None else pd.DataFrame()
+    )
     subplot_titles = []
     for component, component_label in component_pairs:
         subtitle = kegg_subtitles.get(str(component))
@@ -739,6 +787,37 @@ def association_figure(
             stat_lines.append(
                 f"<b>{diagnosis}</b>: "
                 f"{_stat_text(stat_row, scale, resolved, correlation_method)}"
+            )
+
+        if not pooled_statistics.empty:
+            pooled = _clean_xy(panel, "metric_value", phenotype)
+            if len(pooled) >= 3 and pooled["metric_value"].nunique() > 1:
+                slope, intercept = np.polyfit(
+                    pooled["metric_value"], pooled[phenotype], 1
+                )
+                x_line = np.array(
+                    [pooled["metric_value"].min(), pooled["metric_value"].max()]
+                )
+                y_line = intercept + slope * x_line
+                fig.add_trace(
+                    go.Scatter(
+                        x=x_line,
+                        y=y_line,
+                        mode="lines",
+                        name=pooled_label,
+                        legendgroup="__pooled__",
+                        showlegend=index == 0,
+                        hoverinfo="skip",
+                        line={"color": "#1F2937", "width": 3, "dash": "dash"},
+                    ),
+                    row=row,
+                    col=col,
+                )
+            pooled_stat = _pooled_statistics_lookup(pooled_statistics, component)
+            stat_lines.insert(
+                0,
+                f"<b>{pooled_label}</b>: "
+                f"{_pooled_stat_text(pooled_stat, correlation_method)}",
             )
 
         axis_number = index + 1

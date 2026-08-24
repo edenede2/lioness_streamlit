@@ -2021,6 +2021,19 @@ with st.sidebar:
         options=DIAGNOSIS_ORDER,
         default=DIAGNOSIS_ORDER,
     )
+    show_pooled_association = (
+        st.checkbox(
+            "Show pooled association across displayed donors",
+            value=True,
+            help=(
+                "Adds one association and OLS trend using all donors that remain after "
+                "the diagnosis, cohort, tissue-component, and missing-value filters. "
+                "This is descriptive and may include between-diagnosis differences."
+            ),
+        )
+        if active_view == "Associations"
+        else False
+    )
     color_by = st.selectbox(
         "Color points by",
         options=list(COLOR_LABELS),
@@ -2264,10 +2277,37 @@ with st.expander(
     )
 
 if active_view == "Associations":
+    if show_pooled_association:
+        pooled_input = plot_data.copy()
+        pooled_input["diagnosis_group"] = "All donors"
+        pooled_statistics = calculate_correlations(
+            pooled_input,
+            group_columns=[
+                "module",
+                "metric_family",
+                "component",
+                "component_label",
+                "diagnosis_group",
+            ],
+            outcomes=[phenotype],
+        )
+        pooled_label = (
+            "All donors (pooled)"
+            if set(diagnoses) == set(DIAGNOSIS_ORDER)
+            and analysis_subset == "all_donors"
+            else "All displayed donors (pooled)"
+        )
+    else:
+        pooled_statistics = pd.DataFrame()
+        pooled_label = "All donors (pooled)"
     st.subheader("Phenotype association")
     st.caption(
         f"Diagnosis-specific points with {correlation_method} correlation annotations and "
-        "ordinary least-squares trend lines. Click a diagnosis "
+        "ordinary least-squares trend lines. By default, a dashed pooled line and pooled "
+        "correlation summarize all displayed donors in addition to the within-diagnosis "
+        "associations. The pooled result is descriptive and can reflect between-diagnosis "
+        "separation; its panel FDR adjusts only across the currently displayed component "
+        "panels. Click a diagnosis "
         "in the legend to hide or show its points and trend together. Point shape identifies "
         "diagnosis; point color follows the selected color variable. Gray points have a missing "
         "value for a continuous color variable. The OLS lines are visual guides and do not "
@@ -2296,6 +2336,8 @@ if active_view == "Associations":
         continuous_colorscale=continuous_colorscale,
         reverse_colorscale=reverse_colorscale,
         kegg_subtitles=association_subtitles,
+        pooled_statistics=pooled_statistics,
+        pooled_label=pooled_label,
     )
     st.plotly_chart(
         figure,

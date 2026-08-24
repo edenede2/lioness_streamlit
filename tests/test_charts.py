@@ -168,6 +168,60 @@ def test_scatter_and_distribution_chart_paths() -> None:
     assert all(trace.histnorm == "probability density" for trace in histogram.data)
 
 
+def test_association_scatter_adds_pooled_all_donor_statistics_and_trends() -> None:
+    aggregate = load_aggregate("control_anchored", 935, "connectivity")
+    long = aggregate_to_long(aggregate, "rint")
+    stats = load_aggregate_statistics(
+        "control_anchored", 935, "cogn_global", "connectivity"
+    )
+    pooled_input = long.copy()
+    pooled_input["diagnosis_group"] = "All donors"
+    pooled = calculate_correlations(
+        pooled_input,
+        group_columns=[
+            "module",
+            "metric_family",
+            "component",
+            "component_label",
+            "diagnosis_group",
+        ],
+        outcomes=["cogn_global"],
+    )
+    figure = association_figure(
+        long,
+        stats,
+        phenotype="cogn_global",
+        phenotype_label="Global cognition",
+        feature_label="Connectivity",
+        scale="rint",
+        scale_label="Z-score",
+        diagnoses=["Control", "MCI", "AD"],
+        module=935,
+        resolved=False,
+        color_by="diagnosis_group",
+        color_label="Diagnosis group",
+        hover_fields={},
+        pooled_statistics=pooled,
+    )
+
+    pooled_traces = [
+        trace for trace in figure.data if trace.legendgroup == "__pooled__"
+    ]
+    assert len(pooled_traces) == 2
+    assert sum(bool(trace.showlegend) for trace in pooled_traces) == 1
+    assert all(trace.line.dash == "dash" for trace in pooled_traces)
+    pooled_annotations = [
+        str(annotation.text)
+        for annotation in figure.layout.annotations
+        if "All donors (pooled)" in str(annotation.text)
+    ]
+    assert len(pooled_annotations) == 2
+    assert all(
+        "ρ=" in text and "p=" in text and "panel FDR=" in text
+        for text in pooled_annotations
+    )
+
+
 def test_association_panels_show_scope_matched_kegg_subtitles() -> None:
     aggregate = load_aggregate("control_anchored", 935, "connectivity")
     aggregate_long = aggregate_to_long(aggregate, "rint")
