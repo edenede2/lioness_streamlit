@@ -2330,6 +2330,16 @@ def prediction_performance_figure(
         else pd.Series("available", index=selected.index)
     )
     selected = selected.assign(_display_status=status)
+    selected["_network_predictors"] = pd.to_numeric(
+        selected.get(
+            "n_network_predictors", pd.Series(0, index=selected.index)
+        ), errors="coerce"
+    ).fillna(0)
+    selected["_transcriptomic_predictors"] = pd.to_numeric(
+        selected.get(
+            "n_transcriptomic_predictors", pd.Series(0, index=selected.index)
+        ), errors="coerce"
+    ).fillna(0)
     for variant, subset in selected.groupby("model_variant", observed=True):
         figure.add_trace(
             go.Bar(
@@ -2337,9 +2347,17 @@ def prediction_performance_figure(
                 x=[block_labels.get(str(value), str(value)) for value in subset["predictor_block"]],
                 y=subset["value"],
                 marker_color=colors.get(str(variant), "#526273"),
-                customdata=np.column_stack([subset[n_column], subset["_display_status"]]),
+                customdata=np.column_stack(
+                    [
+                        subset[n_column], subset["_display_status"],
+                        subset["_network_predictors"],
+                        subset["_transcriptomic_predictors"],
+                    ]
+                ),
                 hovertemplate=(
                     "%{x}<br>Held-out " + metric + ": %{y:.3f}<br>n=%{customdata[0]}"
+                    "<br>Network predictors=%{customdata[2]:.0f}"
+                    "<br>Eigengene predictors=%{customdata[3]:.0f}"
                     "<br>Status=%{customdata[1]}<extra>%{fullData.name}</extra>"
                 ),
             )
