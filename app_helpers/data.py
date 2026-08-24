@@ -163,6 +163,12 @@ PREDICTION_MODEL_LABELS = {
     "covariates": "Demographics + APOE baseline",
     "network_only": "Network only",
     "covariates_plus_network": "Demographics + APOE + network",
+    "transcriptomics_only": "Transcriptomics only (module eigengenes)",
+    "covariates_plus_transcriptomics": "Demographics + APOE + transcriptomics",
+    "network_plus_transcriptomics": "Network + transcriptomics",
+    "covariates_plus_network_plus_transcriptomics": (
+        "Demographics + APOE + network + transcriptomics"
+    ),
 }
 PREDICTION_REFERENCE_LABELS = {
     "development_frozen": "Leakage-reduced frozen development reference",

@@ -1011,11 +1011,13 @@ def render_targeted_prediction_view() -> None:
                 & performance_catalog["predictor_block"].eq("CT_pooled")
                 & performance_catalog["metric"].eq("roc_auc")
             ]
-            absolute_metrics = st.columns(3)
+            absolute_metrics = st.columns(5)
             absolute_specs = (
                 ("Targeted CT ROC-AUC", "tissue_neutral_ad", "covariates_plus_network"),
+                ("Transcriptomic ROC-AUC", "tissue_neutral_ad", "transcriptomics_only"),
+                ("Adjusted transcriptomic ROC-AUC", "tissue_neutral_ad", "covariates_plus_transcriptomics"),
+                ("Combined ROC-AUC", "tissue_neutral_ad", "covariates_plus_network_plus_transcriptomics"),
                 ("All-module CT ROC-AUC", "all_modules", "covariates_plus_network"),
-                ("Covariate ROC-AUC", "tissue_neutral_ad", "covariates"),
             )
             for column, (label, strategy, variant) in zip(
                 absolute_metrics, absolute_specs, strict=True
@@ -1071,7 +1073,16 @@ def render_targeted_prediction_view() -> None:
 
     with comparison_tab:
         adjusted = selected.loc[
-            selected["model_variant"].isin(["network_only", "covariates_plus_network"])
+            selected["model_variant"].isin(
+                [
+                    "network_only",
+                    "covariates_plus_network",
+                    "transcriptomics_only",
+                    "covariates_plus_transcriptomics",
+                    "network_plus_transcriptomics",
+                    "covariates_plus_network_plus_transcriptomics",
+                ]
+            )
         ].copy()
         if adjusted.empty:
             st.info("No CT/TS comparison is available for this selection.")
@@ -1419,8 +1430,23 @@ def render_targeted_prediction_view() -> None:
                 format_func=lambda value: PREDICTION_BLOCK_LABELS.get(value, value),
                 key="targeted_coefficient_block",
             )
+            coefficient_variants = coefficients.loc[
+                coefficients["predictor_block"].eq(coefficient_block),
+                "model_variant",
+            ].drop_duplicates().tolist()
+            coefficient_variant = st.selectbox(
+                "Targeted coefficient model",
+                options=coefficient_variants,
+                format_func=lambda value: PREDICTION_MODEL_LABELS.get(value, value),
+                index=(
+                    coefficient_variants.index("covariates_plus_network")
+                    if "covariates_plus_network" in coefficient_variants else 0
+                ),
+                key="targeted_coefficient_variant",
+            )
             shown = coefficients.loc[
                 coefficients["predictor_block"].eq(coefficient_block)
+                & coefficients["model_variant"].eq(coefficient_variant)
             ].copy()
             st.plotly_chart(
                 prediction_coefficient_figure(
@@ -1497,6 +1523,15 @@ def render_targeted_prediction_view() -> None:
             "fold; validation/test values are mapped through the training-derived monotone "
             "interpolation and clipped outside the training range. Panels and K may differ by "
             "transformation."
+        )
+        st.markdown(
+            "**Transcriptomic comparator.** For every module, tissue-specific PCA1 "
+            "eigengenes use training-only gene medians, scaling, loadings, and deterministic "
+            "sign alignment. A single-tissue block uses that tissue; a tissue-pair block uses "
+            "the two represented tissues; pooled CT/TS and resolved blocks concatenate AC, "
+            "DLPFC, and PCG eigengenes without a second PCA. The same frozen LIONESS panel is "
+            "used, and expression never contributes to panel selection. Joint models show "
+            "whether connectivity adds information beyond module expression activity."
         )
         st.caption(
             "The current fixed 70/30 held-out results are previously inspected sensitivity "
@@ -1748,7 +1783,18 @@ def render_prediction_view() -> None:
         )
         diagnostic_variant = st.radio(
             "Diagnostic model",
-            options=["network_only", "covariates_plus_network"],
+            options=[
+                value
+                for value in (
+                    "network_only",
+                    "covariates_plus_network",
+                    "transcriptomics_only",
+                    "covariates_plus_transcriptomics",
+                    "network_plus_transcriptomics",
+                    "covariates_plus_network_plus_transcriptomics",
+                )
+                if value in set(selected_performance["model_variant"])
+            ],
             format_func=lambda value: PREDICTION_MODEL_LABELS[value],
             horizontal=True,
         )
@@ -1844,7 +1890,16 @@ def render_prediction_view() -> None:
         }
         coefficients = cached_prediction_coefficients(**coefficient_filters)
         coefficients = coefficients.loc[
-            coefficients["model_variant"].isin(["network_only", "covariates_plus_network"])
+            coefficients["model_variant"].isin(
+                [
+                    "network_only",
+                    "covariates_plus_network",
+                    "transcriptomics_only",
+                    "covariates_plus_transcriptomics",
+                    "network_plus_transcriptomics",
+                    "covariates_plus_network_plus_transcriptomics",
+                ]
+            )
         ]
         if coefficients.empty:
             st.info("No nonzero influential coefficients are available for this selection.")
@@ -1929,6 +1984,13 @@ def render_prediction_view() -> None:
             "before one held-out evaluation. Logistic models use a 50/50 L1/L2 mix and tune "
             "three regularization strengths; continuous models tune both the mixing fraction "
             "and regularization strength."
+        )
+        st.markdown(
+            "Module eigengenes are fitted on development expression only and applied to the "
+            "held-out donors with frozen gene preprocessing and PCA loadings. Tissue and "
+            "tissue-pair blocks use only their represented regions; pooled blocks concatenate "
+            "AC, DLPFC, and PCG eigengenes. Transcriptomic-only and joint network–transcriptomic "
+            "models are displayed beside the dummy, demographic/APOE, and network models."
         )
         st.caption(
             "For prediction only, 30 exact repeated full-cohort tissue–gene assignment "

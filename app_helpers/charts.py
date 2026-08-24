@@ -2318,6 +2318,10 @@ def prediction_performance_figure(
         "covariates": "#6A51A3",
         "network_only": "#2C7FB8",
         "covariates_plus_network": "#E66101",
+        "transcriptomics_only": "#1B9E77",
+        "covariates_plus_transcriptomics": "#66A61E",
+        "network_plus_transcriptomics": "#D95F02",
+        "covariates_plus_network_plus_transcriptomics": "#A6761D",
     }
     n_column = "n_held_out" if "n_held_out" in selected else "n_oof"
     status = (
