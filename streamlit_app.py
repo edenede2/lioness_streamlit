@@ -1005,29 +1005,51 @@ def render_targeted_prediction_view() -> None:
             and outcome == "diagnosis_binary"
         ):
             absolute = performance_catalog.loc[
-                performance_catalog["module_definition"].eq("control_derived")
+                performance_catalog["evidence_tier"].eq("primary")
+                & performance_catalog["score_transform"].eq("raw")
+                & performance_catalog["edge_mask"].eq("all")
+                & performance_catalog["score_normalization"].eq("standard_pruned")
+                & performance_catalog["module_definition"].eq("control_derived")
                 & performance_catalog["network_method"].eq("control_anchored")
                 & performance_catalog["model_outcome"].eq("diagnosis_binary")
                 & performance_catalog["predictor_block"].eq("CT_pooled")
                 & performance_catalog["metric"].eq("roc_auc")
             ]
-            absolute_metrics = st.columns(5)
             absolute_specs = (
-                ("Targeted CT ROC-AUC", "tissue_neutral_ad", "covariates_plus_network"),
-                ("Transcriptomic ROC-AUC", "tissue_neutral_ad", "transcriptomics_only"),
-                ("Adjusted transcriptomic ROC-AUC", "tissue_neutral_ad", "covariates_plus_transcriptomics"),
-                ("Combined ROC-AUC", "tissue_neutral_ad", "covariates_plus_network_plus_transcriptomics"),
-                ("All-module CT ROC-AUC", "all_modules", "covariates_plus_network"),
+                (
+                    "Unadjusted comparators",
+                    (
+                        ("Covariates", "tissue_neutral_ad", "covariates"),
+                        ("Connectivity", "tissue_neutral_ad", "network_only"),
+                        ("Transcriptomics", "tissue_neutral_ad", "transcriptomics_only"),
+                        ("Connectivity + transcriptomics", "tissue_neutral_ad", "network_plus_transcriptomics"),
+                    ),
+                ),
+                (
+                    "Covariate-adjusted comparators",
+                    (
+                        ("Adjusted connectivity", "tissue_neutral_ad", "covariates_plus_network"),
+                        ("Adjusted transcriptomics", "tissue_neutral_ad", "covariates_plus_transcriptomics"),
+                        ("Fully adjusted joint", "tissue_neutral_ad", "covariates_plus_network_plus_transcriptomics"),
+                        ("All-module adjusted connectivity", "all_modules", "covariates_plus_network"),
+                    ),
+                ),
             )
-            for column, (label, strategy, variant) in zip(
-                absolute_metrics, absolute_specs, strict=True
-            ):
-                value = absolute.loc[
-                    absolute["panel_strategy"].eq(strategy)
-                    & absolute["model_variant"].eq(variant),
-                    "value",
-                ]
-                column.metric(label, f"{float(value.iloc[0]):.3f}" if len(value) else "NA")
+            for row_label, specifications in absolute_specs:
+                st.caption(row_label)
+                absolute_metrics = st.columns(len(specifications))
+                for column, (label, strategy, variant) in zip(
+                    absolute_metrics, specifications, strict=True
+                ):
+                    value = absolute.loc[
+                        absolute["panel_strategy"].eq(strategy)
+                        & absolute["model_variant"].eq(variant),
+                        "value",
+                    ]
+                    column.metric(
+                        f"{label} ROC-AUC",
+                        f"{float(value.iloc[0]):.3f}" if len(value) else "NA",
+                    )
         st.plotly_chart(
             prediction_performance_figure(
                 selected,
