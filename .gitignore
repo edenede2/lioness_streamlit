@@ -6,3 +6,4 @@ __pycache__/
 data/
 google-drive-service-account.json
 streamSecrets*.txt
+manuscript_story/
