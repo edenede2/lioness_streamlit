@@ -2323,6 +2323,16 @@ def prediction_performance_figure(
         "network_plus_transcriptomics": "#D95F02",
         "covariates_plus_network_plus_transcriptomics": "#A6761D",
     }
+    model_order = [
+        "dummy",
+        "covariates",
+        "transcriptomics_only",
+        "network_only",
+        "covariates_plus_transcriptomics",
+        "covariates_plus_network",
+        "network_plus_transcriptomics",
+        "covariates_plus_network_plus_transcriptomics",
+    ]
     n_column = "n_held_out" if "n_held_out" in selected else "n_oof"
     status = (
         selected["status"].astype(str)
@@ -2340,7 +2350,13 @@ def prediction_performance_figure(
             "n_transcriptomic_predictors", pd.Series(0, index=selected.index)
         ), errors="coerce"
     ).fillna(0)
-    for variant, subset in selected.groupby("model_variant", observed=True):
+    observed_variants = selected["model_variant"].astype(str).drop_duplicates().tolist()
+    ordered_variants = [value for value in model_order if value in observed_variants]
+    ordered_variants.extend(
+        value for value in observed_variants if value not in ordered_variants
+    )
+    for variant in ordered_variants:
+        subset = selected.loc[selected["model_variant"].astype(str).eq(variant)]
         figure.add_trace(
             go.Bar(
                 name=model_labels.get(str(variant), str(variant)),
