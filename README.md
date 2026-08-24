@@ -288,6 +288,7 @@ the repository root:
 
 ```bash
 python scripts/python/prepare_targeted_lioness_cv_features.py --workers 8
+python scripts/python/prepare_prediction_eigengenes.py
 python scripts/python/run_targeted_lioness_nested_models.py
 python scripts/python/build_targeted_prediction_public_bundle.py --replace
 python scripts/python/validate_targeted_lioness_prediction.py
@@ -300,6 +301,15 @@ module; completed module checkpoints are reused automatically. The model command
 similarly be run by evidence tier and outer fold. Do not publish an incomplete bundle
 except for staging with `--allow-incomplete`; the app labels such a bundle as interim and
 not reportable.
+
+The eigengene stage fits one PCA1 score per module and tissue using only each
+outer-training fold, then projects the corresponding outer-test donors with the frozen
+training loadings. Single-tissue prediction blocks use that tissue's eigengene, tissue-pair
+blocks use both represented tissue eigengenes, and pooled or multi-component blocks use
+the three AC/DLPFC/PCG tissue eigengenes. The Prediction view compares dummy,
+demographics/APOE, transcriptomics-only, connectivity-only, and their adjusted and joint
+models while keeping the LIONESS-selected module panel fixed. Module selection and model
+performance never use KEGG annotations.
 
 After validation, the same incremental Drive uploader can publish the targeted directory
 without relisting Drive for every file:
