@@ -1,6 +1,6 @@
 {
   "analysis": "fully_nested_targeted_module_prediction",
-  "complete": false,
+  "complete": true,
   "completed_evidence_tiers": [
     "exploratory",
     "primary",
@@ -9,9 +9,10 @@
   "completed_outer_folds": 25,
   "completed_transformations": [
     "asinh",
-    "raw"
+    "raw",
+    "rint"
   ],
-  "created_utc": "2026-08-24T17:44:15.403731+00:00",
+  "created_utc": "2026-08-24T21:02:21.510708+00:00",
   "evaluation_designs": {
     "differential_edge_sensitivity": "one_outer_cycle_with_frozen_all_edge_panel_and_regularization",
     "primary": "repeated_nested_cv",
@@ -25,7 +26,7 @@
   "expected_outer_folds": 25,
   "files": {
     "targeted_consensus_panels.parquet": {
-      "bytes": 79811,
+      "bytes": 108771,
       "columns": [
         "module",
         "selected_outer_folds",
@@ -44,11 +45,11 @@
         "kegg_fdr",
         "kegg_role"
       ],
-      "rows": 4006,
-      "sha256": "62af96f4d15ff584671eed131f59c35de24754f52ed5784b6a0c6771cbf79dec"
+      "rows": 6038,
+      "sha256": "e03da21a66b03c7194e853ff5de76bc74579b58aea27d041b5279837ea3c3391"
     },
     "targeted_consensus_transform_overlap.parquet": {
-      "bytes": 8522,
+      "bytes": 8673,
       "columns": [
         "module_definition",
         "network_method",
@@ -62,11 +63,11 @@
         "consensus_jaccard",
         "shared_modules"
       ],
-      "rows": 12,
-      "sha256": "41beb4036322b238c987e3071810e35b1651a5d12a431b077de01770437b08ad"
+      "rows": 24,
+      "sha256": "6d6220f5fba5ca5fa1e30ecf4ee890f3b801daf3f885d8b52122d31b4c43275c"
     },
     "targeted_fold_performance.parquet": {
-      "bytes": 1006054,
+      "bytes": 1495933,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -95,11 +96,11 @@
         "status",
         "reason"
       ],
-      "rows": 371200,
-      "sha256": "75be25cf2e26df41bbb073cafe977b6fd6554e8b5ac387d3788b5167dd2a735a"
+      "rows": 556800,
+      "sha256": "a2fc82b4448d536f572938c65cb1a33b124e335abfcec5067a4726c8c234fad8"
     },
     "targeted_inner_k_scores.parquet": {
-      "bytes": 134225,
+      "bytes": 194860,
       "columns": [
         "outer_repeat",
         "outer_fold",
@@ -116,8 +117,8 @@
         "selection_outcome",
         "transformation_role"
       ],
-      "rows": 18000,
-      "sha256": "2ef7490b3298885708c10cb9618f19ac1a3bf69bc29ac2edf8f738d254b6b5da"
+      "rows": 27000,
+      "sha256": "154b7ab8347f44fc3d098cab4df8864bd1550633042ea7e8ddcde6b988a19ff2"
     },
     "targeted_masked_fold_performance.parquet": {
       "bytes": 83575,
@@ -2484,7 +2485,7 @@
       "sha256": "8d9dfcfaeee856ef59fbfe1ca74b47fdb7269884f1dc4223e627474f7670573e"
     },
     "targeted_oof_performance.parquet": {
-      "bytes": 78055,
+      "bytes": 109566,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -2506,8 +2507,8 @@
         "value",
         "n_oof"
       ],
-      "rows": 14848,
-      "sha256": "3582625cf23465f94adb3258a1215e14af209171c8add4381aae53be2e2059d8"
+      "rows": 22272,
+      "sha256": "682acc5e57578ed1b3b4fee7b8762924f62ec05c95659216241acd19557bbe08"
     },
     "targeted_oof_predictions.parquet": {
       "columns": [
@@ -2901,13 +2902,193 @@
           ],
           "rows": 7944,
           "sha256": "5b40a6909f486482c143451dbba689e7f10a994dd1ce898a98acd91a08f471cc"
+        },
+        "rint__exploratory__control_derived__control_anchored.parquet": {
+          "bytes": 3156897,
+          "columns": [
+            "sample_id",
+            "evaluation_design",
+            "evidence_tier",
+            "module_definition",
+            "network_method",
+            "panel_strategy",
+            "selection_outcome",
+            "model_outcome",
+            "edge_mask",
+            "score_normalization",
+            "score_transform",
+            "transformation_role",
+            "predictor_block",
+            "model_variant",
+            "target",
+            "predicted",
+            "predicted_expected",
+            "probability_0",
+            "probability_1",
+            "probability_2",
+            "probability_3",
+            "probability_4",
+            "probability_5",
+            "probability_AD",
+            "probability_Control",
+            "probability_MCI",
+            "selected_k_across_repeats",
+            "selected_k",
+            "outer_repeats_averaged"
+          ],
+          "rows": 379584,
+          "sha256": "1bff9f2e693f44f4a2dc2e61536f8c11197c0cde030e5e2f7569acb88994a0a3"
+        },
+        "rint__primary__control_derived__control_anchored.parquet": {
+          "bytes": 106757,
+          "columns": [
+            "sample_id",
+            "evaluation_design",
+            "evidence_tier",
+            "module_definition",
+            "network_method",
+            "panel_strategy",
+            "selection_outcome",
+            "model_outcome",
+            "edge_mask",
+            "score_normalization",
+            "score_transform",
+            "transformation_role",
+            "predictor_block",
+            "model_variant",
+            "target",
+            "predicted",
+            "predicted_expected",
+            "probability_0",
+            "probability_1",
+            "probability_2",
+            "probability_3",
+            "probability_4",
+            "probability_5",
+            "probability_AD",
+            "probability_Control",
+            "probability_MCI",
+            "selected_k_across_repeats",
+            "selected_k",
+            "outer_repeats_averaged"
+          ],
+          "rows": 7944,
+          "sha256": "111e6ff878313804c8c124a2818ad2609f1342f5b8f851774bf59034bce88d72"
+        },
+        "rint__secondary__control_derived__control_anchored.parquet": {
+          "bytes": 1169722,
+          "columns": [
+            "sample_id",
+            "evaluation_design",
+            "evidence_tier",
+            "module_definition",
+            "network_method",
+            "panel_strategy",
+            "selection_outcome",
+            "model_outcome",
+            "edge_mask",
+            "score_normalization",
+            "score_transform",
+            "transformation_role",
+            "predictor_block",
+            "model_variant",
+            "target",
+            "predicted",
+            "predicted_expected",
+            "probability_0",
+            "probability_1",
+            "probability_2",
+            "probability_3",
+            "probability_4",
+            "probability_5",
+            "probability_AD",
+            "probability_Control",
+            "probability_MCI",
+            "selected_k_across_repeats",
+            "selected_k",
+            "outer_repeats_averaged"
+          ],
+          "rows": 58828,
+          "sha256": "5030922ebdebfb7c78eb88fc78cc97d47cb1f647336daa9e46c3f0edc44cd7e6"
+        },
+        "rint__secondary__full_cohort__control_anchored.parquet": {
+          "bytes": 106813,
+          "columns": [
+            "sample_id",
+            "evaluation_design",
+            "evidence_tier",
+            "module_definition",
+            "network_method",
+            "panel_strategy",
+            "selection_outcome",
+            "model_outcome",
+            "edge_mask",
+            "score_normalization",
+            "score_transform",
+            "transformation_role",
+            "predictor_block",
+            "model_variant",
+            "target",
+            "predicted",
+            "predicted_expected",
+            "probability_0",
+            "probability_1",
+            "probability_2",
+            "probability_3",
+            "probability_4",
+            "probability_5",
+            "probability_AD",
+            "probability_Control",
+            "probability_MCI",
+            "selected_k_across_repeats",
+            "selected_k",
+            "outer_repeats_averaged"
+          ],
+          "rows": 7944,
+          "sha256": "f7bc5cc5ca3b3fdbc5b71cb91d58a11ae6a83a5d8cbb0ed3f3e8062b2f45bf98"
+        },
+        "rint__secondary__full_cohort__standard.parquet": {
+          "bytes": 106514,
+          "columns": [
+            "sample_id",
+            "evaluation_design",
+            "evidence_tier",
+            "module_definition",
+            "network_method",
+            "panel_strategy",
+            "selection_outcome",
+            "model_outcome",
+            "edge_mask",
+            "score_normalization",
+            "score_transform",
+            "transformation_role",
+            "predictor_block",
+            "model_variant",
+            "target",
+            "predicted",
+            "predicted_expected",
+            "probability_0",
+            "probability_1",
+            "probability_2",
+            "probability_3",
+            "probability_4",
+            "probability_5",
+            "probability_AD",
+            "probability_Control",
+            "probability_MCI",
+            "selected_k_across_repeats",
+            "selected_k",
+            "outer_repeats_averaged"
+          ],
+          "rows": 7944,
+          "sha256": "b92a434bb4faf10b81abc08132f4b63dea7424f323703a9dc42e99478275bef5"
         }
       },
-      "rows": 924488,
-      "shards": 10
+      "rows": 1386732,
+      "shards": 15
     },
     "targeted_panel_selection.parquet": {
-      "bytes": 4578294,
+      "bytes": 6861185,
       "columns": [
         "module",
         "median_incremental_score",
@@ -2942,11 +3123,11 @@
         "kegg_fdr",
         "kegg_role"
       ],
-      "rows": 107300,
-      "sha256": "508075585856d1e3b5934ba8d174dac1dfec88f2d17f30b7008243ab43144e00"
+      "rows": 160950,
+      "sha256": "0dbb401aa87b2609336bcbfaf95da56d3759f1dd0f2847586ea96e477e1991b3"
     },
     "targeted_panel_transform_overlap.parquet": {
-      "bytes": 26030,
+      "bytes": 31877,
       "columns": [
         "module_definition",
         "network_method",
@@ -2965,8 +3146,8 @@
         "transformed_modules",
         "shared_modules"
       ],
-      "rows": 300,
-      "sha256": "2bbbf97326c91567e8a7dd268525fd560b298a96d0ef6871998f50b129416364"
+      "rows": 600,
+      "sha256": "92722f6f40406e4b68791431b62c984fa0b0c2771917fb8bf59f94cc7015fc65"
     },
     "targeted_primary_comparisons.parquet": {
       "bytes": 10669,
@@ -2991,7 +3172,7 @@
       "sha256": "00747f0d8684f7e4af67497f7046091a9f9652aef692e7cd219b251ff8c3f9a8"
     },
     "targeted_tier_comparisons.parquet": {
-      "bytes": 24356,
+      "bytes": 29270,
       "columns": [
         "evidence_tier",
         "module_definition",
@@ -3015,11 +3196,11 @@
         "fdr_within_outcome",
         "fdr_global_exploratory"
       ],
-      "rows": 226,
-      "sha256": "9b8e5bd70fe57c40923ea793d4c1dc240bd34dde388b6018472bc8f683644e79"
+      "rows": 339,
+      "sha256": "ea29bd42752c11c7719058b81bfcd580710aee08891e8233805542c0c6abb417"
     },
     "targeted_top_coefficients.parquet": {
-      "bytes": 3695913,
+      "bytes": 5534490,
       "columns": [
         "coefficient_label",
         "feature_name",
@@ -3047,11 +3228,11 @@
         "kegg_fdr",
         "kegg_role"
       ],
-      "rows": 200160,
-      "sha256": "73bee3f937ace2eb07f960aff120cb94674f3b3bbb1dd2ad64944bfd3b8109e7"
+      "rows": 300017,
+      "sha256": "a22438bb41eec49b07c03635dd5ca55c4d4d6bf77c8d56594df5a2ed1318457a"
     },
     "targeted_transformation_comparisons.parquet": {
-      "bytes": 39468,
+      "bytes": 61196,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -3079,11 +3260,11 @@
         "fdr_transform_global",
         "fdr_transform_within_outcome"
       ],
-      "rows": 586,
-      "sha256": "ecf9c56d0f79db41a747d7526a17db1ff6444b837d3a07d7bd8621f3f0e89034"
+      "rows": 1172,
+      "sha256": "54394d6140084694f525b87246c8741fe99c49cdc913b80e533907277a6e6fd5"
     },
     "targeted_transformation_status.parquet": {
-      "bytes": 7983,
+      "bytes": 8239,
       "columns": [
         "score_transform",
         "status",
@@ -3098,10 +3279,10 @@
         "primary_scale"
       ],
       "rows": 3,
-      "sha256": "b8521ab33d264ced4635ac5ad173d4adf90ea192f2c7eda6e87797a10c07e360"
+      "sha256": "4c44a77965a4b05b7b2d51bfdbc9f37b826c7a98756de01d8514c79a72d99856"
     }
   },
-  "interim": true,
+  "interim": false,
   "limitations": [
     "Repeated nested CV is internal validation conditional on fixed module definitions.",
     "The historical 70/30 held-out cohort is previously inspected sensitivity data.",
@@ -3182,6 +3363,6 @@
   "transformation_status": {
     "asinh": "complete",
     "raw": "complete",
-    "rint": "running"
+    "rint": "complete"
   }
 }
