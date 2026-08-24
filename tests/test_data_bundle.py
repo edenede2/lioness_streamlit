@@ -134,7 +134,11 @@ def test_targeted_masked_sensitivity_packages_all_requested_outcomes() -> None:
         "parkinsonism",
     }
     manifest = data.load_targeted_prediction_manifest()
-    assert manifest["complete"] is True
+    # An incremental Raw/asinh milestone is deployable while the independent
+    # RINT robustness catalog is still running.
+    assert manifest["publishable_milestone"] is True
+    assert {"raw", "asinh"}.issubset(manifest["completed_transformations"])
+    assert manifest["masked_sensitivity_available"] is True
     assert manifest["masked_sensitivity"]["all_edge_nested_analysis_rerun"] is False
     assert set(manifest["masked_sensitivity"]["outcomes"]) == expected
     performance = data.load_targeted_prediction_table("masked_oof_performance")

@@ -1,13 +1,17 @@
 {
   "analysis": "fully_nested_targeted_module_prediction",
-  "complete": true,
+  "complete": false,
   "completed_evidence_tiers": [
     "exploratory",
     "primary",
     "secondary"
   ],
   "completed_outer_folds": 25,
-  "created_utc": "2026-08-23T19:59:39.053665+00:00",
+  "completed_transformations": [
+    "asinh",
+    "raw"
+  ],
+  "created_utc": "2026-08-24T17:44:15.403731+00:00",
   "evaluation_designs": {
     "differential_edge_sensitivity": "one_outer_cycle_with_frozen_all_edge_panel_and_regularization",
     "primary": "repeated_nested_cv",
@@ -21,7 +25,7 @@
   "expected_outer_folds": 25,
   "files": {
     "targeted_consensus_panels.parquet": {
-      "bytes": 44841,
+      "bytes": 79811,
       "columns": [
         "module",
         "selected_outer_folds",
@@ -34,15 +38,35 @@
         "network_method",
         "panel_strategy",
         "selection_outcome",
+        "score_transform",
+        "transformation_role",
         "kegg_annotation",
         "kegg_fdr",
         "kegg_role"
       ],
-      "rows": 1796,
-      "sha256": "7fc6ae89a3229b6d4adb6636a06bc3eda5b5769b8e84618f8055016f1f304a74"
+      "rows": 4006,
+      "sha256": "62af96f4d15ff584671eed131f59c35de24754f52ed5784b6a0c6771cbf79dec"
+    },
+    "targeted_consensus_transform_overlap.parquet": {
+      "bytes": 8522,
+      "columns": [
+        "module_definition",
+        "network_method",
+        "panel_strategy",
+        "selection_outcome",
+        "transformed_scale",
+        "reference_scale",
+        "raw_consensus_k",
+        "transformed_consensus_k",
+        "shared_consensus_modules",
+        "consensus_jaccard",
+        "shared_modules"
+      ],
+      "rows": 12,
+      "sha256": "41beb4036322b238c987e3071810e35b1651a5d12a431b077de01770437b08ad"
     },
     "targeted_fold_performance.parquet": {
-      "bytes": 428457,
+      "bytes": 1006054,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -55,6 +79,8 @@
         "model_outcome",
         "edge_mask",
         "score_normalization",
+        "score_transform",
+        "transformation_role",
         "predictor_block",
         "model_variant",
         "selected_k",
@@ -69,11 +95,11 @@
         "status",
         "reason"
       ],
-      "rows": 167600,
-      "sha256": "3b478974f6a8111d28a5afacf992ae34980354afa926fa99c7b6c68823c0a2e7"
+      "rows": 371200,
+      "sha256": "75be25cf2e26df41bbb073cafe977b6fd6554e8b5ac387d3788b5167dd2a735a"
     },
     "targeted_inner_k_scores.parquet": {
-      "bytes": 65849,
+      "bytes": 134225,
       "columns": [
         "outer_repeat",
         "outer_fold",
@@ -83,16 +109,18 @@
         "score",
         "status",
         "reason",
+        "score_transform",
         "module_definition",
         "network_method",
         "panel_strategy",
-        "selection_outcome"
+        "selection_outcome",
+        "transformation_role"
       ],
-      "rows": 8250,
-      "sha256": "a80174b93f1051f705a70478f531da1716f91af528fb9b1d31c16fe4b42605af"
+      "rows": 18000,
+      "sha256": "2ef7490b3298885708c10cb9618f19ac1a3bf69bc29ac2edf8f738d254b6b5da"
     },
     "targeted_masked_fold_performance.parquet": {
-      "bytes": 81980,
+      "bytes": 83575,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -114,13 +142,15 @@
         "value",
         "n_outer_training",
         "n_outer_test",
-        "status"
+        "status",
+        "score_transform",
+        "transformation_role"
       ],
       "rows": 22080,
-      "sha256": "d5237f0a2562a7a36c933989b7f5fdfc9844dbc04341e1c215eb7848264ae13c"
+      "sha256": "62ba1defb42ed7664632d5a213a2400a8088e85d0d6163a3c41ab835c1bdc902"
     },
     "targeted_masked_oof_performance.parquet": {
-      "bytes": 28596,
+      "bytes": 30119,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -138,10 +168,12 @@
         "higher_is_better",
         "metric",
         "value",
-        "n_oof"
+        "n_oof",
+        "score_transform",
+        "transformation_role"
       ],
       "rows": 4416,
-      "sha256": "8bcd0a91a57d8e726921d728bc8cba80628e4ee2a04f4bae54c0981aff000965"
+      "sha256": "e084d86f59649b498c8d828202b2878381be4285735bacc3f50ce57de5c2a579"
     },
     "targeted_masked_oof_predictions.parquet": {
       "columns": [
@@ -170,11 +202,13 @@
         "probability_Control",
         "selected_k_across_repeats",
         "selected_k",
-        "outer_repeats_averaged"
+        "outer_repeats_averaged",
+        "score_transform",
+        "transformation_role"
       ],
       "files": {
         "global_fdr05__retained_edge__cogdx.parquet": {
-          "bytes": 170420,
+          "bytes": 172030,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -201,13 +235,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "17b859c7e72ada302cf494b0cad8f46c6e3a2660ad5c4ce04f153f8a051bf3b5"
+          "sha256": "23d6ea9e7f87db19c332562c0e39c604e6331037e40452727865f1f9cdeb5ba3"
         },
         "global_fdr05__retained_edge__cogn_global.parquet": {
-          "bytes": 56807,
+          "bytes": 58417,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -234,13 +270,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4716,
-          "sha256": "6b9ef464fd671ea73f9841c6a2f07c65f706ed9fddd6bc0d913b8beeac9b1e80"
+          "sha256": "2b9e33240a402d5fa15472b47db88a11815bd7389d4613e786ce8eaec47ead35"
         },
         "global_fdr05__retained_edge__cogng_demog_slope.parquet": {
-          "bytes": 57154,
+          "bytes": 58764,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -267,13 +305,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4932,
-          "sha256": "7046474a4c178691f5ebb170adc48e54bcd4d3c7b52e6b8f9ade78c30094c1e3"
+          "sha256": "3b5ad12d9bf5dbab95317a4d1ca5871c2095dae561ab604fa0d094cc9237036e"
         },
         "global_fdr05__retained_edge__cogng_path_slope.parquet": {
-          "bytes": 30293,
+          "bytes": 31894,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -300,13 +340,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 3756,
-          "sha256": "8e47a8eb6c14ebff2b15b42e8a196e3d4d8bd7bf0ea5617e58d2186d356b8634"
+          "sha256": "51048c31df5dca85d1baee44cfd715fc96c828bc09988f33129c8bbcf4492f46"
         },
         "global_fdr05__retained_edge__diagnosis_binary.parquet": {
-          "bytes": 65191,
+          "bytes": 66806,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -333,13 +375,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 3972,
-          "sha256": "1a78f47512ebbb1e915b6a2fbfe9e18b9e6fad6de897391a5d9b8686eba16fb7"
+          "sha256": "5b947984cd16dd28c6dded4ce7a4f59d3e3878b4d0eea5cce3c8f8e372801ac7"
         },
         "global_fdr05__retained_edge__motor10_demog_slope.parquet": {
-          "bytes": 36396,
+          "bytes": 38014,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -366,13 +410,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4608,
-          "sha256": "3ca999eb86ea6d769c1697fbedd198e638a4645f8903bf2beb8d1dc65533444e"
+          "sha256": "d79b8906bacfa01735ad50e6f3380dc10d01f840f413976a68b0d355aeb45284"
         },
         "global_fdr05__retained_edge__parkinsonism.parquet": {
-          "bytes": 72308,
+          "bytes": 73917,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -399,13 +445,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "b04bdeb86f47d1ee02dff168f32d1566abee6ba4ec3c5d2e1e19e4a83dd2945e"
+          "sha256": "7b69fc9e434f0bf1c0512e6e43d0b9e6cd9ac9cbb39905e5b6638ba02d9200c8"
         },
         "global_fdr05__retained_edge__sqrt_parksc_demog_slope.parquet": {
-          "bytes": 33236,
+          "bytes": 34846,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -432,13 +480,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4860,
-          "sha256": "e00b855fce51052f781e9a8dbe61074353b6857d8098da3438fb440023f3b038"
+          "sha256": "1b0ff6b39567f1086c534e1feb5ab054375e16bb81d57752655f59181daa18b1"
         },
         "global_fdr05__standard_pruned__cogdx.parquet": {
-          "bytes": 169838,
+          "bytes": 171448,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -465,13 +515,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "756316ac30b448179a3d5acab7d28839d3c41723d1b61862136bbbd7c4c930fd"
+          "sha256": "a163eadeddb7f3ec15d3b42fc677e80e1649ef8284068686b20c8f83efa57ef4"
         },
         "global_fdr05__standard_pruned__cogn_global.parquet": {
-          "bytes": 56789,
+          "bytes": 58399,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -498,13 +550,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4716,
-          "sha256": "156575889b1dd07e06038174fb588c2bd8eb2a8ae8ee88c39fb440d7fa0c952d"
+          "sha256": "7411c0a0cee247c427e650e66d71f3c096185c7aa01f4ba6c871d7ca0d1e3311"
         },
         "global_fdr05__standard_pruned__cogng_demog_slope.parquet": {
-          "bytes": 57114,
+          "bytes": 58724,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -531,13 +585,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4932,
-          "sha256": "8fbe922e08c914b59a9f10ee7f6eb24db0ba0cbfad53a15814ae26232852689f"
+          "sha256": "b08275e80d8f3e3cf2a585faea44424f4dc25e156a075605407979aa9ee7fc81"
         },
         "global_fdr05__standard_pruned__cogng_path_slope.parquet": {
-          "bytes": 30337,
+          "bytes": 31938,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -564,13 +620,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 3756,
-          "sha256": "2b802775a054957d325fd5697870a6de646f6bbc1f7beb1b23534237dc7dc707"
+          "sha256": "6f88f15a5d35f54ec739a942288e5a2567f873f0bbcfc01fa95aab09a24b22f6"
         },
         "global_fdr05__standard_pruned__diagnosis_binary.parquet": {
-          "bytes": 65227,
+          "bytes": 66842,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -597,13 +655,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 3972,
-          "sha256": "c2b17c9a91bbe89e7c8b67762b02a085e09214d13ae793229bb304a4fd89f0c1"
+          "sha256": "a694abd6817cdf190cce3e00d5d6f45df95ffcdecbce67a70fc3b528297fa452"
         },
         "global_fdr05__standard_pruned__motor10_demog_slope.parquet": {
-          "bytes": 36424,
+          "bytes": 38042,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -630,13 +690,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4608,
-          "sha256": "16d41b994a870fa3c50112eb6abbfd4c922282a7bba52da13245536acc5b0600"
+          "sha256": "0bc67a2b7b42e36ca2621a07f1b941499f85f29063b79e6907732e80194ce6d8"
         },
         "global_fdr05__standard_pruned__parkinsonism.parquet": {
-          "bytes": 72267,
+          "bytes": 73876,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -663,13 +725,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "e129d2542b5a00d3869e2152e58deabc8eefccc5ee8d322ca89f368bf87bdecd"
+          "sha256": "5188b6b4ea1e78a17712647ea25332fea3f6b46b68b677b2cc4a636847642e0b"
         },
         "global_fdr05__standard_pruned__sqrt_parksc_demog_slope.parquet": {
-          "bytes": 33209,
+          "bytes": 34819,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -696,13 +760,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4860,
-          "sha256": "1e7e4c499d891f63812268943f80e8e468f2c1fb28ee241a5c0a4fd7ce530321"
+          "sha256": "e4cd3e1e22740934535acc96066a7766b99ace4bfb0b10caadaec6304e29e7b6"
         },
         "global_fdr10__retained_edge__cogdx.parquet": {
-          "bytes": 170530,
+          "bytes": 172140,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -729,13 +795,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "a4159db55ff2869d3ea646e6ea93f3c4a6e16e96086dbd508c6aa92385155851"
+          "sha256": "5369c696a7aeda904929a34ac287a89cd3e339fd527bcf2a6f52008963984537"
         },
         "global_fdr10__retained_edge__cogn_global.parquet": {
-          "bytes": 56774,
+          "bytes": 58384,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -762,13 +830,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4716,
-          "sha256": "e3faa81b2bb72f2559b35f2f783e20cd9f9f64b84131f683d7be3a72ee394d2c"
+          "sha256": "4169398e1f85c8f322332833b8db0f7bda030df2ef61cdd22d2ad916c2beeb2f"
         },
         "global_fdr10__retained_edge__cogng_demog_slope.parquet": {
-          "bytes": 57008,
+          "bytes": 58618,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -795,13 +865,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4932,
-          "sha256": "1987d6cbf5750dbf34c77cd4004ad12a5ba66a0b258e03e0f1b2d2359087f136"
+          "sha256": "3caee6dd0cb7e3b7431eed3f0136e2037dfd3ef0705df4ec41d38bfb9b12cd49"
         },
         "global_fdr10__retained_edge__cogng_path_slope.parquet": {
-          "bytes": 30296,
+          "bytes": 31897,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -828,13 +900,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 3756,
-          "sha256": "14ee866fc3a3200228b7efb443554ad004ee64ca24cfb16fd227cadb036a50bc"
+          "sha256": "1d75a7527b746a9ed2d02bfba5cb098eeb0eff6e041ca4477e33dcd1ec1ac365"
         },
         "global_fdr10__retained_edge__diagnosis_binary.parquet": {
-          "bytes": 65224,
+          "bytes": 66840,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -861,13 +935,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 3972,
-          "sha256": "94b022b6289a5f1599a24d9c262b5fb88c42a888b53ee5c3b4593fe6e0cbe6f0"
+          "sha256": "b819943f95d05043f65c5a6cb5431befed615a67bf007025d82e3b22b108fc1b"
         },
         "global_fdr10__retained_edge__motor10_demog_slope.parquet": {
-          "bytes": 36460,
+          "bytes": 38078,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -894,13 +970,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4608,
-          "sha256": "390b8bc60c54b98993d43739132f5279c002921c2b66c21eac3525bba4442e8d"
+          "sha256": "e8cccad3fcd788caee7dc31b460bb7288e2718e81819a873c7a4a4af9fa06140"
         },
         "global_fdr10__retained_edge__parkinsonism.parquet": {
-          "bytes": 72295,
+          "bytes": 73904,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -927,13 +1005,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "da640ab18358ea543ae26c1612390297baf589810f3bd86d076efb508fec3a98"
+          "sha256": "e53f5588314c322fdee20566f90591c51c54b818a6765f79448edb5ba43e02ab"
         },
         "global_fdr10__retained_edge__sqrt_parksc_demog_slope.parquet": {
-          "bytes": 35475,
+          "bytes": 37085,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -960,13 +1040,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4860,
-          "sha256": "d536f73d568544687b235f07edf12478756dfcb346e21361a6b066e7e6b070de"
+          "sha256": "d8b9c5a18900bf0cef66cf16e2a4472b477bcd9f068fa2dbe42dab5cb6f88fa4"
         },
         "global_fdr10__standard_pruned__cogdx.parquet": {
-          "bytes": 170510,
+          "bytes": 172120,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -993,13 +1075,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "c0eae568ff2faf8d21e353a3946b4b0eade19ed4e7b5cdd28ed5c7dcb8959fac"
+          "sha256": "3272f798a98472fd50f5089aececab418787130c1bdaf37a08b11cbcec9460ef"
         },
         "global_fdr10__standard_pruned__cogn_global.parquet": {
-          "bytes": 56738,
+          "bytes": 58348,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1026,13 +1110,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4716,
-          "sha256": "7b636971b57a0efe275dff356a1487bdda7df524efefbbdca2de7a54d00d5b57"
+          "sha256": "d62927e09e63824f8a7eee1418c13a3f00f62bc81cf043785b4e7dc9c939cb54"
         },
         "global_fdr10__standard_pruned__cogng_demog_slope.parquet": {
-          "bytes": 57095,
+          "bytes": 58705,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1059,13 +1145,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4932,
-          "sha256": "105ea0c697452b4673bacd48c461117a79ff7db6d4f626759765860606db02b0"
+          "sha256": "755b39002b1354fc05c1b489a43abb5706581332d78eb5fd4cafeacb370d5e28"
         },
         "global_fdr10__standard_pruned__cogng_path_slope.parquet": {
-          "bytes": 30314,
+          "bytes": 31915,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1092,13 +1180,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 3756,
-          "sha256": "c30a3a28e04f6679ff6e416ac2bdf156b1aaa08f52838f8761ac4b958273902f"
+          "sha256": "2a2be75c2b251ddbdf02b181f3f65f7be76cb78143d2d7b7e2a1b0fb1f30e348"
         },
         "global_fdr10__standard_pruned__diagnosis_binary.parquet": {
-          "bytes": 65249,
+          "bytes": 66864,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1125,13 +1215,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 3972,
-          "sha256": "12ea05328c5fe5c701f71e73995d9abf422a0f8070475071eed1e6d0485660b2"
+          "sha256": "d94fdfce38994caa51d92532ff92b7cecd349ffa1a00e8ed35dc9e263e1ff88f"
         },
         "global_fdr10__standard_pruned__motor10_demog_slope.parquet": {
-          "bytes": 36468,
+          "bytes": 38086,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1158,13 +1250,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4608,
-          "sha256": "8bedf2a2c4f1acb7c0f8dd77bc4576bcb0293ab992f7a889be8f8ec559bbeb50"
+          "sha256": "3d7b3186cdf4c3f17b68460b8e5e3eb0506ecece373e300049fa2d2f8c937c08"
         },
         "global_fdr10__standard_pruned__parkinsonism.parquet": {
-          "bytes": 72293,
+          "bytes": 73902,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1191,13 +1285,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "48eca5da9dbdbbac149df11225110f34985ec4bce73b81a5da5efc7a2487a7f2"
+          "sha256": "b6c5a6331e2f197377b032da877cbf8692c31173cca29d554874c2e170c1e06a"
         },
         "global_fdr10__standard_pruned__sqrt_parksc_demog_slope.parquet": {
-          "bytes": 35457,
+          "bytes": 37067,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1224,13 +1320,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4860,
-          "sha256": "a8c2c2ec96718363f1c6b3659912ac2bd45403f90cd754ad4924217a1ab937d7"
+          "sha256": "df7113e197721a29200b28f3d7e86fa082ee29acc94ca76c8e1733dae2f8ddf1"
         },
         "per_module_fdr05__retained_edge__cogdx.parquet": {
-          "bytes": 169263,
+          "bytes": 170873,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1257,13 +1355,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "30b083bd2373cb29f879fad44528324a9d59ac583f2cbc8be14ffb1e18294417"
+          "sha256": "fc8c76d8bf62f7ed174cf04a89c178ebbe8504847b8900dce6737dc033457470"
         },
         "per_module_fdr05__retained_edge__cogn_global.parquet": {
-          "bytes": 56857,
+          "bytes": 58467,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1290,13 +1390,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4716,
-          "sha256": "10bb0ec2837f2ee2f1aecba487f137db533dd31ce67ca2e542001e85ded19e73"
+          "sha256": "0f99ecd1e9ac690de06860c3a18661bf9189e5a4999575b0fcaa83787de830b2"
         },
         "per_module_fdr05__retained_edge__cogng_demog_slope.parquet": {
-          "bytes": 57058,
+          "bytes": 58668,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1323,13 +1425,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4932,
-          "sha256": "8a7566434537ffa8741a94d38dcc7eefe7f9cfc6a1c72eda1d588bbe5a87e6b1"
+          "sha256": "eaa0714cf51c460e91ad7086cd74ddc6db1335f33d3c7604d24218997967e5d5"
         },
         "per_module_fdr05__retained_edge__cogng_path_slope.parquet": {
-          "bytes": 30292,
+          "bytes": 31893,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1356,13 +1460,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 3756,
-          "sha256": "e0a825ee6aec2264115d650a2d29882649543811685aacd3ddd6701d2797b78c"
+          "sha256": "67c8b49a4605af8bf691d15502adffe270e023bf549ca720930720659f7011ab"
         },
         "per_module_fdr05__retained_edge__diagnosis_binary.parquet": {
-          "bytes": 65252,
+          "bytes": 66867,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1389,13 +1495,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 3972,
-          "sha256": "83e6f72dd8e8179163d41429b1fcad257aa13f2c6667fa65f4f5e55beadefdfd"
+          "sha256": "2040d6a58cb7a54710b52d00c0988915e28677e5e47a046e1f68642d4b534e60"
         },
         "per_module_fdr05__retained_edge__motor10_demog_slope.parquet": {
-          "bytes": 36480,
+          "bytes": 38098,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1422,13 +1530,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4608,
-          "sha256": "52ffc3c7d99890d6ec8f6929fa6c06e8db552077d0a748befc69fc16767ae14c"
+          "sha256": "8bed072149614a5ca73b143b63a18950a126ac63ea0ee63fe455cd591c813bb3"
         },
         "per_module_fdr05__retained_edge__parkinsonism.parquet": {
-          "bytes": 69663,
+          "bytes": 71272,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1455,13 +1565,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "86626adf8ed6780207fdec86b04cf5b06dc18b5182530e6f5a47017a459523ef"
+          "sha256": "73049b1fcf4d6089282bd0fa606a28710136503a7d9b49442318133c4c30cca2"
         },
         "per_module_fdr05__retained_edge__sqrt_parksc_demog_slope.parquet": {
-          "bytes": 35542,
+          "bytes": 37152,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1488,13 +1600,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4860,
-          "sha256": "6a7d01430ba370564c9e796577099c2a6ef9a67cb499f2583752ceb1d1a7b11e"
+          "sha256": "f470ba6b1795ce6de55cd871efa11039ab0acba2c52b463f8e211db903500988"
         },
         "per_module_fdr05__standard_pruned__cogdx.parquet": {
-          "bytes": 169468,
+          "bytes": 171078,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1521,13 +1635,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "34350537decf51160b578335b1a8a8a45f853182a297670b0c5b4e30f77039b0"
+          "sha256": "cfd326b784cd0d0dfb56e4adda5f9b09f5c617d99db828c67daddbdc140bf238"
         },
         "per_module_fdr05__standard_pruned__cogn_global.parquet": {
-          "bytes": 56809,
+          "bytes": 58419,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1554,13 +1670,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4716,
-          "sha256": "9e29de7d8741dfe4a7392f71610e3984e446b4e8da8995a408af049c841d8232"
+          "sha256": "ac43e7c1513c1a88281f89766b2ed17d9eca756dad55144630c08f1650174338"
         },
         "per_module_fdr05__standard_pruned__cogng_demog_slope.parquet": {
-          "bytes": 57135,
+          "bytes": 58745,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1587,13 +1705,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4932,
-          "sha256": "97179a6f318622c3ace7303bf923741df84f06cc1ed5d760e66992a217e496ed"
+          "sha256": "e3cf091d74c585ec280ff4170a062667cbea2faba27ccc701880bf4b91362a40"
         },
         "per_module_fdr05__standard_pruned__cogng_path_slope.parquet": {
-          "bytes": 30322,
+          "bytes": 31923,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1620,13 +1740,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 3756,
-          "sha256": "6670a0148ebc5dfb402a3963cf41204c85eeb23fb8358d0581033949d64c748b"
+          "sha256": "c19c0e76a9a074e12fd821dd055f075ae72cfc6f5d2a1cf194b0745fe794a6f9"
         },
         "per_module_fdr05__standard_pruned__diagnosis_binary.parquet": {
-          "bytes": 65248,
+          "bytes": 66863,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1653,13 +1775,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 3972,
-          "sha256": "89f4e3450e20580d5e9c792bd43cc6f4f59325119b96d9870eff11d6eb372e2d"
+          "sha256": "2b85d6927424c35288c4a314545ad6780b9942fdfae358ce7925f232eb0198ea"
         },
         "per_module_fdr05__standard_pruned__motor10_demog_slope.parquet": {
-          "bytes": 36505,
+          "bytes": 38123,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1686,13 +1810,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4608,
-          "sha256": "9cfbd7b83f37f2209d1122b2ddc4563b848f20c73c5e906634344fbed59c3d24"
+          "sha256": "6f263f43b56139362cc80d92610d81802a1ec1476655f187cbceda623679e26d"
         },
         "per_module_fdr05__standard_pruned__parkinsonism.parquet": {
-          "bytes": 69653,
+          "bytes": 71262,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1719,13 +1845,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "489cfda34ee3904adddbcce6699182d06d8e0b6e47b462073a9f04256d47523e"
+          "sha256": "5137f28da589d6f781e4bbcbef38a6b497a025cedba1fa34c402e50b99da2400"
         },
         "per_module_fdr05__standard_pruned__sqrt_parksc_demog_slope.parquet": {
-          "bytes": 35511,
+          "bytes": 37121,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1752,13 +1880,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4860,
-          "sha256": "80a8bd4a9155a4d831fce68dc205eb4401eed7c5d2c06f77019e0f23de42a1ec"
+          "sha256": "2be981d20c95eff633983ec4070f752fff1b45ed72d48726dc699fe12e484c1b"
         },
         "per_module_fdr10__retained_edge__cogdx.parquet": {
-          "bytes": 170668,
+          "bytes": 172278,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1785,13 +1915,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "fa5127d3d647f0e06ed852aad49c8c2010871ec35a79b60540ab77dc535d543e"
+          "sha256": "a208fa6fa0c88cef9d9733df0354b2a3a4c2a8516642bfb14b751c071c66e640"
         },
         "per_module_fdr10__retained_edge__cogn_global.parquet": {
-          "bytes": 56820,
+          "bytes": 58430,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1818,13 +1950,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4716,
-          "sha256": "1a65e0869d471b6a1eb09bdc2f53f1250e19e4ee2aa62ee6ed770bcdad00fd45"
+          "sha256": "5bb0e691cf0345c31db36237208a6bfcbd8e16553b08d1f0cb38cbc57be0e2c7"
         },
         "per_module_fdr10__retained_edge__cogng_demog_slope.parquet": {
-          "bytes": 57085,
+          "bytes": 58695,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1851,13 +1985,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4932,
-          "sha256": "fadc469685fc20b08a33bd7218d08b30853906a83a7cedd98798bdb7c667b741"
+          "sha256": "8513f3fe4786be26e25391bd704537c369e3cb3b5c837a4765fc9ac3e5b349a7"
         },
         "per_module_fdr10__retained_edge__cogng_path_slope.parquet": {
-          "bytes": 30312,
+          "bytes": 31913,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1884,13 +2020,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 3756,
-          "sha256": "c689851ed7fca3ad513c5306ae12265de3c793e6646160c6f3f8d76153d5a667"
+          "sha256": "a72bb4530046b6eeded6114494f6ad413f516b0a402c9736adacce1625c1ff6e"
         },
         "per_module_fdr10__retained_edge__diagnosis_binary.parquet": {
-          "bytes": 65216,
+          "bytes": 66831,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1917,13 +2055,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 3972,
-          "sha256": "e693c6d7dd67b2210ee495185dc3bfaff7e30eef7a256e012a19e8be807a4eee"
+          "sha256": "f93a0361b1bdd6d00cfa5cb0070cf0bfcf8285f39c4e7bb9e8fbe5464e68dfcf"
         },
         "per_module_fdr10__retained_edge__motor10_demog_slope.parquet": {
-          "bytes": 36485,
+          "bytes": 38103,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1950,13 +2090,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4608,
-          "sha256": "727087cb0b2de2754887f7435298e18e4db8ba302d565bb06f68194b66658400"
+          "sha256": "10ed5a69ba11ac3482b46e7f4f8d0f3061750f6c9e232da2ac6fb6ff61fb1a03"
         },
         "per_module_fdr10__retained_edge__parkinsonism.parquet": {
-          "bytes": 72291,
+          "bytes": 73900,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1983,13 +2125,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "0133893ea025b4427ff8a54072442d1037d6f101b87d511d618894b06ccd0794"
+          "sha256": "b935f578ea3388231cbbc347715f62153ec67aec90fab14b03c3e4f5210f9978"
         },
         "per_module_fdr10__retained_edge__sqrt_parksc_demog_slope.parquet": {
-          "bytes": 35508,
+          "bytes": 37118,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2016,13 +2160,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4860,
-          "sha256": "394ddcbf4b352767bfc9e79a6f6f941f942d7c998971f00e1812786cd0e72775"
+          "sha256": "450cb2587e4fa63281b93abaa5128c07648b37fa30e738bd585192d7190a8ba7"
         },
         "per_module_fdr10__standard_pruned__cogdx.parquet": {
-          "bytes": 170672,
+          "bytes": 172282,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2049,13 +2195,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "cee20c949fd398c540df37ac4c070de285300d6e030c60afee3708dcf5a9b09a"
+          "sha256": "60b7cbe41bfd15b839ea3a4416e7f52d557586dffe5fda1d50e314f622205454"
         },
         "per_module_fdr10__standard_pruned__cogn_global.parquet": {
-          "bytes": 56807,
+          "bytes": 58417,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2082,13 +2230,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4716,
-          "sha256": "4f3e1c2a497ff470256edea55a25313a16c7b4fe4144ecf4053b432e849e5611"
+          "sha256": "912bf2c0daee8dd2bb5e77f22f2754adbb2f2393b7df520e05a82017f9046041"
         },
         "per_module_fdr10__standard_pruned__cogng_demog_slope.parquet": {
-          "bytes": 57072,
+          "bytes": 58682,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2115,13 +2265,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4932,
-          "sha256": "f0bb8e9a903d22b8d758fc03af324ef493079cd0b7428233cf65f9524ed5dd2d"
+          "sha256": "a8e66dd1dfeb8af007391bd9a0c90021a596f15e144be45dbaa340820a5b88cf"
         },
         "per_module_fdr10__standard_pruned__cogng_path_slope.parquet": {
-          "bytes": 30338,
+          "bytes": 31939,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2148,13 +2300,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 3756,
-          "sha256": "d5dbf360041147e6744bc8f12315dc12963da26a50db9638eff266b71d4ca7aa"
+          "sha256": "fa9d6ad6a20b8725d92b6cbb6813984f1cee9b6027293695105a6685e1475331"
         },
         "per_module_fdr10__standard_pruned__diagnosis_binary.parquet": {
-          "bytes": 65245,
+          "bytes": 66860,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2181,13 +2335,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 3972,
-          "sha256": "debcbb635ffa3c64e7f5e331d5d3f900bd0397eac4e1ccb2271bfbf30296c788"
+          "sha256": "5e6e2e2e1dd9f8440afa73c6752dba98b4d490aa747a9e9a6265c7d635a00f01"
         },
         "per_module_fdr10__standard_pruned__motor10_demog_slope.parquet": {
-          "bytes": 36470,
+          "bytes": 38088,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2214,13 +2370,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4608,
-          "sha256": "f89c1bad731aab44d3cc6b7a019c1e6b8bef421fec73390204bb779f23c4770c"
+          "sha256": "249e030909536742312032dc327389eeadfbd534a1c2065738e7b34019654a20"
         },
         "per_module_fdr10__standard_pruned__parkinsonism.parquet": {
-          "bytes": 72289,
+          "bytes": 73898,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2247,13 +2405,15 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "eeb1349e40f4013996175fdc76441990f13f68bc857883ae1225728531d13ca5"
+          "sha256": "2dea11df349730ad6625078dd0b5bee2cb3777c2325f2eb438130cb67a4117bd"
         },
         "per_module_fdr10__standard_pruned__sqrt_parksc_demog_slope.parquet": {
-          "bytes": 35536,
+          "bytes": 37146,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2280,17 +2440,19 @@
             "probability_Control",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "score_transform",
+            "transformation_role"
           ],
           "rows": 4860,
-          "sha256": "68a669c0f4c412f46b539cb87d32e93779f49c1a6a1c3bc09a2f84fdb5da7cc2"
+          "sha256": "2bc8bce342eccf73ced4b042eda71562533cfd9e6c73798500b5e636ad671a52"
         }
       },
       "rows": 298272,
       "shards": 64
     },
     "targeted_masked_top_coefficients.parquet": {
-      "bytes": 890591,
+      "bytes": 892220,
       "columns": [
         "coefficient_label",
         "feature_name",
@@ -2310,6 +2472,8 @@
         "predictor_block",
         "model_variant",
         "selected_k",
+        "score_transform",
+        "transformation_role",
         "module",
         "display_feature",
         "kegg_annotation",
@@ -2317,10 +2481,10 @@
         "kegg_role"
       ],
       "rows": 36987,
-      "sha256": "4156bc4fc61154bbe2e65fea6bd2d530393bb43fe10fecb4e79549aa6958d215"
+      "sha256": "8d9dfcfaeee856ef59fbfe1ca74b47fdb7269884f1dc4223e627474f7670573e"
     },
     "targeted_oof_performance.parquet": {
-      "bytes": 40994,
+      "bytes": 78055,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -2331,6 +2495,8 @@
         "model_outcome",
         "edge_mask",
         "score_normalization",
+        "score_transform",
+        "transformation_role",
         "predictor_block",
         "model_variant",
         "selected_k",
@@ -2340,8 +2506,8 @@
         "value",
         "n_oof"
       ],
-      "rows": 6704,
-      "sha256": "0d6ccc831785de0a264a0de97ad5b8bef6b2555944958d1f310508033376a8fb"
+      "rows": 14848,
+      "sha256": "3582625cf23465f94adb3258a1215e14af209171c8add4381aae53be2e2059d8"
     },
     "targeted_oof_predictions.parquet": {
       "columns": [
@@ -2355,6 +2521,8 @@
         "model_outcome",
         "edge_mask",
         "score_normalization",
+        "score_transform",
+        "transformation_role",
         "predictor_block",
         "model_variant",
         "target",
@@ -2374,8 +2542,8 @@
         "outer_repeats_averaged"
       ],
       "files": {
-        "exploratory__control_derived__control_anchored.parquet": {
-          "bytes": 2815477,
+        "asinh__exploratory__control_derived__control_anchored.parquet": {
+          "bytes": 3127141,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2387,6 +2555,8 @@
             "model_outcome",
             "edge_mask",
             "score_normalization",
+            "score_transform",
+            "transformation_role",
             "predictor_block",
             "model_variant",
             "target",
@@ -2405,11 +2575,11 @@
             "selected_k",
             "outer_repeats_averaged"
           ],
-          "rows": 322992,
-          "sha256": "5a3b221acf6c0acbc1eb7367f009635112c43fdeb138d6157bb89dc2bb7ee5f1"
+          "rows": 379584,
+          "sha256": "05d92c0cda716fa875e50c199104c3f524f5ead60d0b20dc893d3debaa71296d"
         },
-        "primary__control_derived__control_anchored.parquet": {
-          "bytes": 106714,
+        "asinh__primary__control_derived__control_anchored.parquet": {
+          "bytes": 108316,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2421,6 +2591,8 @@
             "model_outcome",
             "edge_mask",
             "score_normalization",
+            "score_transform",
+            "transformation_role",
             "predictor_block",
             "model_variant",
             "target",
@@ -2440,10 +2612,10 @@
             "outer_repeats_averaged"
           ],
           "rows": 7944,
-          "sha256": "5a966e8c6e214f0c24572ab4a9b8ce443be3c59eb25ab161dae8e0ae98e721ba"
+          "sha256": "6aa0eb297420618f1b7fa0d9265c445f424fc692be0859643086ccc22144e56c"
         },
-        "secondary__control_derived__control_anchored.parquet": {
-          "bytes": 1182360,
+        "asinh__secondary__control_derived__control_anchored.parquet": {
+          "bytes": 1184021,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2455,6 +2627,8 @@
             "model_outcome",
             "edge_mask",
             "score_normalization",
+            "score_transform",
+            "transformation_role",
             "predictor_block",
             "model_variant",
             "target",
@@ -2474,10 +2648,10 @@
             "outer_repeats_averaged"
           ],
           "rows": 58828,
-          "sha256": "8fa771045031a5162cf436b18d6891fed76ac50090e07578b523723b9d1dfadf"
+          "sha256": "77ba4223e2bf84fb7fa137b8fd5bb8d90ac7d1d9f4c3a464c9401d499e98c2a0"
         },
-        "secondary__full_cohort__control_anchored.parquet": {
-          "bytes": 105319,
+        "asinh__secondary__full_cohort__control_anchored.parquet": {
+          "bytes": 106919,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2489,6 +2663,8 @@
             "model_outcome",
             "edge_mask",
             "score_normalization",
+            "score_transform",
+            "transformation_role",
             "predictor_block",
             "model_variant",
             "target",
@@ -2508,10 +2684,10 @@
             "outer_repeats_averaged"
           ],
           "rows": 7944,
-          "sha256": "a9f3e000d6e7282a49aa7facf92597b4dcf2ac56462d56ab8341ed2122f1930b"
+          "sha256": "c4bb3aa47d03f9c0941682d535c4bd74986fa1ddc73a99ad06e74d1540442ce9"
         },
-        "secondary__full_cohort__standard.parquet": {
-          "bytes": 106406,
+        "asinh__secondary__full_cohort__standard.parquet": {
+          "bytes": 108007,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2523,6 +2699,8 @@
             "model_outcome",
             "edge_mask",
             "score_normalization",
+            "score_transform",
+            "transformation_role",
             "predictor_block",
             "model_variant",
             "target",
@@ -2542,14 +2720,194 @@
             "outer_repeats_averaged"
           ],
           "rows": 7944,
-          "sha256": "bc74db20fdc60a2cb61f61f3fbd9910f314e9d269ed5d828fa623169dea03750"
+          "sha256": "01e858ed08e839f5bc0964ca7141124d87e812e4aa2bec14986be25d34e2c039"
+        },
+        "raw__exploratory__control_derived__control_anchored.parquet": {
+          "bytes": 3146497,
+          "columns": [
+            "sample_id",
+            "evaluation_design",
+            "evidence_tier",
+            "module_definition",
+            "network_method",
+            "panel_strategy",
+            "selection_outcome",
+            "model_outcome",
+            "edge_mask",
+            "score_normalization",
+            "score_transform",
+            "transformation_role",
+            "predictor_block",
+            "model_variant",
+            "target",
+            "predicted",
+            "predicted_expected",
+            "probability_0",
+            "probability_1",
+            "probability_2",
+            "probability_3",
+            "probability_4",
+            "probability_5",
+            "probability_AD",
+            "probability_Control",
+            "probability_MCI",
+            "selected_k_across_repeats",
+            "selected_k",
+            "outer_repeats_averaged"
+          ],
+          "rows": 379584,
+          "sha256": "1d3afbe4e809032f3c45039e07cde4f13087dc1556fa96bf37c5e3993053ae06"
+        },
+        "raw__primary__control_derived__control_anchored.parquet": {
+          "bytes": 106400,
+          "columns": [
+            "sample_id",
+            "evaluation_design",
+            "evidence_tier",
+            "module_definition",
+            "network_method",
+            "panel_strategy",
+            "selection_outcome",
+            "model_outcome",
+            "edge_mask",
+            "score_normalization",
+            "score_transform",
+            "transformation_role",
+            "predictor_block",
+            "model_variant",
+            "target",
+            "predicted",
+            "predicted_expected",
+            "probability_0",
+            "probability_1",
+            "probability_2",
+            "probability_3",
+            "probability_4",
+            "probability_5",
+            "probability_AD",
+            "probability_Control",
+            "probability_MCI",
+            "selected_k_across_repeats",
+            "selected_k",
+            "outer_repeats_averaged"
+          ],
+          "rows": 7944,
+          "sha256": "024c02e93d6153a9c2afb80ce5d0d1dc25df6cdcc54cd07d595f101ac3c128d3"
+        },
+        "raw__secondary__control_derived__control_anchored.parquet": {
+          "bytes": 1132040,
+          "columns": [
+            "sample_id",
+            "evaluation_design",
+            "evidence_tier",
+            "module_definition",
+            "network_method",
+            "panel_strategy",
+            "selection_outcome",
+            "model_outcome",
+            "edge_mask",
+            "score_normalization",
+            "score_transform",
+            "transformation_role",
+            "predictor_block",
+            "model_variant",
+            "target",
+            "predicted",
+            "predicted_expected",
+            "probability_0",
+            "probability_1",
+            "probability_2",
+            "probability_3",
+            "probability_4",
+            "probability_5",
+            "probability_AD",
+            "probability_Control",
+            "probability_MCI",
+            "selected_k_across_repeats",
+            "selected_k",
+            "outer_repeats_averaged"
+          ],
+          "rows": 58828,
+          "sha256": "089e1d84e9a2689f9d2a41ab0bee07164cbefc28a2be87cf2e23daa1672fcedb"
+        },
+        "raw__secondary__full_cohort__control_anchored.parquet": {
+          "bytes": 106694,
+          "columns": [
+            "sample_id",
+            "evaluation_design",
+            "evidence_tier",
+            "module_definition",
+            "network_method",
+            "panel_strategy",
+            "selection_outcome",
+            "model_outcome",
+            "edge_mask",
+            "score_normalization",
+            "score_transform",
+            "transformation_role",
+            "predictor_block",
+            "model_variant",
+            "target",
+            "predicted",
+            "predicted_expected",
+            "probability_0",
+            "probability_1",
+            "probability_2",
+            "probability_3",
+            "probability_4",
+            "probability_5",
+            "probability_AD",
+            "probability_Control",
+            "probability_MCI",
+            "selected_k_across_repeats",
+            "selected_k",
+            "outer_repeats_averaged"
+          ],
+          "rows": 7944,
+          "sha256": "96b7a677160dd29f5e293c812cff8d98f54c5aa3972e18e7fe25c8ea89bdfc53"
+        },
+        "raw__secondary__full_cohort__standard.parquet": {
+          "bytes": 106363,
+          "columns": [
+            "sample_id",
+            "evaluation_design",
+            "evidence_tier",
+            "module_definition",
+            "network_method",
+            "panel_strategy",
+            "selection_outcome",
+            "model_outcome",
+            "edge_mask",
+            "score_normalization",
+            "score_transform",
+            "transformation_role",
+            "predictor_block",
+            "model_variant",
+            "target",
+            "predicted",
+            "predicted_expected",
+            "probability_0",
+            "probability_1",
+            "probability_2",
+            "probability_3",
+            "probability_4",
+            "probability_5",
+            "probability_AD",
+            "probability_Control",
+            "probability_MCI",
+            "selected_k_across_repeats",
+            "selected_k",
+            "outer_repeats_averaged"
+          ],
+          "rows": 7944,
+          "sha256": "5b40a6909f486482c143451dbba689e7f10a994dd1ce898a98acd91a08f471cc"
         }
       },
-      "rows": 405652,
-      "shards": 5
+      "rows": 924488,
+      "shards": 10
     },
     "targeted_panel_selection.parquet": {
-      "bytes": 2056754,
+      "bytes": 4578294,
       "columns": [
         "module",
         "median_incremental_score",
@@ -2571,6 +2929,7 @@
         "subsamples",
         "subsample_fraction",
         "redundancy_threshold",
+        "score_transform",
         "outer_repeat",
         "outer_fold",
         "module_definition",
@@ -2578,17 +2937,43 @@
         "selection_outcome",
         "selected_k",
         "selected",
+        "transformation_role",
         "kegg_annotation",
         "kegg_fdr",
         "kegg_role"
       ],
-      "rows": 49025,
-      "sha256": "a88ecf24b873b5acd70acf199be5c91c28f27664c95be4e421968ffc9d1eb45e"
+      "rows": 107300,
+      "sha256": "508075585856d1e3b5934ba8d174dac1dfec88f2d17f30b7008243ab43144e00"
+    },
+    "targeted_panel_transform_overlap.parquet": {
+      "bytes": 26030,
+      "columns": [
+        "module_definition",
+        "network_method",
+        "panel_strategy",
+        "selection_outcome",
+        "outer_repeat",
+        "outer_fold",
+        "transformed_scale",
+        "reference_scale",
+        "raw_k",
+        "transformed_k",
+        "intersection_modules",
+        "union_modules",
+        "jaccard",
+        "raw_modules",
+        "transformed_modules",
+        "shared_modules"
+      ],
+      "rows": 300,
+      "sha256": "2bbbf97326c91567e8a7dd268525fd560b298a96d0ef6871998f50b129416364"
     },
     "targeted_primary_comparisons.parquet": {
-      "bytes": 9328,
+      "bytes": 10669,
       "columns": [
         "evidence_tier",
+        "score_transform",
+        "transformation_role",
         "comparison",
         "model_outcome",
         "metric",
@@ -2603,10 +2988,10 @@
         "fdr_primary_family"
       ],
       "rows": 3,
-      "sha256": "1acc1bd2934ee6f383a35c0e7ea5dfdab05e4d4f68d9f53f5c7b1a39191d4fd7"
+      "sha256": "00747f0d8684f7e4af67497f7046091a9f9652aef692e7cd219b251ff8c3f9a8"
     },
     "targeted_tier_comparisons.parquet": {
-      "bytes": 17113,
+      "bytes": 24356,
       "columns": [
         "evidence_tier",
         "module_definition",
@@ -2615,6 +3000,8 @@
         "model_outcome",
         "edge_mask",
         "score_normalization",
+        "score_transform",
+        "transformation_role",
         "panel_strategy",
         "comparison",
         "metric",
@@ -2628,11 +3015,11 @@
         "fdr_within_outcome",
         "fdr_global_exploratory"
       ],
-      "rows": 100,
-      "sha256": "5216b0622a308d97e0d6ffdff3670602356e88493aba971d1ee238e8ee0231b3"
+      "rows": 226,
+      "sha256": "9b8e5bd70fe57c40923ea793d4c1dc240bd34dde388b6018472bc8f683644e79"
     },
     "targeted_top_coefficients.parquet": {
-      "bytes": 1707222,
+      "bytes": 3695913,
       "columns": [
         "coefficient_label",
         "feature_name",
@@ -2649,6 +3036,8 @@
         "model_outcome",
         "edge_mask",
         "score_normalization",
+        "score_transform",
+        "transformation_role",
         "predictor_block",
         "model_variant",
         "selected_k",
@@ -2658,10 +3047,61 @@
         "kegg_fdr",
         "kegg_role"
       ],
-      "rows": 89216,
-      "sha256": "45612cd772d1cb3319b395e3fb6c91d663dce13a020e97a449a433dfa9754e98"
+      "rows": 200160,
+      "sha256": "73bee3f937ace2eb07f960aff120cb94674f3b3bbb1dd2ad64944bfd3b8109e7"
+    },
+    "targeted_transformation_comparisons.parquet": {
+      "bytes": 39468,
+      "columns": [
+        "evaluation_design",
+        "evidence_tier",
+        "module_definition",
+        "network_method",
+        "panel_strategy",
+        "selection_outcome",
+        "model_outcome",
+        "edge_mask",
+        "score_normalization",
+        "predictor_block",
+        "model_variant",
+        "transformed_scale",
+        "reference_scale",
+        "comparison",
+        "metric",
+        "positive_difference_favors",
+        "comparison_tier",
+        "n_oof",
+        "performance_difference",
+        "ci_low",
+        "ci_high",
+        "p_value",
+        "valid_resamples",
+        "fdr_transform_global",
+        "fdr_transform_within_outcome"
+      ],
+      "rows": 586,
+      "sha256": "ecf9c56d0f79db41a747d7526a17db1ff6444b837d3a07d7bd8621f3f0e89034"
+    },
+    "targeted_transformation_status.parquet": {
+      "bytes": 7983,
+      "columns": [
+        "score_transform",
+        "status",
+        "observed_configurations",
+        "combined_configurations",
+        "checkpoint_configurations",
+        "expected_configurations",
+        "missing_configurations",
+        "observed_outer_folds",
+        "completed_outer_folds",
+        "outcomes",
+        "primary_scale"
+      ],
+      "rows": 3,
+      "sha256": "b8521ab33d264ced4635ac5ad173d4adf90ea192f2c7eda6e87797a10c07e360"
     }
   },
+  "interim": true,
   "limitations": [
     "Repeated nested CV is internal validation conditional on fixed module definitions.",
     "The historical 70/30 held-out cohort is previously inspected sensitivity data.",
@@ -2699,18 +3139,29 @@
     "network_method": "control_anchored",
     "panel_strategy": "tissue_neutral_ad",
     "predictor_block": "CT_pooled",
-    "score_normalization": "standard_pruned"
+    "score_normalization": "standard_pruned",
+    "score_transform": "raw"
   },
+  "primary_score_transform": "raw",
   "privacy": {
     "forbidden_fields": [
       "donor",
       "projid"
     ],
     "mapping_and_salt_exported": false,
+    "mapping_reused_across_incremental_publications": true,
     "prefix": "T-",
     "pseudonyms": 450
   },
-  "schema_version": 2,
+  "publishable_milestone": true,
+  "schema_version": 3,
+  "score_transformations": {
+    "asinh": "arcsinh(metric_raw); robustness sensitivity and corrected legacy provenance",
+    "comparison_tier": "exploratory",
+    "raw": "metric_raw; prespecified primary scale",
+    "rint": "Phi^-1((averageRank(x)-0.5)/n)",
+    "rint_application": "fitted separately within stability subsamples, inner-training folds, and outer-training folds; held-out values use clipped monotone interpolation"
+  },
   "selection": {
     "inner_folds": 5,
     "kegg_used_for_selection": false,
@@ -2727,5 +3178,10 @@
     "redundancy_threshold": 0.9,
     "stability_subsamples": 100,
     "subsample_fraction": 0.8
+  },
+  "transformation_status": {
+    "asinh": "complete",
+    "raw": "complete",
+    "rint": "running"
   }
 }
