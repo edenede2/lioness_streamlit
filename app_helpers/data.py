@@ -120,6 +120,10 @@ TARGETED_PREDICTION_FILES = {
     "consensus_panels": TARGETED_PREDICTION_DIR / "targeted_consensus_panels.parquet",
     "inner_k_scores": TARGETED_PREDICTION_DIR / "targeted_inner_k_scores.parquet",
     "coefficients": TARGETED_PREDICTION_DIR / "targeted_top_coefficients.parquet",
+    "transformation_status": TARGETED_PREDICTION_DIR / "targeted_transformation_status.parquet",
+    "transformation_comparisons": TARGETED_PREDICTION_DIR / "targeted_transformation_comparisons.parquet",
+    "panel_transform_overlap": TARGETED_PREDICTION_DIR / "targeted_panel_transform_overlap.parquet",
+    "consensus_transform_overlap": TARGETED_PREDICTION_DIR / "targeted_consensus_transform_overlap.parquet",
     "oof_predictions": TARGETED_PREDICTION_DIR / "targeted_oof_predictions.parquet",
     "masked_fold_performance": TARGETED_PREDICTION_DIR / "targeted_masked_fold_performance.parquet",
     "masked_oof_performance": TARGETED_PREDICTION_DIR / "targeted_masked_oof_performance.parquet",
@@ -148,6 +152,11 @@ PREDICTION_MASK_LABELS = {
     "global_fdr10": "Global BH FDR < 0.10",
     "per_module_fdr05": "Per-module BH FDR < 0.05",
     "per_module_fdr10": "Per-module BH FDR < 0.10 (exploratory)",
+}
+SCORE_TRANSFORM_LABELS = {
+    "raw": "Raw (primary)",
+    "asinh": "asinh (robustness)",
+    "rint": "RINT (robustness)",
 }
 PREDICTION_MODEL_LABELS = {
     "dummy": "Dummy / intercept baseline",
@@ -1484,12 +1493,31 @@ def load_targeted_prediction_table(
 
     if table not in TARGETED_PREDICTION_FILES:
         raise KeyError(f"Unknown targeted-prediction table: {table}")
+    manifest = load_targeted_prediction_manifest()
+    legacy_transform_schema = int(manifest.get("schema_version", 2)) < 3
+    deferred = {
+        column: value
+        for column, value in filters.items()
+        if legacy_transform_schema and column in {"score_transform", "transformation_role"}
+        and value is not None
+    }
     predicates = [
         (column, "=", value)
         for column, value in filters.items()
-        if value is not None
+        if value is not None and column not in deferred
     ]
-    return _read_filtered(TARGETED_PREDICTION_FILES[table], predicates)
+    result = _read_filtered(TARGETED_PREDICTION_FILES[table], predicates)
+    if "score_transform" not in result:
+        result["score_transform"] = "asinh"
+    if "transformation_role" not in result:
+        result["transformation_role"] = (
+            "existing_masked_sensitivity"
+            if table.startswith("masked_")
+            else "legacy_asinh_provenance"
+        )
+    for column, value in deferred.items():
+        result = result.loc[result[column].eq(value)]
+    return result.reset_index(drop=True)
 
 
 def load_prediction_manifest() -> dict[str, object]:

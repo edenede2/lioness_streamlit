@@ -97,6 +97,9 @@ def test_targeted_prediction_view_defaults_to_primary_control_derived_analysis()
     assert widget_with_label(app.radio, "Prediction mode").value == "targeted"
     assert widget_with_label(app.selectbox, "Targeted edge set").value == "all"
     assert widget_with_label(
+        app.selectbox, "Module-score transformation"
+    ).value in {"raw", "asinh", "rint"}
+    assert widget_with_label(
         app.selectbox, "Targeted module definition"
     ).value == "control_derived"
     assert widget_with_label(
@@ -109,6 +112,7 @@ def test_targeted_prediction_view_defaults_to_primary_control_derived_analysis()
         {
             "Summary",
             "CT versus TS",
+            "Transformation sensitivity",
             "Panel selection",
             "OOF diagnostics",
             "Coefficients & KEGG",

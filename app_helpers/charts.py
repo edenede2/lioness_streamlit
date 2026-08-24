@@ -2302,6 +2302,136 @@ def targeted_primary_comparison_figure(
     return figure
 
 
+def targeted_transform_comparison_figure(
+    frame: pd.DataFrame,
+    *,
+    block_labels: dict[str, str],
+    model_labels: dict[str, str],
+    title: str,
+) -> go.Figure:
+    """Forest plot of exploratory transformed-minus-Raw OOF differences."""
+
+    selected = frame.loc[frame["performance_difference"].notna()].copy()
+    selected["display"] = selected.apply(
+        lambda row: (
+            f"{str(row['transformed_scale']).upper()} · "
+            f"{block_labels.get(str(row['predictor_block']), row['predictor_block'])} · "
+            f"{model_labels.get(str(row['model_variant']), row['model_variant'])}"
+        ),
+        axis=1,
+    )
+    selected = selected.sort_values("performance_difference")
+    custom = selected[
+        ["ci_low", "ci_high", "p_value", "fdr_transform_global", "fdr_transform_within_outcome", "n_oof"]
+    ].to_numpy(float)
+    figure = go.Figure(
+        go.Scatter(
+            x=selected["performance_difference"],
+            y=selected["display"],
+            mode="markers",
+            marker={
+                "size": 10,
+                "color": selected["transformed_scale"].map(
+                    {"asinh": "#2C7FB8", "rint": "#E66101"}
+                ),
+            },
+            error_x={
+                "type": "data",
+                "symmetric": False,
+                "array": selected["ci_high"] - selected["performance_difference"],
+                "arrayminus": selected["performance_difference"] - selected["ci_low"],
+            },
+            customdata=custom,
+            hovertemplate=(
+                "%{y}<br>Oriented difference: %{x:.3f}<br>95% CI: "
+                "%{customdata[0]:.3f} to %{customdata[1]:.3f}"
+                "<br>p=%{customdata[2]:.3g}<br>Global FDR=%{customdata[3]:.3g}"
+                "<br>Within-outcome FDR=%{customdata[4]:.3g}"
+                "<br>OOF n=%{customdata[5]:.0f}<extra></extra>"
+            ),
+        )
+    )
+    figure.add_vline(x=0, line_dash="dash", line_color="#526273")
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"},
+        template="plotly_white",
+        height=max(480, 150 + 34 * len(selected)),
+        margin={"l": 300, "r": 35, "t": 80, "b": 65},
+        xaxis_title="Paired primary-metric difference (positive favors transformed scale)",
+    )
+    return figure
+
+
+def targeted_transform_heatmap_figure(
+    frame: pd.DataFrame,
+    *,
+    block_labels: dict[str, str],
+    model_labels: dict[str, str],
+    title: str,
+) -> go.Figure:
+    """Heatmap of transformed-minus-Raw primary-metric differences."""
+
+    selected = frame.copy()
+    selected["row_label"] = selected.apply(
+        lambda row: (
+            f"{block_labels.get(str(row['predictor_block']), row['predictor_block'])} · "
+            f"{model_labels.get(str(row['model_variant']), row['model_variant'])}"
+        ),
+        axis=1,
+    )
+    matrix = selected.pivot_table(
+        index="row_label", columns="transformed_scale",
+        values="performance_difference", aggfunc="first",
+    ).reindex(columns=[value for value in ("asinh", "rint") if value in set(selected["transformed_scale"])])
+    figure = go.Figure(
+        go.Heatmap(
+            z=matrix.to_numpy(dtype=float),
+            x=[str(value).upper() for value in matrix.columns],
+            y=matrix.index,
+            colorscale="RdBu",
+            zmid=0,
+            colorbar={"title": "Δ metric"},
+            hovertemplate="%{y}<br>%{x} − Raw: %{z:.3f}<extra></extra>",
+        )
+    )
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"},
+        template="plotly_white",
+        height=max(480, 150 + 28 * len(matrix)),
+        margin={"l": 270, "r": 35, "t": 80, "b": 65},
+    )
+    return figure
+
+
+def targeted_panel_overlap_figure(frame: pd.DataFrame, *, title: str) -> go.Figure:
+    """Show fold-level panel Jaccard overlap with Raw selections."""
+
+    selected = frame.loc[frame["jaccard"].notna()].copy()
+    figure = go.Figure()
+    for transform, subset in selected.groupby("transformed_scale", observed=True):
+        figure.add_trace(
+            go.Box(
+                name=str(transform).upper(),
+                y=subset["jaccard"],
+                boxpoints="all",
+                jitter=0.25,
+                pointpos=0,
+                customdata=subset[["raw_k", "transformed_k", "intersection_modules"]].to_numpy(),
+                hovertemplate=(
+                    "%{fullData.name}<br>Jaccard=%{y:.3f}<br>Raw K=%{customdata[0]}"
+                    "<br>Transformed K=%{customdata[1]}<br>Shared=%{customdata[2]}<extra></extra>"
+                ),
+            )
+        )
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"},
+        template="plotly_white",
+        height=480,
+        yaxis={"title": "Selected-panel Jaccard with Raw", "range": [0, 1.02]},
+    )
+    return figure
+
+
 def targeted_selection_frequency_figure(
     frame: pd.DataFrame,
     *,

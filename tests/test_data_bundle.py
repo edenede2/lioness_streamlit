@@ -93,6 +93,35 @@ def test_targeted_prediction_loader_uses_predicates_and_preserves_privacy(
     assert {"donor", "projid"}.isdisjoint(selected.columns)
 
 
+def test_targeted_prediction_loader_filters_explicit_score_transform(
+    tmp_path: Path, monkeypatch
+) -> None:
+    directory = tmp_path / "prediction_targeted"
+    directory.mkdir()
+    path = directory / "targeted_oof_performance.parquet"
+    pd.DataFrame(
+        {
+            "evidence_tier": ["primary", "primary", "primary"],
+            "score_transform": ["raw", "asinh", "rint"],
+            "transformation_role": [
+                "primary_scale", "robustness_sensitivity", "robustness_sensitivity"
+            ],
+            "value": [0.70, 0.69, 0.71],
+        }
+    ).to_parquet(path, index=False)
+    manifest = directory / "targeted_prediction_public_manifest.json"
+    manifest.write_text('{"schema_version": 3, "complete": false}\n', encoding="utf-8")
+    files = dict(data.TARGETED_PREDICTION_FILES)
+    files["oof_performance"] = path
+    monkeypatch.setattr(data, "TARGETED_PREDICTION_MANIFEST", manifest)
+    monkeypatch.setattr(data, "TARGETED_PREDICTION_FILES", files)
+    selected = data.load_targeted_prediction_table(
+        "oof_performance", evidence_tier="primary", score_transform="raw"
+    )
+    assert selected["score_transform"].tolist() == ["raw"]
+    assert selected["value"].tolist() == [0.70]
+
+
 def test_targeted_masked_sensitivity_packages_all_requested_outcomes() -> None:
     expected = {
         "diagnosis_binary",

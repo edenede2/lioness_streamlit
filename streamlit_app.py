@@ -27,6 +27,9 @@ if not all(
         "targeted_primary_comparison_figure",
         "targeted_selection_frequency_figure",
         "targeted_fold_robustness_figure",
+        "targeted_transform_comparison_figure",
+        "targeted_transform_heatmap_figure",
+        "targeted_panel_overlap_figure",
     )
 ):
     _chart_helpers = importlib.reload(_chart_helpers)
@@ -62,8 +65,11 @@ from app_helpers.charts import (
     prediction_performance_figure,
     prediction_threshold_figure,
     targeted_fold_robustness_figure,
+    targeted_panel_overlap_figure,
     targeted_primary_comparison_figure,
     targeted_selection_frequency_figure,
+    targeted_transform_comparison_figure,
+    targeted_transform_heatmap_figure,
     resolved_to_long,
 )
 from app_helpers.correlations import calculate_correlations
@@ -72,7 +78,10 @@ from app_helpers.table_controls import filterable_dataframe
 from app_helpers.drive_data import data_source_label, ensure_data_path
 from app_helpers import data as _data_helpers
 
-if not hasattr(_data_helpers, "collapse_pathway_mdc_rows"):
+if not all(
+    hasattr(_data_helpers, name)
+    for name in ("collapse_pathway_mdc_rows", "SCORE_TRANSFORM_LABELS")
+):
     _data_helpers = importlib.reload(_data_helpers)
 
 from app_helpers.data import (
@@ -106,6 +115,7 @@ from app_helpers.data import (
     TARGETED_PREDICTION_MODE_LABELS,
     TARGETED_TIER_LABELS,
     SCALE_LABELS,
+    SCORE_TRANSFORM_LABELS,
     SCORE_NORMALIZATION_LABELS,
     build_pathway_mdc_rows,
     collapse_pathway_mdc_rows,
@@ -640,6 +650,28 @@ def render_targeted_prediction_view() -> None:
     if performance_catalog.empty:
         st.info("The targeted-prediction manifest is present, but no completed OOF results exist.")
         return
+    if masked_selection:
+        score_transform = "asinh"
+    else:
+        available_transforms = [
+            value for value in ("raw", "asinh", "rint")
+            if value in set(performance_catalog["score_transform"].astype(str))
+        ]
+        with st.sidebar:
+            score_transform = st.selectbox(
+                "Module-score transformation",
+                options=available_transforms,
+                format_func=lambda value: SCORE_TRANSFORM_LABELS.get(value, value),
+                index=available_transforms.index("raw") if "raw" in available_transforms else 0,
+                key="targeted_score_transform",
+                help=(
+                    "Raw is the prespecified primary scale. asinh and RINT are exploratory "
+                    "robustness analyses fitted within the nested-CV training partitions."
+                ),
+            )
+        performance_catalog = performance_catalog.loc[
+            performance_catalog["score_transform"].eq(score_transform)
+        ].copy()
     st.subheader(
         "Targeted differential-edge sensitivity"
         if masked_selection
@@ -652,14 +684,23 @@ def render_targeted_prediction_view() -> None:
     )
     if not bool(manifest.get("complete", False)):
         st.warning(
-            "This is a checkpointed staging catalog. Some folds or evidence tiers are still "
-            "running; do not report these interim performance estimates."
+            "This is an incremental transformation catalog. Only completed configurations are "
+            "shown; the full Raw/asinh/RINT reconciliation is still interim."
         )
     if masked_selection:
         st.warning(
             "Exploratory differential-edge sensitivity: masks are learned from outer-training "
             "AD/Control donors in one five-fold outer cycle. The fold-specific all-edge panel "
             "and regularization settings are frozen; no new selection search is performed."
+        )
+        st.caption(
+            "The differential-edge masked catalog is preserved unchanged and uses the existing "
+            "asinh-based module scores."
+        )
+    elif score_transform != "raw":
+        st.info(
+            f"{SCORE_TRANSFORM_LABELS.get(score_transform, score_transform)} is an exploratory "
+            "robustness analysis. The three prespecified primary hypotheses remain Raw-only."
         )
     with st.sidebar:
         st.header("Targeted prediction controls")
@@ -732,6 +773,7 @@ def render_targeted_prediction_view() -> None:
         & performance_catalog["panel_strategy"].eq(panel_strategy)
         & performance_catalog["edge_mask"].eq(edge_mask)
         & performance_catalog["score_normalization"].eq(score_normalization)
+        & performance_catalog["score_transform"].eq(score_transform)
     ].copy()
     if selected.empty:
         st.warning("No repeated-CV models match the selected targeted analysis.")
@@ -754,7 +796,7 @@ def render_targeted_prediction_view() -> None:
         1 if masked_selection else int(manifest.get("selection", {}).get("outer_repeats", 5))
     )
     folds = int(manifest.get("selection", {}).get("outer_folds", 5))
-    metrics = st.columns(4)
+    metrics = st.columns(5)
     metrics[0].metric(
         "Evaluation",
         f"{repeats} × {folds} outer CV sensitivity"
@@ -763,12 +805,16 @@ def render_targeted_prediction_view() -> None:
     )
     metrics[1].metric("OOF donors", int(selected["n_oof"].max()))
     metrics[2].metric("Primary metric", primary_metric)
-    metrics[3].metric("Edge set", "All edges" if set(selected["edge_mask"]) == {"all"} else "Sensitivity mask")
+    metrics[3].metric("Score scale", SCORE_TRANSFORM_LABELS.get(score_transform, score_transform))
+    metrics[4].metric("Edge set", "All edges" if set(selected["edge_mask"]) == {"all"} else "Sensitivity mask")
 
-    summary_tab, comparison_tab, panel_tab, diagnostic_tab, coefficient_tab, tables_tab, methods_tab = st.tabs(
+    (
+        summary_tab, comparison_tab, transformation_tab, panel_tab, diagnostic_tab,
+        coefficient_tab, tables_tab, methods_tab,
+    ) = st.tabs(
         [
-            "Summary", "CT versus TS", "Panel selection", "OOF diagnostics",
-            "Coefficients & KEGG", "Tables", "Methods",
+            "Summary", "CT versus TS", "Transformation sensitivity", "Panel selection",
+            "OOF diagnostics", "Coefficients & KEGG", "Tables", "Methods",
         ]
     )
     with summary_tab:
@@ -778,6 +824,7 @@ def render_targeted_prediction_view() -> None:
         )
         if (
             not masked_selection
+            and score_transform == "raw"
             and evidence_tier == "primary"
             and module_definition == "control_derived"
             and outcome == "diagnosis_binary"
@@ -815,7 +862,10 @@ def render_targeted_prediction_view() -> None:
             use_container_width=True,
             config={"displaylogo": False},
         )
-        if not masked_selection and evidence_tier == "primary" and outcome == "diagnosis_binary":
+        if (
+            not masked_selection and score_transform == "raw"
+            and evidence_tier == "primary" and outcome == "diagnosis_binary"
+        ):
             comparisons = cached_targeted_prediction_table("primary_comparisons")
             if not comparisons.empty:
                 st.plotly_chart(
@@ -873,6 +923,7 @@ def render_targeted_prediction_view() -> None:
                     model_variant="covariates_plus_network",
                     edge_mask=edge_mask,
                     score_normalization=score_normalization,
+                    score_transform=score_transform,
                 ),
             )
             if not fold_performance.empty:
@@ -894,6 +945,7 @@ def render_targeted_prediction_view() -> None:
                         module_definition=module_definition,
                         network_method=network_method,
                         model_outcome=outcome,
+                        score_transform=score_transform,
                     ),
                 )
                 if not tier_comparisons.empty:
@@ -915,6 +967,121 @@ def render_targeted_prediction_view() -> None:
                         mime="text/tab-separated-values",
                     )
 
+    with transformation_tab:
+        if masked_selection:
+            st.info(
+                "Transformation sensitivity applies to the all-edge targeted catalog. "
+                "The differential-edge masked catalog remains the existing asinh analysis."
+            )
+        elif int(manifest.get("schema_version", 2)) < 3:
+            st.info(
+                "This deployed snapshot contains the corrected legacy asinh catalog only. "
+                "Raw will appear here after its first validated incremental publication."
+            )
+        else:
+            transform_status = cached_targeted_prediction_table("transformation_status")
+            if not transform_status.empty:
+                filterable_dataframe(
+                    transform_status,
+                    table_key="targeted_transform_status",
+                    table_name="Transformation analysis status",
+                    use_container_width=True,
+                    hide_index=True,
+                )
+            transform_comparisons = cached_targeted_prediction_table(
+                "transformation_comparisons",
+                _targeted_filters(
+                    module_definition=module_definition,
+                    network_method=network_method,
+                    panel_strategy=panel_strategy,
+                    model_outcome=outcome,
+                ),
+            )
+            if transform_comparisons.empty:
+                st.info(
+                    "Paired transformed-versus-Raw comparisons will appear after a robustness "
+                    "transformation completes for this configuration."
+                )
+            else:
+                st.caption(
+                    "These comparisons are exploratory. Positive oriented differences favor "
+                    "asinh or RINT over Raw; global and within-outcome BH FDRs are both shown."
+                )
+                st.plotly_chart(
+                    targeted_transform_comparison_figure(
+                        transform_comparisons,
+                        block_labels=PREDICTION_BLOCK_LABELS,
+                        model_labels=PREDICTION_MODEL_LABELS,
+                        title="Transformation sensitivity: paired donor-averaged OOF performance",
+                    ),
+                    use_container_width=True,
+                    config={"displaylogo": False},
+                )
+                st.plotly_chart(
+                    targeted_transform_heatmap_figure(
+                        transform_comparisons,
+                        block_labels=PREDICTION_BLOCK_LABELS,
+                        model_labels=PREDICTION_MODEL_LABELS,
+                        title="Oriented primary-metric difference versus Raw",
+                    ),
+                    use_container_width=True,
+                    config={"displaylogo": False},
+                )
+                filterable_dataframe(
+                    transform_comparisons,
+                    table_key="targeted_transform_comparisons",
+                    table_name="Paired transformation comparisons",
+                    use_container_width=True,
+                    hide_index=True,
+                )
+            if panel_strategy != "all_modules":
+                selection_outcome = str(
+                    outcome_catalog.loc[
+                        outcome_catalog["panel_strategy"].eq(panel_strategy),
+                        "selection_outcome",
+                    ].iloc[0]
+                )
+                overlap = cached_targeted_prediction_table(
+                    "panel_transform_overlap",
+                    _targeted_filters(
+                        module_definition=module_definition,
+                        network_method=network_method,
+                        panel_strategy=panel_strategy,
+                        selection_outcome=selection_outcome,
+                    ),
+                )
+                if not overlap.empty:
+                    st.plotly_chart(
+                        targeted_panel_overlap_figure(
+                            overlap,
+                            title="Fold-specific panel overlap with Raw",
+                        ),
+                        use_container_width=True,
+                        config={"displaylogo": False},
+                    )
+                    k_summary = overlap.groupby(
+                        "transformed_scale", observed=True
+                    ).agg(
+                        folds=("outer_fold", "size"),
+                        median_raw_k=("raw_k", "median"),
+                        median_transformed_k=("transformed_k", "median"),
+                        median_jaccard=("jaccard", "median"),
+                    ).reset_index()
+                    filterable_dataframe(
+                        k_summary,
+                        table_key="targeted_transform_k_summary",
+                        table_name="K and panel-overlap summary",
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+            if not transform_comparisons.empty:
+                st.download_button(
+                    "Download transformation sensitivity (TSV)",
+                    data=dataframe_to_tsv_bytes(transform_comparisons),
+                    file_name="targeted_lioness_transformation_sensitivity.tsv",
+                    mime="text/tab-separated-values",
+                )
+
     with panel_tab:
         if panel_strategy == "all_modules":
             st.info("All-module benchmark uses no data-derived targeted panel.")
@@ -926,6 +1093,7 @@ def render_targeted_prediction_view() -> None:
                 selection_outcome=str(outcome_catalog.loc[
                     outcome_catalog["panel_strategy"].eq(panel_strategy), "selection_outcome"
                 ].iloc[0]),
+                score_transform=score_transform,
             )
             consensus = cached_targeted_prediction_table("consensus_panels", panel_filters)
             selection = cached_targeted_prediction_table("panel_selection", panel_filters)
@@ -1002,6 +1170,7 @@ def render_targeted_prediction_view() -> None:
                 model_variant=diagnostic_variant,
                 edge_mask=edge_mask,
                 score_normalization=score_normalization,
+                score_transform=score_transform,
             ),
         )
         if diagnostics.empty:
@@ -1063,6 +1232,7 @@ def render_targeted_prediction_view() -> None:
                 model_outcome=outcome,
                 edge_mask=edge_mask,
                 score_normalization=score_normalization,
+                score_transform=score_transform,
             ),
         )
         if coefficients.empty:
@@ -1144,6 +1314,14 @@ def render_targeted_prediction_view() -> None:
             "LIONESS uses outer-training donors; Control-referenced LIONESS uses outer-training "
             "Controls. Test donors are add-one scored against the frozen reference. Panel size "
             "and regularization are selected inside the outer-training partition."
+        )
+        st.markdown(
+            "**Score transformations.** Raw uses `metric_raw` and is the only primary scale. "
+            "asinh applies `arcsinh(metric_raw)`. RINT uses average ranks and is fitted anew "
+            "inside every stability-selection subsample, inner-training fold, and outer-training "
+            "fold; validation/test values are mapped through the training-derived monotone "
+            "interpolation and clipped outside the training range. Panels and K may differ by "
+            "transformation."
         )
         st.caption(
             "The current fixed 70/30 held-out results are previously inspected sensitivity "
