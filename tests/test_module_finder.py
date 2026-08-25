@@ -1,10 +1,19 @@
 from __future__ import annotations
 
 import numpy as np
+import pandas as pd
+from scipy import stats
 
 from app_helpers.charts import module_finder_figure
-from app_helpers.data import load_aggregate_statistics, load_module_annotations
-from app_helpers.module_finder import build_module_finder_table
+from app_helpers.data import (
+    load_aggregate_scope,
+    load_aggregate_statistics,
+    load_module_annotations,
+)
+from app_helpers.module_finder import (
+    build_module_finder_table,
+    build_pooled_ct_ts_statistics,
+)
 
 
 def test_module_finder_reconciles_both_association_differences() -> None:
@@ -53,6 +62,56 @@ def test_module_finder_reconciles_both_association_differences() -> None:
     assert np.isclose(row["ad_control_fisher_z_CT"], expected_fisher_z_ct)
     assert result[["ad_control_fdr_CT", "ad_control_fdr_TS"]].min().min() >= 0
     assert result[["ad_control_fdr_CT", "ad_control_fdr_TS"]].max().max() <= 1
+
+
+def test_module_finder_supports_all_donors_ct_ts_comparison() -> None:
+    statistics = load_aggregate_statistics(
+        "control_anchored", None, "cogn_global", "connectivity"
+    )
+    donor_scores = load_aggregate_scope(
+        "control_anchored",
+        module=None,
+        metric_family="connectivity",
+        module_set="full_cohort",
+        estimator="lioness",
+        edge_rule="all",
+    )
+    pooled = build_pooled_ct_ts_statistics(
+        donor_scores, phenotype="cogn_global"
+    )
+    statistics = pd.concat([statistics, pooled], ignore_index=True)
+
+    result = build_module_finder_table(
+        statistics,
+        ct_ts_diagnosis="All donors",
+        correlation_method="Spearman",
+        criterion="ct_ts",
+    )
+    assert len(result) == 154
+    assert result["ct_ts_diagnosis"].eq("All donors").all()
+
+    module = int(result.iloc[0]["module"])
+    source = statistics.loc[
+        statistics["module"].eq(module)
+        & statistics["diagnosis_group"].eq("All donors")
+    ].iloc[0]
+    row = result.loc[result["module"].eq(module)].iloc[0]
+    assert row["ct_ts_n"] == source["n"]
+    assert np.isclose(
+        row["ct_ts_delta_correlation"], source["rho_CT"] - source["rho_TS"]
+    )
+    donor_module = donor_scores.loc[donor_scores["module"].eq(module)].dropna(
+        subset=["CT_raw", "TS_raw", "cogn_global"]
+    )
+    expected_ct = stats.spearmanr(
+        donor_module["CT_raw"], donor_module["cogn_global"]
+    ).statistic
+    expected_ts = stats.spearmanr(
+        donor_module["TS_raw"], donor_module["cogn_global"]
+    ).statistic
+    assert np.isclose(row["ct_ts_correlation_CT"], expected_ct)
+    assert np.isclose(row["ct_ts_correlation_TS"], expected_ts)
+    assert pooled["q_component_rank_within_phenotype"].dropna().between(0, 1).all()
 
 
 def test_module_finder_chart_has_two_explicit_criteria_axes() -> None:

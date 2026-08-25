@@ -75,7 +75,11 @@ from app_helpers.charts import (
     resolved_to_long,
 )
 from app_helpers.correlations import add_across_module_fdr, calculate_correlations
-from app_helpers.module_finder import FINDER_CRITERIA, build_module_finder_table
+from app_helpers.module_finder import (
+    FINDER_CRITERIA,
+    build_module_finder_table,
+    build_pooled_ct_ts_statistics,
+)
 from app_helpers.table_controls import filterable_dataframe
 from app_helpers.drive_data import data_source_label, ensure_data_path
 from app_helpers import data as _data_helpers
@@ -363,6 +367,46 @@ def cached_aggregate_stats(
         score_normalization=score_normalization,
         analysis_subset=analysis_subset,
     )
+
+
+@st.cache_data(
+    show_spinner="Calculating pooled-donor CT–TS module statistics…",
+    max_entries=48,
+)
+def cached_pooled_module_finder_stats(
+    module_set: str,
+    estimator: str,
+    method: str,
+    phenotype: str,
+    feature: str,
+    edge_rule: str,
+    differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
+    differential_fdr_threshold: float = 0.05,
+    score_normalization: str = "standard_pruned",
+    analysis_subset: str = "all_donors",
+) -> pd.DataFrame:
+    source = load_aggregate_scope(
+        method,
+        module=None,
+        metric_family=feature,
+        module_set=module_set,
+        estimator=estimator,
+        edge_rule=edge_rule,
+        differential_edge_rule=differential_edge_rule,
+        differential_fdr_scope=differential_fdr_scope,
+        differential_fdr_threshold=differential_fdr_threshold,
+        score_normalization=score_normalization,
+    )
+    source = attach_metadata(source)
+    if differential_edge_rule != "all" and analysis_subset != "all_donors":
+        split_value = {
+            "discovery_ad_control": "Discovery",
+            "validation_ad_control": "Validation",
+            "mci_external": "MCI_external",
+        }[analysis_subset]
+        source = source.loc[source["ad_control_split"].eq(split_value)].copy()
+    return build_pooled_ct_ts_statistics(source, phenotype=phenotype)
 
 
 @st.cache_data(show_spinner=False, max_entries=48)
@@ -3387,8 +3431,9 @@ if active_view == "CT–TS screen":
 if active_view == "Module finder":
     st.subheader("Find modules with contrasting association patterns")
     st.caption(
-        "Rank modules by the difference between CT and TS correlations within one "
-        "diagnosis, by the difference between Control and AD correlations, or by both. "
+        "Rank modules by the difference between CT and TS correlations across all donors "
+        "or within one diagnosis, by the difference between Control and AD correlations, "
+        "or by both. "
         "All comparisons use the selected phenotype, feature, estimator, network method, "
         "edge rule, and Spearman/Pearson setting. These are association-pattern "
         "differences; they do not test a raw mean difference in the module score."
@@ -3399,9 +3444,9 @@ if active_view == "Module finder":
         differential_fdr_threshold, score_normalization, analysis_subset,
     )
     available_finder_diagnoses = [
-        diagnosis
-        for diagnosis in DIAGNOSIS_ORDER
-        if diagnosis in set(finder_statistics["diagnosis_group"].dropna().astype(str))
+        cohort
+        for cohort in DIAGNOSIS_ORDER
+        if cohort in set(finder_statistics["diagnosis_group"].dropna().astype(str))
     ]
     if not {"Control", "AD"}.issubset(available_finder_diagnoses):
         st.warning(
@@ -3421,12 +3466,13 @@ if active_view == "Module finder":
         )
     with finder_controls[1]:
         finder_ct_ts_diagnosis = st.selectbox(
-            "Diagnosis for CT–TS comparison",
-            options=available_finder_diagnoses,
-            index=(
-                available_finder_diagnoses.index("AD")
-                if "AD" in available_finder_diagnoses
-                else 0
+            "Cohort for CT–TS comparison",
+            options=["All donors", *available_finder_diagnoses],
+            index=0,
+            help=(
+                "All donors pools Control, MCI, and AD donors for the phenotype–score "
+                "correlations. Diagnosis choices calculate the same CT–TS contrast "
+                "within the selected group only."
             ),
         )
     with finder_controls[2]:
@@ -3468,6 +3514,24 @@ if active_view == "Module finder":
             value=0.0,
             step=0.05,
             disabled=finder_criterion == "ct_ts",
+        )
+
+    if finder_ct_ts_diagnosis == "All donors":
+        pooled_finder_statistics = cached_pooled_module_finder_stats(
+            module_set,
+            estimator,
+            method,
+            phenotype,
+            feature,
+            edge_rule,
+            differential_edge_rule,
+            differential_fdr_scope,
+            differential_fdr_threshold,
+            score_normalization,
+            analysis_subset,
+        )
+        finder_statistics = pd.concat(
+            [finder_statistics, pooled_finder_statistics], ignore_index=True
         )
 
     finder = build_module_finder_table(
@@ -3654,7 +3718,9 @@ if active_view == "Module finder":
         )
     st.info(
         "CT–TS FDR uses the existing dependent-component test corrected across modules "
-        "within the selected phenotype. Control–AD differences use an approximate "
+        "within the selected phenotype. For All donors this test is calculated from the "
+        "pooled donor rows; its legacy all-12-outcome FDR field remains unavailable. "
+        "Control–AD differences use an approximate "
         "independent-groups Fisher-z test for CT and TS correlations, with BH across "
         f"both components and all {module_count} displayed modules. The Both score is "
         "the lower of the two percentile scores, so a module must rank well on both "

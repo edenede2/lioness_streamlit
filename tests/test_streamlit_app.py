@@ -263,6 +263,21 @@ def test_streamlit_module_finder_supports_each_ranking_criterion() -> None:
     app = AppTest.from_file(APP, default_timeout=180).run()
     app = select_view(app, "Module finder")
     assert_app_clean(app)
+    cohort = widget_with_label(app.selectbox, "Cohort for CT–TS comparison")
+    assert cohort.value == "All donors"
+    assert set(cohort.options).issuperset({"All donors", "Control", "MCI", "AD"})
+    pooled_table = next(
+        dataframe.value
+        for dataframe in app.dataframe
+        if "ct_ts_diagnosis" in dataframe.value.columns
+    )
+    assert pooled_table["ct_ts_diagnosis"].eq("All donors").all()
+    assert pooled_table["ct_ts_n"].min() > 300
+
+    app = widget_with_label(
+        app.selectbox, "Cohort for CT–TS comparison"
+    ).set_value("AD").run()
+    assert_app_clean(app)
     criterion = widget_with_label(app.radio, "Ranking criterion")
     assert criterion.value == "ct_ts"
     criterion.set_value("ad_control").run()

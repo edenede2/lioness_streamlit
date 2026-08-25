@@ -1,10 +1,10 @@
-"""Rank modules by CT–TS and diagnosis-specific association differences."""
+"""Rank modules by CT–TS cohort and diagnosis-specific association differences."""
 
 from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from scipy.stats import norm
+from scipy import stats
 
 from app_helpers.correlations import benjamini_hochberg
 
@@ -68,11 +68,150 @@ def _fisher_difference(
             1.0 / (count_a[valid] - 3.0) + 1.0 / (count_b[valid] - 3.0)
         )
         statistic[valid] = (np.arctanh(clipped_a) - np.arctanh(clipped_b)) / standard_error
-        p_value[valid] = 2.0 * norm.sf(np.abs(statistic[valid]))
+        p_value[valid] = 2.0 * stats.norm.sf(np.abs(statistic[valid]))
     return (
         pd.Series(statistic, index=correlation_a.index, dtype=float),
         pd.Series(p_value, index=correlation_a.index, dtype=float),
     )
+
+
+def _safe_correlation(
+    values_a: np.ndarray,
+    values_b: np.ndarray,
+    *,
+    method: str = "pearson",
+) -> tuple[float, float]:
+    finite = np.isfinite(values_a) & np.isfinite(values_b)
+    values_a = values_a[finite]
+    values_b = values_b[finite]
+    if (
+        len(values_a) < 4
+        or len(np.unique(values_a)) < 2
+        or len(np.unique(values_b)) < 2
+    ):
+        return np.nan, np.nan
+    if method == "spearman":
+        result = stats.spearmanr(values_a, values_b)
+    else:
+        result = stats.pearsonr(values_a, values_b)
+    return float(result.statistic), float(result.pvalue)
+
+
+def _williams_test(
+    correlation_y_ct: float,
+    correlation_y_ts: float,
+    correlation_ct_ts: float,
+    n: int,
+) -> tuple[float, float]:
+    """Compare two overlapping correlations that share the phenotype variable."""
+
+    values = np.array(
+        [correlation_y_ct, correlation_y_ts, correlation_ct_ts], dtype=float
+    )
+    if n < 6 or not np.isfinite(values).all():
+        return np.nan, np.nan
+    determinant = (
+        1.0
+        - correlation_y_ct**2
+        - correlation_y_ts**2
+        - correlation_ct_ts**2
+        + 2.0 * correlation_y_ct * correlation_y_ts * correlation_ct_ts
+    )
+    denominator_squared = (
+        2.0 * determinant * (n - 1) / (n - 3)
+        + ((correlation_y_ct + correlation_y_ts) ** 2 / 4.0)
+        * (1.0 - correlation_ct_ts) ** 3
+    )
+    if not np.isfinite(denominator_squared) or denominator_squared <= 0:
+        return np.nan, np.nan
+    statistic = (
+        (correlation_y_ct - correlation_y_ts)
+        * np.sqrt((n - 1) * (1.0 + correlation_ct_ts))
+        / np.sqrt(denominator_squared)
+    )
+    return float(statistic), float(2.0 * stats.t.sf(abs(statistic), df=n - 3))
+
+
+def build_pooled_ct_ts_statistics(
+    donor_scores: pd.DataFrame,
+    *,
+    phenotype: str,
+) -> pd.DataFrame:
+    """Calculate all-donor CT/TS correlations and dependent-component tests.
+
+    This mirrors the stored diagnosis-specific robustness statistics: all three
+    variables must be observed, Pearson uses stored RINT scores, Spearman uses raw
+    scores, and Williams' test compares the two overlapping correlations. BH is
+    applied across the displayed modules for this one phenotype.
+    """
+
+    required = {"module", "CT_raw", "TS_raw", "CT_rint", "TS_rint", phenotype}
+    missing = required.difference(donor_scores.columns)
+    if missing:
+        raise ValueError(f"Pooled CT–TS donor scores are missing: {sorted(missing)}")
+
+    rows: list[dict[str, object]] = []
+    for module, group in donor_scores.groupby("module", observed=True, sort=True):
+        y = pd.to_numeric(group[phenotype], errors="coerce").to_numpy(dtype=float)
+        ct_raw = pd.to_numeric(group["CT_raw"], errors="coerce").to_numpy(dtype=float)
+        ts_raw = pd.to_numeric(group["TS_raw"], errors="coerce").to_numpy(dtype=float)
+        ct_rint = pd.to_numeric(group["CT_rint"], errors="coerce").to_numpy(dtype=float)
+        ts_rint = pd.to_numeric(group["TS_rint"], errors="coerce").to_numpy(dtype=float)
+        complete = (
+            np.isfinite(y)
+            & np.isfinite(ct_raw)
+            & np.isfinite(ts_raw)
+            & np.isfinite(ct_rint)
+            & np.isfinite(ts_rint)
+        )
+        y = y[complete]
+        ct_raw = ct_raw[complete]
+        ts_raw = ts_raw[complete]
+        ct_rint = ct_rint[complete]
+        ts_rint = ts_rint[complete]
+
+        rho_ct, p_spearman_ct = _safe_correlation(ct_raw, y, method="spearman")
+        rho_ts, p_spearman_ts = _safe_correlation(ts_raw, y, method="spearman")
+        r_rint_ct, p_rint_ct = _safe_correlation(ct_rint, y)
+        r_rint_ts, p_rint_ts = _safe_correlation(ts_rint, y)
+
+        rank_y = stats.rankdata(y, method="average")
+        rank_ct = stats.rankdata(ct_raw, method="average")
+        rank_ts = stats.rankdata(ts_raw, method="average")
+        rank_ct_ts, _ = _safe_correlation(rank_ct, rank_ts)
+        component_rank = _williams_test(rho_ct, rho_ts, rank_ct_ts, len(y))
+        rint_ct_ts, _ = _safe_correlation(ct_rint, ts_rint)
+        component_rint = _williams_test(
+            r_rint_ct, r_rint_ts, rint_ct_ts, len(y)
+        )
+        rows.append(
+            {
+                "module": int(module),
+                "diagnosis_group": "All donors",
+                "n": int(len(y)),
+                "rho_CT": rho_ct,
+                "p_spearman_CT": p_spearman_ct,
+                "rho_TS": rho_ts,
+                "p_spearman_TS": p_spearman_ts,
+                "r_rint_CT": r_rint_ct,
+                "p_rint_CT": p_rint_ct,
+                "r_rint_TS": r_rint_ts,
+                "p_rint_TS": p_rint_ts,
+                "component_t_rank": component_rank[0],
+                "p_component_rank": component_rank[1],
+                "component_t_rint": component_rint[0],
+                "p_component_rint": component_rint[1],
+            }
+        )
+
+    result = pd.DataFrame(rows)
+    for suffix in ("rank", "rint"):
+        fdr = benjamini_hochberg(result[f"p_component_{suffix}"])
+        result[f"q_component_{suffix}_within_phenotype"] = fdr
+        # The existing finder download retains this legacy field, but no pooled
+        # all-outcome dependent-test family was stored or dynamically calculated.
+        result[f"q_component_{suffix}_all12_global"] = np.nan
+    return result
 
 
 def build_module_finder_table(
@@ -85,7 +224,8 @@ def build_module_finder_table(
     """Build one module-level table for the two association-difference criteria.
 
     The CT–TS criterion uses the existing dependent-component test within the chosen
-    diagnosis. The Control–AD criterion compares independent diagnosis-specific
+    cohort, which may be all donors or one diagnosis. The Control–AD criterion compares
+    independent diagnosis-specific
     correlations with the Fisher-z approximation separately for CT and TS, followed
     by BH across both components and every displayed module.
     """
