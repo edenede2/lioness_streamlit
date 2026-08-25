@@ -155,6 +155,41 @@ def test_targeted_masked_sensitivity_packages_all_requested_outcomes() -> None:
     }
 
 
+def test_primary_raw_eigengene_milestone_is_complete_and_selectable() -> None:
+    expected_variants = {
+        "transcriptomics_only",
+        "covariates_plus_transcriptomics",
+        "network_plus_transcriptomics",
+        "covariates_plus_network_plus_transcriptomics",
+    }
+    manifest = data.load_targeted_prediction_manifest()
+    assert manifest["primary_transcriptomic_milestone_complete"] is True
+    assert manifest["primary_transcriptomic_configurations"] == 600
+    assert manifest["base_raw_catalog_complete"] is True
+
+    performance = data.load_targeted_prediction_table(
+        "oof_performance", evidence_tier="primary", score_transform="raw"
+    )
+    assert expected_variants.issubset(set(performance["model_variant"]))
+
+    fold = data.load_targeted_prediction_table(
+        "fold_performance", evidence_tier="primary", score_transform="raw"
+    )
+    fold = fold.loc[fold["model_variant"].isin(expected_variants)]
+    identity = [
+        "outer_repeat",
+        "outer_fold",
+        "module_definition",
+        "network_method",
+        "panel_strategy",
+        "selection_outcome",
+        "model_outcome",
+        "predictor_block",
+        "model_variant",
+    ]
+    assert len(fold.loc[:, identity].drop_duplicates()) == 600
+
+
 def test_all_modules_and_m1918_are_packaged() -> None:
     annotations = data.load_module_annotations()
     assert annotations["module"].nunique() == 154
