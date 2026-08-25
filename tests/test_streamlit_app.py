@@ -129,6 +129,12 @@ def test_correlation_heatmap_supports_all_features_and_module_blocks() -> None:
         app.selectbox, "Features for all-module heatmap and table"
     ).set_value("__all__").run()
     app = preserve_legacy_pills_state(app)
+    component_selector = widget_with_label(
+        app.selectbox, "Components for all-module heatmap and table"
+    )
+    assert "Both aggregate components (CT and TS)" in component_selector.options
+    app = component_selector.set_value("__all__").run()
+    app = preserve_legacy_pills_state(app)
     app = widget_with_label(app.selectbox, "Heatmap clustering").set_value("Modules").run()
     app = preserve_legacy_pills_state(app)
     assert_app_clean(app)
@@ -140,6 +146,7 @@ def test_correlation_heatmap_supports_all_features_and_module_blocks() -> None:
     )
     assert table["module"].nunique() == 154
     assert table["metric_family"].nunique() == 6
+    assert set(table["component"]) == {"CT", "TS"}
     assert set(table["diagnosis_group"]) == {"AD"}
     assert {"correlation", "p_value", "fdr"}.issubset(table.columns)
 
@@ -153,6 +160,40 @@ def test_correlation_heatmap_supports_all_features_and_module_blocks() -> None:
         if "absolute_correlation" in dataframe.value.columns
     )
     assert significant["fdr"].lt(0.05).all()
+
+
+def test_correlation_heatmap_supports_all_tissue_resolved_components() -> None:
+    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = widget_with_label(app.radio, "Resolution").set_value(
+        "Tissue resolved"
+    ).run()
+    app = select_view(app, "Correlation heatmaps")
+    assert_app_clean(app)
+    scope = widget_with_label(app.radio, "Heatmap scope")
+    app = preserve_legacy_pills_state(
+        scope.set_value("All 154 modules: selected or all feature scores").run()
+    )
+    app = widget_with_label(
+        app.selectbox, "Components for all-module heatmap and table"
+    ).set_value("__all__").run()
+    app = preserve_legacy_pills_state(app)
+    assert_app_clean(app)
+
+    table = next(
+        dataframe.value
+        for dataframe in app.dataframe
+        if "absolute_correlation" in dataframe.value.columns
+    )
+    assert table["module"].nunique() == 154
+    assert set(table["component"]) == {
+        "TS_AC",
+        "TS_DLPFC",
+        "TS_PCGBA23",
+        "CT_AC__DLPFC",
+        "CT_AC__PCGBA23",
+        "CT_DLPFC__PCGBA23",
+    }
+    assert table["component_label"].astype(str).str.contains("DLPFC").any()
 
 
 def test_prediction_view_uses_leakage_reduced_exploratory_default() -> None:

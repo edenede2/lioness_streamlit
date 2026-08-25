@@ -811,6 +811,7 @@ def cached_all_module_correlations(
     analysis_subset: str = "all_donors",
 ) -> pd.DataFrame:
     feature_filter = None if feature == "__all__" else feature
+    component_filter = None if component == "__all__" else component
     summaries: list[pd.DataFrame] = []
 
     # The diagnosis-stratified statistics are already stored. Reading them avoids
@@ -834,15 +835,29 @@ def cached_all_module_correlations(
         if resolved:
             stored = load_resolved_statistics(
                 **statistic_arguments,
-                component=component,
+                component=component_filter,
+            )
+            selected_components = tuple(
+                sorted(
+                    stored["component"].dropna().astype(str).unique(),
+                    key=lambda value: (
+                        COMPONENT_ORDER.index(value)
+                        if value in COMPONENT_ORDER
+                        else len(COMPONENT_ORDER),
+                        value,
+                    ),
+                )
             )
         else:
             stored = load_aggregate_statistics(**statistic_arguments)
+            selected_components = (
+                ("CT", "TS") if component_filter is None else (component_filter,)
+            )
         group_summary = standardize_stored_associations(
             stored,
             resolved=resolved,
             scale="rint",
-            components=(component,),
+            components=selected_components,
             phenotype=None,
         )
         if diagnosis == "All diagnosis groups":
@@ -858,7 +873,7 @@ def cached_all_module_correlations(
             source = load_resolved_scope(
                 method,
                 metric_family=feature_filter,
-                component=component,
+                component=component_filter,
                 module_set=module_set,
                 estimator=estimator,
                 edge_rule=edge_rule,
@@ -881,7 +896,8 @@ def cached_all_module_correlations(
                 score_normalization=score_normalization,
             )
             long = aggregate_to_long(source, "rint")
-            long = long.loc[long["component"].eq(component)]
+            if component_filter is not None:
+                long = long.loc[long["component"].eq(component_filter)]
         long = attach_metadata(long)
         if differential_edge_rule != "all" and analysis_subset != "all_donors":
             split_value = {
@@ -2969,15 +2985,33 @@ if active_view == "Correlation heatmaps":
         if resolved:
             component_options = available_components["component"].tolist()
             all_component = st.selectbox(
-                "Component for all-module heatmap",
-                options=component_options,
-                format_func=lambda value: component_labels[value],
+                "Components for all-module heatmap and table",
+                options=["__all__", *component_options],
+                format_func=lambda value: (
+                    f"All {len(component_options)} tissue-resolved components"
+                    if value == "__all__"
+                    else component_labels[value]
+                ),
+                index=1,
+                help=(
+                    "All components combines AC, DLPFC, PCG, AC–DLPFC, AC–PCG, "
+                    "and DLPFC–PCG in the same heatmap and complete table."
+                ),
             )
         else:
             all_component = st.selectbox(
-                "Component for all-module heatmap",
-                options=["CT", "TS"],
-                format_func=lambda value: f"{value} aggregate",
+                "Components for all-module heatmap and table",
+                options=["__all__", "CT", "TS"],
+                format_func=lambda value: (
+                    "Both aggregate components (CT and TS)"
+                    if value == "__all__"
+                    else f"{value} aggregate"
+                ),
+                index=1,
+                help=(
+                    "Both aggregate components displays CT and TS rows together in "
+                    "the heatmap and complete table."
+                ),
             )
         correlation_table = cached_all_module_correlations(
             module_set,
@@ -2999,12 +3033,17 @@ if active_view == "Correlation heatmaps":
         )
         heatmap_data = correlation_table.copy()
         include_feature_in_row = all_feature == "__all__"
+        include_component_in_row = all_component == "__all__"
         include_group_in_row = heatmap_diagnosis == "All diagnosis groups"
         heatmap_data["heatmap_row"] = heatmap_data["module"].map(
             lambda value: f"M{int(value)}"
         )
         if include_feature_in_row:
             heatmap_data["heatmap_row"] += " · " + heatmap_data["feature_label"]
+        if include_component_in_row:
+            heatmap_data["heatmap_row"] += " · " + heatmap_data[
+                "component_label"
+            ].astype(str)
         if include_group_in_row:
             heatmap_data["heatmap_row"] += (
                 " · " + heatmap_data["diagnosis_group"].astype(str)
@@ -3015,7 +3054,7 @@ if active_view == "Correlation heatmaps":
                 heatmap_data,
                 value_column=value_column,
                 group_column="module",
-                subgroup_columns=("metric_family", "diagnosis_group"),
+                subgroup_columns=("metric_family", "component", "diagnosis_group"),
             )
         else:
             module_order = sorted(heatmap_data["module"].astype(int).unique())
@@ -3027,17 +3066,30 @@ if active_view == "Correlation heatmaps":
             value: index
             for index, value in enumerate(["All donors", *DIAGNOSIS_ORDER])
         }
+        component_order = COMPONENT_ORDER if resolved else ["CT", "TS"]
+        component_rank = {
+            value: index for index, value in enumerate(component_order)
+        }
         row_order_frame = (
             heatmap_data[
-                ["module", "metric_family", "diagnosis_group", "heatmap_row"]
+                [
+                    "module",
+                    "metric_family",
+                    "component",
+                    "diagnosis_group",
+                    "heatmap_row",
+                ]
             ]
             .drop_duplicates()
             .assign(
                 module_rank=lambda frame: frame["module"].map(module_rank),
                 feature_rank=lambda frame: frame["metric_family"].map(feature_rank),
+                component_rank=lambda frame: frame["component"].map(component_rank),
                 diagnosis_rank=lambda frame: frame["diagnosis_group"].map(diagnosis_rank),
             )
-            .sort_values(["module_rank", "feature_rank", "diagnosis_rank"])
+            .sort_values(
+                ["module_rank", "feature_rank", "component_rank", "diagnosis_rank"]
+            )
         )
         row_order = row_order_frame["heatmap_row"].tolist()
         if cluster_modules:
@@ -3051,9 +3103,21 @@ if active_view == "Correlation heatmaps":
             if all_feature == "__all__"
             else active_feature_labels[all_feature]
         )
+        if all_component == "__all__":
+            component_title = (
+                f"all {len(component_options)} tissue-resolved components"
+                if resolved
+                else "both aggregate components (CT and TS)"
+            )
+        else:
+            component_title = (
+                component_labels[all_component]
+                if resolved
+                else f"{all_component} aggregate"
+            )
         heatmap_title = (
             f"{module_set_label}: {feature_title} · "
-            f"{heatmap_data['component_label'].iloc[0]} · {heatmap_diagnosis}"
+            f"{component_title} · {heatmap_diagnosis}"
         )
         fdr_column = (
             "pearson_fdr_across_modules"
@@ -3070,8 +3134,9 @@ if active_view == "Correlation heatmaps":
             "Rows displayed in heatmap",
             options=["All rows", "Top 50", "Top 100", "Top 250"],
             help=(
-                "Top-row views rank module/feature/group rows by their strongest absolute "
-                "correlation across the displayed outcomes. The complete table remains exhaustive."
+                "Top-row views rank module/feature/component/group rows by their strongest "
+                "absolute correlation across the displayed outcomes. The complete table "
+                "remains exhaustive."
             ),
         )
         if heatmap_row_limit != "All rows":
@@ -3143,8 +3208,8 @@ if active_view == "Correlation heatmaps":
     table_data["p_value"] = pd.to_numeric(table_data[p_column], errors="coerce")
     table_data["fdr"] = pd.to_numeric(table_data[fdr_column], errors="coerce")
     table_data = table_data.sort_values(
-        ["absolute_correlation", "module", "metric_family"],
-        ascending=[False, True, True],
+        ["absolute_correlation", "module", "metric_family", "component"],
+        ascending=[False, True, True, True],
         na_position="last",
     )
 
