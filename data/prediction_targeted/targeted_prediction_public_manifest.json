@@ -1,18 +1,31 @@
 {
   "analysis": "fully_nested_targeted_module_prediction",
-  "complete": true,
+  "base_raw_catalog_complete": true,
+  "base_raw_configurations": 29300,
+  "base_transform_configuration_counts": {
+    "asinh": 29300,
+    "raw": 29300,
+    "rint": 29300
+  },
+  "complete": false,
+  "completed_base_transformations": [
+    "asinh",
+    "raw",
+    "rint"
+  ],
   "completed_evidence_tiers": [
     "exploratory",
     "primary",
     "secondary"
   ],
+  "completed_full_variant_transformations": [],
   "completed_outer_folds": 25,
   "completed_transformations": [
     "asinh",
     "raw",
     "rint"
   ],
-  "created_utc": "2026-08-24T21:02:21.510708+00:00",
+  "created_utc": "2026-08-25T10:42:09.948620+00:00",
   "evaluation_designs": {
     "differential_edge_sensitivity": "one_outer_cycle_with_frozen_all_edge_panel_and_regularization",
     "primary": "repeated_nested_cv",
@@ -23,7 +36,9 @@
     "primary": "Control-derived Control-referenced AD-vs-Control all-edge standard-pruned connectivity",
     "secondary": "CT-specific/resolved, CogDx/three-class transfer, and full-cohort benchmarks"
   },
+  "expected_base_raw_configurations": 29300,
   "expected_outer_folds": 25,
+  "expected_primary_transcriptomic_configurations": 600,
   "files": {
     "targeted_consensus_panels.parquet": {
       "bytes": 108771,
@@ -67,7 +82,7 @@
       "sha256": "6d6220f5fba5ca5fa1e30ecf4ee890f3b801daf3f885d8b52122d31b4c43275c"
     },
     "targeted_fold_performance.parquet": {
-      "bytes": 1495933,
+      "bytes": 1514665,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -94,10 +109,11 @@
         "metric",
         "value",
         "status",
-        "reason"
+        "reason",
+        "n_transcriptomic_predictors"
       ],
-      "rows": 556800,
-      "sha256": "a2fc82b4448d536f572938c65cb1a33b124e335abfcec5067a4726c8c234fad8"
+      "rows": 561600,
+      "sha256": "f766504f52169aeb80fc0379a5386d909357df6028512928399b607a12e298c0"
     },
     "targeted_inner_k_scores.parquet": {
       "bytes": 194860,
@@ -2485,7 +2501,7 @@
       "sha256": "8d9dfcfaeee856ef59fbfe1ca74b47fdb7269884f1dc4223e627474f7670573e"
     },
     "targeted_oof_performance.parquet": {
-      "bytes": 109566,
+      "bytes": 110317,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -2507,8 +2523,8 @@
         "value",
         "n_oof"
       ],
-      "rows": 22272,
-      "sha256": "682acc5e57578ed1b3b4fee7b8762924f62ec05c95659216241acd19557bbe08"
+      "rows": 22464,
+      "sha256": "6681347e2ddc56f2dcde60ac9a9a60839867ea2cb2b9d9cbc8140bf1b58f714b"
     },
     "targeted_oof_predictions.parquet": {
       "columns": [
@@ -2760,7 +2776,7 @@
           "sha256": "1d3afbe4e809032f3c45039e07cde4f13087dc1556fa96bf37c5e3993053ae06"
         },
         "raw__primary__control_derived__control_anchored.parquet": {
-          "bytes": 106400,
+          "bytes": 204808,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2792,8 +2808,8 @@
             "selected_k",
             "outer_repeats_averaged"
           ],
-          "rows": 7944,
-          "sha256": "024c02e93d6153a9c2afb80ce5d0d1dc25df6cdcc54cd07d595f101ac3c128d3"
+          "rows": 15888,
+          "sha256": "b43f4a8953b03e5bfafab3c61b5f4e91ef72c9b45cb69b0793a38de37d2e5b69"
         },
         "raw__secondary__control_derived__control_anchored.parquet": {
           "bytes": 1132040,
@@ -3084,7 +3100,7 @@
           "sha256": "b92a434bb4faf10b81abc08132f4b63dea7424f323703a9dc42e99478275bef5"
         }
       },
-      "rows": 1386732,
+      "rows": 1394676,
       "shards": 15
     },
     "targeted_panel_selection.parquet": {
@@ -3200,7 +3216,7 @@
       "sha256": "ea29bd42752c11c7719058b81bfcd580710aee08891e8233805542c0c6abb417"
     },
     "targeted_top_coefficients.parquet": {
-      "bytes": 5534490,
+      "bytes": 5598220,
       "columns": [
         "coefficient_label",
         "feature_name",
@@ -3228,8 +3244,8 @@
         "kegg_fdr",
         "kegg_role"
       ],
-      "rows": 300017,
-      "sha256": "a22438bb41eec49b07c03635dd5ca55c4d4d6bf77c8d56594df5a2ed1318457a"
+      "rows": 302417,
+      "sha256": "858a79118d12c89a8d28cba94cc8a5c3858164e7ecd900261346ba549191ea9a"
     },
     "targeted_transformation_comparisons.parquet": {
       "bytes": 61196,
@@ -3264,7 +3280,7 @@
       "sha256": "54394d6140084694f525b87246c8741fe99c49cdc913b80e533907277a6e6fd5"
     },
     "targeted_transformation_status.parquet": {
-      "bytes": 8239,
+      "bytes": 8171,
       "columns": [
         "score_transform",
         "status",
@@ -3279,10 +3295,10 @@
         "primary_scale"
       ],
       "rows": 3,
-      "sha256": "4c44a77965a4b05b7b2d51bfdbc9f37b826c7a98756de01d8514c79a72d99856"
+      "sha256": "b53a5d856e5308a9c238105b1d0b0e53b81e6d0535a579237d8fb0faf0791ab6"
     }
   },
-  "interim": false,
+  "interim": true,
   "limitations": [
     "Repeated nested CV is internal validation conditional on fixed module definitions.",
     "The historical 70/30 held-out cohort is previously inspected sensitivity data.",
@@ -3324,6 +3340,8 @@
     "score_transform": "raw"
   },
   "primary_score_transform": "raw",
+  "primary_transcriptomic_configurations": 600,
+  "primary_transcriptomic_milestone_complete": true,
   "privacy": {
     "forbidden_fields": [
       "donor",
@@ -3335,7 +3353,7 @@
     "pseudonyms": 450
   },
   "publishable_milestone": true,
-  "schema_version": 3,
+  "schema_version": 4,
   "score_transformations": {
     "asinh": "arcsinh(metric_raw); robustness sensitivity and corrected legacy provenance",
     "comparison_tier": "exploratory",
@@ -3360,9 +3378,22 @@
     "stability_subsamples": 100,
     "subsample_fraction": 0.8
   },
+  "transcriptomic_comparator": {
+    "feature": "outer-training-fitted per-tissue module PCA1 eigengene",
+    "model_variants": [
+      "transcriptomics_only",
+      "covariates_plus_transcriptomics",
+      "network_plus_transcriptomics",
+      "covariates_plus_network_plus_transcriptomics"
+    ],
+    "pooled_blocks": "AC, DLPFC, and PCG eigengenes concatenated without a second PCA",
+    "preprocessing": "training-only median imputation, scaling, PCA loading, and sign alignment",
+    "tissue_pair_blocks": "eigengenes from the two represented tissues",
+    "used_for_panel_selection": false
+  },
   "transformation_status": {
-    "asinh": "complete",
-    "raw": "complete",
-    "rint": "complete"
+    "asinh": "running",
+    "raw": "running",
+    "rint": "running"
   }
 }
