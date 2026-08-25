@@ -30,6 +30,7 @@ if not all(
         "targeted_transform_comparison_figure",
         "targeted_transform_heatmap_figure",
         "targeted_panel_overlap_figure",
+        "clustered_correlation_group_order",
     )
 ):
     _chart_helpers = importlib.reload(_chart_helpers)
@@ -40,6 +41,7 @@ from app_helpers.charts import (
     aggregate_to_long,
     association_figure,
     correlation_heatmap_figure,
+    clustered_correlation_group_order,
     distribution_figure,
     distribution_summary,
     edge_volcano_figure,
@@ -459,7 +461,7 @@ def standardize_stored_associations(
     resolved: bool,
     scale: str,
     components: tuple[str, ...],
-    phenotype: str,
+    phenotype: str | None,
 ) -> pd.DataFrame:
     """Convert stored group statistics to one row per module and component."""
 
@@ -481,7 +483,12 @@ def standardize_stored_associations(
             part["spearman_p"] = part[f"p_spearman_{component}"]
             parts.append(part)
         result = pd.concat(parts, ignore_index=True)
-    result["outcome"] = phenotype
+    if phenotype is None:
+        if "phenotype" not in result:
+            raise ValueError("Stored association table is missing its phenotype column")
+        result["outcome"] = result["phenotype"]
+    else:
+        result["outcome"] = phenotype
     columns = [
         "module",
         "metric_family",
@@ -710,57 +717,113 @@ def cached_all_module_correlations(
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
 ) -> pd.DataFrame:
-    if resolved:
-        source = load_resolved_scope(
-            method,
-            metric_family=feature,
-            component=component,
-            module_set=module_set,
-            estimator=estimator,
-            edge_rule=edge_rule,
-            differential_edge_rule=differential_edge_rule,
-            differential_fdr_scope=differential_fdr_scope,
-            differential_fdr_threshold=differential_fdr_threshold,
-            score_normalization=score_normalization,
-        )
-        long = resolved_to_long(source, "rint")
-    else:
-        source = load_aggregate_scope(
-            method, metric_family=feature, module_set=module_set,
-            estimator=estimator, edge_rule=edge_rule,
-            differential_edge_rule=differential_edge_rule,
-            differential_fdr_scope=differential_fdr_scope,
-            differential_fdr_threshold=differential_fdr_threshold,
-            score_normalization=score_normalization,
-        )
-        long = aggregate_to_long(source, "rint")
-        long = long.loc[long["component"].eq(component)]
-    long = attach_metadata(long)
-    if differential_edge_rule != "all" and analysis_subset != "all_donors":
-        split_value = {
-            "discovery_ad_control": "Discovery",
-            "validation_ad_control": "Validation",
-            "mci_external": "MCI_external",
-        }[analysis_subset]
-        long = long.loc[long["ad_control_split"].eq(split_value)]
+    feature_filter = None if feature == "__all__" else feature
+    summaries: list[pd.DataFrame] = []
+
+    # The diagnosis-stratified statistics are already stored. Reading them avoids
+    # loading all donor-level values just to reconstruct Control/MCI/AD summaries.
     if diagnosis != "All donors":
-        long = long.loc[long["diagnosis_group"].eq(diagnosis)]
-    else:
+        statistic_arguments = {
+            "method": method,
+            "module": None,
+            "phenotype": None,
+            "metric_family": feature_filter,
+            "module_set": module_set,
+            "estimator": estimator,
+            "edge_rule": edge_rule,
+            "differential_edge_rule": differential_edge_rule,
+            "differential_fdr_scope": differential_fdr_scope,
+            "differential_fdr_threshold": differential_fdr_threshold,
+            "score_normalization": score_normalization,
+            "analysis_subset": analysis_subset,
+            "diagnosis_group": None if diagnosis == "All diagnosis groups" else diagnosis,
+        }
+        if resolved:
+            stored = load_resolved_statistics(
+                **statistic_arguments,
+                component=component,
+            )
+        else:
+            stored = load_aggregate_statistics(**statistic_arguments)
+        group_summary = standardize_stored_associations(
+            stored,
+            resolved=resolved,
+            scale="rint",
+            components=(component,),
+            phenotype=None,
+        )
+        if diagnosis == "All diagnosis groups":
+            group_summary = group_summary.loc[
+                group_summary["diagnosis_group"].isin(DIAGNOSIS_ORDER)
+            ]
+        summaries.append(group_summary)
+
+    # Pooled-donor correlations are intentionally calculated from the anonymous
+    # donor rows because the original robustness tables are diagnosis-stratified.
+    if diagnosis in {"All donors", "All diagnosis groups"}:
+        if resolved:
+            source = load_resolved_scope(
+                method,
+                metric_family=feature_filter,
+                component=component,
+                module_set=module_set,
+                estimator=estimator,
+                edge_rule=edge_rule,
+                differential_edge_rule=differential_edge_rule,
+                differential_fdr_scope=differential_fdr_scope,
+                differential_fdr_threshold=differential_fdr_threshold,
+                score_normalization=score_normalization,
+            )
+            long = resolved_to_long(source, "rint")
+        else:
+            source = load_aggregate_scope(
+                method,
+                metric_family=feature_filter,
+                module_set=module_set,
+                estimator=estimator,
+                edge_rule=edge_rule,
+                differential_edge_rule=differential_edge_rule,
+                differential_fdr_scope=differential_fdr_scope,
+                differential_fdr_threshold=differential_fdr_threshold,
+                score_normalization=score_normalization,
+            )
+            long = aggregate_to_long(source, "rint")
+            long = long.loc[long["component"].eq(component)]
+        long = attach_metadata(long)
+        if differential_edge_rule != "all" and analysis_subset != "all_donors":
+            split_value = {
+                "discovery_ad_control": "Discovery",
+                "validation_ad_control": "Validation",
+                "mci_external": "MCI_external",
+            }[analysis_subset]
+            long = long.loc[long["ad_control_split"].eq(split_value)]
         long = long.copy()
         long["diagnosis_group"] = "All donors"
-    summary = calculate_correlations(
-        long,
-        group_columns=[
-            "module",
+        summaries.append(
+            calculate_correlations(
+                long,
+                group_columns=[
+                    "module",
+                    "metric_family",
+                    "component",
+                    "component_label",
+                    "diagnosis_group",
+                ],
+                outcomes=NUMERIC_OUTCOMES,
+            )
+        )
+
+    summary = pd.concat(summaries, ignore_index=True)
+    summary = add_across_module_fdr(
+        summary,
+        family_columns=[
             "metric_family",
             "component",
-            "component_label",
             "diagnosis_group",
+            "outcome",
         ],
-        outcomes=NUMERIC_OUTCOMES,
     )
     summary = add_correlation_labels(summary)
-    summary["heatmap_row"] = summary["module"].map(lambda value: f"M{int(value)}")
     return summary
 
 
@@ -2706,35 +2769,47 @@ if active_view == "Correlation heatmaps":
         "Heatmap scope",
         [
             "Selected module: all feature scores",
-            f"All {module_count} modules: selected score",
+            f"All {module_count} modules: selected or all feature scores",
         ],
         horizontal=True,
     )
     st.caption(f"Correlation method: **{correlation_method}** (controlled in the sidebar).")
     heatmap_diagnosis = st.selectbox(
         "Diagnosis in heatmap",
-        options=["All donors", *DIAGNOSIS_ORDER],
+        options=["All donors", *DIAGNOSIS_ORDER, "All diagnosis groups"],
         index=3,
         key="heatmap_diagnosis",
+        help=(
+            "All diagnosis groups displays pooled donors, Control, MCI, and AD together; "
+            "the group is included in each heatmap row and in the complete table."
+        ),
     )
+    clustering_options = ["None", "Rows", "Columns", "Rows and columns"]
+    if heatmap_mode.startswith("All"):
+        clustering_options.extend(["Modules", "Modules and columns"])
     heatmap_clustering = st.selectbox(
         "Heatmap clustering",
-        options=["None", "Rows", "Columns", "Rows and columns"],
+        options=clustering_options,
         help=(
             "Reorders the selected axes using average-linkage hierarchical clustering "
-            "of Euclidean distances between correlation profiles."
+            "of Euclidean distances between correlation profiles. Module clustering "
+            "clusters whole module profiles, keeps all score rows from a module together, "
+            "and outlines each module block."
         ),
     )
     cluster_rows = heatmap_clustering in {"Rows", "Rows and columns"}
-    cluster_columns = heatmap_clustering in {"Columns", "Rows and columns"}
+    cluster_columns = heatmap_clustering in {
+        "Columns", "Rows and columns", "Modules and columns"
+    }
+    cluster_modules = heatmap_clustering in {"Modules", "Modules and columns"}
     if correlation_method == "Pearson":
         value_column = "pearson_r"
         p_column = "pearson_p"
-        fdr_column = "pearson_fdr_displayed_family"
     else:
         value_column = "spearman_rho"
         p_column = "spearman_p"
-        fdr_column = "spearman_fdr_displayed_family"
+
+    row_group_labels: dict[str, str] | None = None
 
     if heatmap_mode.startswith("Selected module"):
         correlation_table = cached_module_correlations(
@@ -2742,19 +2817,41 @@ if active_view == "Correlation heatmaps":
             differential_edge_rule, differential_fdr_scope,
             differential_fdr_threshold, score_normalization, analysis_subset,
         )
-        heatmap_data = correlation_table.loc[
-            correlation_table["diagnosis_group"].eq(heatmap_diagnosis)
-        ].copy()
+        if heatmap_diagnosis == "All diagnosis groups":
+            heatmap_data = correlation_table.copy()
+            heatmap_data["heatmap_row"] = (
+                heatmap_data["heatmap_row"]
+                + " · "
+                + heatmap_data["diagnosis_group"].astype(str)
+            )
+        else:
+            heatmap_data = correlation_table.loc[
+                correlation_table["diagnosis_group"].eq(heatmap_diagnosis)
+            ].copy()
+        fdr_column = (
+            "pearson_fdr_displayed_family"
+            if correlation_method == "Pearson"
+            else "spearman_fdr_displayed_family"
+        )
         component_rank = {value: index for index, value in enumerate(COMPONENT_ORDER)}
         feature_rank = {value: index for index, value in enumerate(FEATURE_LABELS)}
+        diagnosis_rank = {
+            value: index
+            for index, value in enumerate(["All donors", *DIAGNOSIS_ORDER])
+        }
         row_order_frame = (
-            heatmap_data[["metric_family", "component", "heatmap_row"]]
+            heatmap_data[
+                ["metric_family", "component", "diagnosis_group", "heatmap_row"]
+            ]
             .drop_duplicates()
             .assign(
                 feature_rank=lambda frame: frame["metric_family"].map(feature_rank),
                 component_rank=lambda frame: frame["component"].map(component_rank),
+                diagnosis_rank=lambda frame: frame["diagnosis_group"].map(diagnosis_rank),
             )
-            .sort_values(["feature_rank", "component_rank", "component"])
+            .sort_values(
+                ["feature_rank", "component_rank", "component", "diagnosis_rank"]
+            )
         )
         row_order = row_order_frame["heatmap_row"].tolist()
         heatmap_title = (
@@ -2768,10 +2865,14 @@ if active_view == "Correlation heatmaps":
         )
     else:
         all_feature = st.selectbox(
-            "Feature for all-module heatmap",
-            options=list(active_feature_labels),
-            format_func=lambda value: active_feature_labels[value],
-            index=list(active_feature_labels).index(feature),
+            "Features for all-module heatmap and table",
+            options=["__all__", *list(active_feature_labels)],
+            format_func=lambda value: (
+                f"All {ESTIMATOR_LABELS[estimator]} features"
+                if value == "__all__"
+                else active_feature_labels[value]
+            ),
+            index=1 + list(active_feature_labels).index(feature),
         )
         if resolved:
             component_options = available_components["component"].tolist()
@@ -2801,48 +2902,197 @@ if active_view == "Correlation heatmaps":
             score_normalization,
             analysis_subset,
         )
+        correlation_table["feature_label"] = correlation_table["metric_family"].map(
+            active_feature_labels
+        )
         heatmap_data = correlation_table.copy()
-        module_order = sorted(heatmap_data["module"].astype(int).unique())
-        row_order = [f"M{value}" for value in module_order]
+        include_feature_in_row = all_feature == "__all__"
+        include_group_in_row = heatmap_diagnosis == "All diagnosis groups"
+        heatmap_data["heatmap_row"] = heatmap_data["module"].map(
+            lambda value: f"M{int(value)}"
+        )
+        if include_feature_in_row:
+            heatmap_data["heatmap_row"] += " · " + heatmap_data["feature_label"]
+        if include_group_in_row:
+            heatmap_data["heatmap_row"] += (
+                " · " + heatmap_data["diagnosis_group"].astype(str)
+            )
+
+        if cluster_modules:
+            module_order = clustered_correlation_group_order(
+                heatmap_data,
+                value_column=value_column,
+                group_column="module",
+                subgroup_columns=("metric_family", "diagnosis_group"),
+            )
+        else:
+            module_order = sorted(heatmap_data["module"].astype(int).unique())
+        module_rank = {int(value): index for index, value in enumerate(module_order)}
+        feature_rank = {
+            value: index for index, value in enumerate(active_feature_labels)
+        }
+        diagnosis_rank = {
+            value: index
+            for index, value in enumerate(["All donors", *DIAGNOSIS_ORDER])
+        }
+        row_order_frame = (
+            heatmap_data[
+                ["module", "metric_family", "diagnosis_group", "heatmap_row"]
+            ]
+            .drop_duplicates()
+            .assign(
+                module_rank=lambda frame: frame["module"].map(module_rank),
+                feature_rank=lambda frame: frame["metric_family"].map(feature_rank),
+                diagnosis_rank=lambda frame: frame["diagnosis_group"].map(diagnosis_rank),
+            )
+            .sort_values(["module_rank", "feature_rank", "diagnosis_rank"])
+        )
+        row_order = row_order_frame["heatmap_row"].tolist()
+        if cluster_modules:
+            row_group_labels = dict(
+                row_order_frame[["heatmap_row", "module"]]
+                .assign(module=lambda frame: frame["module"].map(lambda value: f"M{int(value)}"))
+                .itertuples(index=False, name=None)
+            )
+        feature_title = (
+            f"all {len(active_feature_labels)} {ESTIMATOR_LABELS[estimator]} features"
+            if all_feature == "__all__"
+            else active_feature_labels[all_feature]
+        )
         heatmap_title = (
-            f"{module_set_label}: {active_feature_labels[all_feature]} · "
+            f"{module_set_label}: {feature_title} · "
             f"{heatmap_data['component_label'].iloc[0]} · {heatmap_diagnosis}"
         )
-        fdr_scope = (
-            f"Displayed-family FDR is Benjamini–Hochberg correction across all "
-            f"{module_count} modules "
-            "and all numeric outcomes in this selected feature/component/diagnosis map."
+        fdr_column = (
+            "pearson_fdr_across_modules"
+            if correlation_method == "Pearson"
+            else "spearman_fdr_across_modules"
         )
+        fdr_scope = (
+            f"FDR is Benjamini–Hochberg correction across the {module_count} modules "
+            "only, separately for each fixed feature, component, outcome, diagnosis/cohort, "
+            "and Pearson/Spearman method. Missing or constant tests are excluded."
+        )
+
+        heatmap_row_limit = st.selectbox(
+            "Rows displayed in heatmap",
+            options=["All rows", "Top 50", "Top 100", "Top 250"],
+            help=(
+                "Top-row views rank module/feature/group rows by their strongest absolute "
+                "correlation across the displayed outcomes. The complete table remains exhaustive."
+            ),
+        )
+        if heatmap_row_limit != "All rows":
+            row_count = int(heatmap_row_limit.split()[-1])
+            strongest_rows = (
+                heatmap_data.assign(
+                    _absolute_correlation=pd.to_numeric(
+                        heatmap_data[value_column], errors="coerce"
+                    ).abs()
+                )
+                .groupby("heatmap_row", observed=True)["_absolute_correlation"]
+                .max()
+                .nlargest(row_count)
+                .index
+            )
+            strongest_set = set(strongest_rows)
+            heatmap_data = heatmap_data.loc[
+                heatmap_data["heatmap_row"].isin(strongest_set)
+            ].copy()
+            row_order = [row for row in row_order if row in strongest_set]
+            if row_group_labels:
+                row_group_labels = {
+                    row: group
+                    for row, group in row_group_labels.items()
+                    if row in strongest_set
+                }
+
+    significance_view = st.radio(
+        "Correlation rows",
+        options=["All rows", "At least one FDR < 0.05"],
+        horizontal=True,
+        help=(
+            "The significant-only heatmap retains a module/feature/group row when at least "
+            "one displayed outcome has across-module FDR < 0.05. The table then contains "
+            "only its significant correlation cells."
+        ),
+    )
+    table_data = correlation_table.copy()
+    if significance_view == "At least one FDR < 0.05":
+        significant_rows = set(
+            heatmap_data.loc[
+                pd.to_numeric(heatmap_data[fdr_column], errors="coerce").lt(0.05),
+                "heatmap_row",
+            ]
+        )
+        heatmap_data = heatmap_data.loc[
+            heatmap_data["heatmap_row"].isin(significant_rows)
+        ].copy()
+        row_order = [row for row in row_order if row in significant_rows]
+        table_data = table_data.loc[
+            pd.to_numeric(table_data[fdr_column], errors="coerce").lt(0.05)
+        ].copy()
+        if row_group_labels:
+            row_group_labels = {
+                row: group
+                for row, group in row_group_labels.items()
+                if row in significant_rows
+            }
 
     correlation_table = correlation_table.copy()
     correlation_table.insert(0, "module_definition", module_set_label)
+    table_data = table_data.copy()
+    table_data.insert(0, "module_definition", module_set_label)
+    table_data["correlation_method"] = correlation_method
+    table_data["correlation"] = pd.to_numeric(
+        table_data[value_column], errors="coerce"
+    )
+    table_data["absolute_correlation"] = table_data["correlation"].abs()
+    table_data["p_value"] = pd.to_numeric(table_data[p_column], errors="coerce")
+    table_data["fdr"] = pd.to_numeric(table_data[fdr_column], errors="coerce")
+    table_data = table_data.sort_values(
+        ["absolute_correlation", "module", "metric_family"],
+        ascending=[False, True, True],
+        na_position="last",
+    )
 
-    correlation_heatmap = correlation_heatmap_figure(
-        heatmap_data,
-        value_column=value_column,
-        p_column=p_column,
-        fdr_column=fdr_column,
-        title=heatmap_title,
-        row_order=row_order,
-        cluster_rows=cluster_rows,
-        cluster_columns=cluster_columns,
-    )
-    st.plotly_chart(
-        correlation_heatmap,
-        use_container_width=True,
-        config={
-            "displaylogo": False,
-            "toImageButtonOptions": {
-                "format": "png",
-                "filename": (
-                    f"{download_prefix}{method}_{heatmap_diagnosis}_"
-                    f"{correlation_method.lower()}_"
-                    "correlation_heatmap"
-                ),
-                "scale": 3,
+    if heatmap_data.empty or not row_order:
+        st.info("No correlations meet the selected heatmap filters.")
+    else:
+        if cluster_rows and len(row_order) > 1000:
+            st.warning(
+                "Row clustering is disabled above 1,000 rows to avoid a large pairwise-distance "
+                "matrix. Choose a Top-row view or use Modules clustering."
+            )
+            cluster_rows = False
+        correlation_heatmap = correlation_heatmap_figure(
+            heatmap_data,
+            value_column=value_column,
+            p_column=p_column,
+            fdr_column=fdr_column,
+            title=heatmap_title,
+            row_order=row_order,
+            cluster_rows=cluster_rows,
+            cluster_columns=cluster_columns,
+            row_group_labels=row_group_labels,
+            significance_threshold=0.05,
+        )
+        st.plotly_chart(
+            correlation_heatmap,
+            use_container_width=True,
+            config={
+                "displaylogo": False,
+                "toImageButtonOptions": {
+                    "format": "png",
+                    "filename": (
+                        f"{download_prefix}{method}_{heatmap_diagnosis}_"
+                        f"{correlation_method.lower()}_"
+                        "correlation_heatmap"
+                    ),
+                    "scale": 3,
+                },
             },
-        },
-    )
+        )
     if heatmap_clustering != "None":
         st.caption(
             "Display order uses average-linkage hierarchical clustering with Euclidean "
@@ -2850,9 +3100,11 @@ if active_view == "Correlation heatmaps":
             "the order; displayed correlations, p-values, FDRs, and downloads are unchanged."
         )
     st.caption(fdr_scope)
+    st.caption("* indicates selected-method FDR < 0.05 for that heatmap cell.")
     correlation_columns = [
         "module_definition",
         "module",
+        "feature_label",
         "metric_family",
         "component",
         "component_label",
@@ -2860,16 +3112,22 @@ if active_view == "Correlation heatmaps":
         "outcome",
         "outcome_label",
         "n",
+        "correlation_method",
+        "correlation",
+        "absolute_correlation",
+        "p_value",
+        "fdr",
         "pearson_r",
         "pearson_p",
-        "pearson_fdr_displayed_family",
         "spearman_rho",
         "spearman_p",
-        "spearman_fdr_displayed_family",
+    ]
+    correlation_columns = [
+        column for column in correlation_columns if column in table_data.columns
     ]
     with st.expander("Complete correlation table", expanded=False):
         filterable_dataframe(
-            correlation_table[correlation_columns],
+            table_data[correlation_columns],
             table_key="complete_correlation_table",
             table_name="Complete correlation table",
             use_container_width=True,
@@ -2877,7 +3135,7 @@ if active_view == "Correlation heatmaps":
         )
         st.download_button(
             "Download complete correlation table (TSV)",
-            data=dataframe_to_tsv_bytes(correlation_table[correlation_columns]),
+            data=dataframe_to_tsv_bytes(table_data[correlation_columns]),
             file_name=(
                 f"{download_prefix}{method}_{heatmap_diagnosis}_"
                 "network_outcome_correlations.tsv"

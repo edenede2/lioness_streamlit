@@ -659,6 +659,7 @@ def load_aggregate_statistics(
     differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
+    diagnosis_group: str | None = None,
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
@@ -667,6 +668,8 @@ def load_aggregate_statistics(
         filters.append(("phenotype", "=", phenotype))
     if metric_family is not None:
         filters.append(("metric_family", "=", metric_family))
+    if diagnosis_group is not None:
+        filters.append(("diagnosis_group", "=", diagnosis_group))
     if differential_edge_rule != "all":
         filters.append(("analysis_subset", "=", analysis_subset))
     return _read_filtered(
@@ -691,6 +694,8 @@ def load_resolved_statistics(
     differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
+    component: str | None = None,
+    diagnosis_group: str | None = None,
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
@@ -699,6 +704,10 @@ def load_resolved_statistics(
         filters.append(("phenotype", "=", phenotype))
     if metric_family is not None:
         filters.append(("metric_family", "=", metric_family))
+    if component is not None:
+        filters.append(("component", "=", component))
+    if diagnosis_group is not None:
+        filters.append(("diagnosis_group", "=", diagnosis_group))
     if differential_edge_rule != "all":
         filters.append(("analysis_subset", "=", analysis_subset))
     return _read_filtered(

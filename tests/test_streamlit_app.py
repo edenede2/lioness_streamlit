@@ -14,13 +14,33 @@ def widget_with_label(elements, label: str):
     return next(element for element in elements if element.label == label)
 
 
+def pills(app: AppTest):
+    """Support Streamlit releases that expose pills as a generic button group."""
+    return app.pills if hasattr(app, "pills") else app.get("button_group")
+
+
+def preserve_legacy_pills_state(app: AppTest) -> AppTest:
+    if not hasattr(app, "pills"):
+        selector = widget_with_label(pills(app), "Analysis view")
+        if isinstance(selector.value, str):
+            selector._value = [selector.value]
+    return app
+
+
 def assert_app_clean(app: AppTest) -> None:
     assert not app.exception
     assert not [error for error in app.error if "Traceback" in str(error.value)]
 
 
 def select_view(app: AppTest, label: str) -> AppTest:
-    return widget_with_label(app.pills, "Analysis view").set_value(label).run()
+    selector = widget_with_label(pills(app), "Analysis view")
+    value = label if hasattr(app, "pills") else [label]
+    result = selector.set_value(value).run()
+    if not hasattr(result, "pills"):
+        # Streamlit 1.44 exposes st.pills as ButtonGroup but decodes its single
+        # selection as a scalar; preserve the list-form widget state for reruns.
+        widget_with_label(pills(result), "Analysis view")._value = [label]
+    return result
 
 
 def test_streamlit_hot_reload_recovers_stale_chart_helper(monkeypatch) -> None:
@@ -63,7 +83,7 @@ def test_streamlit_table_value_filter_filters_rows_and_resets() -> None:
 def test_every_lazy_analysis_view_renders_cleanly() -> None:
     app = AppTest.from_file(APP, default_timeout=180).run()
     assert_app_clean(app)
-    view_selector = widget_with_label(app.pills, "Analysis view")
+    view_selector = widget_with_label(pills(app), "Analysis view")
     assert view_selector.value == "Associations"
     for view in view_selector.options:
         app = select_view(app, view)
@@ -95,6 +115,44 @@ def test_association_view_defaults_to_pooled_all_donor_association() -> None:
     }
     assert association_table["pearson_fdr_module_family_n"].between(1, 154).all()
     assert association_table["spearman_fdr_module_family_n"].between(1, 154).all()
+
+
+def test_correlation_heatmap_supports_all_features_and_module_blocks() -> None:
+    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = select_view(app, "Correlation heatmaps")
+    assert_app_clean(app)
+    scope = widget_with_label(app.radio, "Heatmap scope")
+    app = preserve_legacy_pills_state(
+        scope.set_value("All 154 modules: selected or all feature scores").run()
+    )
+    app = widget_with_label(
+        app.selectbox, "Features for all-module heatmap and table"
+    ).set_value("__all__").run()
+    app = preserve_legacy_pills_state(app)
+    app = widget_with_label(app.selectbox, "Heatmap clustering").set_value("Modules").run()
+    app = preserve_legacy_pills_state(app)
+    assert_app_clean(app)
+
+    table = next(
+        dataframe.value
+        for dataframe in app.dataframe
+        if "absolute_correlation" in dataframe.value.columns
+    )
+    assert table["module"].nunique() == 154
+    assert table["metric_family"].nunique() == 6
+    assert set(table["diagnosis_group"]) == {"AD"}
+    assert {"correlation", "p_value", "fdr"}.issubset(table.columns)
+
+    app = widget_with_label(app.radio, "Correlation rows").set_value(
+        "At least one FDR < 0.05"
+    ).run()
+    assert_app_clean(app)
+    significant = next(
+        dataframe.value
+        for dataframe in app.dataframe
+        if "absolute_correlation" in dataframe.value.columns
+    )
+    assert significant["fdr"].lt(0.05).all()
 
 
 def test_prediction_view_uses_leakage_reduced_exploratory_default() -> None:

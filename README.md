@@ -31,9 +31,13 @@ The app includes two explicitly separated module definitions:
 - Expanded hover details for cognition, motor function, age, education, APOE,
   CogDx, Braak, CERAD, ADNC, and Parkinsonism.
 - Feature-only histograms and violin distributions.
-- Selected-module and all-module correlation heatmaps, with downloadable
-  Pearson, Spearman, p-value, and displayed-family FDR tables.
-- Optional average-linkage clustering of heatmap rows, columns, or both.
+- Selected-module and all-module correlation heatmaps, including an all-feature
+  view across every module and diagnosis group, with sortable/downloadable Pearson,
+  Spearman, p-value, and FDR tables.
+- Optional average-linkage clustering of heatmap rows, columns, or whole modules.
+  Whole-module clustering keeps all feature rows together and outlines each module
+  block. Asterisks mark cells with selected-method FDR below 0.05, and significant-only
+  or strongest-correlation row views keep large maps navigable.
 - Module differential connectivity (MDC) for total, pooled TS, pooled CT, three
   tissue-specific blocks, and three cross-tissue pairs, including directional
   FDR significance and an all-module resolved heatmap.
@@ -452,10 +456,12 @@ its module and region across the stable set of 350 KEGG pathways; pathways below
 minimum overlap receive p=1. These values come from the supplied enrichment analyses
 and are not recalculated by the app.
 
-The additional heatmap tables calculate Pearson and Spearman correlations on demand.
-Their `*_fdr_displayed_family` columns use Benjamini-Hochberg correction over the
-complete correlation family used by that displayed module or all-module heatmap; the
-scope is stated directly below each heatmap.
+The all-module heatmap table applies Benjamini-Hochberg separately across modules
+only for each fixed feature, component, outcome, diagnosis/cohort, estimator/network
+method, edge rule, and Pearson/Spearman test. Missing or constant correlations are
+excluded from the family size. The selected-module heatmap retains its explicitly
+labeled displayed-family correction because its rows compare multiple features and
+components within one module.
 
 AD-Control edge tests store two BH values for every tested edge. **Global BH**
 adjusts across all edges in one module-definition, estimator, network-method, and

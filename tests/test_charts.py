@@ -16,6 +16,7 @@ from app_helpers.charts import (  # noqa: E402
     EDGE_COMPONENT_LABELS,
     aggregate_to_long,
     association_figure,
+    clustered_correlation_group_order,
     correlation_heatmap_figure,
     distribution_figure,
     edge_volcano_figure,
@@ -460,6 +461,56 @@ def test_correlation_heatmap_can_cluster_rows_and_columns() -> None:
     assert abs(clustered_rows.index("A") - clustered_rows.index("C")) == 1
     assert abs(clustered_rows.index("B") - clustered_rows.index("D")) == 1
     assert abs(clustered_columns.index("outcome_1") - clustered_columns.index("outcome_2")) == 1
+
+
+def test_correlation_heatmap_marks_fdr_and_outlines_clustered_module_blocks() -> None:
+    records = []
+    for module, profile in ((10, [0.9, 0.8]), (20, [-0.8, -0.7]), (30, [0.85, 0.75])):
+        for feature_index, feature in enumerate(("connectivity", "abs_sum")):
+            for outcome_index, outcome in enumerate(("cognition", "motor")):
+                coefficient = profile[outcome_index] - feature_index * 0.05
+                records.append(
+                    {
+                        "module": module,
+                        "metric_family": feature,
+                        "diagnosis_group": "AD",
+                        "heatmap_row": f"M{module} · {feature}",
+                        "outcome": outcome,
+                        "outcome_label": outcome.title(),
+                        "spearman_rho": coefficient,
+                        "spearman_p": 0.001 if module != 20 else 0.4,
+                        "spearman_fdr_across_modules": 0.01 if module != 20 else 0.6,
+                        "n": 100,
+                    }
+                )
+    frame = pd.DataFrame.from_records(records)
+    module_order = clustered_correlation_group_order(
+        frame,
+        value_column="spearman_rho",
+    )
+    assert set(module_order) == {10, 20, 30}
+    assert abs(module_order.index(10) - module_order.index(30)) == 1
+
+    row_order = [
+        f"M{module} · {feature}"
+        for module in module_order
+        for feature in ("connectivity", "abs_sum")
+    ]
+    groups = {
+        row: row.split(" · ", maxsplit=1)[0]
+        for row in row_order
+    }
+    figure = correlation_heatmap_figure(
+        frame,
+        value_column="spearman_rho",
+        p_column="spearman_p",
+        fdr_column="spearman_fdr_across_modules",
+        title="Module blocks",
+        row_order=row_order,
+        row_group_labels=groups,
+    )
+    assert len(figure.layout.shapes) == 3
+    assert np.count_nonzero(np.asarray(figure.data[0].text) == "*") == 8
 
 
 def test_mdc_selected_module_and_overview_charts() -> None:

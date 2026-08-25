@@ -2202,7 +2202,7 @@ def mdc_overview_figure(
     return figure
 
 
-def _hierarchical_order(matrix: pd.DataFrame, axis: str) -> list[str]:
+def _hierarchical_order(matrix: pd.DataFrame, axis: str) -> list[object]:
     """Order one heatmap axis by average-linkage clustering of correlation profiles."""
     if axis not in {"rows", "columns"}:
         raise ValueError("axis must be 'rows' or 'columns'")
@@ -2222,6 +2222,33 @@ def _hierarchical_order(matrix: pd.DataFrame, axis: str) -> list[str]:
     return [labels[index] for index in leaves_list(hierarchy)]
 
 
+def clustered_correlation_group_order(
+    frame: pd.DataFrame,
+    *,
+    value_column: str,
+    group_column: str = "module",
+    subgroup_columns: tuple[str, ...] = ("metric_family", "diagnosis_group"),
+) -> list[object]:
+    """Cluster modules while keeping all of each module's score rows together."""
+
+    if frame.empty:
+        return []
+    required = {group_column, "outcome", value_column, *subgroup_columns}
+    missing = required.difference(frame.columns)
+    if missing:
+        raise ValueError(
+            "Grouped correlation clustering is missing columns: "
+            + ", ".join(sorted(missing))
+        )
+    profiles = frame.pivot_table(
+        index=group_column,
+        columns=[*subgroup_columns, "outcome"],
+        values=value_column,
+        aggfunc="first",
+    )
+    return _hierarchical_order(profiles, "rows")
+
+
 def correlation_heatmap_figure(
     frame: pd.DataFrame,
     value_column: str,
@@ -2231,6 +2258,8 @@ def correlation_heatmap_figure(
     row_order: list[str] | None = None,
     cluster_rows: bool = False,
     cluster_columns: bool = False,
+    row_group_labels: dict[str, str] | None = None,
+    significance_threshold: float = 0.05,
 ) -> go.Figure:
     """Render a correlation matrix, optionally clustering its display order."""
     if frame.empty:
@@ -2264,6 +2293,12 @@ def correlation_heatmap_figure(
     p_values = pivot(p_column, row_order, outcome_order)
     fdr_values = pivot(fdr_column, row_order, outcome_order)
     customdata = np.dstack([n_values.to_numpy(), p_values.to_numpy(), fdr_values.to_numpy()])
+    significance_text = np.where(
+        np.isfinite(fdr_values.to_numpy(dtype=float))
+        & (fdr_values.to_numpy(dtype=float) < float(significance_threshold)),
+        "*",
+        "",
+    )
     coefficient_label = "Pearson r" if value_column == "pearson_r" else "Spearman ρ"
     figure = go.Figure(
         data=go.Heatmap(
@@ -2280,6 +2315,9 @@ def correlation_heatmap_figure(
             ],
             colorbar={"title": coefficient_label, "thickness": 16},
             customdata=customdata,
+            text=significance_text,
+            texttemplate="%{text}",
+            textfont={"size": 11, "color": "#111111"},
             hovertemplate=(
                 "LIONESS score: %{y}<br>Outcome: %{x}<br>"
                 + f"{coefficient_label}: %{{z:.3f}}<br>"
@@ -2298,6 +2336,30 @@ def correlation_heatmap_figure(
         xaxis={"tickangle": -42, "side": "bottom"},
         yaxis={"autorange": "reversed", "tickfont": {"size": 10}},
     )
+    if row_group_labels:
+        block_start = 0
+        previous_group = row_group_labels.get(row_order[0], "")
+        blocks: list[tuple[int, int]] = []
+        for index, row in enumerate(row_order[1:], start=1):
+            group = row_group_labels.get(row, "")
+            if group != previous_group:
+                blocks.append((block_start, index - 1))
+                block_start = index
+                previous_group = group
+        blocks.append((block_start, len(row_order) - 1))
+        for start, end in blocks:
+            figure.add_shape(
+                type="rect",
+                xref="paper",
+                x0=0,
+                x1=1,
+                yref="y",
+                y0=start - 0.5,
+                y1=end + 0.5,
+                line={"color": "rgba(20, 35, 50, 0.55)", "width": 1.1},
+                fillcolor="rgba(0, 0, 0, 0)",
+                layer="above",
+            )
     return figure
 
 
