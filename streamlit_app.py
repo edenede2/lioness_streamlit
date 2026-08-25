@@ -124,6 +124,7 @@ from app_helpers.data import (
     association_kegg_subtitles,
     dataframe_to_tsv_bytes,
     differential_data_available,
+    differential_mdc_data_available,
     filter_kegg_enrichments,
     load_aggregate,
     load_aggregate_scope,
@@ -4011,6 +4012,17 @@ if active_view == "Edge volcano":
 
 if active_view == "MDC":
     st.subheader("Module differential connectivity (MDC)")
+    if (
+        differential_edge_rule != "all"
+        and not differential_mdc_data_available(module_set)
+    ):
+        st.info(
+            "AD–Control-filtered MDC is currently being generated for this module "
+            "definition. Select **All edges** to use the existing MDC catalog now; "
+            "the filtered option will activate automatically when its validated public "
+            "tables are deployed."
+        )
+        st.stop()
     mdc_summary = cached_mdc_summary(
         module_set,
         estimator,

@@ -369,6 +369,19 @@ def differential_data_available(module_set: str = "full_cohort") -> bool:
     )
 
 
+def differential_mdc_data_available(module_set: str = "full_cohort") -> bool:
+    """Return whether both generated differential-edge MDC tables are deployed."""
+
+    directory = module_set_data_dir(module_set) / "differential"
+    return all(
+        data_path_available(directory / filename)
+        for filename in (
+            "mdc_filtered_summary.parquet",
+            "mdc_filtered_resolved.parquet",
+        )
+    )
+
+
 def require_data_files() -> None:
     """Raise a useful error if the GitHub data bundle was not built."""
     required = [
@@ -401,14 +414,6 @@ def require_data_files() -> None:
             / "edge_summaries"
             / f"lioness__{method}.parquet"
             for method in MODULE_SET_METHODS[module_set]
-        )
-        required.extend(
-            [
-                module_set_data_dir(module_set)
-                / "differential/mdc_filtered_summary.parquet",
-                module_set_data_dir(module_set)
-                / "differential/mdc_filtered_resolved.parquet",
-            ]
         )
     missing = [
         str(path.relative_to(APP_ROOT)) if path.is_relative_to(APP_ROOT) else str(path)
