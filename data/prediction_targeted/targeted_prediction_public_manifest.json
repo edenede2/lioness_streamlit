@@ -25,7 +25,7 @@
     "raw",
     "rint"
   ],
-  "created_utc": "2026-08-25T10:42:09.948620+00:00",
+  "created_utc": "2026-08-25T12:37:58.224157+00:00",
   "evaluation_designs": {
     "differential_edge_sensitivity": "one_outer_cycle_with_frozen_all_edge_panel_and_regularization",
     "primary": "repeated_nested_cv",
@@ -38,7 +38,9 @@
   },
   "expected_base_raw_configurations": 29300,
   "expected_outer_folds": 25,
+  "expected_primary_joint_configurations": 300,
   "expected_primary_transcriptomic_configurations": 600,
+  "expected_standalone_transcriptomic_configurations": 14650,
   "files": {
     "targeted_consensus_panels.parquet": {
       "bytes": 108771,
@@ -82,7 +84,7 @@
       "sha256": "6d6220f5fba5ca5fa1e30ecf4ee890f3b801daf3f885d8b52122d31b4c43275c"
     },
     "targeted_fold_performance.parquet": {
-      "bytes": 1514665,
+      "bytes": 1829911,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -112,8 +114,8 @@
         "reason",
         "n_transcriptomic_predictors"
       ],
-      "rows": 561600,
-      "sha256": "f766504f52169aeb80fc0379a5386d909357df6028512928399b607a12e298c0"
+      "rows": 652000,
+      "sha256": "f21d1ce98e0bbcb76324848a8b6df94b1e01173be2af4413b482745b3f21b907"
     },
     "targeted_inner_k_scores.parquet": {
       "bytes": 194860,
@@ -2501,7 +2503,7 @@
       "sha256": "8d9dfcfaeee856ef59fbfe1ca74b47fdb7269884f1dc4223e627474f7670573e"
     },
     "targeted_oof_performance.parquet": {
-      "bytes": 110317,
+      "bytes": 128271,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -2523,8 +2525,8 @@
         "value",
         "n_oof"
       ],
-      "rows": 22464,
-      "sha256": "6681347e2ddc56f2dcde60ac9a9a60839867ea2cb2b9d9cbc8140bf1b58f714b"
+      "rows": 26080,
+      "sha256": "b18d4123a8ba2f81e652f2ed315d70cf11701be6d3a0ca4576f3fad1be66d6ab"
     },
     "targeted_oof_predictions.parquet": {
       "columns": [
@@ -2740,7 +2742,7 @@
           "sha256": "01e858ed08e839f5bc0964ca7141124d87e812e4aa2bec14986be25d34e2c039"
         },
         "raw__exploratory__control_derived__control_anchored.parquet": {
-          "bytes": 3146497,
+          "bytes": 5019598,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2772,8 +2774,8 @@
             "selected_k",
             "outer_repeats_averaged"
           ],
-          "rows": 379584,
-          "sha256": "1d3afbe4e809032f3c45039e07cde4f13087dc1556fa96bf37c5e3993053ae06"
+          "rows": 569376,
+          "sha256": "7d6f597b067b26eb55395b800697dc8fc79f1358fe3d3be79f6753f02220795b"
         },
         "raw__primary__control_derived__control_anchored.parquet": {
           "bytes": 204808,
@@ -2812,7 +2814,7 @@
           "sha256": "b43f4a8953b03e5bfafab3c61b5f4e91ef72c9b45cb69b0793a38de37d2e5b69"
         },
         "raw__secondary__control_derived__control_anchored.parquet": {
-          "bytes": 1132040,
+          "bytes": 1823212,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2844,11 +2846,11 @@
             "selected_k",
             "outer_repeats_averaged"
           ],
-          "rows": 58828,
-          "sha256": "089e1d84e9a2689f9d2a41ab0bee07164cbefc28a2be87cf2e23daa1672fcedb"
+          "rows": 88242,
+          "sha256": "5c6c779842c9ab939ae488af4d0adbf19c07409128086e1f06a1fbe1ba49d9db"
         },
         "raw__secondary__full_cohort__control_anchored.parquet": {
-          "bytes": 106694,
+          "bytes": 139945,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2880,11 +2882,11 @@
             "selected_k",
             "outer_repeats_averaged"
           ],
-          "rows": 7944,
-          "sha256": "96b7a677160dd29f5e293c812cff8d98f54c5aa3972e18e7fe25c8ea89bdfc53"
+          "rows": 11916,
+          "sha256": "eb6c7e121f454922bde728f825eaaa4b3792e803a0d90117eb2cbab538c138c4"
         },
         "raw__secondary__full_cohort__standard.parquet": {
-          "bytes": 106363,
+          "bytes": 139590,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2916,8 +2918,8 @@
             "selected_k",
             "outer_repeats_averaged"
           ],
-          "rows": 7944,
-          "sha256": "5b40a6909f486482c143451dbba689e7f10a994dd1ce898a98acd91a08f471cc"
+          "rows": 11916,
+          "sha256": "391adec3e2ad69a474c4166a12d39e098f98a81ca6bde1d9367f2b17db321b05"
         },
         "rint__exploratory__control_derived__control_anchored.parquet": {
           "bytes": 3156897,
@@ -3100,7 +3102,7 @@
           "sha256": "b92a434bb4faf10b81abc08132f4b63dea7424f323703a9dc42e99478275bef5"
         }
       },
-      "rows": 1394676,
+      "rows": 1621826,
       "shards": 15
     },
     "targeted_panel_selection.parquet": {
@@ -3216,7 +3218,7 @@
       "sha256": "ea29bd42752c11c7719058b81bfcd580710aee08891e8233805542c0c6abb417"
     },
     "targeted_top_coefficients.parquet": {
-      "bytes": 5598220,
+      "bytes": 6776541,
       "columns": [
         "coefficient_label",
         "feature_name",
@@ -3244,8 +3246,8 @@
         "kegg_fdr",
         "kegg_role"
       ],
-      "rows": 302417,
-      "sha256": "858a79118d12c89a8d28cba94cc8a5c3858164e7ecd900261346ba549191ea9a"
+      "rows": 378122,
+      "sha256": "3fdc55573dba911224056de51e54d2c5055d0f9c89bfdf30b448d3cf4ac4af0c"
     },
     "targeted_transformation_comparisons.parquet": {
       "bytes": 61196,
@@ -3295,7 +3297,7 @@
         "primary_scale"
       ],
       "rows": 3,
-      "sha256": "b53a5d856e5308a9c238105b1d0b0e53b81e6d0535a579237d8fb0faf0791ab6"
+      "sha256": "a854b0a8434f39fe18e4a5db5d33cb225591cd3870dc049d1f130d701098cfe8"
     }
   },
   "interim": true,
@@ -3339,6 +3341,8 @@
     "score_normalization": "standard_pruned",
     "score_transform": "raw"
   },
+  "primary_joint_configurations": 300,
+  "primary_joint_milestone_complete": true,
   "primary_score_transform": "raw",
   "primary_transcriptomic_configurations": 600,
   "primary_transcriptomic_milestone_complete": true,
@@ -3378,6 +3382,8 @@
     "stability_subsamples": 100,
     "subsample_fraction": 0.8
   },
+  "standalone_transcriptomic_configurations": 14650,
+  "standalone_transcriptomic_milestone_complete": true,
   "transcriptomic_comparator": {
     "feature": "outer-training-fitted per-tissue module PCA1 eigengene",
     "model_variants": [

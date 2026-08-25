@@ -165,6 +165,10 @@ def test_primary_raw_eigengene_milestone_is_complete_and_selectable() -> None:
     manifest = data.load_targeted_prediction_manifest()
     assert manifest["primary_transcriptomic_milestone_complete"] is True
     assert manifest["primary_transcriptomic_configurations"] == 600
+    assert manifest["standalone_transcriptomic_milestone_complete"] is True
+    assert manifest["standalone_transcriptomic_configurations"] == 14_650
+    assert manifest["primary_joint_milestone_complete"] is True
+    assert manifest["primary_joint_configurations"] == 300
     assert manifest["base_raw_catalog_complete"] is True
 
     performance = data.load_targeted_prediction_table(
@@ -188,6 +192,26 @@ def test_primary_raw_eigengene_milestone_is_complete_and_selectable() -> None:
         "model_variant",
     ]
     assert len(fold.loc[:, identity].drop_duplicates()) == 600
+
+    all_raw = data.load_targeted_prediction_table(
+        "fold_performance", score_transform="raw"
+    )
+    standalone = all_raw.loc[
+        all_raw["model_variant"].isin(
+            {"transcriptomics_only", "covariates_plus_transcriptomics"}
+        )
+    ]
+    assert len(standalone.loc[:, identity].drop_duplicates()) == 14_650
+    assert {
+        "AC",
+        "DLPFC",
+        "PCG",
+        "AC_DLPFC",
+        "AC_PCG",
+        "DLPFC_PCG",
+        "CT_pooled",
+        "TS_pooled",
+    }.issubset(set(standalone["predictor_block"]))
 
 
 def test_all_modules_and_m1918_are_packaged() -> None:
