@@ -535,6 +535,61 @@ def test_resolved_mdc_has_six_components_and_conservative_fdr() -> None:
         ).abs().max() < 1e-12
 
 
+def test_filtered_mdc_covers_both_fdr_scopes_cutoffs_and_network_methods() -> None:
+    configurations = {
+        "full_cohort": {
+            ("lioness", "standard"),
+            ("lioness", "control_anchored"),
+            ("bonobo", "bonobo"),
+        },
+        "control_derived": {
+            ("lioness", "control_anchored"),
+            ("bonobo", "bonobo"),
+        },
+    }
+    module_counts = {"full_cohort": 154, "control_derived": 186}
+    for module_set, methods in configurations.items():
+        for estimator, method in methods:
+            for fdr_scope in ("global", "per_module"):
+                for threshold in (0.05, 0.10):
+                    summary = data.load_mdc_summary(
+                        module_set,
+                        estimator,
+                        method,
+                        "ad_control_discovery_fdr05",
+                        fdr_scope,
+                        threshold,
+                    )
+                    resolved = data.load_mdc_resolved(
+                        module_set,
+                        estimator,
+                        method,
+                        "ad_control_discovery_fdr05",
+                        fdr_scope,
+                        threshold,
+                    )
+                    assert len(summary) == summary["module"].nunique() == module_counts[module_set]
+                    assert len(resolved) == module_counts[module_set] * 6
+                    assert resolved["component"].nunique() == 6
+                    assert (
+                        summary["n_retained_edges_total"]
+                        == summary["n_retained_edges_ts"] + summary["n_retained_edges_ct"]
+                    ).all()
+                    assert summary["mdc_total"].notna().eq(
+                        summary["n_retained_edges_total"].gt(0)
+                    ).all()
+                    assert resolved["mdc"].notna().eq(
+                        resolved["n_retained_edges"].gt(0)
+                    ).all()
+                    assert set(summary["differential_fdr_scope"]) == {fdr_scope}
+                    assert np.isclose(
+                        summary["differential_fdr_threshold"].unique(), threshold
+                    ).all()
+                    assert not resolved.astype(str).apply(
+                        lambda column: column.str.contains("MFBA9", regex=False)
+                    ).any().any()
+
+
 def test_control_derived_bundle_is_isolated_complete_and_private() -> None:
     module_set = "control_derived"
     annotations = data.load_module_annotations(module_set)

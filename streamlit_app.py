@@ -244,23 +244,71 @@ def cached_sample_metadata() -> pd.DataFrame:
     return load_sample_metadata()
 
 
-@st.cache_data(show_spinner=False)
-def cached_mdc_summary(module_set: str) -> pd.DataFrame:
-    return load_mdc_summary(module_set)
+@st.cache_data(show_spinner=False, max_entries=48)
+def cached_mdc_summary(
+    module_set: str,
+    estimator: str = "lioness",
+    method: str = "control_anchored",
+    differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
+    differential_fdr_threshold: float = 0.05,
+) -> pd.DataFrame:
+    return load_mdc_summary(
+        module_set,
+        estimator,
+        method,
+        differential_edge_rule,
+        differential_fdr_scope,
+        differential_fdr_threshold,
+    )
 
 
-@st.cache_data(show_spinner=False)
-def cached_mdc_resolved(module_set: str) -> pd.DataFrame:
-    return load_mdc_resolved(module_set)
+@st.cache_data(show_spinner=False, max_entries=48)
+def cached_mdc_resolved(
+    module_set: str,
+    estimator: str = "lioness",
+    method: str = "control_anchored",
+    differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
+    differential_fdr_threshold: float = 0.05,
+) -> pd.DataFrame:
+    return load_mdc_resolved(
+        module_set,
+        estimator,
+        method,
+        differential_edge_rule,
+        differential_fdr_scope,
+        differential_fdr_threshold,
+    )
 
 
-@st.cache_data(show_spinner=False, max_entries=8)
+@st.cache_data(show_spinner=False, max_entries=48)
 def cached_pathway_mdc_rows(
-    module_set: str, enrichment_fdr_threshold: float
+    module_set: str,
+    enrichment_fdr_threshold: float,
+    estimator: str = "lioness",
+    method: str = "control_anchored",
+    differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
+    differential_fdr_threshold: float = 0.05,
 ) -> pd.DataFrame:
     return build_pathway_mdc_rows(
-        load_mdc_summary(module_set),
-        load_mdc_resolved(module_set),
+        load_mdc_summary(
+            module_set,
+            estimator,
+            method,
+            differential_edge_rule,
+            differential_fdr_scope,
+            differential_fdr_threshold,
+        ),
+        load_mdc_resolved(
+            module_set,
+            estimator,
+            method,
+            differential_edge_rule,
+            differential_fdr_scope,
+            differential_fdr_threshold,
+        ),
         load_kegg(module_set=module_set),
         enrichment_fdr_threshold=enrichment_fdr_threshold,
     )
@@ -2197,7 +2245,6 @@ with st.sidebar:
         )
         st.stop()
     module_details = cached_module_details(module_set)
-    mdc_summary = cached_mdc_summary(module_set)
     estimator = st.radio(
         "Network estimator",
         options=list(ESTIMATOR_LABELS),
@@ -3964,21 +4011,55 @@ if active_view == "Edge volcano":
 
 if active_view == "MDC":
     st.subheader("Module differential connectivity (MDC)")
+    mdc_summary = cached_mdc_summary(
+        module_set,
+        estimator,
+        method,
+        differential_edge_rule,
+        differential_fdr_scope,
+        differential_fdr_threshold,
+    )
+    if mdc_summary.empty:
+        st.error("No MDC rows are available for the selected edge mask and network method.")
+        st.stop()
     st.caption(
         "MDC compares the mean absolute signedAlt adjacency in AD with Control. "
         "Values above 1 indicate higher connectivity in AD; values below 1 indicate "
         "higher connectivity in Control. Total uses all edges, TS uses same-tissue edges, "
         "and CT uses cross-tissue edges."
     )
-    mdc_metadata = module_manifest.get("mdc", data_manifest.get("mdc", {}))
+    mdc_metadata = (
+        data_manifest.get("mdc_differential_edges", {})
+        if differential_edge_rule != "all"
+        else module_manifest.get("mdc", data_manifest.get("mdc", {}))
+    )
+    estimator_note = (
+        "All-edge MDC is module-level context and does not change with the estimator "
+        "or network-method selector."
+        if differential_edge_rule == "all"
+        else (
+            f"This view applies the {ESTIMATOR_LABELS[estimator]} / "
+            f"{readable_method(method)} discovery mask selected above. The mask is held "
+            "fixed during MDC calculation; BONOBO donor-native edge significance is not "
+            "an additional group-MDC filter."
+        )
+    )
     st.warning(
         "Cohort scope differs from the donor-complete LIONESS analysis. The MDC source "
         f"assembled {mdc_metadata.get('reference_assembled_donors', 517)} AD and "
         f"{mdc_metadata.get('target_assembled_donors', 408)} Control donors across the "
         "tissue union, including the 167 AD and 164 Control complete-three-tissue donors "
         "used here plus donors with partial tissue availability. MCI was not included. "
-        "MDC is module-level context and does not change with the estimator or network-method selector."
+        + estimator_note
     )
+    if differential_edge_rule != "all":
+        st.warning(
+            "Filtered MDC is exploratory post-selection context. The AD–Control discovery "
+            "mask is fixed in the 200 sample and 200 tissue-count-preserving gene "
+            "permutations, so its directional FDR does not account for adaptive edge "
+            "selection and is not independent validation. Modules with no retained edge "
+            "in a scope remain unavailable rather than being assigned MDC=0."
+        )
     mdc_control_columns = st.columns(2)
     with mdc_control_columns[0]:
         mdc_threshold = st.radio(
@@ -4007,6 +4088,8 @@ if active_view == "MDC":
         )
 
     mdc_view = mdc_summary.copy()
+    if "module_definition" in mdc_view:
+        mdc_view.pop("module_definition")
     mdc_view.insert(0, "module_definition", module_set_label)
     mdc_view = mdc_view.merge(
         module_details[
@@ -4034,6 +4117,18 @@ if active_view == "MDC":
     mdc_view["any_significant"] = mdc_view[
         ["significant_total", "significant_ts", "significant_ct"]
     ].any(axis=1)
+    if differential_edge_rule != "all":
+        available_counts = {
+            scope.upper(): int(mdc_view[f"mdc_{scope}"].notna().sum())
+            for scope in ("total", "ts", "ct")
+        }
+        st.caption(
+            "Modules with at least one retained edge and an available MDC ratio: "
+            + " · ".join(
+                f"{scope}={count}/{module_count}"
+                for scope, count in available_counts.items()
+            )
+        )
 
     count_columns = st.columns(4)
     count_columns[0].metric(
@@ -4049,6 +4144,16 @@ if active_view == "MDC":
     else:
         selected_mdc_row = selected_mdc.iloc[0]
         st.markdown(f"#### Selected module: {module_label(module)}")
+        if differential_edge_rule != "all":
+            st.caption(
+                "Retained discovery edges: "
+                f"total={int(selected_mdc_row['n_retained_edges_total']):,}/"
+                f"{int(selected_mdc_row['n_possible_edges_total']):,}, "
+                f"TS={int(selected_mdc_row['n_retained_edges_ts']):,}/"
+                f"{int(selected_mdc_row['n_possible_edges_ts']):,}, "
+                f"CT={int(selected_mdc_row['n_retained_edges_ct']):,}/"
+                f"{int(selected_mdc_row['n_possible_edges_ct']):,}."
+            )
         selected_columns = st.columns(3)
         for container, scope, label in zip(
             selected_columns,
@@ -4144,17 +4249,27 @@ if active_view == "MDC":
             },
         },
     )
-    ct_unavailable_count = len(
-        module_manifest.get(
-            "ct_unavailable_modules",
-            mdc_summary.loc[
-                pd.to_numeric(mdc_summary["n_ct_edges"], errors="coerce")
-                .fillna(0)
-                .eq(0),
-                "module",
-            ].astype(int).tolist(),
+    if differential_edge_rule == "all":
+        ct_unavailable_count = len(
+            module_manifest.get(
+                "ct_unavailable_modules",
+                mdc_summary.loc[
+                    pd.to_numeric(mdc_summary["n_ct_edges"], errors="coerce")
+                    .fillna(0)
+                    .eq(0),
+                    "module",
+                ].astype(int).tolist(),
+            )
         )
-    )
+        unavailable_reason = "have no structural CT edges"
+    else:
+        ct_unavailable_count = int(
+            pd.to_numeric(mdc_summary["n_ct_edges"], errors="coerce")
+            .fillna(0)
+            .eq(0)
+            .sum()
+        )
+        unavailable_reason = "retain no CT edge under the selected discovery mask"
     st.caption(
         (
             "Dashed zero lines separate AD-higher from Control-higher MDC. "
@@ -4162,7 +4277,7 @@ if active_view == "MDC":
             else "Dashed equality lines at one separate AD-higher from Control-higher MDC. "
         )
         + "The dotted diagonal "
-        f"marks equal TS and CT effects. {ct_unavailable_count} module(s) have no CT edges "
+        f"marks equal TS and CT effects. {ct_unavailable_count} module(s) {unavailable_reason} "
         "and therefore no CT MDC point."
     )
 
@@ -4236,6 +4351,31 @@ if active_view == "MDC":
         "n_ts_edges",
         "n_ct_edges",
     ]
+    if differential_edge_rule != "all":
+        mdc_columns.extend(
+            [
+                "estimator",
+                "network_method",
+                "differential_fdr_scope",
+                "differential_fdr_threshold",
+                "n_possible_edges_total",
+                "n_possible_edges_ts",
+                "n_possible_edges_ct",
+                "n_retained_edges_total",
+                "n_retained_edges_ts",
+                "n_retained_edges_ct",
+                "retained_edge_fraction_total",
+                "retained_edge_fraction_ts",
+                "retained_edge_fraction_ct",
+                "mean_abs_ad_total",
+                "mean_abs_control_total",
+                "mean_abs_ad_ts",
+                "mean_abs_control_ts",
+                "mean_abs_ad_ct",
+                "mean_abs_control_ct",
+                "inference_scope",
+            ]
+        )
     filterable_dataframe(
         displayed_mdc[mdc_columns],
         table_key="mdc_summary",
@@ -4286,7 +4426,14 @@ if active_view == "MDC":
             "For each component and direction, BH correction uses only modules where that edge "
             "block structurally exists; unavailable blocks remain missing."
         )
-        resolved_mdc = cached_mdc_resolved(module_set).copy()
+        resolved_mdc = cached_mdc_resolved(
+            module_set,
+            estimator,
+            method,
+            differential_edge_rule,
+            differential_fdr_scope,
+            differential_fdr_threshold,
+        ).copy()
         resolved_components_available = resolved_mdc[
             ["component", "component_label"]
         ].drop_duplicates()
@@ -4405,7 +4552,13 @@ if active_view == "MDC":
             )
 
         pathway_rows = cached_pathway_mdc_rows(
-            module_set, pathway_kegg_threshold
+            module_set,
+            pathway_kegg_threshold,
+            estimator,
+            method,
+            differential_edge_rule,
+            differential_fdr_scope,
+            differential_fdr_threshold,
         ).copy()
         component_preference = [
             "TS_AC",
@@ -5339,14 +5492,17 @@ if active_view == "Methods & data":
 
     st.markdown("#### Module differential connectivity")
     st.markdown(
-        "MDC is an independent group-network comparison supplied as module-level context: "
+        "All-edge MDC is an independent group-network comparison supplied as module-level context: "
         "mean absolute AD adjacency divided by mean absolute Control adjacency. The app "
         "shows total, pooled TS/CT, and six tissue-resolved ratios and their conservative "
         "directional permutation FDR on raw-ratio or log2 scales. Separate TS and CT "
         "scatter plots relate MDC to normalized Shannon tissue-mixing entropy. The "
         "pathway-resolved tab annotates module MDC with component-matched KEGG enrichment; "
         "it is not a newly recomputed edge-level pathway MDC. Its broader tissue-union "
-        "AD/Control cohort and absence of MCI are stated in the MDC tab."
+        "AD/Control cohort and absence of MCI are stated in the MDC tab. When the sidebar "
+        "selects AD–Control differential edges, MDC is recomputed on the matching estimator/"
+        "method discovery mask for Global or Per-module BH at 0.05 or 0.10. That fixed-mask "
+        "permutation analysis is post-selection and exploratory, not independent validation."
     )
 
     st.markdown("#### Module feature definitions")

@@ -402,6 +402,14 @@ def require_data_files() -> None:
             / f"lioness__{method}.parquet"
             for method in MODULE_SET_METHODS[module_set]
         )
+        required.extend(
+            [
+                module_set_data_dir(module_set)
+                / "differential/mdc_filtered_summary.parquet",
+                module_set_data_dir(module_set)
+                / "differential/mdc_filtered_resolved.parquet",
+            ]
+        )
     missing = [
         str(path.relative_to(APP_ROOT)) if path.is_relative_to(APP_ROOT) else str(path)
         for path in required
@@ -776,18 +784,64 @@ def load_sample_metadata() -> pd.DataFrame:
     return pd.read_parquet(ensure_data_path(SAMPLE_METADATA))
 
 
-def load_mdc_summary(module_set: str = "full_cohort") -> pd.DataFrame:
-    path = ensure_data_path(
-        module_set_path("mdc_ad_vs_control_summary.tsv", module_set)
+def load_mdc_summary(
+    module_set: str = "full_cohort",
+    estimator: str = "lioness",
+    method: str = "control_anchored",
+    differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
+    differential_fdr_threshold: float = 0.05,
+) -> pd.DataFrame:
+    """Load all-edge MDC or the selected discovery-filtered MDC summary."""
+
+    if differential_edge_rule == "all":
+        path = ensure_data_path(
+            module_set_path("mdc_ad_vs_control_summary.tsv", module_set)
+        )
+        return pd.read_csv(path, sep="\t")
+    if differential_edge_rule not in DIFFERENTIAL_EDGE_RULE_LABELS:
+        raise ValueError(f"Unknown differential edge rule: {differential_edge_rule}")
+    path = module_set_data_dir(module_set) / "differential/mdc_filtered_summary.parquet"
+    return _read_filtered(
+        path,
+        [
+            ("estimator", "=", estimator),
+            ("network_method", "=", method),
+            ("differential_edge_rule", "=", differential_edge_rule),
+            ("differential_fdr_scope", "=", differential_fdr_scope),
+            ("differential_fdr_threshold", "=", float(differential_fdr_threshold)),
+        ],
     )
-    return pd.read_csv(path, sep="\t")
 
 
-def load_mdc_resolved(module_set: str = "full_cohort") -> pd.DataFrame:
-    path = ensure_data_path(
-        module_set_path("mdc_resolved_ad_vs_control.tsv", module_set)
+def load_mdc_resolved(
+    module_set: str = "full_cohort",
+    estimator: str = "lioness",
+    method: str = "control_anchored",
+    differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
+    differential_fdr_threshold: float = 0.05,
+) -> pd.DataFrame:
+    """Load all-edge MDC or the selected discovery-filtered resolved MDC rows."""
+
+    if differential_edge_rule == "all":
+        path = ensure_data_path(
+            module_set_path("mdc_resolved_ad_vs_control.tsv", module_set)
+        )
+        return pd.read_csv(path, sep="\t")
+    if differential_edge_rule not in DIFFERENTIAL_EDGE_RULE_LABELS:
+        raise ValueError(f"Unknown differential edge rule: {differential_edge_rule}")
+    path = module_set_data_dir(module_set) / "differential/mdc_filtered_resolved.parquet"
+    return _read_filtered(
+        path,
+        [
+            ("estimator", "=", estimator),
+            ("network_method", "=", method),
+            ("differential_edge_rule", "=", differential_edge_rule),
+            ("differential_fdr_scope", "=", differential_fdr_scope),
+            ("differential_fdr_threshold", "=", float(differential_fdr_threshold)),
+        ],
     )
-    return pd.read_csv(path, sep="\t")
 
 
 def load_edge_summaries(

@@ -294,6 +294,40 @@ def test_streamlit_mdc_can_switch_to_raw_scale() -> None:
     assert widget_with_label(app.radio, "MDC display scale").value == "raw"
 
 
+def test_streamlit_mdc_uses_selected_ad_control_edge_mask() -> None:
+    app = AppTest.from_file(APP, default_timeout=180).run()
+    assert_app_clean(app)
+    app = select_view(app, "MDC")
+    assert_app_clean(app)
+
+    widget_with_label(app.radio, "AD–Control edge subset").set_value(
+        "ad_control_discovery_fdr05"
+    ).run()
+    assert_app_clean(app)
+    assert widget_with_label(app.radio, "Differential-edge FDR scope").value == "global"
+    widget_with_label(app.radio, "Differential-edge FDR scope").set_value(
+        "per_module"
+    ).run()
+    widget_with_label(app.radio, "Differential-edge FDR cutoff").set_value(0.10).run()
+    assert_app_clean(app)
+    assert any(
+        "Filtered MDC is exploratory post-selection context" in warning.value
+        for warning in app.warning
+    )
+
+    widget_with_label(app.radio, "Network estimator").set_value("bonobo").run()
+    assert_app_clean(app)
+    assert widget_with_label(app.radio, "Network method").value == "bonobo"
+
+    widget_with_label(app.selectbox, "Module definition").set_value(
+        "control_derived"
+    ).run()
+    assert_app_clean(app)
+    assert widget_with_label(app.radio, "AD–Control edge subset").value == (
+        "ad_control_discovery_fdr05"
+    )
+
+
 def test_streamlit_pathway_resolved_mdc_controls_both_module_sets() -> None:
     app = AppTest.from_file(APP, default_timeout=180).run()
     assert_app_clean(app)
