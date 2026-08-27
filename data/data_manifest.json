@@ -785,6 +785,41 @@
     "cluster_association_statistics.parquet": {
       "bytes": 8053416,
       "rows": 192768,
+      "schema": {
+        "categorical_fdr_across_modules": "double",
+        "categorical_fdr_module_family_n": "int64",
+        "categorical_p": "double",
+        "clusters_are_nominal": "bool",
+        "clusters_excluded_small_n": "string",
+        "clusters_tested": "string",
+        "component": "string",
+        "component_label": "string",
+        "diagnosis_group": "string",
+        "edge_rule": "string",
+        "effect_definition": "string",
+        "epsilon_squared": "double",
+        "estimator": "string",
+        "kruskal_df": "double",
+        "kruskal_h": "double",
+        "median_cluster_1": "double",
+        "median_cluster_2": "double",
+        "median_cluster_3": "double",
+        "median_cluster_4": "double",
+        "metric_family": "string",
+        "min_group_n": "int64",
+        "module": "int32",
+        "module_set": "string",
+        "n": "int64",
+        "n_cluster_1": "int64",
+        "n_cluster_2": "int64",
+        "n_cluster_3": "int64",
+        "n_cluster_4": "int64",
+        "n_tested": "int64",
+        "network_method": "string",
+        "numeric_correlation_used": "bool",
+        "outcome": "string",
+        "resolution": "string"
+      },
       "sha256": "825b95e69f231507cc9888d8e1835466a52266a609de109b9e29ce689db25f60"
     },
     "control_derived/aggregate_plot_data.parquet": {
@@ -24012,7 +24047,7 @@
       "sha256": "031d29a3e4c7d3e123bfb0860eb76136251cd45b3f9d582ce0b0a7d876c8ede3"
     },
     "sample_metadata.parquet": {
-      "bytes": 37195,
+      "bytes": 37932,
       "rows": 450,
       "schema": {
         "ad_control_split": "string",
@@ -24021,6 +24056,7 @@
         "apoe_genotype": "string",
         "braak_stage": "double",
         "cerad_score": "double",
+        "clusters": "int64",
         "cogdx": "double",
         "cogn_global": "double",
         "cogng_demog_slope": "double",
@@ -24034,7 +24070,7 @@
         "sex_code": "string",
         "sqrt_parksc_demog_slope": "double"
       },
-      "sha256": "842ecca75255a38cb6f76afdc79ae14c7f17c76c0a3c5a217cf445ee51ea0e73"
+      "sha256": "c31c442a4c5bced64d34bbf5b8a02cfc8e5b6d6755729bb50a95746246b50f2c"
     },
     "tissue_mapping.tsv": {
       "bytes": 66,

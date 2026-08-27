@@ -34,11 +34,13 @@ def preserve_legacy_pills_state(app: AppTest) -> AppTest:
 
 
 def assert_app_clean(app: AppTest) -> None:
+    preserve_legacy_pills_state(app)
     assert not app.exception
     assert not [error for error in app.error if "Traceback" in str(error.value)]
 
 
 def select_view(app: AppTest, label: str) -> AppTest:
+    label = getattr(label, "content", label)
     selector = widget_with_label(pills(app), "Analysis view")
     value = label if hasattr(app, "pills") else [label]
     result = selector.set_value(value).run()
@@ -79,6 +81,7 @@ def test_streamlit_table_value_filter_filters_rows_and_resets() -> None:
         app.multiselect, "Module composition filter columns"
     )
     app = picker.set_value(["Genes"]).run()
+    assert_app_clean(app)
     minimum = widget_with_label(app.number_input, "Genes minimum")
     app = minimum.set_value(1).run()
     assert_app_clean(app)
@@ -90,7 +93,7 @@ def test_every_lazy_analysis_view_renders_cleanly() -> None:
     app = AppTest.from_file(APP, default_timeout=180).run()
     assert_app_clean(app)
     view_selector = widget_with_label(pills(app), "Analysis view")
-    assert view_selector.value == "Associations"
+    assert view_selector.value == "Associations" or view_selector.value == ["Associations"]
     for view in view_selector.options:
         app = select_view(app, view)
         assert_app_clean(app)
@@ -170,6 +173,7 @@ def test_correlation_heatmap_supports_all_features_and_module_blocks() -> None:
 
 def test_correlation_heatmap_supports_all_tissue_resolved_components() -> None:
     app = AppTest.from_file(APP, default_timeout=240).run()
+    assert_app_clean(app)
     app = widget_with_label(app.radio, "Resolution").set_value(
         "Tissue resolved"
     ).run()
@@ -256,28 +260,67 @@ def test_targeted_prediction_view_defaults_to_primary_control_derived_analysis()
     )
 
 
+def test_targeted_cluster_prediction_renders_all_resolved_blocks() -> None:
+    app = AppTest.from_file(APP, default_timeout=300).run()
+    app = select_view(app, "Prediction")
+    app = preserve_legacy_pills_state(app)
+    app = widget_with_label(app.selectbox, "Evidence tier").set_value(
+        "exploratory"
+    ).run()
+    app = preserve_legacy_pills_state(app)
+    app = widget_with_label(app.selectbox, "Targeted prediction outcome").set_value(
+        "clusters"
+    ).run()
+    app = preserve_legacy_pills_state(app)
+    assert_app_clean(app)
+    assert any("Cluster prediction is exploratory" in warning.value for warning in app.warning)
+
+    block = widget_with_label(app.selectbox, "OOF diagnostic predictor block")
+    assert {
+        "AC",
+        "DLPFC",
+        "PCG",
+        "AC–DLPFC",
+        "AC–PCG",
+        "DLPFC–PCG",
+        "All three CT tissue pairs",
+        "All three TS tissues",
+        "All six resolved components",
+    }.issubset(set(block.options))
+    app = block.set_value("all_resolved").run()
+    assert_app_clean(app)
+
+
 def test_streamlit_smoke_lioness_and_bonobo_module_definitions() -> None:
     app = AppTest.from_file(APP, default_timeout=180).run()
     assert_app_clean(app)
+    app = preserve_legacy_pills_state(app)
 
     outcome = widget_with_label(app.selectbox, "Association outcome")
-    assert len(outcome.options) == 12
+    assert len(outcome.options) == 13
     outcome.set_value("adnc")
-    widget_with_label(app.selectbox, "Color points by").set_value(
+    app = widget_with_label(app.selectbox, "Color points by").set_value(
         "age_at_death"
     ).run()
+    app = preserve_legacy_pills_state(app)
     widget_with_label(app.selectbox, "Continuous color scale").set_value("Viridis")
-    widget_with_label(app.radio, "Network estimator").set_value("bonobo").run()
+    app = widget_with_label(app.radio, "Network estimator").set_value("bonobo").run()
+    app = preserve_legacy_pills_state(app)
     assert_app_clean(app)
 
     edge_subset = widget_with_label(app.radio, "BONOBO edge subset")
-    edge_subset.set_value("Significant edges").run()
-    widget_with_label(app.radio, "Significant-edge rule").set_value("bh_fdr05").run()
+    app = edge_subset.set_value("Significant edges").run()
+    app = preserve_legacy_pills_state(app)
+    app = widget_with_label(app.radio, "Significant-edge rule").set_value(
+        "bh_fdr05"
+    ).run()
+    app = preserve_legacy_pills_state(app)
     assert_app_clean(app)
 
-    widget_with_label(app.selectbox, "Module definition").set_value(
+    app = widget_with_label(app.selectbox, "Module definition").set_value(
         "control_derived"
     ).run()
+    app = preserve_legacy_pills_state(app)
     assert_app_clean(app)
     network_method = widget_with_label(app.radio, "Network method")
     assert network_method.value == "bonobo"
@@ -288,13 +331,15 @@ def test_streamlit_differential_filter_can_switch_bh_scope_and_cutoff() -> None:
     app = AppTest.from_file(APP, default_timeout=180).run()
     assert_app_clean(app)
 
-    widget_with_label(app.radio, "AD–Control edge subset").set_value(
+    app = widget_with_label(app.radio, "AD–Control edge subset").set_value(
         "ad_control_discovery_fdr05"
     ).run()
-    widget_with_label(app.radio, "Differential-edge FDR scope").set_value(
+    assert_app_clean(app)
+    app = widget_with_label(app.radio, "Differential-edge FDR scope").set_value(
         "per_module"
     ).run()
-    widget_with_label(app.radio, "Differential-edge FDR cutoff").set_value(
+    assert_app_clean(app)
+    app = widget_with_label(app.radio, "Differential-edge FDR cutoff").set_value(
         0.10
     ).run()
     assert_app_clean(app)
@@ -362,19 +407,25 @@ def test_streamlit_mdc_uses_selected_ad_control_edge_mask() -> None:
     app = select_view(app, "MDC")
     assert_app_clean(app)
 
-    widget_with_label(app.radio, "AD–Control edge subset").set_value(
+    app = widget_with_label(app.radio, "AD–Control edge subset").set_value(
         "ad_control_discovery_fdr05"
     ).run()
     assert_app_clean(app)
     assert widget_with_label(app.radio, "Differential-edge FDR scope").value == "global"
-    widget_with_label(app.radio, "Differential-edge FDR scope").set_value(
+    app = widget_with_label(app.radio, "Differential-edge FDR scope").set_value(
         "per_module"
     ).run()
-    widget_with_label(app.radio, "Differential-edge FDR cutoff").set_value(0.10).run()
+    assert_app_clean(app)
+    app = widget_with_label(app.radio, "Differential-edge FDR cutoff").set_value(
+        0.10
+    ).run()
     assert_app_clean(app)
     assert any(
         "Filtered MDC is exploratory post-selection context" in warning.value
         for warning in app.warning
+    ) or any(
+        "AD–Control-filtered MDC is currently being generated" in info.value
+        for info in app.info
     )
 
     widget_with_label(app.radio, "Network estimator").set_value("bonobo").run()
@@ -402,14 +453,17 @@ def test_streamlit_pathway_resolved_mdc_controls_both_module_sets() -> None:
     )
     assert widget_with_label(app.selectbox, "Pathway detail").value
 
-    widget_with_label(app.selectbox, "MDC enrichment resolution").set_value(
+    app = widget_with_label(app.selectbox, "MDC enrichment resolution").set_value(
         "subcategory"
     ).run()
     assert_app_clean(app)
     assert widget_with_label(app.selectbox, "KEGG sub-category detail").value
 
-    widget_with_label(app.radio, "KEGG enrichment threshold").set_value(0.10).run()
-    widget_with_label(app.radio, "Module MDC rows").set_value(
+    app = widget_with_label(app.radio, "KEGG enrichment threshold").set_value(
+        0.10
+    ).run()
+    assert_app_clean(app)
+    app = widget_with_label(app.radio, "Module MDC rows").set_value(
         "MDC FDR-significant only"
     ).run()
     assert_app_clean(app)

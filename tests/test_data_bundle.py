@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
+import pytest
 
 
 APP_ROOT = Path(__file__).resolve().parents[1]
@@ -166,7 +167,7 @@ def test_primary_raw_eigengene_milestone_is_complete_and_selectable() -> None:
     assert manifest["primary_transcriptomic_milestone_complete"] is True
     assert manifest["primary_transcriptomic_configurations"] == 600
     assert manifest["standalone_transcriptomic_milestone_complete"] is True
-    assert manifest["standalone_transcriptomic_configurations"] == 14_650
+    assert manifest["standalone_transcriptomic_configurations"] == 16_750
     assert manifest["primary_joint_milestone_complete"] is True
     assert manifest["primary_joint_configurations"] == 300
     assert manifest["base_raw_catalog_complete"] is True
@@ -202,7 +203,7 @@ def test_primary_raw_eigengene_milestone_is_complete_and_selectable() -> None:
             {"transcriptomics_only", "covariates_plus_transcriptomics"}
         )
     ]
-    assert len(standalone.loc[:, identity].drop_duplicates()) == 14_650
+    assert len(standalone.loc[:, identity].drop_duplicates()) == 16_750
     assert {
         "AC",
         "DLPFC",
@@ -227,7 +228,7 @@ def test_primary_raw_eigengene_milestone_is_complete_and_selectable() -> None:
         "covariates_plus_network",
         *expected_variants,
     }
-    assert full_variant_counts.eq(7_325).all()
+    assert full_variant_counts.eq(8_375).all()
 
 
 def test_all_modules_and_m1918_are_packaged() -> None:
@@ -623,6 +624,11 @@ def test_filtered_mdc_covers_both_fdr_scopes_cutoffs_and_network_methods() -> No
         },
     }
     module_counts = {"full_cohort": 154, "control_derived": 186}
+    if not all(data.differential_mdc_data_available(module_set) for module_set in configurations):
+        pytest.skip(
+            "Differential-edge MDC is an optional separately generated catalog and is "
+            "not present in this deploy bundle."
+        )
     for module_set, methods in configurations.items():
         for estimator, method in methods:
             for fdr_scope in ("global", "per_module"):

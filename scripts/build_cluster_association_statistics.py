@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+import pyarrow.parquet as pq
 
 APP_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -217,12 +218,21 @@ def refresh_manifest(data_root: Path, output: Path, row_count: int) -> None:
         "fdr": "BH across modules only within fixed analysis strata",
         "pearson_or_spearman_used": False,
     }
-    digest = hashlib.sha256(output.read_bytes()).hexdigest()
-    manifest.setdefault("files", {})[output.name] = {
-        "rows": int(row_count),
-        "bytes": int(output.stat().st_size),
-        "sha256": digest,
-    }
+    files = manifest.setdefault("files", {})
+    for path, expected_rows in (
+        (output, int(row_count)),
+        (data_root / "sample_metadata.parquet", None),
+    ):
+        parquet = pq.ParquetFile(path)
+        rows = int(parquet.metadata.num_rows if expected_rows is None else expected_rows)
+        files[path.relative_to(data_root).as_posix()] = {
+            "rows": rows,
+            "bytes": int(path.stat().st_size),
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "schema": {
+                field.name: str(field.type) for field in parquet.schema_arrow
+            },
+        }
     manifest_path.write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",

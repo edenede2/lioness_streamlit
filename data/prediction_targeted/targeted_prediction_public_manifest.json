@@ -1,15 +1,16 @@
 {
   "analysis": "fully_nested_targeted_module_prediction",
-  "base_raw_catalog_complete": false,
-  "base_raw_configurations": 31100,
+  "base_raw_catalog_complete": true,
+  "base_raw_configurations": 33500,
   "base_transform_configuration_counts": {
     "asinh": 29300,
-    "raw": 31100,
+    "raw": 33500,
     "rint": 29300
   },
   "complete": false,
   "completed_base_transformations": [
     "asinh",
+    "raw",
     "rint"
   ],
   "completed_evidence_tiers": [
@@ -17,13 +18,16 @@
     "primary",
     "secondary"
   ],
-  "completed_full_variant_transformations": [],
+  "completed_full_variant_transformations": [
+    "raw"
+  ],
   "completed_outer_folds": 25,
   "completed_transformations": [
     "asinh",
+    "raw",
     "rint"
   ],
-  "created_utc": "2026-08-27T13:53:16.515409+00:00",
+  "created_utc": "2026-08-27T14:23:14.625618+00:00",
   "evaluation_designs": {
     "differential_edge_sensitivity": "one_outer_cycle_with_frozen_all_edge_panel_and_regularization",
     "primary": "repeated_nested_cv",
@@ -92,7 +96,7 @@
       "sha256": "67ca051d137e328cee1244fc72877b2ce85a24354611cb5b6db88eebbf51e828"
     },
     "targeted_fold_performance.parquet": {
-      "bytes": 2295771,
+      "bytes": 2472550,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -122,8 +126,8 @@
         "reason",
         "n_transcriptomic_predictors"
       ],
-      "rows": 771200,
-      "sha256": "91826ef6d2573e1fe63c9089dcccf5099eaf9a975f586a859e5a2c0a734349a4"
+      "rows": 848000,
+      "sha256": "61bdd81e8f1b6132fe825ec48a76c9e0fd101d48bdf7f2308339e3a8bf022c1b"
     },
     "targeted_inner_k_scores.parquet": {
       "bytes": 194688,
@@ -2511,7 +2515,7 @@
       "sha256": "bb3b78567bc896c0a6cd2bc6173b8c52a1e67886b9a10dfe263c8757513d8f7c"
     },
     "targeted_oof_performance.parquet": {
-      "bytes": 162647,
+      "bytes": 179025,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -2533,8 +2537,8 @@
         "value",
         "n_oof"
       ],
-      "rows": 30848,
-      "sha256": "2484086801fa3250fdb607b62c6356ceada5e9f5b960b06d68ef8a5f1859a718"
+      "rows": 33920,
+      "sha256": "4b2d9a9c6e4cd6f2683efff1649b60ae8866ec0b71e4b128a45ac4cfb8ce1b04"
     },
     "targeted_oof_predictions.parquet": {
       "columns": [
@@ -2750,7 +2754,7 @@
           "sha256": "0577de30c3bb0ee0d10ded409f7f8d0918952136ca67b4fbb75ad34f61a21dab"
         },
         "raw__exploratory__control_derived__control_anchored.parquet": {
-          "bytes": 8368707,
+          "bytes": 9963282,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2782,8 +2786,8 @@
             "selected_k",
             "outer_repeats_averaged"
           ],
-          "rows": 806832,
-          "sha256": "dbddad771d095f13a404a0f50e09fd7b55be1323e741718a573af2fe6f7cc63f"
+          "rows": 866928,
+          "sha256": "79e7878a0eea59791451e6aa14b20e7f73ee77c80ebc6edce4c5fd6cb505aed9"
         },
         "raw__primary__control_derived__control_anchored.parquet": {
           "bytes": 205042,
@@ -3110,7 +3114,7 @@
           "sha256": "94390ab2b5fd1ea394d6309acd9d540ae5f3678749b05529c323385ff433b09e"
         }
       },
-      "rows": 1896640,
+      "rows": 1956736,
       "shards": 15
     },
     "targeted_panel_selection.parquet": {
@@ -3198,7 +3202,7 @@
       "sha256": "a101a6cde4ba91deda41e375d3758f03ad61a416cfae13d3d5528639215de2ca"
     },
     "targeted_tier_comparisons.parquet": {
-      "bytes": 29276,
+      "bytes": 29870,
       "columns": [
         "evidence_tier",
         "module_definition",
@@ -3222,11 +3226,11 @@
         "fdr_within_outcome",
         "fdr_global_exploratory"
       ],
-      "rows": 341,
-      "sha256": "3e57370e978d6de018ee58c8fcd8bd889a3fb29f0ad465b8dcba72c329c2968e"
+      "rows": 350,
+      "sha256": "2bd081c1b844966019e03fad77a5b8055c5ccd24b6f37227f81380662547574c"
     },
     "targeted_top_coefficients.parquet": {
-      "bytes": 8939693,
+      "bytes": 10016919,
       "columns": [
         "coefficient_label",
         "feature_name",
@@ -3254,8 +3258,8 @@
         "kegg_fdr",
         "kegg_role"
       ],
-      "rows": 468451,
-      "sha256": "aa1667c06a33cff1ee0c8fd8fb9aa7e69c9252fd2b275a2aa0ae7f4f3035aea5"
+      "rows": 522060,
+      "sha256": "416820077f6704d28d6b8102da140e6276616c79667455000459c065073a1a2c"
     },
     "targeted_transformation_comparisons.parquet": {
       "bytes": 60910,
@@ -3290,7 +3294,7 @@
       "sha256": "308f40bde54b3787256301387e335a6d35bff781d177591c0a1288bf02bd1ed2"
     },
     "targeted_transformation_status.parquet": {
-      "bytes": 8179,
+      "bytes": 8228,
       "columns": [
         "score_transform",
         "status",
@@ -3305,7 +3309,7 @@
         "primary_scale"
       ],
       "rows": 3,
-      "sha256": "42130c286f231ead1a51ce6db38d9748bd07357ccd8ff43990fb65be31734d60"
+      "sha256": "867b747832e8d9a043e7622b41bd306c52ba0d7c920a53b03c664fc0807a7a21"
     }
   },
   "interim": true,
@@ -3364,7 +3368,7 @@
     "prefix": "T-",
     "pseudonyms": 450
   },
-  "publishable_milestone": false,
+  "publishable_milestone": true,
   "schema_version": 4,
   "score_transformations": {
     "asinh": "arcsinh(metric_raw); robustness sensitivity and corrected legacy provenance",
@@ -3390,8 +3394,8 @@
     "stability_subsamples": 100,
     "subsample_fraction": 0.8
   },
-  "standalone_transcriptomic_configurations": 15550,
-  "standalone_transcriptomic_milestone_complete": false,
+  "standalone_transcriptomic_configurations": 16750,
+  "standalone_transcriptomic_milestone_complete": true,
   "transcriptomic_comparator": {
     "feature": "outer-training-fitted per-tissue module PCA1 eigengene",
     "model_variants": [
@@ -3407,7 +3411,7 @@
   },
   "transformation_status": {
     "asinh": "running",
-    "raw": "running",
+    "raw": "complete",
     "rint": "running"
   }
 }
