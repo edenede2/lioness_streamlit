@@ -23,6 +23,8 @@ import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
+from build_cluster_association_statistics import build_statistics
+
 
 RUN_NAME = "20260817_standard_control_anchored_allmodules_5phenotypes_6features"
 CONTROL_DERIVED_RUN_NAME = (
@@ -339,6 +341,7 @@ def write_sample_metadata(
 ) -> int:
     source_columns = [
         "donor",
+        "projid",
         "diagnosis_group",
         *PHENOTYPES,
         *METADATA_RENAME,
@@ -347,6 +350,31 @@ def write_sample_metadata(
     ]
     frame = pd.read_parquet(phenotype_source, columns=source_columns)
     frame["donor"] = frame["donor"].astype(str)
+    frame["projid"] = frame["projid"].astype(str)
+    cluster_source = (
+        Path(__file__).resolve().parents[3]
+        / "data/external/rosmapPhenos/rosmap_combined_phenotypes.csv"
+    )
+    cluster_rows = pd.read_csv(
+        cluster_source,
+        usecols=["projid", "clusters"],
+        low_memory=False,
+    )
+    cluster_rows = cluster_rows.loc[cluster_rows["clusters"].notna()].copy()
+    cluster_rows["projid"] = cluster_rows["projid"].astype(str)
+    conflicts = cluster_rows.groupby("projid", observed=True)["clusters"].nunique()
+    if conflicts.gt(1).any():
+        raise ValueError("Conflicting non-missing ROSMAP cluster assignments")
+    cluster_rows = cluster_rows.drop_duplicates("projid")
+    if len(cluster_rows) != 898:
+        raise ValueError(f"Expected 898 unique cluster assignments; found {len(cluster_rows)}")
+    frame = frame.merge(
+        cluster_rows,
+        on="projid",
+        how="left",
+        validate="one_to_one",
+    )
+    frame = frame.drop(columns="projid")
     if split_source is not None:
         split = pd.read_csv(split_source, sep="\t", dtype={"donor": str})
         frame = frame.merge(
@@ -366,6 +394,15 @@ def write_sample_metadata(
     frame["parkinsonism_label"] = frame["parkinsonism"].map(
         {0.0: "No", 1.0: "Yes"}
     ).astype("string")
+    frame["clusters"] = pd.to_numeric(frame["clusters"], errors="coerce").astype("Int64")
+    observed_cluster_counts = {
+        int(key): int(value)
+        for key, value in frame["clusters"].value_counts().sort_index().items()
+    }
+    if observed_cluster_counts != {1: 168, 2: 71, 3: 44, 4: 30}:
+        raise ValueError(f"Unexpected public-cohort cluster counts: {observed_cluster_counts}")
+    if int(frame["clusters"].isna().sum()) != 137:
+        raise ValueError("Expected 137 cohort donors without a cluster assignment")
     frame["age_at_death"] = pd.to_numeric(frame["age_at_death"], errors="coerce")
     numeric_columns = [
         *PHENOTYPES,
@@ -2297,7 +2334,7 @@ def main() -> None:
         )
         module_manifest["ad_control_differential_edges"] = differential
         module_manifest["outcomes"] = list(
-            (*PHENOTYPES, "age_at_death", "education_years", "cogdx", "braak_stage", "cerad_score", "adnc", "parkinsonism")
+            (*PHENOTYPES, "age_at_death", "education_years", "cogdx", "braak_stage", "cerad_score", "adnc", "parkinsonism", "clusters")
         )
         module_manifest["estimators"] = ["lioness", "bonobo"]
         module_manifest["feature_families_by_estimator"] = {
@@ -2430,6 +2467,18 @@ def main() -> None:
     for config in configs:
         validate_public_module_set(config.output, expected_sample_ids)
 
+    cluster_metadata = pd.read_parquet(
+        output / "sample_metadata.parquet",
+        columns=["sample_id", "diagnosis_group", "clusters"],
+    )
+    cluster_statistics = build_statistics(output, cluster_metadata)
+    cluster_statistics.to_parquet(
+        output / "cluster_association_statistics.parquet",
+        index=False,
+        compression="zstd",
+        row_group_size=50_000,
+    )
+
     if metadata_rows != 450:
         raise ValueError(f"Expected 450 metadata rows, found {metadata_rows}")
     diagnosis_counts = (
@@ -2454,6 +2503,17 @@ def main() -> None:
         raise ValueError(f"Deploy files exceed the 95-MiB release cap: {too_large}")
 
     full_manifest = module_set_manifests["full_cohort"]
+    full_manifest["nominal_cluster_associations"] = {
+        "source": "rosmap_combined_phenotypes.csv: clusters",
+        "eligible_donors": 313,
+        "missing_donors": 137,
+        "class_counts": {"1": 168, "2": 71, "3": 44, "4": 30},
+        "test": "Kruskal-Wallis; groups with at least five donors",
+        "effect": "epsilon_squared=max(0,(H-k+1)/(n-k))",
+        "fdr": "Benjamini-Hochberg across modules only within fixed analysis strata",
+        "pearson_or_spearman_used": False,
+        "hot_cache_rows": int(len(cluster_statistics)),
+    }
     expansion_grains = {
         "bonobo_networks": sum(config.module_count * 450 for config in configs),
         "bonobo_aggregate_plot_rows": sum(

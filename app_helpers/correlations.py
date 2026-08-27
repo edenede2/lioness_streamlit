@@ -7,7 +7,7 @@ from collections.abc import Iterable
 
 import numpy as np
 import pandas as pd
-from scipy.stats import ConstantInputWarning, pearsonr, spearmanr
+from scipy.stats import ConstantInputWarning, kruskal, pearsonr, spearmanr
 
 
 def benjamini_hochberg(values: pd.Series) -> pd.Series:
@@ -112,4 +112,96 @@ def calculate_correlations(
         return result
     result["pearson_fdr_displayed_family"] = benjamini_hochberg(result["pearson_p"])
     result["spearman_fdr_displayed_family"] = benjamini_hochberg(result["spearman_p"])
+    return result
+
+
+def calculate_categorical_associations(
+    frame: pd.DataFrame,
+    group_columns: list[str],
+    *,
+    category_column: str = "clusters",
+    min_group_n: int = 5,
+) -> pd.DataFrame:
+    """Kruskal–Wallis and epsilon-squared for an unordered donor category.
+
+    Categories with fewer than ``min_group_n`` non-missing score values remain
+    visible in plots but are excluded from the omnibus test.  No numeric
+    correlation is ever calculated from the category codes.
+    """
+
+    rows: list[dict[str, object]] = []
+    for keys, group in frame.groupby(group_columns, observed=True, sort=False):
+        keys = keys if isinstance(keys, tuple) else (keys,)
+        base = dict(zip(group_columns, keys, strict=True))
+        work = pd.DataFrame(
+            {
+                "score": pd.to_numeric(group["metric_value"], errors="coerce"),
+                "category": pd.to_numeric(group[category_column], errors="coerce"),
+            }
+        ).dropna()
+        work = work.loc[np.isfinite(work["score"]) & np.isfinite(work["category"])]
+        counts = work.groupby("category", observed=True)["score"].size()
+        eligible = [int(value) for value in counts.index[counts.ge(int(min_group_n))]]
+        excluded = [int(value) for value in counts.index[counts.lt(int(min_group_n))]]
+        samples = [
+            work.loc[work["category"].eq(value), "score"].to_numpy(dtype=float)
+            for value in eligible
+        ]
+        h_statistic = p_value = epsilon_squared = np.nan
+        n_tested = int(sum(len(values) for values in samples))
+        k_tested = int(len(samples))
+        if k_tested >= 2 and n_tested > k_tested and any(
+            np.unique(values).size > 1 for values in samples
+        ):
+            try:
+                h_statistic, p_value = kruskal(*samples, nan_policy="omit")
+                epsilon_squared = max(
+                    0.0,
+                    float((h_statistic - k_tested + 1) / (n_tested - k_tested)),
+                )
+            except ValueError:
+                pass
+        row: dict[str, object] = {
+            **base,
+            "outcome": category_column,
+            "n": int(len(work)),
+            "n_tested": n_tested,
+            "clusters_tested": ",".join(map(str, eligible)),
+            "clusters_excluded_small_n": ",".join(map(str, excluded)),
+            "kruskal_h": h_statistic,
+            "kruskal_df": float(k_tested - 1) if k_tested >= 2 else np.nan,
+            "epsilon_squared": epsilon_squared,
+            "categorical_p": p_value,
+            "min_group_n": int(min_group_n),
+        }
+        for label in (1, 2, 3, 4):
+            values = work.loc[work["category"].eq(label), "score"]
+            row[f"n_cluster_{label}"] = int(len(values))
+            row[f"median_cluster_{label}"] = (
+                float(values.median()) if not values.empty else np.nan
+            )
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def add_categorical_across_module_fdr(
+    frame: pd.DataFrame,
+    *,
+    family_columns: Iterable[str],
+    module_column: str = "module",
+) -> pd.DataFrame:
+    """Apply BH to nominal omnibus tests across modules only."""
+
+    result = frame.copy()
+    family_columns = list(family_columns)
+    duplicate = result.duplicated([*family_columns, module_column], keep=False)
+    if duplicate.any():
+        raise ValueError("Categorical FDR family contains duplicate module rows")
+    grouped = result.groupby(family_columns, observed=True, dropna=False, sort=False)
+    result["categorical_fdr_across_modules"] = grouped["categorical_p"].transform(
+        benjamini_hochberg
+    )
+    result["categorical_fdr_module_family_n"] = grouped["categorical_p"].transform(
+        lambda values: int(pd.to_numeric(values, errors="coerce").notna().sum())
+    ).astype(int)
     return result

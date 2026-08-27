@@ -130,6 +130,7 @@ TARGETED_PREDICTION_FILES = {
     "masked_coefficients": TARGETED_PREDICTION_DIR / "targeted_masked_top_coefficients.parquet",
     "masked_oof_predictions": TARGETED_PREDICTION_DIR / "targeted_masked_oof_predictions.parquet",
 }
+CLUSTER_ASSOCIATION_STATS = DATA_DIR / "cluster_association_statistics.parquet"
 
 PREDICTION_OUTCOME_LABELS = {
     "diagnosis_binary": "Diagnosis: AD versus Control",
@@ -141,6 +142,7 @@ PREDICTION_OUTCOME_LABELS = {
     "motor10_demog_slope": "Demographic-adjusted motor slope",
     "sqrt_parksc_demog_slope": "Demographic-adjusted Parkinsonian-score slope",
     "parkinsonism": "Parkinsonism",
+    "clusters": "ROSMAP donor cluster (nominal 1–4)",
 }
 PREDICTION_DESIGN_LABELS = {
     "edge_sums": "Whole-network retained-edge sums",
@@ -242,15 +244,25 @@ OUTCOME_LABELS = {
     "parkinsonism": "Parkinsonism",
 }
 
+CATEGORICAL_OUTCOME_LABELS = {
+    "clusters": "ROSMAP donor cluster (nominal 1–4)",
+}
+ASSOCIATION_OUTCOME_LABELS = {**OUTCOME_LABELS, **CATEGORICAL_OUTCOME_LABELS}
+
 HOVER_LABELS = {
     **OUTCOME_LABELS,
+    **CATEGORICAL_OUTCOME_LABELS,
     "sex_code": "Sex code",
     "apoe_genotype": "APOE genotype",
     "parkinsonism_label": "Parkinsonism status",
 }
 
 NUMERIC_OUTCOMES = list(OUTCOME_LABELS)
-COLOR_LABELS = {"diagnosis_group": "Diagnosis group", **OUTCOME_LABELS}
+COLOR_LABELS = {
+    "diagnosis_group": "Diagnosis group",
+    **OUTCOME_LABELS,
+    **CATEGORICAL_OUTCOME_LABELS,
+}
 
 FEATURE_LABELS = {
     "connectivity": "Connectivity",
@@ -389,6 +401,7 @@ def require_data_files() -> None:
         TISSUE_MAPPING,
         SAMPLE_METADATA,
         DATA_MANIFEST,
+        CLUSTER_ASSOCIATION_STATS,
     ]
     for module_set in MODULE_SET_DIRS:
         required.extend(
@@ -787,6 +800,35 @@ def load_tissue_mapping() -> pd.DataFrame:
 
 def load_sample_metadata() -> pd.DataFrame:
     return pd.read_parquet(ensure_data_path(SAMPLE_METADATA))
+
+
+def load_cluster_association_statistics(
+    *,
+    module_set: str,
+    estimator: str,
+    method: str,
+    resolution: str,
+    metric_family: str | None = None,
+    component: str | None = None,
+    diagnosis_group: str | None = None,
+    edge_rule: str = "all",
+) -> pd.DataFrame:
+    """Read compact all-edge nominal association statistics."""
+
+    filters: list[tuple[str, str, object]] = [
+        ("module_set", "=", module_set),
+        ("estimator", "=", estimator),
+        ("network_method", "=", method),
+        ("resolution", "=", resolution),
+        ("edge_rule", "=", edge_rule),
+    ]
+    if metric_family is not None:
+        filters.append(("metric_family", "=", metric_family))
+    if component is not None:
+        filters.append(("component", "=", component))
+    if diagnosis_group is not None:
+        filters.append(("diagnosis_group", "=", diagnosis_group))
+    return _read_filtered(CLUSTER_ASSOCIATION_STATS, filters)
 
 
 def load_mdc_summary(

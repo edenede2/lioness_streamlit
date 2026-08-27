@@ -782,6 +782,11 @@
       },
       "sha256": "e7716a9414662099e0db9a1d881a7858faba7565dc7b393e1b33f8108fdd6ad7"
     },
+    "cluster_association_statistics.parquet": {
+      "bytes": 8053416,
+      "rows": 192768,
+      "sha256": "825b95e69f231507cc9888d8e1835466a52266a609de109b9e29ce689db25f60"
+    },
     "control_derived/aggregate_plot_data.parquet": {
       "bytes": 20973757,
       "rows": 502200,
@@ -49083,6 +49088,21 @@
     }
   },
   "modules": 154,
+  "nominal_cluster_associations": {
+    "class_counts": {
+      "1": 168,
+      "2": 71,
+      "3": 44,
+      "4": 30
+    },
+    "effect": "epsilon_squared=max(0,(H-k+1)/(n-k))",
+    "eligible_donors": 313,
+    "fdr": "BH across modules only within fixed analysis strata",
+    "missing_donors": 137,
+    "pearson_or_spearman_used": false,
+    "source": "rosmap_combined_phenotypes.csv: clusters",
+    "test": "Kruskal-Wallis; categories require n>=5"
+  },
   "outcomes": [
     "cogn_global",
     "cogng_demog_slope",
@@ -49095,7 +49115,8 @@
     "braak_stage",
     "cerad_score",
     "adnc",
-    "parkinsonism"
+    "parkinsonism",
+    "clusters"
   ],
   "phenotypes": [
     "cogn_global",

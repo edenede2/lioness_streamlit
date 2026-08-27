@@ -14,6 +14,8 @@ from plotly.subplots import make_subplots
 from scipy.cluster.hierarchy import leaves_list, linkage
 from scipy.spatial.distance import pdist
 from scipy.stats import spearmanr
+from sklearn.calibration import calibration_curve
+from sklearn.metrics import precision_recall_curve, roc_curve
 
 
 DIAGNOSIS_COLORS = {
@@ -22,6 +24,7 @@ DIAGNOSIS_COLORS = {
     "AD": "#E66101",
 }
 DIAGNOSIS_SYMBOLS = {"Control": "circle", "MCI": "diamond", "AD": "square"}
+CLUSTER_COLORS = {1: "#3B4CC0", 2: "#20A486", 3: "#F6C141", 4: "#D1495B"}
 MDC_DIRECTION_COLORS = {
     "Higher in AD": "#E66101",
     "Higher in Control": "#2C7FB8",
@@ -718,7 +721,8 @@ def association_figure(
     for annotation in fig.layout.annotations:
         annotation.update(font={"size": 12, "color": "#27364B"})
 
-    continuous_color = color_by != "diagnosis_group"
+    categorical_cluster_color = color_by == "clusters"
+    continuous_color = color_by not in {"diagnosis_group", "clusters"}
     color_min = color_max = None
     if continuous_color:
         color_values = pd.to_numeric(frame[color_by], errors="coerce")
@@ -743,13 +747,20 @@ def association_figure(
             )
             if group.empty:
                 continue
-            if continuous_color:
+            if categorical_cluster_color:
+                cluster_values = pd.to_numeric(group[color_by], errors="coerce")
+                point_subsets = [
+                    (group.loc[cluster_values.eq(cluster)], cluster)
+                    for cluster in (1, 2, 3, 4)
+                ]
+                point_subsets.append((group.loc[cluster_values.isna()], None))
+            elif continuous_color:
                 valid_color = pd.to_numeric(group[color_by], errors="coerce").notna()
                 point_subsets = [(group.loc[valid_color], True), (group.loc[~valid_color], False)]
             else:
                 point_subsets = [(group, True)]
             legend_added = False
-            for point_group, has_color_value in point_subsets:
+            for point_group, color_value in point_subsets:
                 if point_group.empty:
                     continue
                 customdata, hover_template = _hover_payload(point_group, hover_fields)
@@ -759,7 +770,12 @@ def association_figure(
                     "opacity": 0.74,
                     "line": {"width": 0.5, "color": "white"},
                 }
-                if continuous_color and has_color_value:
+                if categorical_cluster_color:
+                    marker["color"] = (
+                        CLUSTER_COLORS[int(color_value)]
+                        if color_value is not None else "#A9B1BA"
+                    )
+                elif continuous_color and color_value:
                     marker.update(
                         {
                             "color": pd.to_numeric(point_group[color_by], errors="coerce"),
@@ -775,9 +791,22 @@ def association_figure(
                         x=point_group["metric_value"],
                         y=point_group[phenotype],
                         mode="markers",
-                        name=diagnosis,
-                        legendgroup=diagnosis,
-                        showlegend=index == 0 and not legend_added,
+                        name=(
+                            f"Cluster {int(color_value)}"
+                            if categorical_cluster_color and color_value is not None
+                            else "Cluster unavailable"
+                            if categorical_cluster_color
+                            else diagnosis
+                        ),
+                        legendgroup=(
+                            f"cluster_{color_value}"
+                            if categorical_cluster_color else diagnosis
+                        ),
+                        showlegend=(
+                            index == 0 and diagnosis == diagnoses[0]
+                            if categorical_cluster_color
+                            else index == 0 and not legend_added
+                        ),
                         marker=marker,
                         customdata=customdata,
                         hovertemplate=(
@@ -905,6 +934,190 @@ def association_figure(
             }
         )
     return fig
+
+
+def cluster_association_figure(
+    frame: pd.DataFrame,
+    statistics: pd.DataFrame,
+    *,
+    feature_label: str,
+    scale_label: str,
+    module: int,
+    module_definition: str | None = None,
+    kegg_subtitles: dict[str, str] | None = None,
+    hover_fields: dict[str, str] | None = None,
+) -> go.Figure:
+    """Render nominal Cluster 1–4 score distributions without numeric trends."""
+
+    components = frame[["component", "component_label"]].drop_duplicates()
+    component_pairs = list(components.itertuples(index=False, name=None))
+    ncols = 2 if len(component_pairs) <= 2 else 3
+    nrows = math.ceil(len(component_pairs) / ncols)
+    subtitles = kegg_subtitles or {}
+    titles = []
+    for component, label in component_pairs:
+        enrichment = subtitles.get(str(component), "")
+        titles.append(
+            html.escape(str(label))
+            if not enrichment
+            else f"<b>{html.escape(str(label))}</b><br>{html.escape(str(enrichment))}"
+        )
+    figure = make_subplots(
+        rows=nrows,
+        cols=ncols,
+        subplot_titles=titles,
+        horizontal_spacing=0.08,
+        vertical_spacing=0.24 if nrows > 1 else 0.08,
+    )
+    hover_fields = hover_fields or {}
+    for index, (component, _label) in enumerate(component_pairs):
+        row = index // ncols + 1
+        col = index % ncols + 1
+        panel = frame.loc[frame["component"].eq(component)].copy()
+        panel["clusters"] = pd.to_numeric(panel["clusters"], errors="coerce")
+        for cluster in (1, 2, 3, 4):
+            selected = panel.loc[panel["clusters"].eq(cluster)].copy()
+            if selected.empty:
+                continue
+            customdata, hover_template = _hover_payload(selected, hover_fields)
+            figure.add_trace(
+                go.Box(
+                    x=np.repeat(f"Cluster {cluster}", len(selected)),
+                    y=selected["metric_value"],
+                    name=f"Cluster {cluster}",
+                    legendgroup=f"cluster_{cluster}",
+                    showlegend=index == 0,
+                    boxpoints="all",
+                    jitter=0.36,
+                    pointpos=0,
+                    fillcolor="rgba(255,255,255,0)",
+                    line={"color": CLUSTER_COLORS[cluster], "width": 2},
+                    marker={
+                        "color": CLUSTER_COLORS[cluster],
+                        "size": 7,
+                        "opacity": 0.72,
+                        "line": {"color": "white", "width": 0.4},
+                    },
+                    customdata=customdata,
+                    hovertemplate=(
+                        hover_template
+                        + f"Cluster: {cluster}<br>{feature_label}: %{{y:.3f}}<extra></extra>"
+                    ),
+                ),
+                row=row,
+                col=col,
+            )
+        stat = statistics.loc[statistics["component"].eq(component)]
+        if not stat.empty:
+            value = stat.iloc[0]
+            tested = value.get("clusters_tested", "") or "none"
+            excluded = value.get("clusters_excluded_small_n", "") or "none"
+            text = (
+                f"n={int(value.get('n', 0))}; H={_format_number(value.get('kruskal_h'))}; "
+                f"ε²={_format_number(value.get('epsilon_squared'))}; "
+                f"p={_format_number(value.get('categorical_p'))}; "
+                f"module-set FDR={_format_number(value.get('categorical_fdr_across_modules'))}"
+                f"<br>tested clusters: {tested}; excluded (&lt;5): {excluded}"
+            )
+            axis_number = index + 1
+            figure.add_annotation(
+                x=0.01,
+                y=0.99,
+                xref="x domain" if axis_number == 1 else f"x{axis_number} domain",
+                yref="y domain" if axis_number == 1 else f"y{axis_number} domain",
+                text=text,
+                showarrow=False,
+                xanchor="left",
+                yanchor="top",
+                align="left",
+                font={"size": 10, "color": "#27364B"},
+                bgcolor="rgba(255,255,255,0.82)",
+            )
+    figure.update_xaxes(title_text="Nominal donor cluster")
+    figure.update_yaxes(title_text=f"{feature_label} ({scale_label})", zeroline=True)
+    title = f"Module M{int(module)}: network-score distributions by ROSMAP cluster"
+    if module_definition:
+        title += f"<br><sup>{module_definition}</sup>"
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"},
+        template="plotly_white",
+        height=610 if nrows == 1 else 1050,
+        margin={"l": 60, "r": 25, "t": 175, "b": 60},
+        legend={"orientation": "h", "y": 1.13, "x": 1, "xanchor": "right"},
+    )
+    return figure
+
+
+def cluster_association_heatmap_figure(
+    frame: pd.DataFrame,
+    *,
+    title: str,
+    cluster_rows: bool = False,
+    cluster_columns: bool = False,
+    significance_threshold: float = 0.05,
+) -> go.Figure:
+    """Sequential epsilon-squared heatmap kept separate from signed correlations."""
+
+    if frame.empty:
+        return go.Figure()
+    rows = frame["heatmap_row"].drop_duplicates().tolist()
+    columns = frame["component_label"].drop_duplicates().tolist()
+    values = frame.pivot_table(
+        index="heatmap_row", columns="component_label",
+        values="epsilon_squared", aggfunc="first",
+    ).reindex(index=rows, columns=columns)
+    if cluster_rows:
+        rows = _hierarchical_order(values, "rows")
+        values = values.reindex(index=rows)
+    if cluster_columns:
+        columns = _hierarchical_order(values, "columns")
+        values = values.reindex(columns=columns)
+    def pivot(column: str) -> pd.DataFrame:
+        return frame.pivot_table(
+            index="heatmap_row", columns="component_label", values=column,
+            aggfunc="first",
+        ).reindex(index=rows, columns=columns)
+    p_values = pivot("categorical_p")
+    fdr_values = pivot("categorical_fdr_across_modules")
+    n_values = pivot("n")
+    stars = np.where(
+        np.isfinite(fdr_values.to_numpy(float))
+        & (fdr_values.to_numpy(float) < float(significance_threshold)),
+        "*",
+        "",
+    )
+    customdata = np.dstack(
+        [n_values.to_numpy(), p_values.to_numpy(), fdr_values.to_numpy()]
+    )
+    figure = go.Figure(
+        go.Heatmap(
+            z=values.to_numpy(),
+            x=columns,
+            y=rows,
+            zmin=0,
+            zmax=max(0.10, float(np.nanmax(values.to_numpy(float)))),
+            colorscale="Viridis",
+            colorbar={"title": "Kruskal ε²", "thickness": 16},
+            text=stars,
+            texttemplate="%{text}",
+            customdata=customdata,
+            hovertemplate=(
+                "Score: %{y}<br>Component: %{x}<br>ε²: %{z:.3f}<br>"
+                "n: %{customdata[0]:.0f}<br>p: %{customdata[1]:.3g}<br>"
+                "module-set FDR: %{customdata[2]:.3g}<extra></extra>"
+            ),
+            hoverongaps=False,
+        )
+    )
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"},
+        template="plotly_white",
+        height=max(560, min(2400, 180 + 12 * len(rows))),
+        margin={"l": 250, "r": 35, "t": 80, "b": 130},
+        xaxis={"tickangle": -35},
+        yaxis={"autorange": "reversed", "tickfont": {"size": 10}},
+    )
+    return figure
 
 
 def distribution_figure(
@@ -2833,6 +3046,37 @@ def prediction_curve_figure(frame: pd.DataFrame, *, curve: str, title: str) -> g
         legend={"orientation": "h", "y": 1.1},
     )
     return figure
+
+
+def classification_diagnostic_rows(frame: pd.DataFrame) -> pd.DataFrame:
+    """Build one-vs-rest ROC, PR, and calibration rows from public OOF predictions."""
+
+    rows: list[dict[str, object]] = []
+    truth = frame["target"].astype(str)
+    for column in sorted(value for value in frame if value.startswith("probability_")):
+        label = column.removeprefix("probability_")
+        score = pd.to_numeric(frame[column], errors="coerce")
+        valid = score.notna() & truth.notna()
+        binary = truth.loc[valid].eq(label).astype(int).to_numpy()
+        probability = score.loc[valid].to_numpy(dtype=float)
+        if len(binary) < 2 or np.unique(binary).size != 2:
+            continue
+        false_positive, true_positive, _ = roc_curve(binary, probability)
+        rows.extend(
+            {"curve": "ROC", "class_label": f"Class {label}", "x": x, "y": y}
+            for x, y in zip(false_positive, true_positive, strict=True)
+        )
+        precision, recall, _ = precision_recall_curve(binary, probability)
+        rows.extend(
+            {"curve": "Precision-recall", "class_label": f"Class {label}", "x": x, "y": y}
+            for x, y in zip(recall, precision, strict=True)
+        )
+        observed, predicted = calibration_curve(binary, probability, n_bins=10, strategy="quantile")
+        rows.extend(
+            {"curve": "Calibration", "class_label": f"Class {label}", "x": x, "y": y}
+            for x, y in zip(predicted, observed, strict=True)
+        )
+    return pd.DataFrame(rows)
 
 
 def prediction_observed_figure(frame: pd.DataFrame, *, title: str) -> go.Figure:

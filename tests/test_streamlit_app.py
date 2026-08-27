@@ -2,7 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pandas as pd
 from streamlit.testing.v1 import AppTest
+
+from app_helpers.correlations import (
+    add_categorical_across_module_fdr,
+    calculate_categorical_associations,
+)
 
 import app_helpers.charts as chart_helpers
 
@@ -420,3 +426,54 @@ def test_streamlit_pathway_resolved_mdc_controls_both_module_sets() -> None:
     ).run()
     assert_app_clean(app)
     assert widget_with_label(app.selectbox, "KEGG category detail").value
+
+
+def test_nominal_cluster_statistics_never_use_numeric_correlation() -> None:
+    rows = []
+    for module in (1, 2):
+        for cluster, values in {
+            1: [0, 1, 2, 3, 4],
+            2: [5, 6, 7, 8, 9],
+            3: [10, 11, 12, 13],  # displayed but excluded: n < 5
+        }.items():
+            rows.extend(
+                {
+                    "module": module,
+                    "component": "CT",
+                    "diagnosis_group": "All donors",
+                    "metric_value": value + module,
+                    "clusters": cluster,
+                }
+                for value in values
+            )
+    source = pd.DataFrame(rows)
+    result = calculate_categorical_associations(
+        source,
+        ["module", "component", "diagnosis_group"],
+    )
+    assert set(result["clusters_tested"]) == {"1,2"}
+    assert set(result["clusters_excluded_small_n"]) == {"3"}
+    assert result["epsilon_squared"].between(0, 1).all()
+    assert not {"pearson_r", "spearman_rho"}.intersection(result.columns)
+    adjusted = add_categorical_across_module_fdr(
+        result,
+        family_columns=["component", "diagnosis_group", "outcome"],
+    )
+    assert adjusted["categorical_fdr_module_family_n"].eq(2).all()
+
+
+def test_streamlit_nominal_cluster_association_and_heatmap_render() -> None:
+    app = AppTest.from_file(APP, default_timeout=240).run()
+    assert_app_clean(app)
+    app = preserve_legacy_pills_state(app)
+    outcome = widget_with_label(app.selectbox, "Association outcome")
+    app = outcome.set_value("clusters").run()
+    assert_app_clean(app)
+    assert any("Cluster labels are nominal" in caption.value for caption in app.caption)
+
+    app = select_view(app, "Correlation heatmaps")
+    assert_app_clean(app)
+    association_type = widget_with_label(app.radio, "Association type")
+    app = association_type.set_value("Nominal ROSMAP clusters").run()
+    assert_app_clean(app)
+    assert widget_with_label(app.checkbox, "Show only rows with at least one cluster FDR < 0.05")
