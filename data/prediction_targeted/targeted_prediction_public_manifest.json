@@ -18,14 +18,16 @@
     "primary",
     "secondary"
   ],
-  "completed_full_variant_transformations": [],
+  "completed_full_variant_transformations": [
+    "raw"
+  ],
   "completed_outer_folds": 25,
   "completed_transformations": [
     "asinh",
     "raw",
     "rint"
   ],
-  "created_utc": "2026-08-25T12:37:58.224157+00:00",
+  "created_utc": "2026-08-27T12:11:24.014511+00:00",
   "evaluation_designs": {
     "differential_edge_sensitivity": "one_outer_cycle_with_frozen_all_edge_panel_and_regularization",
     "primary": "repeated_nested_cv",
@@ -84,7 +86,7 @@
       "sha256": "6d6220f5fba5ca5fa1e30ecf4ee890f3b801daf3f885d8b52122d31b4c43275c"
     },
     "targeted_fold_performance.parquet": {
-      "bytes": 1829911,
+      "bytes": 2231134,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -114,8 +116,8 @@
         "reason",
         "n_transcriptomic_predictors"
       ],
-      "rows": 652000,
-      "sha256": "f21d1ce98e0bbcb76324848a8b6df94b1e01173be2af4413b482745b3f21b907"
+      "rows": 742400,
+      "sha256": "d690c1fa399c2b91b55ae0036d3716b1b8380e0e7151010c95c00c33bc29ce69"
     },
     "targeted_inner_k_scores.parquet": {
       "bytes": 194860,
@@ -2503,7 +2505,7 @@
       "sha256": "8d9dfcfaeee856ef59fbfe1ca74b47fdb7269884f1dc4223e627474f7670573e"
     },
     "targeted_oof_performance.parquet": {
-      "bytes": 128271,
+      "bytes": 157331,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -2525,8 +2527,8 @@
         "value",
         "n_oof"
       ],
-      "rows": 26080,
-      "sha256": "b18d4123a8ba2f81e652f2ed315d70cf11701be6d3a0ca4576f3fad1be66d6ab"
+      "rows": 29696,
+      "sha256": "6663b6c05c9df3c7ddb58556d5e48dbcdc53902904ddd06b2d8a818b2eb00243"
     },
     "targeted_oof_predictions.parquet": {
       "columns": [
@@ -2742,7 +2744,7 @@
           "sha256": "01e858ed08e839f5bc0964ca7141124d87e812e4aa2bec14986be25d34e2c039"
         },
         "raw__exploratory__control_derived__control_anchored.parquet": {
-          "bytes": 5019598,
+          "bytes": 7738540,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2774,11 +2776,11 @@
             "selected_k",
             "outer_repeats_averaged"
           ],
-          "rows": 569376,
-          "sha256": "7d6f597b067b26eb55395b800697dc8fc79f1358fe3d3be79f6753f02220795b"
+          "rows": 759168,
+          "sha256": "b1e2caa8bf8417c675f6feeeb7ef3183755103e4ad000273d28e634b5c1b9ab8"
         },
         "raw__primary__control_derived__control_anchored.parquet": {
-          "bytes": 204808,
+          "bytes": 205042,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2811,10 +2813,10 @@
             "outer_repeats_averaged"
           ],
           "rows": 15888,
-          "sha256": "b43f4a8953b03e5bfafab3c61b5f4e91ef72c9b45cb69b0793a38de37d2e5b69"
+          "sha256": "bc559b06044a6af33665d4621592e9dd4aa4c07fc0a6713871a37d3124d79c35"
         },
         "raw__secondary__control_derived__control_anchored.parquet": {
-          "bytes": 1823212,
+          "bytes": 2882339,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2846,11 +2848,11 @@
             "selected_k",
             "outer_repeats_averaged"
           ],
-          "rows": 88242,
-          "sha256": "5c6c779842c9ab939ae488af4d0adbf19c07409128086e1f06a1fbe1ba49d9db"
+          "rows": 117656,
+          "sha256": "541092ca59ad485eba8753fefa7f2054fac3b43e27057e510f279b6fb2d517e6"
         },
         "raw__secondary__full_cohort__control_anchored.parquet": {
-          "bytes": 139945,
+          "bytes": 204830,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2882,11 +2884,11 @@
             "selected_k",
             "outer_repeats_averaged"
           ],
-          "rows": 11916,
-          "sha256": "eb6c7e121f454922bde728f825eaaa4b3792e803a0d90117eb2cbab538c138c4"
+          "rows": 15888,
+          "sha256": "8f895fb8ce575716bc7f19885c96001507f2b523a8995a785d45b5cefc105247"
         },
         "raw__secondary__full_cohort__standard.parquet": {
-          "bytes": 139590,
+          "bytes": 204496,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2918,8 +2920,8 @@
             "selected_k",
             "outer_repeats_averaged"
           ],
-          "rows": 11916,
-          "sha256": "391adec3e2ad69a474c4166a12d39e098f98a81ca6bde1d9367f2b17db321b05"
+          "rows": 15888,
+          "sha256": "5c34e5d1863ced49d7c2239e6fcde7591be4fce62f4db6182273373c15af79b2"
         },
         "rint__exploratory__control_derived__control_anchored.parquet": {
           "bytes": 3156897,
@@ -3102,7 +3104,7 @@
           "sha256": "b92a434bb4faf10b81abc08132f4b63dea7424f323703a9dc42e99478275bef5"
         }
       },
-      "rows": 1621826,
+      "rows": 1848976,
       "shards": 15
     },
     "targeted_panel_selection.parquet": {
@@ -3218,7 +3220,7 @@
       "sha256": "ea29bd42752c11c7719058b81bfcd580710aee08891e8233805542c0c6abb417"
     },
     "targeted_top_coefficients.parquet": {
-      "bytes": 6776541,
+      "bytes": 8604716,
       "columns": [
         "coefficient_label",
         "feature_name",
@@ -3246,8 +3248,8 @@
         "kegg_fdr",
         "kegg_role"
       ],
-      "rows": 378122,
-      "sha256": "3fdc55573dba911224056de51e54d2c5055d0f9c89bfdf30b448d3cf4ac4af0c"
+      "rows": 456319,
+      "sha256": "2669a2addd09f2186f5c4c7bb7cf0cc26c14e11e88af34038244ae5deca1c24f"
     },
     "targeted_transformation_comparisons.parquet": {
       "bytes": 61196,
@@ -3282,7 +3284,7 @@
       "sha256": "54394d6140084694f525b87246c8741fe99c49cdc913b80e533907277a6e6fd5"
     },
     "targeted_transformation_status.parquet": {
-      "bytes": 8171,
+      "bytes": 8185,
       "columns": [
         "score_transform",
         "status",
@@ -3297,7 +3299,7 @@
         "primary_scale"
       ],
       "rows": 3,
-      "sha256": "a854b0a8434f39fe18e4a5db5d33cb225591cd3870dc049d1f130d701098cfe8"
+      "sha256": "f2b1116702cce1ad06a64bc10bec8dc9b24015992297d478e3e0612655dec79e"
     }
   },
   "interim": true,
@@ -3399,7 +3401,7 @@
   },
   "transformation_status": {
     "asinh": "running",
-    "raw": "running",
+    "raw": "complete",
     "rint": "running"
   }
 }

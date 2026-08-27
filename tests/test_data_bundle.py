@@ -170,6 +170,7 @@ def test_primary_raw_eigengene_milestone_is_complete_and_selectable() -> None:
     assert manifest["primary_joint_milestone_complete"] is True
     assert manifest["primary_joint_configurations"] == 300
     assert manifest["base_raw_catalog_complete"] is True
+    assert "raw" in manifest["completed_full_variant_transformations"]
 
     performance = data.load_targeted_prediction_table(
         "oof_performance", evidence_tier="primary", score_transform="raw"
@@ -212,6 +213,21 @@ def test_primary_raw_eigengene_milestone_is_complete_and_selectable() -> None:
         "CT_pooled",
         "TS_pooled",
     }.issubset(set(standalone["predictor_block"]))
+
+    full_variant_counts = (
+        all_raw.loc[:, identity]
+        .drop_duplicates()
+        .groupby("model_variant", observed=True)
+        .size()
+    )
+    assert set(full_variant_counts.index) == {
+        "dummy",
+        "covariates",
+        "network_only",
+        "covariates_plus_network",
+        *expected_variants,
+    }
+    assert full_variant_counts.eq(7_325).all()
 
 
 def test_all_modules_and_m1918_are_packaged() -> None:
