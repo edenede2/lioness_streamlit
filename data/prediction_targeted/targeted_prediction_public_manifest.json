@@ -1,16 +1,15 @@
 {
   "analysis": "fully_nested_targeted_module_prediction",
-  "base_raw_catalog_complete": true,
-  "base_raw_configurations": 29300,
+  "base_raw_catalog_complete": false,
+  "base_raw_configurations": 31100,
   "base_transform_configuration_counts": {
     "asinh": 29300,
-    "raw": 29300,
+    "raw": 31100,
     "rint": 29300
   },
   "complete": false,
   "completed_base_transformations": [
     "asinh",
-    "raw",
     "rint"
   ],
   "completed_evidence_tiers": [
@@ -18,16 +17,13 @@
     "primary",
     "secondary"
   ],
-  "completed_full_variant_transformations": [
-    "raw"
-  ],
+  "completed_full_variant_transformations": [],
   "completed_outer_folds": 25,
   "completed_transformations": [
     "asinh",
-    "raw",
     "rint"
   ],
-  "created_utc": "2026-08-27T12:11:24.014511+00:00",
+  "created_utc": "2026-08-27T13:53:16.515409+00:00",
   "evaluation_designs": {
     "differential_edge_sensitivity": "one_outer_cycle_with_frozen_all_edge_panel_and_regularization",
     "primary": "repeated_nested_cv",
@@ -38,14 +34,24 @@
     "primary": "Control-derived Control-referenced AD-vs-Control all-edge standard-pruned connectivity",
     "secondary": "CT-specific/resolved, CogDx/three-class transfer, and full-cohort benchmarks"
   },
-  "expected_base_raw_configurations": 29300,
+  "expected_base_configurations_by_transform": {
+    "asinh": 29300,
+    "raw": 33500,
+    "rint": 29300
+  },
+  "expected_base_raw_configurations": 33500,
   "expected_outer_folds": 25,
   "expected_primary_joint_configurations": 300,
   "expected_primary_transcriptomic_configurations": 600,
-  "expected_standalone_transcriptomic_configurations": 14650,
+  "expected_standalone_transcriptomic_configurations": 16750,
+  "expected_total_configurations_by_transform": {
+    "asinh": 58600,
+    "raw": 67000,
+    "rint": 58600
+  },
   "files": {
     "targeted_consensus_panels.parquet": {
-      "bytes": 108771,
+      "bytes": 108596,
       "columns": [
         "module",
         "selected_outer_folds",
@@ -65,10 +71,10 @@
         "kegg_role"
       ],
       "rows": 6038,
-      "sha256": "e03da21a66b03c7194e853ff5de76bc74579b58aea27d041b5279837ea3c3391"
+      "sha256": "629735d18e72fb8cc85ce347266dfe30d9e96861d931e5b1d3119dc61a114e04"
     },
     "targeted_consensus_transform_overlap.parquet": {
-      "bytes": 8673,
+      "bytes": 8566,
       "columns": [
         "module_definition",
         "network_method",
@@ -83,10 +89,10 @@
         "shared_modules"
       ],
       "rows": 24,
-      "sha256": "6d6220f5fba5ca5fa1e30ecf4ee890f3b801daf3f885d8b52122d31b4c43275c"
+      "sha256": "67ca051d137e328cee1244fc72877b2ce85a24354611cb5b6db88eebbf51e828"
     },
     "targeted_fold_performance.parquet": {
-      "bytes": 2231134,
+      "bytes": 2295771,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -116,11 +122,11 @@
         "reason",
         "n_transcriptomic_predictors"
       ],
-      "rows": 742400,
-      "sha256": "d690c1fa399c2b91b55ae0036d3716b1b8380e0e7151010c95c00c33bc29ce69"
+      "rows": 771200,
+      "sha256": "91826ef6d2573e1fe63c9089dcccf5099eaf9a975f586a859e5a2c0a734349a4"
     },
     "targeted_inner_k_scores.parquet": {
-      "bytes": 194860,
+      "bytes": 194688,
       "columns": [
         "outer_repeat",
         "outer_fold",
@@ -138,10 +144,10 @@
         "transformation_role"
       ],
       "rows": 27000,
-      "sha256": "154b7ab8347f44fc3d098cab4df8864bd1550633042ea7e8ddcde6b988a19ff2"
+      "sha256": "da8d4e1791529f599865699eff3651c6e6797f6a94b698365e4031aabb6abed0"
     },
     "targeted_masked_fold_performance.parquet": {
-      "bytes": 83575,
+      "bytes": 83278,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -168,10 +174,10 @@
         "transformation_role"
       ],
       "rows": 22080,
-      "sha256": "62ba1defb42ed7664632d5a213a2400a8088e85d0d6163a3c41ab835c1bdc902"
+      "sha256": "fdefa751b1856c58e28e26aedb8e65a4cca6876547ace7aa8b104b5a808ecd10"
     },
     "targeted_masked_oof_performance.parquet": {
-      "bytes": 30119,
+      "bytes": 29886,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -194,7 +200,7 @@
         "transformation_role"
       ],
       "rows": 4416,
-      "sha256": "e084d86f59649b498c8d828202b2878381be4285735bacc3f50ce57de5c2a579"
+      "sha256": "8431bd5234adf7bca42eb772984004969d805d2e0d6fde25cfd50eb24adedb5d"
     },
     "targeted_masked_oof_predictions.parquet": {
       "columns": [
@@ -229,7 +235,7 @@
       ],
       "files": {
         "global_fdr05__retained_edge__cogdx.parquet": {
-          "bytes": 172030,
+          "bytes": 171709,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -261,10 +267,10 @@
             "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "23d6ea9e7f87db19c332562c0e39c604e6331037e40452727865f1f9cdeb5ba3"
+          "sha256": "b99f6ff212ccf06aae4a0bc3515b086603df5199c4c724b94995a90f87939e45"
         },
         "global_fdr05__retained_edge__cogn_global.parquet": {
-          "bytes": 58417,
+          "bytes": 58095,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -296,10 +302,10 @@
             "transformation_role"
           ],
           "rows": 4716,
-          "sha256": "2b9e33240a402d5fa15472b47db88a11815bd7389d4613e786ce8eaec47ead35"
+          "sha256": "015a94faec8fc4627611c615a44bd2395081d7b51277b1e71479143a49be7ea9"
         },
         "global_fdr05__retained_edge__cogng_demog_slope.parquet": {
-          "bytes": 58764,
+          "bytes": 58442,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -331,10 +337,10 @@
             "transformation_role"
           ],
           "rows": 4932,
-          "sha256": "3b5ad12d9bf5dbab95317a4d1ca5871c2095dae561ab604fa0d094cc9237036e"
+          "sha256": "2e035bf90848f85b04b082cf99f94a11ff3c1c0e0474f5d71a921a38e98ffddf"
         },
         "global_fdr05__retained_edge__cogng_path_slope.parquet": {
-          "bytes": 31894,
+          "bytes": 31572,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -366,10 +372,10 @@
             "transformation_role"
           ],
           "rows": 3756,
-          "sha256": "51048c31df5dca85d1baee44cfd715fc96c828bc09988f33129c8bbcf4492f46"
+          "sha256": "3999a263f26ae9ce084ed49a79e37bb92c4f02f2a1c1a7a8983a45889a8a33ce"
         },
         "global_fdr05__retained_edge__diagnosis_binary.parquet": {
-          "bytes": 66806,
+          "bytes": 66484,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -401,10 +407,10 @@
             "transformation_role"
           ],
           "rows": 3972,
-          "sha256": "5b947984cd16dd28c6dded4ce7a4f59d3e3878b4d0eea5cce3c8f8e372801ac7"
+          "sha256": "2a8151ef2502c4c3ad69d26d04ac16a675b935e022c7e2af478ab0ca670f95b3"
         },
         "global_fdr05__retained_edge__motor10_demog_slope.parquet": {
-          "bytes": 38014,
+          "bytes": 37692,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -436,10 +442,10 @@
             "transformation_role"
           ],
           "rows": 4608,
-          "sha256": "d79b8906bacfa01735ad50e6f3380dc10d01f840f413976a68b0d355aeb45284"
+          "sha256": "30bc7b9aee82136ba581445373de28f36d51172a4621002d9862445b63713a7b"
         },
         "global_fdr05__retained_edge__parkinsonism.parquet": {
-          "bytes": 73917,
+          "bytes": 73597,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -471,10 +477,10 @@
             "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "7b69fc9e434f0bf1c0512e6e43d0b9e6cd9ac9cbb39905e5b6638ba02d9200c8"
+          "sha256": "3f38e23d74b2212411d82e4e7503ba7ccff57d9eafe804b1b87d95ee1f19d977"
         },
         "global_fdr05__retained_edge__sqrt_parksc_demog_slope.parquet": {
-          "bytes": 34846,
+          "bytes": 34524,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -506,10 +512,10 @@
             "transformation_role"
           ],
           "rows": 4860,
-          "sha256": "1b0ff6b39567f1086c534e1feb5ab054375e16bb81d57752655f59181daa18b1"
+          "sha256": "c529652d8422d9b2f5a56cd7ce8345a96fdaf2f025525d6e29fd956c8c5be723"
         },
         "global_fdr05__standard_pruned__cogdx.parquet": {
-          "bytes": 171448,
+          "bytes": 171127,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -541,10 +547,10 @@
             "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "a163eadeddb7f3ec15d3b42fc677e80e1649ef8284068686b20c8f83efa57ef4"
+          "sha256": "fbd9c4eb43ae34b8db2ede1e1ffd70ba7dbbfa16769e7e4a5e2ad4bd21ff89a8"
         },
         "global_fdr05__standard_pruned__cogn_global.parquet": {
-          "bytes": 58399,
+          "bytes": 58077,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -576,10 +582,10 @@
             "transformation_role"
           ],
           "rows": 4716,
-          "sha256": "7411c0a0cee247c427e650e66d71f3c096185c7aa01f4ba6c871d7ca0d1e3311"
+          "sha256": "91d276ed329d5a6ffc97053846865b90bcb56c726a6532bbf797fd04580f2669"
         },
         "global_fdr05__standard_pruned__cogng_demog_slope.parquet": {
-          "bytes": 58724,
+          "bytes": 58402,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -611,10 +617,10 @@
             "transformation_role"
           ],
           "rows": 4932,
-          "sha256": "b08275e80d8f3e3cf2a585faea44424f4dc25e156a075605407979aa9ee7fc81"
+          "sha256": "4ed5553e3044b46f4a1eb341e5420bce422a5fd7862d566ec0f3f6aeee227f03"
         },
         "global_fdr05__standard_pruned__cogng_path_slope.parquet": {
-          "bytes": 31938,
+          "bytes": 31616,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -646,10 +652,10 @@
             "transformation_role"
           ],
           "rows": 3756,
-          "sha256": "6f88f15a5d35f54ec739a942288e5a2567f873f0bbcfc01fa95aab09a24b22f6"
+          "sha256": "5d6a4f41e4ddaed209cffa318cb71bdedebd7c6647c7eb389e02e75ac9c594bf"
         },
         "global_fdr05__standard_pruned__diagnosis_binary.parquet": {
-          "bytes": 66842,
+          "bytes": 66520,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -681,10 +687,10 @@
             "transformation_role"
           ],
           "rows": 3972,
-          "sha256": "a694abd6817cdf190cce3e00d5d6f45df95ffcdecbce67a70fc3b528297fa452"
+          "sha256": "1dc3df73dbc391bc2fd4e8481d8ecd79ab4acf1be51cf265a906a50f0d32f90f"
         },
         "global_fdr05__standard_pruned__motor10_demog_slope.parquet": {
-          "bytes": 38042,
+          "bytes": 37720,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -716,10 +722,10 @@
             "transformation_role"
           ],
           "rows": 4608,
-          "sha256": "0bc67a2b7b42e36ca2621a07f1b941499f85f29063b79e6907732e80194ce6d8"
+          "sha256": "626bc8ea3578afaac1db12b5cc5cfb2dc2284efc915ab595d8fd26dbc301bb04"
         },
         "global_fdr05__standard_pruned__parkinsonism.parquet": {
-          "bytes": 73876,
+          "bytes": 73556,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -751,10 +757,10 @@
             "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "5188b6b4ea1e78a17712647ea25332fea3f6b46b68b677b2cc4a636847642e0b"
+          "sha256": "7ed57a4914bfc3307ebe551b6d0b8990131d21bf680e761d0b6d5911b4b99ba0"
         },
         "global_fdr05__standard_pruned__sqrt_parksc_demog_slope.parquet": {
-          "bytes": 34819,
+          "bytes": 34497,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -786,10 +792,10 @@
             "transformation_role"
           ],
           "rows": 4860,
-          "sha256": "e4cd3e1e22740934535acc96066a7766b99ace4bfb0b10caadaec6304e29e7b6"
+          "sha256": "c21d6cde6e78cf615e20ee1575e308006a5056baead5d6fb2dd7fd64da6d0916"
         },
         "global_fdr10__retained_edge__cogdx.parquet": {
-          "bytes": 172140,
+          "bytes": 171819,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -821,10 +827,10 @@
             "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "5369c696a7aeda904929a34ac287a89cd3e339fd527bcf2a6f52008963984537"
+          "sha256": "4ae55e15a44a47717249af55b7c99129eb6d9ea441f4016304e3a0be11ba331f"
         },
         "global_fdr10__retained_edge__cogn_global.parquet": {
-          "bytes": 58384,
+          "bytes": 58062,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -856,10 +862,10 @@
             "transformation_role"
           ],
           "rows": 4716,
-          "sha256": "4169398e1f85c8f322332833b8db0f7bda030df2ef61cdd22d2ad916c2beeb2f"
+          "sha256": "0500195b2ecb3f6ce167124ee692dc0320d9130e100f9e05625427bf57c3cb3c"
         },
         "global_fdr10__retained_edge__cogng_demog_slope.parquet": {
-          "bytes": 58618,
+          "bytes": 58296,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -891,10 +897,10 @@
             "transformation_role"
           ],
           "rows": 4932,
-          "sha256": "3caee6dd0cb7e3b7431eed3f0136e2037dfd3ef0705df4ec41d38bfb9b12cd49"
+          "sha256": "38285955cbe20c85b08b70a0eca08a04a6426d336939b8b5be18ecea20e6527c"
         },
         "global_fdr10__retained_edge__cogng_path_slope.parquet": {
-          "bytes": 31897,
+          "bytes": 31575,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -926,10 +932,10 @@
             "transformation_role"
           ],
           "rows": 3756,
-          "sha256": "1d75a7527b746a9ed2d02bfba5cb098eeb0eff6e041ca4477e33dcd1ec1ac365"
+          "sha256": "8a79d81740d798e28e66acb0ea6948f51dea9a29b58c7bf6be2ff87f64bfd1b7"
         },
         "global_fdr10__retained_edge__diagnosis_binary.parquet": {
-          "bytes": 66840,
+          "bytes": 66518,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -961,10 +967,10 @@
             "transformation_role"
           ],
           "rows": 3972,
-          "sha256": "b819943f95d05043f65c5a6cb5431befed615a67bf007025d82e3b22b108fc1b"
+          "sha256": "acbdba85d2996aac5e80d99a539fa68702287df6e180d2803d9c16d120133237"
         },
         "global_fdr10__retained_edge__motor10_demog_slope.parquet": {
-          "bytes": 38078,
+          "bytes": 37756,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -996,10 +1002,10 @@
             "transformation_role"
           ],
           "rows": 4608,
-          "sha256": "e8cccad3fcd788caee7dc31b460bb7288e2718e81819a873c7a4a4af9fa06140"
+          "sha256": "ee7631477b7b9d61b12138074ccdc8c8e0ef48c097bf481e39527736449acb09"
         },
         "global_fdr10__retained_edge__parkinsonism.parquet": {
-          "bytes": 73904,
+          "bytes": 73584,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1031,10 +1037,10 @@
             "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "e53f5588314c322fdee20566f90591c51c54b818a6765f79448edb5ba43e02ab"
+          "sha256": "c25977027a3b4ca058f447c6c19d78f18b72e0ae5da41fd2259af8fce52eea04"
         },
         "global_fdr10__retained_edge__sqrt_parksc_demog_slope.parquet": {
-          "bytes": 37085,
+          "bytes": 36763,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1066,10 +1072,10 @@
             "transformation_role"
           ],
           "rows": 4860,
-          "sha256": "d8b9c5a18900bf0cef66cf16e2a4472b477bcd9f068fa2dbe42dab5cb6f88fa4"
+          "sha256": "ae735dc87c8a9cd9c91fbdbda4533a2319da7042dd86b29ba1909c19a1f69860"
         },
         "global_fdr10__standard_pruned__cogdx.parquet": {
-          "bytes": 172120,
+          "bytes": 171799,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1101,10 +1107,10 @@
             "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "3272f798a98472fd50f5089aececab418787130c1bdaf37a08b11cbcec9460ef"
+          "sha256": "822413e2074fe61b5e21b856bc072b083c9982b2b54ae54da4f366362cf2d588"
         },
         "global_fdr10__standard_pruned__cogn_global.parquet": {
-          "bytes": 58348,
+          "bytes": 58026,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1136,10 +1142,10 @@
             "transformation_role"
           ],
           "rows": 4716,
-          "sha256": "d62927e09e63824f8a7eee1418c13a3f00f62bc81cf043785b4e7dc9c939cb54"
+          "sha256": "c4d9901b2348ea96c14806d83b625a2c8401168f4286b59a19e96fc8c2334183"
         },
         "global_fdr10__standard_pruned__cogng_demog_slope.parquet": {
-          "bytes": 58705,
+          "bytes": 58383,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1171,10 +1177,10 @@
             "transformation_role"
           ],
           "rows": 4932,
-          "sha256": "755b39002b1354fc05c1b489a43abb5706581332d78eb5fd4cafeacb370d5e28"
+          "sha256": "2a57785e781546899a86d9f93c05c835aea005d7976a2872d9b5c8e6c24d5dc3"
         },
         "global_fdr10__standard_pruned__cogng_path_slope.parquet": {
-          "bytes": 31915,
+          "bytes": 31593,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1206,10 +1212,10 @@
             "transformation_role"
           ],
           "rows": 3756,
-          "sha256": "2a2be75c2b251ddbdf02b181f3f65f7be76cb78143d2d7b7e2a1b0fb1f30e348"
+          "sha256": "8d67478cbe8e04a0c3cdcc4b8b6accd3aa6047b0ac554501a62bad439edd115b"
         },
         "global_fdr10__standard_pruned__diagnosis_binary.parquet": {
-          "bytes": 66864,
+          "bytes": 66542,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1241,10 +1247,10 @@
             "transformation_role"
           ],
           "rows": 3972,
-          "sha256": "d94fdfce38994caa51d92532ff92b7cecd349ffa1a00e8ed35dc9e263e1ff88f"
+          "sha256": "2c770c2e0c062b5bd93048b49ba6c48d793e1814b8d71ee665d690d1f9d09e6c"
         },
         "global_fdr10__standard_pruned__motor10_demog_slope.parquet": {
-          "bytes": 38086,
+          "bytes": 37764,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1276,10 +1282,10 @@
             "transformation_role"
           ],
           "rows": 4608,
-          "sha256": "3d7b3186cdf4c3f17b68460b8e5e3eb0506ecece373e300049fa2d2f8c937c08"
+          "sha256": "47f8ec37b343e760614c8860347a6f81987e9956cf8e5b34110e38222d65ee75"
         },
         "global_fdr10__standard_pruned__parkinsonism.parquet": {
-          "bytes": 73902,
+          "bytes": 73582,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1311,10 +1317,10 @@
             "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "b6c5a6331e2f197377b032da877cbf8692c31173cca29d554874c2e170c1e06a"
+          "sha256": "541a712277a3362b0dd8a4a0ccb9ba8123e81f4055214004a225a74a0855d283"
         },
         "global_fdr10__standard_pruned__sqrt_parksc_demog_slope.parquet": {
-          "bytes": 37067,
+          "bytes": 36745,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1346,10 +1352,10 @@
             "transformation_role"
           ],
           "rows": 4860,
-          "sha256": "df7113e197721a29200b28f3d7e86fa082ee29acc94ca76c8e1733dae2f8ddf1"
+          "sha256": "25e30633fce4cd33b2da1840354e386c1fd557f2fa388bf8d492cd3d0e965b25"
         },
         "per_module_fdr05__retained_edge__cogdx.parquet": {
-          "bytes": 170873,
+          "bytes": 170552,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1381,10 +1387,10 @@
             "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "fc8c76d8bf62f7ed174cf04a89c178ebbe8504847b8900dce6737dc033457470"
+          "sha256": "b8be3cc1283533a4cbd51c5fda7f6c5dfb13f4cd234fd43df42c27b205af523a"
         },
         "per_module_fdr05__retained_edge__cogn_global.parquet": {
-          "bytes": 58467,
+          "bytes": 58145,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1416,10 +1422,10 @@
             "transformation_role"
           ],
           "rows": 4716,
-          "sha256": "0f99ecd1e9ac690de06860c3a18661bf9189e5a4999575b0fcaa83787de830b2"
+          "sha256": "4797a1ff3edb17e882b6825f6360ad80ae11ae517593f9e46710e349172bdc16"
         },
         "per_module_fdr05__retained_edge__cogng_demog_slope.parquet": {
-          "bytes": 58668,
+          "bytes": 58346,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1451,10 +1457,10 @@
             "transformation_role"
           ],
           "rows": 4932,
-          "sha256": "eaa0714cf51c460e91ad7086cd74ddc6db1335f33d3c7604d24218997967e5d5"
+          "sha256": "aa110fe4dcccbe96297ae2c3ff5f4094128d1e5e0f39db29b042171de6405742"
         },
         "per_module_fdr05__retained_edge__cogng_path_slope.parquet": {
-          "bytes": 31893,
+          "bytes": 31571,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1486,10 +1492,10 @@
             "transformation_role"
           ],
           "rows": 3756,
-          "sha256": "67c8b49a4605af8bf691d15502adffe270e023bf549ca720930720659f7011ab"
+          "sha256": "24285d621a31f1757c2542625e17e1da8c88f89d2b3f542e65e2dc2b12c1607e"
         },
         "per_module_fdr05__retained_edge__diagnosis_binary.parquet": {
-          "bytes": 66867,
+          "bytes": 66545,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1521,10 +1527,10 @@
             "transformation_role"
           ],
           "rows": 3972,
-          "sha256": "2040d6a58cb7a54710b52d00c0988915e28677e5e47a046e1f68642d4b534e60"
+          "sha256": "b14412fffb9157200ab63a2634dc7e894fe495cd85c453416723e35fabc852a8"
         },
         "per_module_fdr05__retained_edge__motor10_demog_slope.parquet": {
-          "bytes": 38098,
+          "bytes": 37776,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1556,10 +1562,10 @@
             "transformation_role"
           ],
           "rows": 4608,
-          "sha256": "8bed072149614a5ca73b143b63a18950a126ac63ea0ee63fe455cd591c813bb3"
+          "sha256": "06f4228f6783a13249a53910245aece4e8a5478b1a6da6fc4afb991090b5d63c"
         },
         "per_module_fdr05__retained_edge__parkinsonism.parquet": {
-          "bytes": 71272,
+          "bytes": 70952,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1591,10 +1597,10 @@
             "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "73049b1fcf4d6089282bd0fa606a28710136503a7d9b49442318133c4c30cca2"
+          "sha256": "17309a81e46726694ab1d4044d7774d59bf22ede9c10150add4acce1c06a9aa3"
         },
         "per_module_fdr05__retained_edge__sqrt_parksc_demog_slope.parquet": {
-          "bytes": 37152,
+          "bytes": 36830,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1626,10 +1632,10 @@
             "transformation_role"
           ],
           "rows": 4860,
-          "sha256": "f470ba6b1795ce6de55cd871efa11039ab0acba2c52b463f8e211db903500988"
+          "sha256": "d862c5b729fd383a4f4e1e10642ec6e49cb5099b1df55ade68f4691d9365a2e9"
         },
         "per_module_fdr05__standard_pruned__cogdx.parquet": {
-          "bytes": 171078,
+          "bytes": 170757,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1661,10 +1667,10 @@
             "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "cfd326b784cd0d0dfb56e4adda5f9b09f5c617d99db828c67daddbdc140bf238"
+          "sha256": "fe425fc2699890d28557bc5e6b9ea3cd7099586bbc1d1ef73945b2176a538b0e"
         },
         "per_module_fdr05__standard_pruned__cogn_global.parquet": {
-          "bytes": 58419,
+          "bytes": 58097,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1696,10 +1702,10 @@
             "transformation_role"
           ],
           "rows": 4716,
-          "sha256": "ac43e7c1513c1a88281f89766b2ed17d9eca756dad55144630c08f1650174338"
+          "sha256": "174a16b4112a897372ad3a3026fc0d093cf128a9d9f97789bbf8296f4c68a118"
         },
         "per_module_fdr05__standard_pruned__cogng_demog_slope.parquet": {
-          "bytes": 58745,
+          "bytes": 58423,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1731,10 +1737,10 @@
             "transformation_role"
           ],
           "rows": 4932,
-          "sha256": "e3cf091d74c585ec280ff4170a062667cbea2faba27ccc701880bf4b91362a40"
+          "sha256": "978c9fca845df382774e3f994a37940199d96d81a98984022f404a5a741d2be0"
         },
         "per_module_fdr05__standard_pruned__cogng_path_slope.parquet": {
-          "bytes": 31923,
+          "bytes": 31601,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1766,10 +1772,10 @@
             "transformation_role"
           ],
           "rows": 3756,
-          "sha256": "c19c0e76a9a074e12fd821dd055f075ae72cfc6f5d2a1cf194b0745fe794a6f9"
+          "sha256": "85ee91142b952d6410b9c8b419995993d7dbcf961c3b76a47151a800edf464ee"
         },
         "per_module_fdr05__standard_pruned__diagnosis_binary.parquet": {
-          "bytes": 66863,
+          "bytes": 66541,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1801,10 +1807,10 @@
             "transformation_role"
           ],
           "rows": 3972,
-          "sha256": "2b85d6927424c35288c4a314545ad6780b9942fdfae358ce7925f232eb0198ea"
+          "sha256": "e5f968547616578b005fd0ab535897c833374c50508bfcb211736f048f947448"
         },
         "per_module_fdr05__standard_pruned__motor10_demog_slope.parquet": {
-          "bytes": 38123,
+          "bytes": 37801,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1836,10 +1842,10 @@
             "transformation_role"
           ],
           "rows": 4608,
-          "sha256": "6f263f43b56139362cc80d92610d81802a1ec1476655f187cbceda623679e26d"
+          "sha256": "10d19444f0552ccac619dc7a08391254eb5c938d0f9a88d21555f6d40a710cb8"
         },
         "per_module_fdr05__standard_pruned__parkinsonism.parquet": {
-          "bytes": 71262,
+          "bytes": 70942,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1871,10 +1877,10 @@
             "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "5137f28da589d6f781e4bbcbef38a6b497a025cedba1fa34c402e50b99da2400"
+          "sha256": "70d7b4de16a24a71ade86e5027fd67839b256636d6926194932e1129589b8c3f"
         },
         "per_module_fdr05__standard_pruned__sqrt_parksc_demog_slope.parquet": {
-          "bytes": 37121,
+          "bytes": 36799,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1906,10 +1912,10 @@
             "transformation_role"
           ],
           "rows": 4860,
-          "sha256": "2be981d20c95eff633983ec4070f752fff1b45ed72d48726dc699fe12e484c1b"
+          "sha256": "b9c082b93c7b6e9d34f7e268132bc49cc3df5fe58bdc3ccfccfbbfdbcc905462"
         },
         "per_module_fdr10__retained_edge__cogdx.parquet": {
-          "bytes": 172278,
+          "bytes": 171957,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1941,10 +1947,10 @@
             "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "a208fa6fa0c88cef9d9733df0354b2a3a4c2a8516642bfb14b751c071c66e640"
+          "sha256": "8c29074de7d7aff13a5bf6c96145232c26be76025797435457f69b635233ba2b"
         },
         "per_module_fdr10__retained_edge__cogn_global.parquet": {
-          "bytes": 58430,
+          "bytes": 58108,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -1976,10 +1982,10 @@
             "transformation_role"
           ],
           "rows": 4716,
-          "sha256": "5bb0e691cf0345c31db36237208a6bfcbd8e16553b08d1f0cb38cbc57be0e2c7"
+          "sha256": "b4a9a7c7445f8c683f7a8a5f02f92cf84212662c97d0a1ad70c365eba8730dec"
         },
         "per_module_fdr10__retained_edge__cogng_demog_slope.parquet": {
-          "bytes": 58695,
+          "bytes": 58373,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2011,10 +2017,10 @@
             "transformation_role"
           ],
           "rows": 4932,
-          "sha256": "8513f3fe4786be26e25391bd704537c369e3cb3b5c837a4765fc9ac3e5b349a7"
+          "sha256": "0e441be6e5b5845ba26ce9a9df097c2b0fc7c1f085c022a92ac2c8bf83d411ed"
         },
         "per_module_fdr10__retained_edge__cogng_path_slope.parquet": {
-          "bytes": 31913,
+          "bytes": 31591,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2046,10 +2052,10 @@
             "transformation_role"
           ],
           "rows": 3756,
-          "sha256": "a72bb4530046b6eeded6114494f6ad413f516b0a402c9736adacce1625c1ff6e"
+          "sha256": "800fc36978147886c66a965197e2eef374674a5b9cce8f4c709f019b06b9fa5e"
         },
         "per_module_fdr10__retained_edge__diagnosis_binary.parquet": {
-          "bytes": 66831,
+          "bytes": 66509,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2081,10 +2087,10 @@
             "transformation_role"
           ],
           "rows": 3972,
-          "sha256": "f93a0361b1bdd6d00cfa5cb0070cf0bfcf8285f39c4e7bb9e8fbe5464e68dfcf"
+          "sha256": "049e1c1a7512714a632b6f850906f7b8114022a7a11f194ba5c0d665364c1996"
         },
         "per_module_fdr10__retained_edge__motor10_demog_slope.parquet": {
-          "bytes": 38103,
+          "bytes": 37781,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2116,10 +2122,10 @@
             "transformation_role"
           ],
           "rows": 4608,
-          "sha256": "10ed5a69ba11ac3482b46e7f4f8d0f3061750f6c9e232da2ac6fb6ff61fb1a03"
+          "sha256": "92623f9913a98d28b77bedd7728eb67016c7d6e799c4aeb9d04d0429a9e6c028"
         },
         "per_module_fdr10__retained_edge__parkinsonism.parquet": {
-          "bytes": 73900,
+          "bytes": 73580,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2151,10 +2157,10 @@
             "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "b935f578ea3388231cbbc347715f62153ec67aec90fab14b03c3e4f5210f9978"
+          "sha256": "37d5e147e7eec5ac94a3bc1386e8f44eb77a77e603af519b1e3ab9a9c2616700"
         },
         "per_module_fdr10__retained_edge__sqrt_parksc_demog_slope.parquet": {
-          "bytes": 37118,
+          "bytes": 36796,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2186,10 +2192,10 @@
             "transformation_role"
           ],
           "rows": 4860,
-          "sha256": "450cb2587e4fa63281b93abaa5128c07648b37fa30e738bd585192d7190a8ba7"
+          "sha256": "bbc56e904d1c1b992e98642a5ca71cc25fec319b0afab852caeb580e24d6a39a"
         },
         "per_module_fdr10__standard_pruned__cogdx.parquet": {
-          "bytes": 172282,
+          "bytes": 171961,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2221,10 +2227,10 @@
             "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "60b7cbe41bfd15b839ea3a4416e7f52d557586dffe5fda1d50e314f622205454"
+          "sha256": "849b561a68b7999d843e29d990b055c4853b784ae594856ed1c6c9b40b929362"
         },
         "per_module_fdr10__standard_pruned__cogn_global.parquet": {
-          "bytes": 58417,
+          "bytes": 58095,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2256,10 +2262,10 @@
             "transformation_role"
           ],
           "rows": 4716,
-          "sha256": "912bf2c0daee8dd2bb5e77f22f2754adbb2f2393b7df520e05a82017f9046041"
+          "sha256": "cb929843afd26a83d9a724e714433d2bf1f7452b9615613c9fdc1d7f1c3d65dc"
         },
         "per_module_fdr10__standard_pruned__cogng_demog_slope.parquet": {
-          "bytes": 58682,
+          "bytes": 58360,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2291,10 +2297,10 @@
             "transformation_role"
           ],
           "rows": 4932,
-          "sha256": "a8e66dd1dfeb8af007391bd9a0c90021a596f15e144be45dbaa340820a5b88cf"
+          "sha256": "09e8b9dcdb94429e70b06d76b766b5f529d469c50fff892f5f7166696ec6c5f8"
         },
         "per_module_fdr10__standard_pruned__cogng_path_slope.parquet": {
-          "bytes": 31939,
+          "bytes": 31617,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2326,10 +2332,10 @@
             "transformation_role"
           ],
           "rows": 3756,
-          "sha256": "fa9d6ad6a20b8725d92b6cbb6813984f1cee9b6027293695105a6685e1475331"
+          "sha256": "603010cc7e5a8d23339f11a9fdc39f9ee7fc21a8dfba4e437103ffaf5fc67a8f"
         },
         "per_module_fdr10__standard_pruned__diagnosis_binary.parquet": {
-          "bytes": 66860,
+          "bytes": 66538,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2361,10 +2367,10 @@
             "transformation_role"
           ],
           "rows": 3972,
-          "sha256": "5e6e2e2e1dd9f8440afa73c6752dba98b4d490aa747a9e9a6265c7d635a00f01"
+          "sha256": "73489f2d73dec35f61ee28011cd7c442055b09d9ebf850bdf8009c5ef688e2e0"
         },
         "per_module_fdr10__standard_pruned__motor10_demog_slope.parquet": {
-          "bytes": 38088,
+          "bytes": 37766,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2396,10 +2402,10 @@
             "transformation_role"
           ],
           "rows": 4608,
-          "sha256": "249e030909536742312032dc327389eeadfbd534a1c2065738e7b34019654a20"
+          "sha256": "50b6b4fdcc3a686816ad39743213f6438af0be4e73c537d05c25c43e2f13eb99"
         },
         "per_module_fdr10__standard_pruned__parkinsonism.parquet": {
-          "bytes": 73898,
+          "bytes": 73578,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2431,10 +2437,10 @@
             "transformation_role"
           ],
           "rows": 5220,
-          "sha256": "2dea11df349730ad6625078dd0b5bee2cb3777c2325f2eb438130cb67a4117bd"
+          "sha256": "7a7592bca145e749bc1f38ed09eff03a1c48d534eb2a562e5c89eaa7542789e4"
         },
         "per_module_fdr10__standard_pruned__sqrt_parksc_demog_slope.parquet": {
-          "bytes": 37146,
+          "bytes": 36824,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2466,14 +2472,14 @@
             "transformation_role"
           ],
           "rows": 4860,
-          "sha256": "2bc8bce342eccf73ced4b042eda71562533cfd9e6c73798500b5e636ad671a52"
+          "sha256": "b9f9a871f7d46cb0b980ecfaab6e6e94200b73417ff2b28e31a93c79ee745993"
         }
       },
       "rows": 298272,
       "shards": 64
     },
     "targeted_masked_top_coefficients.parquet": {
-      "bytes": 892220,
+      "bytes": 891889,
       "columns": [
         "coefficient_label",
         "feature_name",
@@ -2502,10 +2508,10 @@
         "kegg_role"
       ],
       "rows": 36987,
-      "sha256": "8d9dfcfaeee856ef59fbfe1ca74b47fdb7269884f1dc4223e627474f7670573e"
+      "sha256": "bb3b78567bc896c0a6cd2bc6173b8c52a1e67886b9a10dfe263c8757513d8f7c"
     },
     "targeted_oof_performance.parquet": {
-      "bytes": 157331,
+      "bytes": 162647,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -2527,8 +2533,8 @@
         "value",
         "n_oof"
       ],
-      "rows": 29696,
-      "sha256": "6663b6c05c9df3c7ddb58556d5e48dbcdc53902904ddd06b2d8a818b2eb00243"
+      "rows": 30848,
+      "sha256": "2484086801fa3250fdb607b62c6356ceada5e9f5b960b06d68ef8a5f1859a718"
     },
     "targeted_oof_predictions.parquet": {
       "columns": [
@@ -2564,7 +2570,7 @@
       ],
       "files": {
         "asinh__exploratory__control_derived__control_anchored.parquet": {
-          "bytes": 3127141,
+          "bytes": 3125614,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2597,10 +2603,10 @@
             "outer_repeats_averaged"
           ],
           "rows": 379584,
-          "sha256": "05d92c0cda716fa875e50c199104c3f524f5ead60d0b20dc893d3debaa71296d"
+          "sha256": "5ac31ed5988e36500879cd11883040a50c4db267bb1e1c62c9156e957d069535"
         },
         "asinh__primary__control_derived__control_anchored.parquet": {
-          "bytes": 108316,
+          "bytes": 107985,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2633,10 +2639,10 @@
             "outer_repeats_averaged"
           ],
           "rows": 7944,
-          "sha256": "6aa0eb297420618f1b7fa0d9265c445f424fc692be0859643086ccc22144e56c"
+          "sha256": "4c83c86db458af849f7eb1935de71176789f3ac0da49cf428f705fba7d2d4e41"
         },
         "asinh__secondary__control_derived__control_anchored.parquet": {
-          "bytes": 1184021,
+          "bytes": 1183641,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2669,10 +2675,10 @@
             "outer_repeats_averaged"
           ],
           "rows": 58828,
-          "sha256": "77ba4223e2bf84fb7fa137b8fd5bb8d90ac7d1d9f4c3a464c9401d499e98c2a0"
+          "sha256": "06e330073575cfc4d72ac6c4db8a57e2f6043c3f1f3fb1eda393d5c78510d28a"
         },
         "asinh__secondary__full_cohort__control_anchored.parquet": {
-          "bytes": 106919,
+          "bytes": 106588,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2705,10 +2711,10 @@
             "outer_repeats_averaged"
           ],
           "rows": 7944,
-          "sha256": "c4bb3aa47d03f9c0941682d535c4bd74986fa1ddc73a99ad06e74d1540442ce9"
+          "sha256": "d173407c7c8f252353864dc18ca0fef36ffeec2057a9cbd2b3c9154a9a73bd4d"
         },
         "asinh__secondary__full_cohort__standard.parquet": {
-          "bytes": 108007,
+          "bytes": 107676,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2741,10 +2747,10 @@
             "outer_repeats_averaged"
           ],
           "rows": 7944,
-          "sha256": "01e858ed08e839f5bc0964ca7141124d87e812e4aa2bec14986be25d34e2c039"
+          "sha256": "0577de30c3bb0ee0d10ded409f7f8d0918952136ca67b4fbb75ad34f61a21dab"
         },
         "raw__exploratory__control_derived__control_anchored.parquet": {
-          "bytes": 7738540,
+          "bytes": 8368707,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2776,8 +2782,8 @@
             "selected_k",
             "outer_repeats_averaged"
           ],
-          "rows": 759168,
-          "sha256": "b1e2caa8bf8417c675f6feeeb7ef3183755103e4ad000273d28e634b5c1b9ab8"
+          "rows": 806832,
+          "sha256": "dbddad771d095f13a404a0f50e09fd7b55be1323e741718a573af2fe6f7cc63f"
         },
         "raw__primary__control_derived__control_anchored.parquet": {
           "bytes": 205042,
@@ -2924,7 +2930,7 @@
           "sha256": "5c34e5d1863ced49d7c2239e6fcde7591be4fce62f4db6182273373c15af79b2"
         },
         "rint__exploratory__control_derived__control_anchored.parquet": {
-          "bytes": 3156897,
+          "bytes": 3155369,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2957,10 +2963,10 @@
             "outer_repeats_averaged"
           ],
           "rows": 379584,
-          "sha256": "1bff9f2e693f44f4a2dc2e61536f8c11197c0cde030e5e2f7569acb88994a0a3"
+          "sha256": "d1d80e58aa20b2ba70d2a1246abd6bfd6020a7b21748be9bfaa2abb6f078307e"
         },
         "rint__primary__control_derived__control_anchored.parquet": {
-          "bytes": 106757,
+          "bytes": 106426,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2993,10 +2999,10 @@
             "outer_repeats_averaged"
           ],
           "rows": 7944,
-          "sha256": "111e6ff878313804c8c124a2818ad2609f1342f5b8f851774bf59034bce88d72"
+          "sha256": "3590e13bcdc67512cd9285e3540cfafa4df5155a9f08315d264c80891c1afc8f"
         },
         "rint__secondary__control_derived__control_anchored.parquet": {
-          "bytes": 1169722,
+          "bytes": 1169342,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -3029,10 +3035,10 @@
             "outer_repeats_averaged"
           ],
           "rows": 58828,
-          "sha256": "5030922ebdebfb7c78eb88fc78cc97d47cb1f647336daa9e46c3f0edc44cd7e6"
+          "sha256": "7ce2faac2e661165caba9f9ad8a990ca9d982233d57680d28eab300c3faebadc"
         },
         "rint__secondary__full_cohort__control_anchored.parquet": {
-          "bytes": 106813,
+          "bytes": 106482,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -3065,10 +3071,10 @@
             "outer_repeats_averaged"
           ],
           "rows": 7944,
-          "sha256": "f7bc5cc5ca3b3fdbc5b71cb91d58a11ae6a83a5d8cbb0ed3f3e8062b2f45bf98"
+          "sha256": "0c512106de740b18b915698acd4c3be0606ce6551fba9cf5d140db715404f124"
         },
         "rint__secondary__full_cohort__standard.parquet": {
-          "bytes": 106514,
+          "bytes": 106183,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -3101,14 +3107,14 @@
             "outer_repeats_averaged"
           ],
           "rows": 7944,
-          "sha256": "b92a434bb4faf10b81abc08132f4b63dea7424f323703a9dc42e99478275bef5"
+          "sha256": "94390ab2b5fd1ea394d6309acd9d540ae5f3678749b05529c323385ff433b09e"
         }
       },
-      "rows": 1848976,
+      "rows": 1896640,
       "shards": 15
     },
     "targeted_panel_selection.parquet": {
-      "bytes": 6861185,
+      "bytes": 6860460,
       "columns": [
         "module",
         "median_incremental_score",
@@ -3144,10 +3150,10 @@
         "kegg_role"
       ],
       "rows": 160950,
-      "sha256": "0dbb401aa87b2609336bcbfaf95da56d3759f1dd0f2847586ea96e477e1991b3"
+      "sha256": "cc89936faeb8e311890d7fdd4286f50570a8a6f08778aee77b842306dcb4d998"
     },
     "targeted_panel_transform_overlap.parquet": {
-      "bytes": 31877,
+      "bytes": 31701,
       "columns": [
         "module_definition",
         "network_method",
@@ -3167,10 +3173,10 @@
         "shared_modules"
       ],
       "rows": 600,
-      "sha256": "92722f6f40406e4b68791431b62c984fa0b0c2771917fb8bf59f94cc7015fc65"
+      "sha256": "919fe5da464edd07435784bf3979a0fe7b53c306ffd0513e2506531f06d44401"
     },
     "targeted_primary_comparisons.parquet": {
-      "bytes": 10669,
+      "bytes": 10532,
       "columns": [
         "evidence_tier",
         "score_transform",
@@ -3189,10 +3195,10 @@
         "fdr_primary_family"
       ],
       "rows": 3,
-      "sha256": "00747f0d8684f7e4af67497f7046091a9f9652aef692e7cd219b251ff8c3f9a8"
+      "sha256": "a101a6cde4ba91deda41e375d3758f03ad61a416cfae13d3d5528639215de2ca"
     },
     "targeted_tier_comparisons.parquet": {
-      "bytes": 29270,
+      "bytes": 29276,
       "columns": [
         "evidence_tier",
         "module_definition",
@@ -3216,11 +3222,11 @@
         "fdr_within_outcome",
         "fdr_global_exploratory"
       ],
-      "rows": 339,
-      "sha256": "ea29bd42752c11c7719058b81bfcd580710aee08891e8233805542c0c6abb417"
+      "rows": 341,
+      "sha256": "3e57370e978d6de018ee58c8fcd8bd889a3fb29f0ad465b8dcba72c329c2968e"
     },
     "targeted_top_coefficients.parquet": {
-      "bytes": 8604716,
+      "bytes": 8939693,
       "columns": [
         "coefficient_label",
         "feature_name",
@@ -3248,11 +3254,11 @@
         "kegg_fdr",
         "kegg_role"
       ],
-      "rows": 456319,
-      "sha256": "2669a2addd09f2186f5c4c7bb7cf0cc26c14e11e88af34038244ae5deca1c24f"
+      "rows": 468451,
+      "sha256": "aa1667c06a33cff1ee0c8fd8fb9aa7e69c9252fd2b275a2aa0ae7f4f3035aea5"
     },
     "targeted_transformation_comparisons.parquet": {
-      "bytes": 61196,
+      "bytes": 60910,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -3281,10 +3287,10 @@
         "fdr_transform_within_outcome"
       ],
       "rows": 1172,
-      "sha256": "54394d6140084694f525b87246c8741fe99c49cdc913b80e533907277a6e6fd5"
+      "sha256": "308f40bde54b3787256301387e335a6d35bff781d177591c0a1288bf02bd1ed2"
     },
     "targeted_transformation_status.parquet": {
-      "bytes": 8185,
+      "bytes": 8179,
       "columns": [
         "score_transform",
         "status",
@@ -3299,7 +3305,7 @@
         "primary_scale"
       ],
       "rows": 3,
-      "sha256": "f2b1116702cce1ad06a64bc10bec8dc9b24015992297d478e3e0612655dec79e"
+      "sha256": "42130c286f231ead1a51ce6db38d9748bd07357ccd8ff43990fb65be31734d60"
     }
   },
   "interim": true,
@@ -3358,7 +3364,7 @@
     "prefix": "T-",
     "pseudonyms": 450
   },
-  "publishable_milestone": true,
+  "publishable_milestone": false,
   "schema_version": 4,
   "score_transformations": {
     "asinh": "arcsinh(metric_raw); robustness sensitivity and corrected legacy provenance",
@@ -3384,8 +3390,8 @@
     "stability_subsamples": 100,
     "subsample_fraction": 0.8
   },
-  "standalone_transcriptomic_configurations": 14650,
-  "standalone_transcriptomic_milestone_complete": true,
+  "standalone_transcriptomic_configurations": 15550,
+  "standalone_transcriptomic_milestone_complete": false,
   "transcriptomic_comparator": {
     "feature": "outer-training-fitted per-tissue module PCA1 eigengene",
     "model_variants": [
@@ -3401,7 +3407,7 @@
   },
   "transformation_status": {
     "asinh": "running",
-    "raw": "complete",
+    "raw": "running",
     "rint": "running"
   }
 }
