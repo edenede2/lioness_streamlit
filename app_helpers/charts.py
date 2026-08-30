@@ -18,6 +18,9 @@ from sklearn.calibration import calibration_curve
 from sklearn.metrics import precision_recall_curve, roc_curve
 
 
+PREDICTION_BLOCK_ORDERING_API_VERSION = 1
+
+
 DIAGNOSIS_COLORS = {
     "Control": "#2C7FB8",
     "MCI": "#D8A500",
@@ -3047,6 +3050,7 @@ def prediction_performance_figure(
     *,
     metric: str,
     block_labels: dict[str, str],
+    block_order: Iterable[str] | None = None,
     model_labels: dict[str, str],
     title: str,
 ) -> go.Figure:
@@ -3096,8 +3100,16 @@ def prediction_performance_figure(
     ordered_variants.extend(
         value for value in observed_variants if value not in ordered_variants
     )
+    ordered_blocks = _ordered_prediction_blocks(
+        selected["predictor_block"], block_order
+    )
+    block_rank = {value: index for index, value in enumerate(ordered_blocks)}
     for variant in ordered_variants:
-        subset = selected.loc[selected["model_variant"].astype(str).eq(variant)]
+        subset = selected.loc[
+            selected["model_variant"].astype(str).eq(variant)
+        ].copy()
+        subset["_block_rank"] = subset["predictor_block"].astype(str).map(block_rank)
+        subset = subset.sort_values("_block_rank", kind="stable")
         figure.add_trace(
             go.Bar(
                 name=model_labels.get(str(variant), str(variant)),
@@ -3126,10 +3138,29 @@ def prediction_performance_figure(
         height=560,
         legend={"orientation": "h", "y": 1.12},
         margin={"l": 70, "r": 30, "t": 100, "b": 150},
-        xaxis={"tickangle": -35},
+        xaxis={
+            "tickangle": -35,
+            "categoryorder": "array",
+            "categoryarray": [
+                block_labels.get(value, value) for value in ordered_blocks
+            ],
+        },
         yaxis_title=metric,
     )
     return figure
+
+
+def _ordered_prediction_blocks(
+    values: Iterable[object],
+    block_order: Iterable[str] | None,
+) -> list[str]:
+    """Return observed predictor blocks in the requested biological order."""
+
+    observed = [str(value) for value in pd.Series(values).dropna().drop_duplicates()]
+    preferred = [str(value) for value in (block_order or ())]
+    ordered = [value for value in preferred if value in observed]
+    ordered.extend(value for value in observed if value not in ordered)
+    return ordered
 
 
 def targeted_primary_comparison_figure(
@@ -3252,12 +3283,23 @@ def targeted_transform_heatmap_figure(
     frame: pd.DataFrame,
     *,
     block_labels: dict[str, str],
+    block_order: Iterable[str] | None = None,
     model_labels: dict[str, str],
     title: str,
 ) -> go.Figure:
     """Heatmap of transformed-minus-Raw primary-metric differences."""
 
     selected = frame.copy()
+    ordered_blocks = _ordered_prediction_blocks(
+        selected["predictor_block"], block_order
+    )
+    block_rank = {value: index for index, value in enumerate(ordered_blocks)}
+    model_rank = {value: index for index, value in enumerate(model_labels)}
+    selected["_block_rank"] = selected["predictor_block"].astype(str).map(block_rank)
+    selected["_model_rank"] = selected["model_variant"].astype(str).map(model_rank)
+    selected = selected.sort_values(
+        ["_block_rank", "_model_rank"], kind="stable"
+    )
     selected["row_label"] = selected.apply(
         lambda row: (
             f"{block_labels.get(str(row['predictor_block']), row['predictor_block'])} · "
@@ -3267,8 +3309,14 @@ def targeted_transform_heatmap_figure(
     )
     matrix = selected.pivot_table(
         index="row_label", columns="transformed_scale",
-        values="performance_difference", aggfunc="first",
-    ).reindex(columns=[value for value in ("asinh", "rint") if value in set(selected["transformed_scale"])])
+        values="performance_difference", aggfunc="first", sort=False,
+    ).reindex(
+        index=selected["row_label"].drop_duplicates(),
+        columns=[
+            value for value in ("asinh", "rint")
+            if value in set(selected["transformed_scale"])
+        ],
+    )
     figure = go.Figure(
         go.Heatmap(
             z=matrix.to_numpy(dtype=float),
@@ -3370,13 +3418,18 @@ def targeted_fold_robustness_figure(
     *,
     metric: str,
     block_labels: dict[str, str],
+    block_order: Iterable[str] | None = None,
     title: str,
 ) -> go.Figure:
     """Repeat/fold metric distributions for selected targeted models."""
 
     selected = frame.loc[frame["metric"].eq(metric) & frame["value"].notna()].copy()
     figure = go.Figure()
-    for block, subset in selected.groupby("predictor_block", observed=True):
+    ordered_blocks = _ordered_prediction_blocks(
+        selected["predictor_block"], block_order
+    )
+    for block in ordered_blocks:
+        subset = selected.loc[selected["predictor_block"].astype(str).eq(block)]
         figure.add_trace(
             go.Box(
                 name=block_labels.get(str(block), str(block)),
@@ -3459,12 +3512,16 @@ def prediction_heatmap_figure(
     *,
     metric: str,
     block_labels: dict[str, str],
+    block_order: Iterable[str] | None = None,
     outcome_labels: dict[str, str],
     title: str,
 ) -> go.Figure:
     selected = frame.loc[frame["metric"].eq(metric) & frame["value"].notna()].copy()
     pivot = selected.pivot_table(
         index="predictor_block", columns="outcome", values="value", aggfunc="first"
+    )
+    pivot = pivot.reindex(
+        _ordered_prediction_blocks(pivot.index, block_order)
     )
     figure = go.Figure(
         go.Heatmap(

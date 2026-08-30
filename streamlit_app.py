@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib
+from collections.abc import Iterable
 
 import numpy as np
 import pandas as pd
@@ -25,6 +26,7 @@ if not all(
         "mdc_entropy_figure",
         "pathway_mdc_heatmap_figure",
         "prediction_performance_figure",
+        "PREDICTION_BLOCK_ORDERING_API_VERSION",
         "targeted_primary_comparison_figure",
         "targeted_selection_frequency_figure",
         "targeted_fold_robustness_figure",
@@ -112,6 +114,7 @@ if not all(
     for name in (
         "collapse_pathway_mdc_rows", "SCORE_TRANSFORM_LABELS",
         "ASSOCIATION_GROUP_LABELS", "association_level_label",
+        "PREDICTION_BLOCK_ORDER",
     )
 ):
     _data_helpers = importlib.reload(_data_helpers)
@@ -142,6 +145,7 @@ from app_helpers.data import (
     OUTCOME_LABELS,
     PHENOTYPE_LABELS,
     PREDICTION_BLOCK_LABELS,
+    PREDICTION_BLOCK_ORDER,
     PREDICTION_DESIGN_LABELS,
     PREDICTION_MASK_LABELS,
     PREDICTION_MODEL_LABELS,
@@ -1184,6 +1188,15 @@ def readable_method(method: str) -> str:
     return METHOD_LABELS.get(method, method)
 
 
+def ordered_prediction_blocks(values: Iterable[object]) -> list[str]:
+    """Order available prediction blocks from resolved TS through combined scopes."""
+
+    observed = [str(value) for value in pd.Series(values).dropna().drop_duplicates()]
+    ordered = [value for value in PREDICTION_BLOCK_ORDER if value in observed]
+    ordered.extend(value for value in observed if value not in ordered)
+    return ordered
+
+
 def fdr_text(module_manifest: dict[str, object], module_count: int) -> str:
     return (
         f"Association-plot module-set FDR uses Benjamini–Hochberg across the {module_count} "
@@ -1478,6 +1491,7 @@ def render_targeted_prediction_view() -> None:
                 selected,
                 metric=primary_metric,
                 block_labels=PREDICTION_BLOCK_LABELS,
+                block_order=PREDICTION_BLOCK_ORDER,
                 model_labels=PREDICTION_MODEL_LABELS,
                 title=f"Nested-CV OOF performance: {PREDICTION_OUTCOME_LABELS.get(outcome, outcome)}",
             ),
@@ -1537,6 +1551,7 @@ def render_targeted_prediction_view() -> None:
                     adjusted,
                     metric=primary_metric,
                     block_labels=PREDICTION_BLOCK_LABELS,
+                    block_order=PREDICTION_BLOCK_ORDER,
                     model_labels=PREDICTION_MODEL_LABELS,
                     title="CT, TS, and resolved-component OOF comparison",
                 ),
@@ -1563,6 +1578,7 @@ def render_targeted_prediction_view() -> None:
                         fold_performance,
                         metric=primary_metric,
                         block_labels=PREDICTION_BLOCK_LABELS,
+                        block_order=PREDICTION_BLOCK_ORDER,
                         title="Outer-fold robustness",
                     ),
                     use_container_width=True,
@@ -1652,6 +1668,7 @@ def render_targeted_prediction_view() -> None:
                     targeted_transform_heatmap_figure(
                         transform_comparisons,
                         block_labels=PREDICTION_BLOCK_LABELS,
+                        block_order=PREDICTION_BLOCK_ORDER,
                         model_labels=PREDICTION_MODEL_LABELS,
                         title="Oriented primary-metric difference versus Raw",
                     ),
@@ -1772,7 +1789,7 @@ def render_targeted_prediction_view() -> None:
                 )
 
     with diagnostic_tab:
-        blocks = selected["predictor_block"].drop_duplicates().tolist()
+        blocks = ordered_prediction_blocks(selected["predictor_block"])
         diagnostic_block = st.selectbox(
             "OOF diagnostic predictor block",
             options=blocks,
@@ -1888,7 +1905,7 @@ def render_targeted_prediction_view() -> None:
         else:
             coefficient_block = st.selectbox(
                 "Targeted coefficient block",
-                options=coefficients["predictor_block"].drop_duplicates().tolist(),
+                options=ordered_prediction_blocks(coefficients["predictor_block"]),
                 format_func=lambda value: PREDICTION_BLOCK_LABELS.get(value, value),
                 key="targeted_coefficient_block",
             )
@@ -2145,6 +2162,7 @@ def render_prediction_view() -> None:
             selected_performance,
             metric=primary_metric,
             block_labels=PREDICTION_BLOCK_LABELS,
+            block_order=PREDICTION_BLOCK_ORDER,
             model_labels=PREDICTION_MODEL_LABELS,
             title=f"Held-out {PREDICTION_OUTCOME_LABELS[outcome]} performance",
         )
@@ -2167,6 +2185,7 @@ def render_prediction_view() -> None:
                     adjusted,
                     metric="primary_performance",
                     block_labels=PREDICTION_BLOCK_LABELS,
+                    block_order=PREDICTION_BLOCK_ORDER,
                     outcome_labels=PREDICTION_OUTCOME_LABELS,
                     title="Covariate-adjusted held-out primary performance by outcome and component block",
                 ),
@@ -2238,7 +2257,7 @@ def render_prediction_view() -> None:
 
     with diagnostics_tab:
         available_blocks = [
-            block for block in PREDICTION_BLOCK_LABELS
+            block for block in PREDICTION_BLOCK_ORDER
             if block in set(selected_performance["predictor_block"])
         ]
         diagnostic_block = st.selectbox(
@@ -2371,7 +2390,7 @@ def render_prediction_view() -> None:
         else:
             coefficient_block = st.selectbox(
                 "Coefficient predictor block",
-                options=sorted(coefficients["predictor_block"].unique()),
+                options=ordered_prediction_blocks(coefficients["predictor_block"]),
                 format_func=lambda value: PREDICTION_BLOCK_LABELS.get(value, value),
             )
             coefficient_variant = st.radio(

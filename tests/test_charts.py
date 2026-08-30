@@ -36,7 +36,9 @@ from app_helpers.charts import (  # noqa: E402
     prediction_confusion_figure,
     prediction_ct_ts_figure,
     prediction_error_figure,
+    prediction_heatmap_figure,
     prediction_observed_figure,
+    prediction_performance_figure,
     prediction_threshold_figure,
     resolved_to_long,
     targeted_fold_robustness_figure,
@@ -60,6 +62,8 @@ from app_helpers.data import (  # noqa: E402
     load_module_details,
     load_resolved,
     load_resolved_statistics,
+    PREDICTION_BLOCK_LABELS,
+    PREDICTION_BLOCK_ORDER,
     selected_annotation,
     summarize_pathway_mdc_rows,
 )
@@ -932,3 +936,39 @@ def test_targeted_prediction_charts_render_nested_cv_contract() -> None:
         title="Robustness",
     )
     assert len(robustness.data) == 2
+
+
+def test_prediction_block_charts_use_ts_ct_pool_all_order() -> None:
+    shuffled_blocks = list(reversed(PREDICTION_BLOCK_ORDER))
+    performance = pd.DataFrame(
+        {
+            "metric": ["roc_auc"] * len(shuffled_blocks),
+            "value": np.linspace(0.55, 0.75, len(shuffled_blocks)),
+            "predictor_block": shuffled_blocks,
+            "model_variant": ["network_only"] * len(shuffled_blocks),
+            "n_oof": [300] * len(shuffled_blocks),
+            "status": ["available"] * len(shuffled_blocks),
+        }
+    )
+    figure = prediction_performance_figure(
+        performance,
+        metric="roc_auc",
+        block_labels=PREDICTION_BLOCK_LABELS,
+        block_order=PREDICTION_BLOCK_ORDER,
+        model_labels={"network_only": "Network only"},
+        title="Ordered blocks",
+    )
+    expected_labels = [PREDICTION_BLOCK_LABELS[value] for value in PREDICTION_BLOCK_ORDER]
+    assert list(figure.data[0].x) == expected_labels
+    assert list(figure.layout.xaxis.categoryarray) == expected_labels
+
+    heatmap_data = performance.assign(outcome="diagnosis_binary")
+    heatmap = prediction_heatmap_figure(
+        heatmap_data,
+        metric="roc_auc",
+        block_labels=PREDICTION_BLOCK_LABELS,
+        block_order=PREDICTION_BLOCK_ORDER,
+        outcome_labels={"diagnosis_binary": "AD versus Control"},
+        title="Ordered heatmap",
+    )
+    assert list(heatmap.data[0].y) == expected_labels

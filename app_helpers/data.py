@@ -176,18 +176,32 @@ PREDICTION_REFERENCE_LABELS = {
     "development_frozen": "Leakage-reduced frozen development reference",
     "existing_sensitivity": "Exploratory existing all-donor/all-Control reference",
 }
+PREDICTION_BLOCK_ORDER = (
+    "AC",
+    "PCG",
+    "DLPFC",
+    "AC_PCG",
+    "DLPFC_PCG",
+    "AC_DLPFC",
+    "TS_pooled",
+    "CT_pooled",
+    "CT_TS_pooled",
+    "TS_resolved",
+    "CT_resolved",
+    "all_resolved",
+)
 PREDICTION_BLOCK_LABELS = {
-    "CT_pooled": "CT pooled",
-    "TS_pooled": "TS pooled",
-    "CT_TS_pooled": "CT + TS pooled",
     "AC": "AC",
-    "DLPFC": "DLPFC",
     "PCG": "PCG",
-    "AC_DLPFC": "AC–DLPFC",
+    "DLPFC": "DLPFC",
     "AC_PCG": "AC–PCG",
     "DLPFC_PCG": "DLPFC–PCG",
-    "CT_resolved": "All three CT tissue pairs",
+    "AC_DLPFC": "AC–DLPFC",
+    "TS_pooled": "TS pooled",
+    "CT_pooled": "CT pooled",
+    "CT_TS_pooled": "CT + TS pooled",
     "TS_resolved": "All three TS tissues",
+    "CT_resolved": "All three CT tissue pairs",
     "all_resolved": "All six resolved components",
 }
 TARGETED_PREDICTION_MODE_LABELS = {
