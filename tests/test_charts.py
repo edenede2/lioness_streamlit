@@ -972,6 +972,7 @@ def test_eigengene_source_comparison_chart_uses_paired_intervals() -> None:
     assert len(figure.data[0].x) == 2
     assert np.all(np.asarray(figure.data[0].error_x.array) >= 0)
     assert np.all(np.asarray(figure.data[0].error_x.arrayminus) >= 0)
+    assert "Source A − Source B" in figure.layout.xaxis.title.text
 
 
 def test_prediction_block_charts_use_ts_ct_pool_all_order() -> None:

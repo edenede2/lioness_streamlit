@@ -1796,6 +1796,8 @@ def render_targeted_prediction_view() -> None:
     with source_tab:
         source_rows = []
         for source_id, values in source_registry.items():
+            module_counts = values.get("module_counts", {})
+            assignment_counts = values.get("assignment_counts", {})
             source_rows.append(
                 {
                     "eigengene_source": source_id,
@@ -1806,6 +1808,12 @@ def render_targeted_prediction_view() -> None:
                     "selectable": bool(values.get("selectable", False)),
                     "partition_level": values.get("partition_level"),
                     "tissue_scoped_modules": values.get("tissue_scoped_modules"),
+                    "ac_modules": module_counts.get("AC"),
+                    "dlpfc_modules": module_counts.get("DLPFC"),
+                    "pcg_modules": module_counts.get("PCG"),
+                    "assigned_tissue_genes": (
+                        sum(assignment_counts.values()) if assignment_counts else None
+                    ),
                     "raw_configurations": values.get("raw_configurations", 0),
                 }
             )

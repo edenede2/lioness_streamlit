@@ -3404,7 +3404,10 @@ def targeted_eigengene_source_comparison_figure(
         template="plotly_white",
         height=max(480, 150 + 30 * len(selected)),
         margin={"l": 310, "r": 35, "t": 85, "b": 65},
-        xaxis_title="Paired primary-metric difference (positive favors selected source)",
+        xaxis_title=(
+            "Paired primary-metric difference (Source A − Source B; "
+            "positive favors Source A)"
+        ),
         legend={"orientation": "h", "y": 1.08},
     )
     return figure
