@@ -316,12 +316,29 @@ not reportable.
 
 The eigengene stage fits one PCA1 score per module and tissue using only each
 outer-training fold, then projects the corresponding outer-test donors with the frozen
-training loadings. Single-tissue prediction blocks use that tissue's eigengene, tissue-pair
-blocks use both represented tissue eigengenes, and pooled or multi-component blocks use
-the three AC/DLPFC/PCG tissue eigengenes. The Prediction view compares dummy,
-demographics/APOE, transcriptomics-only, connectivity-only, and their adjusted and joint
-models while keeping the LIONESS-selected module panel fixed. Module selection and model
-performance never use KEGG annotations.
+training loadings. The default source uses the selected matched multi-tissue module
+definition. Independent single-region level-3 partitions can be prepared and modeled with:
+
+```bash
+python scripts/python/prepare_prediction_eigengenes.py \
+  --eigengene-source single_region_full_tissue_l3
+python scripts/python/run_targeted_lioness_nested_models.py \
+  --eigengene-source single_region_full_tissue_l3
+python scripts/python/build_eigengene_source_prediction_comparisons.py
+python scripts/python/build_targeted_prediction_public_bundle.py --replace
+```
+
+Single-tissue blocks use every regional module from that tissue, tissue-pair blocks use
+all modules from both represented tissues, and pooled or resolved three-tissue blocks use
+all AC/DLPFC/PCG regional modules. Regional module IDs are namespaced by source and tissue;
+they are never mapped to LIONESS modules by numeric ID or overlap. The complete-case source
+is registered only after its partition manifest is complete and validated. The Prediction
+view compares dummy, demographics/APOE, transcriptomics-only, connectivity-only, and their
+adjusted and joint models while keeping the LIONESS-selected network panel fixed.
+Expression/eigengenes do not influence that panel, and KEGG never enters selection or model
+fitting. The regional partitions are fixed unsupervised structures from broader expression
+cohorts, so fold-local loadings are leakage-safe but module discovery is not external
+validation.
 
 After validation, the same incremental Drive uploader can publish the targeted directory
 without relisting Drive for every file:

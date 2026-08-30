@@ -32,6 +32,7 @@ if not all(
         "targeted_fold_robustness_figure",
         "targeted_transform_comparison_figure",
         "targeted_transform_heatmap_figure",
+        "targeted_eigengene_source_comparison_figure",
         "targeted_panel_overlap_figure",
         "clustered_correlation_group_order",
         "grouped_association_figure",
@@ -79,6 +80,7 @@ from app_helpers.charts import (
     targeted_selection_frequency_figure,
     targeted_transform_comparison_figure,
     targeted_transform_heatmap_figure,
+    targeted_eigengene_source_comparison_figure,
     resolved_to_long,
 )
 
@@ -113,6 +115,7 @@ if not all(
     hasattr(_data_helpers, name)
     for name in (
         "collapse_pathway_mdc_rows", "SCORE_TRANSFORM_LABELS",
+        "EIGENGENE_SOURCE_LABELS",
         "ASSOCIATION_GROUP_LABELS", "association_level_label",
         "PREDICTION_BLOCK_ORDER",
     )
@@ -137,6 +140,7 @@ from app_helpers.data import (
     METHOD_LABELS,
     MDC_ENRICHMENT_RESOLUTION_LABELS,
     ESTIMATOR_LABELS,
+    EIGENGENE_SOURCE_LABELS,
     FDR_SCOPE_LABELS,
     FDR_THRESHOLD_LABELS,
     MODULE_SET_LABELS,
@@ -1217,6 +1221,12 @@ def render_targeted_prediction_view() -> None:
     """Render repeated nested-CV targeted-module results without touching the benchmark."""
 
     manifest = load_targeted_prediction_manifest()
+    transcriptomic_variants = {
+        "transcriptomics_only",
+        "covariates_plus_transcriptomics",
+        "network_plus_transcriptomics",
+        "covariates_plus_network_plus_transcriptomics",
+    }
     masked_available = bool(manifest.get("masked_sensitivity_available", False))
     with st.sidebar:
         edge_options = ["all"]
@@ -1276,6 +1286,53 @@ def render_targeted_prediction_view() -> None:
         performance_catalog = performance_catalog.loc[
             performance_catalog["score_transform"].eq(score_transform)
         ].copy()
+    source_registry = manifest.get("eigengene_source_registry", {})
+    observed_sources = [
+        value
+        for value in performance_catalog.loc[
+            performance_catalog["model_variant"].isin(transcriptomic_variants),
+            "eigengene_source",
+        ].dropna().astype(str).drop_duplicates().tolist()
+        if value != "not_applicable"
+    ]
+    selectable_sources = [
+        source
+        for source in source_registry
+        if bool(source_registry[source].get("selectable", False))
+        and source in observed_sources
+    ]
+    selectable_sources.extend(
+        source for source in observed_sources if source not in selectable_sources
+    )
+    if masked_selection or score_transform != "raw":
+        eigengene_source = (
+            "matched_multitissue"
+            if "matched_multitissue" in observed_sources
+            else observed_sources[0] if observed_sources else "not_applicable"
+        )
+    else:
+        with st.sidebar:
+            eigengene_source = st.selectbox(
+                "Eigengene source",
+                options=selectable_sources or ["matched_multitissue"],
+                format_func=lambda value: EIGENGENE_SOURCE_LABELS.get(value, value),
+                index=(
+                    (selectable_sources or ["matched_multitissue"]).index(
+                        "matched_multitissue"
+                    )
+                    if "matched_multitissue" in (selectable_sources or ["matched_multitissue"])
+                    else 0
+                ),
+                key="targeted_eigengene_source",
+                help=(
+                    "This selection changes transcriptomic and joint models only. Dummy, "
+                    "demographic, and network-only baselines remain source-neutral."
+                ),
+            )
+    performance_catalog = performance_catalog.loc[
+        ~performance_catalog["model_variant"].isin(transcriptomic_variants)
+        | performance_catalog["eigengene_source"].eq(eigengene_source)
+    ].copy()
     st.subheader(
         "Targeted differential-edge sensitivity"
         if masked_selection
@@ -1407,7 +1464,7 @@ def render_targeted_prediction_view() -> None:
         1 if masked_selection else int(manifest.get("selection", {}).get("outer_repeats", 5))
     )
     folds = int(manifest.get("selection", {}).get("outer_folds", 5))
-    metrics = st.columns(5)
+    metrics = st.columns(6)
     metrics[0].metric(
         "Evaluation",
         f"{repeats} × {folds} outer CV sensitivity"
@@ -1418,13 +1475,17 @@ def render_targeted_prediction_view() -> None:
     metrics[2].metric("Primary metric", primary_metric)
     metrics[3].metric("Score scale", SCORE_TRANSFORM_LABELS.get(score_transform, score_transform))
     metrics[4].metric("Edge set", "All edges" if set(selected["edge_mask"]) == {"all"} else "Sensitivity mask")
+    metrics[5].metric(
+        "Eigengenes",
+        EIGENGENE_SOURCE_LABELS.get(eigengene_source, eigengene_source),
+    )
 
     (
-        summary_tab, comparison_tab, transformation_tab, panel_tab, diagnostic_tab,
-        coefficient_tab, tables_tab, methods_tab,
+        summary_tab, comparison_tab, transformation_tab, source_tab, panel_tab,
+        diagnostic_tab, coefficient_tab, tables_tab, methods_tab,
     ) = st.tabs(
         [
-            "Summary", "CT versus TS", "Transformation sensitivity", "Panel selection",
+            "Summary", "CT versus TS", "Transformation sensitivity", "Eigengene sources", "Panel selection",
             "OOF diagnostics", "Coefficients & KEGG", "Tables", "Methods",
         ]
     )
@@ -1730,6 +1791,90 @@ def render_targeted_prediction_view() -> None:
                     mime="text/tab-separated-values",
                 )
 
+    with source_tab:
+        source_rows = []
+        for source_id, values in source_registry.items():
+            source_rows.append(
+                {
+                    "eigengene_source": source_id,
+                    "label": values.get(
+                        "label", EIGENGENE_SOURCE_LABELS.get(source_id, source_id)
+                    ),
+                    "status": values.get("status", "unavailable"),
+                    "selectable": bool(values.get("selectable", False)),
+                    "partition_level": values.get("partition_level"),
+                    "tissue_scoped_modules": values.get("tissue_scoped_modules"),
+                    "raw_configurations": values.get("raw_configurations", 0),
+                }
+            )
+        if source_rows:
+            filterable_dataframe(
+                pd.DataFrame(source_rows),
+                table_key="targeted_eigengene_source_registry",
+                table_name="Eigengene-source availability",
+                use_container_width=True,
+                hide_index=True,
+            )
+        if masked_selection or score_transform != "raw":
+            st.info(
+                "Independent eigengene-source comparisons are available only for the "
+                "all-edge Raw catalog. This selection retains the matched multi-tissue source."
+            )
+        elif "targeted_eigengene_source_comparisons.parquet" not in manifest.get(
+            "files", {}
+        ):
+            st.info(
+                "Source-comparison intervals will appear after the first independent "
+                "regional eigengene source finishes and passes validation."
+            )
+        else:
+            source_comparisons = cached_targeted_prediction_table(
+                "eigengene_source_comparisons",
+                _targeted_filters(
+                    evidence_tier=evidence_tier,
+                    module_definition=module_definition,
+                    network_method=network_method,
+                    panel_strategy=panel_strategy,
+                    model_outcome=outcome,
+                    score_transform="raw",
+                ),
+            )
+            source_comparisons = source_comparisons.loc[
+                source_comparisons["source_a"].eq(eigengene_source)
+                | source_comparisons["source_b"].eq(eigengene_source)
+            ].copy()
+            if source_comparisons.empty:
+                st.info("No paired source comparison matches the selected analysis.")
+            else:
+                st.caption(
+                    "Exploratory paired comparisons use identical donors and outer folds. "
+                    "Positive differences favor Source A. Global and within-outcome BH FDRs "
+                    "are retained; these comparisons do not change the prespecified primary tests."
+                )
+                render_plotly_chart(
+                    targeted_eigengene_source_comparison_figure(
+                        source_comparisons,
+                        block_labels=PREDICTION_BLOCK_LABELS,
+                        model_labels=PREDICTION_MODEL_LABELS,
+                        title="Eigengene-source sensitivity: paired OOF performance",
+                    ),
+                    use_container_width=True,
+                    config={"displaylogo": False},
+                )
+                filterable_dataframe(
+                    source_comparisons,
+                    table_key="targeted_eigengene_source_comparisons",
+                    table_name="Paired eigengene-source comparisons",
+                    use_container_width=True,
+                    hide_index=True,
+                )
+                st.download_button(
+                    "Download eigengene-source comparisons (TSV)",
+                    data=dataframe_to_tsv_bytes(source_comparisons),
+                    file_name="targeted_lioness_eigengene_source_comparisons.tsv",
+                    mime="text/tab-separated-values",
+                )
+
     with panel_tab:
         if panel_strategy == "all_modules":
             st.info("All-module benchmark uses no data-derived targeted panel.")
@@ -1819,6 +1964,11 @@ def render_targeted_prediction_view() -> None:
                 edge_mask=edge_mask,
                 score_normalization=score_normalization,
                 score_transform=score_transform,
+                eigengene_source=(
+                    eigengene_source
+                    if diagnostic_variant in transcriptomic_variants
+                    else "not_applicable"
+                ),
             ),
         )
         if diagnostics.empty:
@@ -1900,6 +2050,10 @@ def render_targeted_prediction_view() -> None:
                 score_transform=score_transform,
             ),
         )
+        coefficients = coefficients.loc[
+            ~coefficients["model_variant"].isin(transcriptomic_variants)
+            | coefficients["eigengene_source"].eq(eigengene_source)
+        ].copy()
         if coefficients.empty:
             st.info("No nonzero coefficients are available for this model family.")
         else:
@@ -2008,9 +2162,16 @@ def render_targeted_prediction_view() -> None:
             "eigengenes use training-only gene medians, scaling, loadings, and deterministic "
             "sign alignment. A single-tissue block uses that tissue; a tissue-pair block uses "
             "the two represented tissues; pooled CT/TS and resolved blocks concatenate AC, "
-            "DLPFC, and PCG eigengenes without a second PCA. The same frozen LIONESS panel is "
-            "used, and expression never contributes to panel selection. Joint models show "
-            "whether connectivity adds information beyond module expression activity."
+            "DLPFC, and PCG eigengenes without a second PCA. The matched source uses the same "
+            "frozen LIONESS panel. Independent single-region sources instead use all level-3 "
+            "regional modules from the represented tissues; joint models combine those "
+            "eigengenes with the unchanged fold-selected LIONESS panel. Expression never "
+            "contributes to LIONESS panel selection."
+        )
+        st.caption(
+            "Regional partitions are fixed unsupervised structures discovered from broader "
+            "expression cohorts. Eigengene preprocessing and PCA loadings are outer-training "
+            "only, but partition discovery itself is not external validation."
         )
         st.caption(
             "The current fixed 70/30 held-out results are previously inspected sensitivity "

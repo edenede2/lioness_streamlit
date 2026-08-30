@@ -123,6 +123,35 @@ def test_targeted_prediction_loader_filters_explicit_score_transform(
     assert selected["value"].tolist() == [0.70]
 
 
+def test_targeted_prediction_loader_filters_eigengene_source(
+    tmp_path: Path, monkeypatch
+) -> None:
+    directory = tmp_path / "prediction_targeted"
+    directory.mkdir()
+    path = directory / "targeted_oof_performance.parquet"
+    pd.DataFrame(
+        {
+            "model_variant": ["transcriptomics_only", "transcriptomics_only"],
+            "eigengene_source": [
+                "matched_multitissue",
+                "single_region_full_tissue_l3",
+            ],
+            "score_transform": ["raw", "raw"],
+            "value": [0.70, 0.73],
+        }
+    ).to_parquet(path, index=False)
+    manifest = directory / "targeted_prediction_public_manifest.json"
+    manifest.write_text('{"schema_version": 5, "complete": true}\n', encoding="utf-8")
+    files = dict(data.TARGETED_PREDICTION_FILES)
+    files["oof_performance"] = path
+    monkeypatch.setattr(data, "TARGETED_PREDICTION_MANIFEST", manifest)
+    monkeypatch.setattr(data, "TARGETED_PREDICTION_FILES", files)
+    selected = data.load_targeted_prediction_table(
+        "oof_performance", eigengene_source="single_region_full_tissue_l3"
+    )
+    assert selected["value"].tolist() == [0.73]
+
+
 def test_targeted_masked_sensitivity_packages_all_requested_outcomes() -> None:
     expected = {
         "diagnosis_binary",
@@ -192,13 +221,19 @@ def test_primary_raw_eigengene_milestone_is_complete_and_selectable() -> None:
         "model_outcome",
         "predictor_block",
         "model_variant",
+        "eigengene_source",
     ]
     assert len(fold.loc[:, identity].drop_duplicates()) == 600
 
     all_raw = data.load_targeted_prediction_table(
         "fold_performance", score_transform="raw"
     )
-    standalone = all_raw.loc[
+    matched_raw = all_raw.loc[
+        all_raw["eigengene_source"].isin(
+            {"matched_multitissue", "not_applicable"}
+        )
+    ]
+    standalone = matched_raw.loc[
         all_raw["model_variant"].isin(
             {"transcriptomics_only", "covariates_plus_transcriptomics"}
         )
@@ -216,7 +251,7 @@ def test_primary_raw_eigengene_milestone_is_complete_and_selectable() -> None:
     }.issubset(set(standalone["predictor_block"]))
 
     full_variant_counts = (
-        all_raw.loc[:, identity]
+        matched_raw.loc[:, identity]
         .drop_duplicates()
         .groupby("model_variant", observed=True)
         .size()

@@ -3337,6 +3337,79 @@ def targeted_transform_heatmap_figure(
     return figure
 
 
+def targeted_eigengene_source_comparison_figure(
+    frame: pd.DataFrame,
+    *,
+    block_labels: dict[str, str],
+    model_labels: dict[str, str],
+    title: str,
+) -> go.Figure:
+    """Forest plot of paired OOF performance differences between eigengene sources."""
+
+    selected = frame.loc[frame["performance_difference"].notna()].copy()
+    if selected.empty:
+        figure = go.Figure()
+        figure.update_layout(title=title, template="plotly_white", height=420)
+        return figure
+    selected["display"] = selected.apply(
+        lambda row: (
+            f"{block_labels.get(str(row['predictor_block']), row['predictor_block'])} · "
+            f"{model_labels.get(str(row['model_variant']), row['model_variant'])}"
+        ),
+        axis=1,
+    )
+    selected = selected.sort_values("performance_difference", kind="stable")
+    colors = {
+        "single_region_full_tissue_l3": "#1B9E77",
+        "single_region_complete_case_l3": "#D95F02",
+    }
+    figure = go.Figure()
+    for source, subset in selected.groupby("source_a", observed=True):
+        figure.add_trace(
+            go.Scatter(
+                x=subset["performance_difference"],
+                y=subset["display"],
+                mode="markers",
+                name=str(subset["source_a_label"].iloc[0]),
+                marker={"size": 9, "color": colors.get(str(source), "#2C7FB8")},
+                error_x={
+                    "type": "data",
+                    "symmetric": False,
+                    "array": subset["ci_high"] - subset["performance_difference"],
+                    "arrayminus": subset["performance_difference"] - subset["ci_low"],
+                    "thickness": 1.3,
+                },
+                customdata=np.column_stack(
+                    [
+                        subset["source_b_label"],
+                        subset["p_value"],
+                        subset["fdr_global"],
+                        subset["fdr_within_outcome"],
+                        subset["n_oof"],
+                    ]
+                ),
+                hovertemplate=(
+                    "%{y}<br>Source difference: %{x:.3f}"
+                    "<br>Reference: %{customdata[0]}"
+                    "<br>p=%{customdata[1]:.3g}"
+                    "<br>Global FDR=%{customdata[2]:.3g}"
+                    "<br>Within-outcome FDR=%{customdata[3]:.3g}"
+                    "<br>OOF n=%{customdata[4]:.0f}<extra>%{fullData.name}</extra>"
+                ),
+            )
+        )
+    figure.add_vline(x=0, line_dash="dash", line_color="#526273")
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"},
+        template="plotly_white",
+        height=max(480, 150 + 30 * len(selected)),
+        margin={"l": 310, "r": 35, "t": 85, "b": 65},
+        xaxis_title="Paired primary-metric difference (positive favors selected source)",
+        legend={"orientation": "h", "y": 1.08},
+    )
+    return figure
+
+
 def targeted_panel_overlap_figure(frame: pd.DataFrame, *, title: str) -> go.Figure:
     """Show fold-level panel Jaccard overlap with Raw selections."""
 

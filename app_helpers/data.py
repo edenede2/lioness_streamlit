@@ -124,6 +124,7 @@ TARGETED_PREDICTION_FILES = {
     "transformation_comparisons": TARGETED_PREDICTION_DIR / "targeted_transformation_comparisons.parquet",
     "panel_transform_overlap": TARGETED_PREDICTION_DIR / "targeted_panel_transform_overlap.parquet",
     "consensus_transform_overlap": TARGETED_PREDICTION_DIR / "targeted_consensus_transform_overlap.parquet",
+    "eigengene_source_comparisons": TARGETED_PREDICTION_DIR / "targeted_eigengene_source_comparisons.parquet",
     "oof_predictions": TARGETED_PREDICTION_DIR / "targeted_oof_predictions.parquet",
     "masked_fold_performance": TARGETED_PREDICTION_DIR / "targeted_masked_fold_performance.parquet",
     "masked_oof_performance": TARGETED_PREDICTION_DIR / "targeted_masked_oof_performance.parquet",
@@ -159,6 +160,14 @@ SCORE_TRANSFORM_LABELS = {
     "raw": "Raw (primary)",
     "asinh": "asinh (robustness)",
     "rint": "RINT (robustness)",
+}
+EIGENGENE_SOURCE_LABELS = {
+    "matched_multitissue": "Matched multi-tissue modules",
+    "single_region_full_tissue_l3": "Single-region modules: full tissue cohorts",
+    "single_region_complete_case_l3": (
+        "Single-region modules: matched complete-expression donors"
+    ),
+    "not_applicable": "Not applicable",
 }
 PREDICTION_MODEL_LABELS = {
     "dummy": "Dummy / intercept baseline",
@@ -1709,11 +1718,18 @@ def load_targeted_prediction_table(
         raise KeyError(f"Unknown targeted-prediction table: {table}")
     manifest = load_targeted_prediction_manifest()
     legacy_transform_schema = int(manifest.get("schema_version", 2)) < 3
+    legacy_eigengene_source_schema = int(manifest.get("schema_version", 2)) < 5
     deferred = {
         column: value
         for column, value in filters.items()
-        if legacy_transform_schema and column in {"score_transform", "transformation_role"}
-        and value is not None
+        if value is not None
+        and (
+            (
+                legacy_transform_schema
+                and column in {"score_transform", "transformation_role"}
+            )
+            or (legacy_eigengene_source_schema and column == "eigengene_source")
+        )
     }
     predicates = [
         (column, "=", value)
@@ -1728,6 +1744,20 @@ def load_targeted_prediction_table(
             "existing_masked_sensitivity"
             if table.startswith("masked_")
             else "legacy_asinh_provenance"
+        )
+    if "eigengene_source" not in result:
+        transcriptomic_variants = {
+            "transcriptomics_only",
+            "covariates_plus_transcriptomics",
+            "network_plus_transcriptomics",
+            "covariates_plus_network_plus_transcriptomics",
+        }
+        result["eigengene_source"] = np.where(
+            result.get("model_variant", pd.Series(index=result.index, dtype=str)).isin(
+                transcriptomic_variants
+            ),
+            "matched_multitissue",
+            "not_applicable",
         )
     for column, value in deferred.items():
         result = result.loc[result[column].eq(value)]
