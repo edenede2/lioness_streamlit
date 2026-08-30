@@ -98,6 +98,12 @@ from app_helpers.module_finder import (
 )
 from app_helpers.table_controls import filterable_dataframe
 from app_helpers.streamlit_compat import plotly_chart as render_plotly_chart
+from app_helpers.streaming_associations import (
+    stream_categorical_associations,
+    stream_diagnosis_categorical_associations,
+    stream_grouped_correlations,
+    stream_pooled_correlations,
+)
 from app_helpers.drive_data import data_source_label, ensure_data_path
 from app_helpers import data as _data_helpers
 
@@ -225,7 +231,7 @@ def cached_module_details(module_set: str) -> pd.DataFrame:
     return load_module_details(module_set=module_set)
 
 
-@st.cache_data(show_spinner=False, max_entries=48)
+@st.cache_data(show_spinner=False, max_entries=16)
 def cached_aggregate(
     module_set: str,
     estimator: str,
@@ -248,7 +254,7 @@ def cached_aggregate(
     )
 
 
-@st.cache_data(show_spinner=False, max_entries=48)
+@st.cache_data(show_spinner=False, max_entries=8)
 def cached_resolved(
     module_set: str,
     estimator: str,
@@ -276,7 +282,7 @@ def cached_sample_metadata() -> pd.DataFrame:
     return load_sample_metadata()
 
 
-@st.cache_data(show_spinner=False, max_entries=48)
+@st.cache_data(show_spinner=False, max_entries=8)
 def cached_mdc_summary(
     module_set: str,
     estimator: str = "lioness",
@@ -295,7 +301,7 @@ def cached_mdc_summary(
     )
 
 
-@st.cache_data(show_spinner=False, max_entries=48)
+@st.cache_data(show_spinner=False, max_entries=8)
 def cached_mdc_resolved(
     module_set: str,
     estimator: str = "lioness",
@@ -314,7 +320,7 @@ def cached_mdc_resolved(
     )
 
 
-@st.cache_data(show_spinner=False, max_entries=48)
+@st.cache_data(show_spinner=False, max_entries=4)
 def cached_pathway_mdc_rows(
     module_set: str,
     enrichment_fdr_threshold: float,
@@ -346,7 +352,7 @@ def cached_pathway_mdc_rows(
     )
 
 
-@st.cache_data(show_spinner=False, max_entries=32)
+@st.cache_data(show_spinner=False, max_entries=6)
 def cached_edge_summaries(
     module_set: str,
     estimator: str,
@@ -370,7 +376,7 @@ def cached_data_manifest() -> dict[str, object]:
     return load_data_manifest()
 
 
-@st.cache_data(show_spinner=False, max_entries=96)
+@st.cache_data(show_spinner=False, max_entries=16)
 def cached_aggregate_stats(
     module_set: str,
     estimator: str,
@@ -398,7 +404,7 @@ def cached_aggregate_stats(
 
 @st.cache_data(
     show_spinner="Calculating pooled-donor CT–TS module statistics…",
-    max_entries=48,
+    max_entries=4,
 )
 def cached_pooled_module_finder_stats(
     module_set: str,
@@ -424,6 +430,7 @@ def cached_pooled_module_finder_stats(
         differential_fdr_scope=differential_fdr_scope,
         differential_fdr_threshold=differential_fdr_threshold,
         score_normalization=score_normalization,
+        include_embedded_metadata=False,
     )
     source = attach_metadata(source)
     if differential_edge_rule != "all" and analysis_subset != "all_donors":
@@ -436,7 +443,7 @@ def cached_pooled_module_finder_stats(
     return build_pooled_ct_ts_statistics(source, phenotype=phenotype)
 
 
-@st.cache_data(show_spinner=False, max_entries=48)
+@st.cache_data(show_spinner=False, max_entries=12)
 def cached_resolved_stats(
     module_set: str,
     estimator: str,
@@ -462,14 +469,14 @@ def cached_resolved_stats(
     )
 
 
-@st.cache_data(show_spinner=False, max_entries=48)
+@st.cache_data(show_spinner=False, max_entries=8)
 def cached_volcano_candidates(
     module_set: str, estimator: str, method: str, module: int
 ) -> pd.DataFrame:
     return load_volcano_candidates(module_set, estimator, method, module)
 
 
-@st.cache_data(show_spinner=False, max_entries=48)
+@st.cache_data(show_spinner=False, max_entries=8)
 def cached_volcano_bins(
     module_set: str,
     estimator: str,
@@ -482,7 +489,7 @@ def cached_volcano_bins(
     )
 
 
-@st.cache_data(show_spinner=False, max_entries=48)
+@st.cache_data(show_spinner=False, max_entries=8)
 def cached_kegg(module_set: str, module: int | None) -> pd.DataFrame:
     return load_kegg(module, module_set=module_set)
 
@@ -497,7 +504,7 @@ def cached_feature_definitions() -> pd.DataFrame:
     return load_feature_definitions()
 
 
-@st.cache_data(show_spinner=False, max_entries=32)
+@st.cache_data(show_spinner=False, max_entries=8)
 def cached_prediction_performance(
     reference_provenance: str,
     module_definition: str,
@@ -513,7 +520,7 @@ def cached_prediction_performance(
     )
 
 
-@st.cache_data(show_spinner=False, max_entries=32)
+@st.cache_data(show_spinner=False, max_entries=8)
 def cached_prediction_bootstrap(
     reference_provenance: str,
     module_definition: str,
@@ -529,32 +536,32 @@ def cached_prediction_bootstrap(
     )
 
 
-@st.cache_data(show_spinner=False, max_entries=32)
+@st.cache_data(show_spinner=False, max_entries=8)
 def cached_prediction_curves(**filters: str | None) -> pd.DataFrame:
     return load_prediction_curves(**filters)
 
 
-@st.cache_data(show_spinner=False, max_entries=32)
+@st.cache_data(show_spinner=False, max_entries=8)
 def cached_prediction_confusion(**filters: str | None) -> pd.DataFrame:
     return load_prediction_confusion(**filters)
 
 
-@st.cache_data(show_spinner=False, max_entries=32)
+@st.cache_data(show_spinner=False, max_entries=8)
 def cached_prediction_coefficients(**filters: str | None) -> pd.DataFrame:
     return load_prediction_coefficients(**filters)
 
 
-@st.cache_data(show_spinner=False, max_entries=32)
+@st.cache_data(show_spinner=False, max_entries=6)
 def cached_prediction_diagnostics(**filters: str | None) -> pd.DataFrame:
     return load_prediction_diagnostics(**filters)
 
 
-@st.cache_data(show_spinner=False, max_entries=24)
+@st.cache_data(show_spinner=False, max_entries=6)
 def cached_prediction_whole_network(**filters: str | None) -> pd.DataFrame:
     return load_prediction_whole_network_features(**filters)
 
 
-@st.cache_data(show_spinner=False, max_entries=48)
+@st.cache_data(show_spinner=False, max_entries=8)
 def cached_targeted_prediction_table(
     table: str,
     filters: tuple[tuple[str, object], ...] = (),
@@ -647,7 +654,7 @@ def standardize_stored_associations(
 
 @st.cache_data(
     show_spinner="Calculating nominal cluster associations across modules…",
-    max_entries=48,
+    max_entries=6,
 )
 def cached_module_set_cluster_associations(
     module_set: str,
@@ -685,50 +692,20 @@ def cached_module_set_cluster_associations(
             & result["diagnosis_group"].isin(selected_groups)
         ].copy()
     else:
-        scope_arguments = {
-            "method": method,
-            "module": None,
-            "metric_family": feature,
-            "module_set": module_set,
-            "estimator": estimator,
-            "edge_rule": edge_rule,
-            "differential_edge_rule": differential_edge_rule,
-            "differential_fdr_scope": differential_fdr_scope,
-            "differential_fdr_threshold": differential_fdr_threshold,
-            "score_normalization": score_normalization,
-        }
-        if resolved:
-            source = load_resolved_scope(**scope_arguments)
-            long = resolved_to_long(source, "raw")
-        else:
-            source = load_aggregate_scope(**scope_arguments)
-            long = aggregate_to_long(source, "raw")
-        long = attach_metadata(long)
-        if analysis_subset != "all_donors":
-            split_value = {
-                "discovery_ad_control": "Discovery",
-                "validation_ad_control": "Validation",
-                "mci_external": "MCI_external",
-            }[analysis_subset]
-            long = long.loc[long["ad_control_split"].eq(split_value)]
-        long = long.loc[
-            long["component"].isin(components)
-            & long["diagnosis_group"].isin(diagnoses)
-        ].copy()
-        pieces = [long]
-        if include_pooled:
-            pooled = long.copy()
-            pooled["diagnosis_group"] = "All donors"
-            pieces.append(pooled)
-        result = calculate_categorical_associations(
-            pd.concat(pieces, ignore_index=True),
-            [
-                "module",
-                "metric_family",
-                "component",
-                "component_label",
-                "diagnosis_group",
-            ],
+        module_ids = tuple(
+            sorted(cached_annotations(module_set)["module"].astype(int).unique())
+        )
+        result = stream_diagnosis_categorical_associations(
+            module_ids, cached_sample_metadata(), module_set=module_set,
+            estimator=estimator, method=method, resolved=resolved,
+            feature=feature, category_variable="clusters", scale="raw",
+            components=components, diagnoses=diagnoses,
+            include_pooled=include_pooled, min_group_n=5,
+            edge_rule=edge_rule, differential_edge_rule=differential_edge_rule,
+            differential_fdr_scope=differential_fdr_scope,
+            differential_fdr_threshold=differential_fdr_threshold,
+            score_normalization=score_normalization,
+            analysis_subset=analysis_subset,
         )
         result = add_categorical_across_module_fdr(
             result,
@@ -747,7 +724,7 @@ def cached_module_set_cluster_associations(
 
 @st.cache_data(
     show_spinner="Calculating association FDR across the selected module set…",
-    max_entries=48,
+    max_entries=6,
 )
 def cached_module_set_associations(
     module_set: str,
@@ -824,48 +801,22 @@ def cached_module_set_associations(
     if not include_pooled:
         return group_statistics
 
-    scope_arguments = {
-        "method": method,
-        "module": None,
-        "metric_family": feature,
-        "module_set": module_set,
-        "estimator": estimator,
-        "edge_rule": edge_rule,
-        "differential_edge_rule": differential_edge_rule,
-        "differential_fdr_scope": differential_fdr_scope,
-        "differential_fdr_threshold": differential_fdr_threshold,
-        "score_normalization": score_normalization,
-        "metric_scale": scale,
-    }
-    if resolved:
-        source = load_resolved_scope(**scope_arguments)
-        source = source.loc[source["component"].isin(components)]
-        long = resolved_to_long(source, scale)
-    else:
-        source = load_aggregate_scope(**scope_arguments)
-        long = aggregate_to_long(source, scale)
-        long = long.loc[long["component"].isin(components)]
-    long = attach_metadata(long)
-    if differential_edge_rule != "all" and analysis_subset != "all_donors":
-        split_value = {
-            "discovery_ad_control": "Discovery",
-            "validation_ad_control": "Validation",
-            "mci_external": "MCI_external",
-        }[analysis_subset]
-        long = long.loc[long["ad_control_split"].eq(split_value)]
-    long = long.loc[long["diagnosis_group"].isin(diagnoses)].copy()
-    long["diagnosis_group"] = "All donors"
-    pooled_statistics = calculate_correlations(
-        long,
-        group_columns=[
-            "module",
-            "metric_family",
-            "component",
-            "component_label",
-            "diagnosis_group",
-        ],
-        outcomes=[phenotype],
+    module_ids = tuple(
+        sorted(cached_annotations(module_set)["module"].astype(int).unique())
     )
+    pooled_statistics = stream_pooled_correlations(
+        module_ids, cached_sample_metadata(), module_set=module_set,
+        estimator=estimator, method=method, resolved=resolved, feature=feature,
+        component=None, outcomes=(phenotype,), scale=scale,
+        diagnoses=diagnoses, edge_rule=edge_rule,
+        differential_edge_rule=differential_edge_rule,
+        differential_fdr_scope=differential_fdr_scope,
+        differential_fdr_threshold=differential_fdr_threshold,
+        score_normalization=score_normalization, analysis_subset=analysis_subset,
+    )
+    pooled_statistics = pooled_statistics.loc[
+        pooled_statistics["component"].isin(components)
+    ].copy()
     pooled_statistics = add_across_module_fdr(
         pooled_statistics,
         family_columns=["component", "diagnosis_group", "outcome"],
@@ -883,60 +834,9 @@ def cached_module_set_associations(
     return pd.concat([group_statistics, pooled_statistics], ignore_index=True)
 
 
-def _association_scope_long(
-    *,
-    module_set: str,
-    estimator: str,
-    method: str,
-    resolved: bool,
-    feature: str,
-    scale: str,
-    components: tuple[str, ...],
-    diagnoses: tuple[str, ...],
-    edge_rule: str,
-    differential_edge_rule: str,
-    differential_fdr_scope: str,
-    differential_fdr_threshold: float,
-    score_normalization: str,
-    analysis_subset: str,
-) -> pd.DataFrame:
-    """Read only the selected score scope and attach the compact metadata table."""
-
-    scope_arguments = {
-        "method": method,
-        "module": None,
-        "metric_family": feature,
-        "module_set": module_set,
-        "estimator": estimator,
-        "edge_rule": edge_rule,
-        "differential_edge_rule": differential_edge_rule,
-        "differential_fdr_scope": differential_fdr_scope,
-        "differential_fdr_threshold": differential_fdr_threshold,
-        "score_normalization": score_normalization,
-        "metric_scale": scale,
-    }
-    if resolved:
-        source = load_resolved_scope(**scope_arguments)
-        source = source.loc[source["component"].isin(components)]
-        long = resolved_to_long(source, scale)
-    else:
-        source = load_aggregate_scope(**scope_arguments)
-        long = aggregate_to_long(source, scale)
-        long = long.loc[long["component"].isin(components)]
-    long = attach_metadata(long)
-    if differential_edge_rule != "all" and analysis_subset != "all_donors":
-        split_value = {
-            "discovery_ad_control": "Discovery",
-            "validation_ad_control": "Validation",
-            "mci_external": "MCI_external",
-        }[analysis_subset]
-        long = long.loc[long["ad_control_split"].eq(split_value)]
-    return long.loc[long["diagnosis_group"].isin(diagnoses)].copy()
-
-
 @st.cache_data(
     show_spinner="Calculating grouped associations across the selected module set…",
-    max_entries=96,
+    max_entries=4,
 )
 def cached_grouped_module_set_associations(
     module_set: str,
@@ -994,31 +894,20 @@ def cached_grouped_module_set_associations(
         )
         return result
 
-    long = _association_scope_long(
-        module_set=module_set, estimator=estimator, method=method,
-        resolved=resolved, feature=feature, scale=scale, components=components,
-        diagnoses=diagnoses, edge_rule=edge_rule,
+    module_ids = tuple(
+        sorted(cached_annotations(module_set)["module"].astype(int).unique())
+    )
+    result = stream_grouped_correlations(
+        module_ids, cached_sample_metadata(), module_set=module_set,
+        estimator=estimator, method=method, resolved=resolved, feature=feature,
+        phenotype=phenotype, scale=scale, components=components,
+        diagnoses=diagnoses, grouping_variable=grouping_variable,
+        grouping_levels=grouping_levels, include_pooled=include_pooled,
+        min_group_n=min_group_n, edge_rule=edge_rule,
         differential_edge_rule=differential_edge_rule,
         differential_fdr_scope=differential_fdr_scope,
         differential_fdr_threshold=differential_fdr_threshold,
         score_normalization=score_normalization, analysis_subset=analysis_subset,
-    )
-    if grouping_variable == "__all__":
-        long["grouping_variable"] = "__all__"
-        long["grouping_level"] = "__all__"
-    else:
-        long = long.loc[long[grouping_variable].notna()].copy()
-        long = long.loc[long[grouping_variable].isin(grouping_levels)].copy()
-        long["grouping_variable"] = grouping_variable
-        long["grouping_level"] = long[grouping_variable]
-
-    group_columns = [
-        "module", "metric_family", "component", "component_label",
-        "grouping_variable", "grouping_level",
-    ]
-    result = calculate_correlations(
-        long, group_columns=group_columns, outcomes=[phenotype],
-        min_group_n=min_group_n,
     )
     if not result.empty:
         result = add_across_module_fdr(
@@ -1027,31 +916,17 @@ def cached_grouped_module_set_associations(
                 "component", "outcome", "grouping_variable", "grouping_level",
             ],
         )
+        result["is_pooled"] = result["grouping_level"].astype(str).eq("__pooled__")
         result["grouping_label"] = result["grouping_level"].map(
-            lambda value: association_level_label(grouping_variable, value)
+            lambda value: (
+                "All displayed donors (pooled)"
+                if str(value) == "__pooled__"
+                else association_level_label(grouping_variable, value)
+            )
         )
         # A string key avoids mixed numeric/"__pooled__" object columns in
         # Streamlit/Arrow tables while preserving the human-readable label.
         result["grouping_level"] = result["grouping_level"].astype(str)
-        result["is_pooled"] = False
-
-    if include_pooled and grouping_variable != "__all__" and not long.empty:
-        pooled = long.copy()
-        pooled["grouping_variable"] = grouping_variable
-        pooled["grouping_level"] = "__pooled__"
-        pooled_statistics = calculate_correlations(
-            pooled, group_columns=group_columns, outcomes=[phenotype],
-            min_group_n=min_group_n,
-        )
-        pooled_statistics = add_across_module_fdr(
-            pooled_statistics,
-            family_columns=[
-                "component", "outcome", "grouping_variable", "grouping_level",
-            ],
-        )
-        pooled_statistics["grouping_label"] = "All displayed donors (pooled)"
-        pooled_statistics["is_pooled"] = True
-        result = pd.concat([result, pooled_statistics], ignore_index=True)
 
     if not result.empty:
         family_sizes = result.loc[~result["is_pooled"]].groupby(
@@ -1068,7 +943,7 @@ def cached_grouped_module_set_associations(
 
 @st.cache_data(
     show_spinner="Calculating categorical associations across the selected module set…",
-    max_entries=64,
+    max_entries=4,
 )
 def cached_categorical_module_set_associations(
     module_set: str,
@@ -1092,24 +967,19 @@ def cached_categorical_module_set_associations(
 ) -> pd.DataFrame:
     """Return a generic Kruskal–Wallis/epsilon-squared module-set catalog."""
 
-    long = _association_scope_long(
-        module_set=module_set, estimator=estimator, method=method,
-        resolved=resolved, feature=feature, scale=scale, components=components,
-        diagnoses=diagnoses, edge_rule=edge_rule,
+    module_ids = tuple(
+        sorted(cached_annotations(module_set)["module"].astype(int).unique())
+    )
+    result = stream_categorical_associations(
+        module_ids, cached_sample_metadata(), module_set=module_set,
+        estimator=estimator, method=method, resolved=resolved, feature=feature,
+        category_variable=category_variable, scale=scale, components=components,
+        diagnoses=diagnoses, category_levels=category_levels,
+        min_group_n=int(min_group_n), edge_rule=edge_rule,
         differential_edge_rule=differential_edge_rule,
         differential_fdr_scope=differential_fdr_scope,
         differential_fdr_threshold=differential_fdr_threshold,
         score_normalization=score_normalization, analysis_subset=analysis_subset,
-    )
-    long = long.loc[
-        long[category_variable].notna()
-        & long[category_variable].isin(category_levels)
-    ].copy()
-    result = calculate_categorical_associations(
-        long,
-        ["module", "metric_family", "component", "component_label"],
-        category_column=category_variable,
-        min_group_n=int(min_group_n),
     )
     if result.empty:
         return result
@@ -1137,7 +1007,7 @@ def add_correlation_labels(frame: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
-@st.cache_data(show_spinner="Calculating the selected module correlation matrix…", max_entries=24)
+@st.cache_data(show_spinner="Calculating the selected module correlation matrix…", max_entries=6)
 def cached_module_correlations(
     module_set: str,
     estimator: str,
@@ -1196,7 +1066,7 @@ def cached_module_correlations(
     return add_correlation_labels(summary)
 
 
-@st.cache_data(show_spinner="Calculating correlations across all modules…", max_entries=24)
+@st.cache_data(show_spinner="Calculating correlations across all modules…", max_entries=3)
 def cached_all_module_correlations(
     module_set: str,
     estimator: str,
@@ -1271,56 +1141,21 @@ def cached_all_module_correlations(
     # Pooled-donor correlations are intentionally calculated from the anonymous
     # donor rows because the original robustness tables are diagnosis-stratified.
     if diagnosis in {"All donors", "All diagnosis groups"}:
-        if resolved:
-            source = load_resolved_scope(
-                method,
-                metric_family=feature_filter,
-                component=component_filter,
-                module_set=module_set,
-                estimator=estimator,
-                edge_rule=edge_rule,
-                differential_edge_rule=differential_edge_rule,
-                differential_fdr_scope=differential_fdr_scope,
-                differential_fdr_threshold=differential_fdr_threshold,
-                score_normalization=score_normalization,
-            )
-            long = resolved_to_long(source, "rint")
-        else:
-            source = load_aggregate_scope(
-                method,
-                metric_family=feature_filter,
-                module_set=module_set,
-                estimator=estimator,
-                edge_rule=edge_rule,
-                differential_edge_rule=differential_edge_rule,
-                differential_fdr_scope=differential_fdr_scope,
-                differential_fdr_threshold=differential_fdr_threshold,
-                score_normalization=score_normalization,
-            )
-            long = aggregate_to_long(source, "rint")
-            if component_filter is not None:
-                long = long.loc[long["component"].eq(component_filter)]
-        long = attach_metadata(long)
-        if differential_edge_rule != "all" and analysis_subset != "all_donors":
-            split_value = {
-                "discovery_ad_control": "Discovery",
-                "validation_ad_control": "Validation",
-                "mci_external": "MCI_external",
-            }[analysis_subset]
-            long = long.loc[long["ad_control_split"].eq(split_value)]
-        long = long.copy()
-        long["diagnosis_group"] = "All donors"
+        module_ids = tuple(
+            sorted(cached_annotations(module_set)["module"].astype(int).unique())
+        )
         summaries.append(
-            calculate_correlations(
-                long,
-                group_columns=[
-                    "module",
-                    "metric_family",
-                    "component",
-                    "component_label",
-                    "diagnosis_group",
-                ],
-                outcomes=NUMERIC_OUTCOMES,
+            stream_pooled_correlations(
+                module_ids, cached_sample_metadata(), module_set=module_set,
+                estimator=estimator, method=method, resolved=resolved,
+                feature=feature_filter, component=component_filter,
+                outcomes=tuple(NUMERIC_OUTCOMES), scale="rint",
+                diagnoses=tuple(DIAGNOSIS_ORDER), edge_rule=edge_rule,
+                differential_edge_rule=differential_edge_rule,
+                differential_fdr_scope=differential_fdr_scope,
+                differential_fdr_threshold=differential_fdr_threshold,
+                score_normalization=score_normalization,
+                analysis_subset=analysis_subset,
             )
         )
 
@@ -1335,6 +1170,13 @@ def cached_all_module_correlations(
         ],
     )
     summary = add_correlation_labels(summary)
+    for column in (
+        "metric_family", "component", "component_label", "diagnosis_group",
+        "outcome", "outcome_label", "feature_label", "heatmap_row",
+        "unavailable_reason",
+    ):
+        if column in summary:
+            summary[column] = summary[column].astype("category")
     return summary
 
 
@@ -3794,7 +3636,9 @@ if active_view == "Correlation heatmaps":
             lambda value: f"M{int(value)}"
         )
         if include_feature_in_row:
-            heatmap_data["heatmap_row"] += " · " + heatmap_data["feature_label"]
+            heatmap_data["heatmap_row"] += (
+                " · " + heatmap_data["feature_label"].astype(str)
+            )
         if include_component_in_row:
             heatmap_data["heatmap_row"] += " · " + heatmap_data[
                 "component_label"

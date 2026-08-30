@@ -592,6 +592,7 @@ def load_aggregate_scope(
     differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
     metric_scale: str | None = None,
+    include_embedded_metadata: bool = True,
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
@@ -608,11 +609,11 @@ def load_aggregate_scope(
         "module",
         "metric_family",
         *metric_columns,
-        "diagnosis_group",
-        *PHENOTYPE_LABELS,
         "lioness_method",
     ]
-    if differential_edge_rule != "all":
+    if include_embedded_metadata:
+        columns.extend(["diagnosis_group", *PHENOTYPE_LABELS])
+    if differential_edge_rule != "all" and include_embedded_metadata:
         columns.extend(
             [
                 "estimator",
@@ -701,6 +702,7 @@ def load_resolved_scope(
     differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
     metric_scale: str | None = None,
+    include_embedded_metadata: bool = True,
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
@@ -722,11 +724,11 @@ def load_resolved_scope(
         "component_class",
         "component_label",
         *metric_columns,
-        "diagnosis_group",
-        *PHENOTYPE_LABELS,
         "lioness_method",
     ]
-    if differential_edge_rule != "all":
+    if include_embedded_metadata:
+        columns.extend(["diagnosis_group", *PHENOTYPE_LABELS])
+    if differential_edge_rule != "all" and include_embedded_metadata:
         columns.extend(
             [
                 "estimator",
