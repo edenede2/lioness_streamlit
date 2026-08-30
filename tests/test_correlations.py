@@ -48,6 +48,41 @@ def test_across_module_fdr_keeps_pearson_and_spearman_families_separate() -> Non
     assert set(ts["spearman_fdr_module_family_n"]) == {3}
 
 
+def test_grouped_fdr_corrects_modules_separately_within_each_group_level() -> None:
+    frame = pd.DataFrame(
+        {
+            "module": [1, 2, 3, 1, 2, 3],
+            "component": ["CT"] * 6,
+            "outcome": ["cogn_global"] * 6,
+            "grouping_variable": ["clusters"] * 6,
+            "grouping_level": [1] * 3 + [4] * 3,
+            "pearson_p": [0.001, 0.020, 0.90, 0.040, 0.060, 0.80],
+            "spearman_p": [0.002, 0.030, 0.70, 0.010, 0.20, 0.90],
+        }
+    )
+    adjusted = add_across_module_fdr(
+        frame,
+        family_columns=[
+            "component", "outcome", "grouping_variable", "grouping_level",
+        ],
+    )
+
+    for level in (1, 4):
+        group = adjusted.loc[adjusted["grouping_level"].eq(level)]
+        assert np.allclose(
+            group["pearson_fdr_across_modules"],
+            benjamini_hochberg(group["pearson_p"]),
+            equal_nan=True,
+        )
+        assert np.allclose(
+            group["spearman_fdr_across_modules"],
+            benjamini_hochberg(group["spearman_p"]),
+            equal_nan=True,
+        )
+        assert group["pearson_fdr_module_family_n"].eq(3).all()
+        assert group["spearman_fdr_module_family_n"].eq(3).all()
+
+
 def test_real_aggregate_fdr_families_contain_each_module_definition() -> None:
     for module_set, expected_modules in (("full_cohort", 154), ("control_derived", 186)):
         stored = load_aggregate_statistics(
