@@ -8,4 +8,4 @@ plotly==6.9.0
 scipy==1.15.3
 google-auth==2.36.0
 requests==2.32.3
-sklearn
+scikit-learn==1.7.2
