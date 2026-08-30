@@ -16,11 +16,13 @@ from app_helpers.charts import (  # noqa: E402
     EDGE_COMPONENT_LABELS,
     aggregate_to_long,
     association_figure,
+    categorical_association_figure,
     clustered_correlation_group_order,
     correlation_heatmap_figure,
     distribution_figure,
     edge_volcano_figure,
     edge_summary_figure,
+    grouped_association_figure,
     mdc_entropy_figure,
     mdc_module_figure,
     mdc_overview_figure,
@@ -167,6 +169,81 @@ def test_scatter_and_distribution_chart_paths() -> None:
     )
     assert len(histogram.data) == 6
     assert all(trace.histnorm == "probability density" for trace in histogram.data)
+
+
+def test_configurable_grouped_scatter_controls_annotations_lines_and_legend() -> None:
+    rows = []
+    for cluster, diagnosis, offset in [(1, "Control", 0.0), (2, "AD", 1.0)]:
+        for index in range(12):
+            rows.append(
+                {
+                    "sample_id": f"S-{cluster}-{index}", "module": 1,
+                    "component": "CT", "component_label": "CT aggregate",
+                    "metric_value": float(index), "cogn_global": offset + index,
+                    "clusters": cluster, "diagnosis_group": diagnosis,
+                }
+            )
+    frame = pd.DataFrame(rows)
+    statistics = calculate_correlations(
+        frame.assign(grouping_variable="clusters", grouping_level=frame["clusters"]),
+        ["module", "component", "component_label", "grouping_variable", "grouping_level"],
+        ["cogn_global"], min_group_n=10,
+    )
+    statistics["spearman_fdr_across_modules"] = [0.01, 0.20]
+    statistics["pearson_fdr_across_modules"] = [0.01, 0.20]
+    figure = grouped_association_figure(
+        frame, statistics, phenotype="cogn_global", phenotype_label="Global cognition",
+        feature_label="Connectivity", scale_label="Raw", grouping_variable="clusters",
+        grouping_levels=[1, 2], grouping_labels={"1": "Cluster 1", "2": "Cluster 2"},
+        module=1, color_by="clusters", color_label="Cluster", hover_fields={},
+        trend_line_rule="fdr", significance_cutoff=0.05,
+        annotation_fields=["coefficient", "fdr"], minimum_group_n=10,
+        categorical_color_fields={"clusters"}, show_pooled=False,
+    )
+    legend_groups = {
+        trace.legendgroup for trace in figure.data if bool(trace.showlegend)
+    }
+    assert legend_groups == {"association_group::1", "association_group::2"}
+    trend_groups = {
+        trace.legendgroup
+        for trace in figure.data
+        if trace.mode == "lines" and "trend" in str(trace.name)
+    }
+    assert trend_groups == {"association_group::1"}
+    statistic_text = " ".join(str(value.text) for value in figure.layout.annotations)
+    assert "ρ=" in statistic_text and "module-set FDR=" in statistic_text
+    assert "n=" not in statistic_text
+
+
+def test_generic_categorical_figure_uses_diagnosis_marker_shapes() -> None:
+    frame = pd.DataFrame(
+        {
+            "sample_id": [f"S-{index}" for index in range(20)],
+            "component": ["TS"] * 20, "component_label": ["TS aggregate"] * 20,
+            "metric_value": np.arange(20, dtype=float),
+            "braak_stage": [1] * 10 + [2] * 10,
+            "diagnosis_group": ["Control"] * 10 + ["AD"] * 10,
+        }
+    )
+    statistics = pd.DataFrame(
+        {
+            "component": ["TS"], "n": [20], "n_tested": [20],
+            "levels_tested": ["1,2"], "levels_excluded_small_n": [""],
+            "kruskal_h": [8.0], "epsilon_squared": [0.4],
+            "categorical_p": [0.004], "categorical_fdr_across_modules": [0.02],
+        }
+    )
+    figure = categorical_association_figure(
+        frame, statistics, category_variable="braak_stage", category_label="Braak stage",
+        category_levels=[1, 2], category_labels={"1": "Braak 1", "2": "Braak 2"},
+        feature_label="Connectivity", scale_label="Raw", module=1,
+    )
+    point_symbols = {
+        trace.marker.symbol for trace in figure.data if trace.type == "scatter"
+    }
+    assert point_symbols == {"circle", "square"}
+    annotation = " ".join(str(value.text) for value in figure.layout.annotations)
+    assert "ε²=" in annotation and "module-set FDR=" in annotation
 
 
 def test_association_scatter_adds_pooled_all_donor_statistics_and_trends() -> None:

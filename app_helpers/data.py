@@ -246,8 +246,79 @@ OUTCOME_LABELS = {
 
 CATEGORICAL_OUTCOME_LABELS = {
     "clusters": "ROSMAP donor cluster (nominal 1–4)",
+    "diagnosis_group": "Diagnosis group",
+    "sex_code": "Sex code",
+    "apoe_genotype": "APOE genotype",
 }
 ASSOCIATION_OUTCOME_LABELS = {**OUTCOME_LABELS, **CATEGORICAL_OUTCOME_LABELS}
+
+# Association fields that can be used as correlation strata.  The ``__all__``
+# sentinel represents one unstratified association after all donor filters.
+ASSOCIATION_GROUP_LABELS = {
+    "diagnosis_group": "Diagnosis group",
+    "__all__": "All displayed donors",
+    "clusters": "ROSMAP clusters",
+    "cogdx": "CogDx",
+    "braak_stage": "Braak stage",
+    "cerad_score": "CERAD score",
+    "adnc": "ADNC",
+    "parkinsonism": "Parkinsonism",
+    "sex_code": "Sex code",
+    "apoe_genotype": "APOE genotype",
+}
+
+CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES = {
+    "clusters",
+    "diagnosis_group",
+    "sex_code",
+    "apoe_genotype",
+}
+SELECTABLE_ASSOCIATION_OUTCOMES = {
+    "cogdx",
+    "braak_stage",
+    "cerad_score",
+    "adnc",
+    "parkinsonism",
+}
+
+ASSOCIATION_LEVEL_ORDERS = {
+    "diagnosis_group": ["Control", "MCI", "AD"],
+    "clusters": [1, 2, 3, 4],
+    "cogdx": [1, 2, 3, 4, 5],
+    "braak_stage": [0, 1, 2, 3, 4, 5, 6],
+    "cerad_score": [1, 2, 3, 4],
+    "adnc": [0, 1, 2, 3],
+    "parkinsonism": [0, 1],
+    "sex_code": ["Code 0", "Code 1"],
+    "apoe_genotype": ["ε2/ε2", "ε2/ε3", "ε2/ε4", "ε3/ε3", "ε3/ε4", "ε4/ε4"],
+}
+
+
+def association_level_label(variable: str, value: object) -> str:
+    """Return a stable public label for an association category level."""
+
+    if variable == "__all__":
+        return "All displayed donors"
+    if pd.isna(value):
+        return "Missing"
+    if variable == "diagnosis_group":
+        return str(value)
+    if variable == "clusters":
+        return f"Cluster {int(float(value))}"
+    if variable == "cogdx":
+        return f"CogDx {int(float(value))}"
+    if variable == "braak_stage":
+        return f"Braak {int(float(value))}"
+    if variable == "cerad_score":
+        return f"CERAD {int(float(value))}"
+    if variable == "adnc":
+        return f"ADNC {int(float(value))}"
+    if variable == "parkinsonism":
+        return "Parkinsonism" if int(float(value)) == 1 else "No Parkinsonism"
+    if variable == "sex_code":
+        text = str(value)
+        return text if text.lower().startswith("sex ") else f"Sex {text.lower()}"
+    return str(value)
 
 HOVER_LABELS = {
     **OUTCOME_LABELS,
@@ -520,22 +591,23 @@ def load_aggregate_scope(
     differential_fdr_scope: str = "global",
     differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
+    metric_scale: str | None = None,
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
         filters.append(("module", "=", int(module)))
     if metric_family is not None:
         filters.append(("metric_family", "=", metric_family))
+    metric_columns = (
+        [f"CT_{metric_scale}", f"TS_{metric_scale}"]
+        if metric_scale is not None
+        else ["CT_raw", "TS_raw", "CT_asinh", "TS_asinh", "CT_rint", "TS_rint"]
+    )
     columns = [
         "sample_id",
         "module",
         "metric_family",
-        "CT_raw",
-        "TS_raw",
-        "CT_asinh",
-        "TS_asinh",
-        "CT_rint",
-        "TS_rint",
+        *metric_columns,
         "diagnosis_group",
         *PHENOTYPE_LABELS,
         "lioness_method",
@@ -628,6 +700,7 @@ def load_resolved_scope(
     differential_fdr_scope: str = "global",
     differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
+    metric_scale: str | None = None,
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
@@ -636,6 +709,11 @@ def load_resolved_scope(
         filters.append(("metric_family", "=", metric_family))
     if component is not None:
         filters.append(("component", "=", component))
+    metric_columns = (
+        [f"metric_{metric_scale}"]
+        if metric_scale is not None
+        else ["metric_raw", "metric_asinh", "metric_rint"]
+    )
     columns = [
         "sample_id",
         "module",
@@ -643,9 +721,7 @@ def load_resolved_scope(
         "component",
         "component_class",
         "component_label",
-        "metric_raw",
-        "metric_asinh",
-        "metric_rint",
+        *metric_columns,
         "diagnosis_group",
         *PHENOTYPE_LABELS,
         "lioness_method",

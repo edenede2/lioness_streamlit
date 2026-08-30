@@ -90,6 +90,10 @@ CONTINUOUS_COLOR_SCALES = {
     "RdBu": "RdBu",
     "Spectral": "Spectral",
 }
+ASSOCIATION_GROUP_COLORS = [
+    "#2C7FB8", "#E66101", "#20A486", "#8C6BB1", "#D8A500",
+    "#C44E8A", "#4D908E", "#6C757D", "#E76F51", "#577590",
+]
 MDC_ENRICHMENT_RESOLUTION_TITLES = {
     "pathway": ("Pathway", "pathways"),
     "subcategory": ("KEGG sub-category", "KEGG sub-categories"),
@@ -934,6 +938,468 @@ def association_figure(
             }
         )
     return fig
+
+
+def _group_stat_lookup(
+    statistics: pd.DataFrame,
+    component: str,
+    grouping_level: object,
+) -> pd.Series | None:
+    if statistics.empty:
+        return None
+    mask = statistics["component"].astype(str).eq(str(component))
+    mask &= statistics["grouping_level"].astype(str).eq(str(grouping_level))
+    selected = statistics.loc[mask]
+    return None if selected.empty else selected.iloc[0]
+
+
+def _configurable_correlation_text(
+    row: pd.Series | None,
+    correlation_method: str,
+    annotation_fields: Iterable[str],
+    minimum_group_n: int,
+) -> str:
+    fields = set(annotation_fields)
+    if row is None:
+        return "statistics unavailable"
+    n = int(row.get("n", 0))
+    if n < int(minimum_group_n) or not bool(row.get("eligible", True)):
+        reason = row.get("unavailable_reason", "") or "constant or unavailable values"
+        return f"n={n}; statistics unavailable ({html.escape(str(reason))})"
+    method = correlation_method.lower()
+    coefficient_column = "spearman_rho" if method == "spearman" else "pearson_r"
+    p_column = f"{method}_p"
+    q_column = f"{method}_fdr_across_modules"
+    parts: list[str] = []
+    if "n" in fields:
+        parts.append(f"n={n}")
+    if "coefficient" in fields:
+        symbol = "ρ" if method == "spearman" else "r"
+        parts.append(f"{symbol}={_format_number(row.get(coefficient_column))}")
+    if "p" in fields:
+        parts.append(f"p={_format_number(row.get(p_column))}")
+    if "fdr" in fields:
+        parts.append(f"module-set FDR={_format_number(row.get(q_column))}")
+    return "; ".join(parts) if parts else ""
+
+
+def _trend_is_visible(
+    row: pd.Series | None,
+    correlation_method: str,
+    rule: str,
+    cutoff: float,
+    minimum_group_n: int,
+) -> bool:
+    if rule == "none" or row is None:
+        return False
+    if int(row.get("n", 0)) < int(minimum_group_n) or not bool(row.get("eligible", True)):
+        return False
+    if rule == "all":
+        return True
+    column = (
+        f"{correlation_method.lower()}_p"
+        if rule == "p"
+        else f"{correlation_method.lower()}_fdr_across_modules"
+    )
+    value = pd.to_numeric(pd.Series([row.get(column)]), errors="coerce").iloc[0]
+    return bool(pd.notna(value) and value < float(cutoff))
+
+
+def grouped_association_figure(
+    frame: pd.DataFrame,
+    statistics: pd.DataFrame,
+    *,
+    phenotype: str,
+    phenotype_label: str,
+    feature_label: str,
+    scale_label: str,
+    grouping_variable: str,
+    grouping_levels: Iterable[object],
+    grouping_labels: dict[str, str],
+    module: int,
+    color_by: str,
+    color_label: str,
+    hover_fields: dict[str, str],
+    correlation_method: str = "spearman",
+    annotation_fields: Iterable[str] = ("n", "coefficient", "p", "fdr"),
+    trend_line_rule: str = "all",
+    significance_cutoff: float = 0.05,
+    minimum_group_n: int = 10,
+    show_pooled: bool = True,
+    pooled_label: str = "All displayed donors (pooled)",
+    module_definition: str | None = None,
+    continuous_colorscale: str = "Blue–white–orange",
+    reverse_colorscale: bool = False,
+    categorical_color_fields: Iterable[str] = (),
+    kegg_subtitles: dict[str, str] | None = None,
+) -> go.Figure:
+    """Grouped numeric associations with configurable annotations and trends."""
+
+    levels = list(grouping_levels)
+    components = frame[["component", "component_label"]].drop_duplicates()
+    component_pairs = list(components.itertuples(index=False, name=None))
+    ncols = 2 if len(component_pairs) <= 2 else 3
+    nrows = math.ceil(len(component_pairs) / ncols)
+    subtitles = kegg_subtitles or {}
+    subplot_titles = []
+    for component, label in component_pairs:
+        enrichment = subtitles.get(str(component), "")
+        subplot_titles.append(
+            html.escape(str(label))
+            if not enrichment
+            else f"<b>{html.escape(str(label))}</b><br>{html.escape(str(enrichment))}"
+        )
+    figure = make_subplots(
+        rows=nrows, cols=ncols, subplot_titles=subplot_titles,
+        horizontal_spacing=0.08, vertical_spacing=0.25 if nrows > 1 else 0.08,
+    )
+    for annotation in figure.layout.annotations:
+        annotation.update(font={"size": 12, "color": "#27364B"})
+
+    group_colors = {
+        str(level): (
+            DIAGNOSIS_COLORS[str(level)]
+            if grouping_variable == "diagnosis_group" and str(level) in DIAGNOSIS_COLORS
+            else CLUSTER_COLORS[int(float(level))]
+            if grouping_variable == "clusters" and int(float(level)) in CLUSTER_COLORS
+            else ASSOCIATION_GROUP_COLORS[index % len(ASSOCIATION_GROUP_COLORS)]
+        )
+        for index, level in enumerate(levels)
+    }
+    categorical_color_fields = set(categorical_color_fields)
+    discrete_color = color_by in categorical_color_fields or color_by == grouping_variable
+    continuous_color = not discrete_color
+    color_min = color_max = None
+    if continuous_color and color_by in frame:
+        color_values = pd.to_numeric(frame[color_by], errors="coerce")
+        finite = color_values.loc[np.isfinite(color_values)]
+        if not finite.empty:
+            color_min, color_max = float(finite.min()), float(finite.max())
+            if color_min == color_max:
+                color_min -= 0.5
+                color_max += 0.5
+    discrete_values = []
+    if discrete_color and color_by in frame:
+        discrete_values = frame[color_by].dropna().drop_duplicates().tolist()
+    if color_by == "diagnosis_group":
+        discrete_colors = {str(value): DIAGNOSIS_COLORS.get(str(value), "#A9B1BA") for value in discrete_values}
+    elif color_by == "clusters":
+        discrete_colors = {
+            str(value): CLUSTER_COLORS.get(int(float(value)), "#A9B1BA")
+            for value in discrete_values
+        }
+    else:
+        discrete_colors = {
+            str(value): ASSOCIATION_GROUP_COLORS[index % len(ASSOCIATION_GROUP_COLORS)]
+            for index, value in enumerate(discrete_values)
+        }
+
+    for panel_index, (component, _component_label) in enumerate(component_pairs):
+        row = panel_index // ncols + 1
+        col = panel_index % ncols + 1
+        panel = frame.loc[frame["component"].eq(component)]
+        annotation_lines: list[str] = []
+        for level in levels:
+            if grouping_variable == "__all__":
+                selected = panel.copy()
+            else:
+                selected = panel.loc[panel[grouping_variable].eq(level)].copy()
+            selected = _clean_xy(selected, "metric_value", phenotype)
+            if selected.empty:
+                continue
+            group_key = str(level)
+            group_label = grouping_labels.get(group_key, group_key)
+            group_color = group_colors[group_key]
+            stat = _group_stat_lookup(statistics, component, level)
+
+            # One legend item controls every diagnosis-shaped point trace and its line.
+            figure.add_trace(
+                go.Scatter(
+                    x=[None], y=[None], mode="lines+markers", name=group_label,
+                    legendgroup=f"association_group::{group_key}",
+                    showlegend=panel_index == 0,
+                    line={"color": group_color, "width": 2.5},
+                    marker={"color": group_color, "size": 8}, hoverinfo="skip",
+                ), row=row, col=col,
+            )
+            for diagnosis in [*DIAGNOSIS_COLORS, None]:
+                diagnosis_rows = (
+                    selected.loc[selected["diagnosis_group"].eq(diagnosis)]
+                    if diagnosis is not None
+                    else selected.loc[~selected["diagnosis_group"].isin(DIAGNOSIS_COLORS)]
+                )
+                if diagnosis_rows.empty:
+                    continue
+                if discrete_color and color_by != grouping_variable:
+                    color_subsets = [
+                        (diagnosis_rows.loc[diagnosis_rows[color_by].eq(value)], value)
+                        for value in discrete_values
+                    ]
+                    color_subsets.append((diagnosis_rows.loc[diagnosis_rows[color_by].isna()], None))
+                elif continuous_color:
+                    numeric_color = pd.to_numeric(diagnosis_rows[color_by], errors="coerce")
+                    color_subsets = [
+                        (diagnosis_rows.loc[numeric_color.notna()], "__continuous__"),
+                        (diagnosis_rows.loc[numeric_color.isna()], None),
+                    ]
+                else:
+                    color_subsets = [(diagnosis_rows, level)]
+                for point_rows, point_color in color_subsets:
+                    if point_rows.empty:
+                        continue
+                    customdata, hover_template = _hover_payload(point_rows, hover_fields)
+                    marker: dict[str, object] = {
+                        "symbol": DIAGNOSIS_SYMBOLS.get(diagnosis, "circle-open"),
+                        "size": 8, "opacity": 0.74,
+                        "line": {"width": 0.5, "color": "white"},
+                    }
+                    if point_color == "__continuous__":
+                        marker.update({
+                            "color": pd.to_numeric(point_rows[color_by], errors="coerce"),
+                            "coloraxis": "coloraxis",
+                        })
+                    elif point_color is None:
+                        marker["color"] = "#A9B1BA"
+                    elif color_by == grouping_variable:
+                        marker["color"] = group_color
+                    elif discrete_color:
+                        marker["color"] = discrete_colors.get(str(point_color), "#A9B1BA")
+                    else:
+                        marker["color"] = group_color
+                    figure.add_trace(
+                        go.Scatter(
+                            x=point_rows["metric_value"], y=point_rows[phenotype],
+                            mode="markers", name=group_label,
+                            legendgroup=f"association_group::{group_key}", showlegend=False,
+                            marker=marker, customdata=customdata,
+                            hovertemplate=(
+                                hover_template + f"Correlation group: {html.escape(group_label)}<br>"
+                                + f"{feature_label}: %{{x:.3f}}<br>"
+                                + f"{phenotype_label}: %{{y:.3f}}<extra></extra>"
+                            ),
+                        ), row=row, col=col,
+                    )
+            if _trend_is_visible(
+                stat, correlation_method, trend_line_rule,
+                significance_cutoff, minimum_group_n,
+            ) and selected["metric_value"].nunique() > 1:
+                slope, intercept = np.polyfit(selected["metric_value"], selected[phenotype], 1)
+                x_line = np.array([selected["metric_value"].min(), selected["metric_value"].max()])
+                figure.add_trace(
+                    go.Scatter(
+                        x=x_line, y=intercept + slope * x_line, mode="lines",
+                        name=f"{group_label} trend",
+                        legendgroup=f"association_group::{group_key}", showlegend=False,
+                        hoverinfo="skip", line={"color": group_color, "width": 2.5},
+                    ), row=row, col=col,
+                )
+            statistic_text = _configurable_correlation_text(
+                stat, correlation_method, annotation_fields, minimum_group_n,
+            )
+            if statistic_text:
+                annotation_lines.append(f"<b>{html.escape(group_label)}</b>: {statistic_text}")
+
+        pooled_stat = _group_stat_lookup(statistics, component, "__pooled__")
+        if show_pooled and pooled_stat is not None:
+            pooled = _clean_xy(panel, "metric_value", phenotype)
+            if _trend_is_visible(
+                pooled_stat, correlation_method, trend_line_rule,
+                significance_cutoff, minimum_group_n,
+            ) and pooled["metric_value"].nunique() > 1:
+                slope, intercept = np.polyfit(pooled["metric_value"], pooled[phenotype], 1)
+                x_line = np.array([pooled["metric_value"].min(), pooled["metric_value"].max()])
+                figure.add_trace(
+                    go.Scatter(
+                        x=x_line, y=intercept + slope * x_line, mode="lines",
+                        name=pooled_label, legendgroup="__pooled__",
+                        showlegend=panel_index == 0, hoverinfo="skip",
+                        line={"color": "#1F2937", "width": 3, "dash": "dash"},
+                    ), row=row, col=col,
+                )
+            pooled_text = _configurable_correlation_text(
+                pooled_stat, correlation_method, annotation_fields, minimum_group_n,
+            )
+            if pooled_text:
+                annotation_lines.insert(0, f"<b>{html.escape(pooled_label)}</b>: {pooled_text}")
+
+        if annotation_lines:
+            axis_number = panel_index + 1
+            figure.add_annotation(
+                x=0.01, y=0.99,
+                xref="x domain" if axis_number == 1 else f"x{axis_number} domain",
+                yref="y domain" if axis_number == 1 else f"y{axis_number} domain",
+                text="<br>".join(annotation_lines), showarrow=False, align="left",
+                xanchor="left", yanchor="top", font={"size": 10, "color": "#27364B"},
+                bgcolor="rgba(255,255,255,0.80)",
+                bordercolor="rgba(90,110,130,0.28)", borderwidth=1,
+            )
+
+    figure.update_xaxes(title_text=f"{feature_label} ({scale_label})", zeroline=True)
+    figure.update_yaxes(title_text=phenotype_label, zeroline=True)
+    title = f"Module M{int(module)}: {phenotype_label} vs {feature_label}"
+    if module_definition:
+        title += f"<br><sup>{module_definition}</sup>"
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"}, template="plotly_white",
+        height=610 if nrows == 1 else 1060,
+        margin={"l": 55, "r": 25, "t": 180, "b": 55},
+        legend={
+            "orientation": "h", "yanchor": "bottom", "y": 1.14,
+            "xanchor": "right", "x": 1, "groupclick": "togglegroup",
+        },
+        hoverlabel={"font_size": 13},
+    )
+    if continuous_color and color_min is not None and color_max is not None:
+        figure.update_layout(coloraxis={
+            "cmin": color_min, "cmax": color_max,
+            "colorscale": CONTINUOUS_COLOR_SCALES.get(
+                continuous_colorscale, CONTINUOUS_COLOR_SCALES["Blue–white–orange"]
+            ),
+            "reversescale": bool(reverse_colorscale),
+            "colorbar": {"title": {"text": color_label}, "thickness": 16},
+        })
+    return figure
+
+
+def categorical_association_figure(
+    frame: pd.DataFrame,
+    statistics: pd.DataFrame,
+    *,
+    category_variable: str,
+    category_label: str,
+    category_levels: Iterable[object],
+    category_labels: dict[str, str],
+    feature_label: str,
+    scale_label: str,
+    module: int,
+    minimum_group_n: int = 10,
+    annotation_fields: Iterable[str] = ("n", "effect", "p", "fdr"),
+    module_definition: str | None = None,
+    kegg_subtitles: dict[str, str] | None = None,
+    hover_fields: dict[str, str] | None = None,
+) -> go.Figure:
+    """Generic nominal/ordinal category comparison without numeric correlations."""
+
+    levels = list(category_levels)
+    components = frame[["component", "component_label"]].drop_duplicates()
+    component_pairs = list(components.itertuples(index=False, name=None))
+    ncols = 2 if len(component_pairs) <= 2 else 3
+    nrows = math.ceil(len(component_pairs) / ncols)
+    subtitles = kegg_subtitles or {}
+    titles = [
+        html.escape(str(label)) if not subtitles.get(str(component))
+        else f"<b>{html.escape(str(label))}</b><br>{html.escape(str(subtitles[str(component)]))}"
+        for component, label in component_pairs
+    ]
+    figure = make_subplots(
+        rows=nrows, cols=ncols, subplot_titles=titles,
+        horizontal_spacing=0.08, vertical_spacing=0.24 if nrows > 1 else 0.08,
+    )
+    hover_fields = hover_fields or {}
+    fields = set(annotation_fields)
+    colors = {
+        str(level): (
+            CLUSTER_COLORS[int(float(level))]
+            if category_variable == "clusters" and int(float(level)) in CLUSTER_COLORS
+            else DIAGNOSIS_COLORS[str(level)]
+            if category_variable == "diagnosis_group" and str(level) in DIAGNOSIS_COLORS
+            else ASSOCIATION_GROUP_COLORS[index % len(ASSOCIATION_GROUP_COLORS)]
+        )
+        for index, level in enumerate(levels)
+    }
+    for panel_index, (component, _label) in enumerate(component_pairs):
+        row = panel_index // ncols + 1
+        col = panel_index % ncols + 1
+        panel = frame.loc[frame["component"].eq(component)]
+        for level in levels:
+            selected = panel.loc[panel[category_variable].eq(level)].copy()
+            selected = selected.loc[pd.to_numeric(selected["metric_value"], errors="coerce").notna()]
+            if selected.empty:
+                continue
+            label = category_labels.get(str(level), str(level))
+            customdata, hover_template = _hover_payload(selected, hover_fields)
+            figure.add_trace(
+                go.Box(
+                    x=np.repeat(label, len(selected)), y=selected["metric_value"],
+                    name=label, legendgroup=f"category::{level}",
+                    showlegend=panel_index == 0, boxpoints=False,
+                    fillcolor="rgba(255,255,255,0)",
+                    line={"color": colors[str(level)], "width": 2},
+                    hoverinfo="skip",
+                ), row=row, col=col,
+            )
+            for diagnosis in DIAGNOSIS_COLORS:
+                points = selected.loc[selected["diagnosis_group"].eq(diagnosis)]
+                if points.empty:
+                    continue
+                point_customdata, point_hover = _hover_payload(points, hover_fields)
+                figure.add_trace(
+                    go.Scatter(
+                        x=np.repeat(label, len(points)), y=points["metric_value"],
+                        mode="markers", name=label,
+                        legendgroup=f"category::{level}", showlegend=False,
+                        marker={
+                            "color": colors[str(level)],
+                            "symbol": DIAGNOSIS_SYMBOLS[diagnosis],
+                            "size": 7, "opacity": 0.72,
+                            "line": {"color": "white", "width": 0.4},
+                        },
+                        customdata=point_customdata,
+                        hovertemplate=(
+                            point_hover + f"{html.escape(category_label)}: {html.escape(label)}<br>"
+                            + f"{feature_label}: %{{y:.3f}}<extra></extra>"
+                        ),
+                    ), row=row, col=col,
+                )
+        stat = statistics.loc[statistics["component"].astype(str).eq(str(component))]
+        if not stat.empty:
+            value = stat.iloc[0]
+            pieces: list[str] = []
+            if "n" in fields:
+                pieces.append(f"n={int(value.get('n', 0))}")
+            if "h" in fields:
+                pieces.append(f"H={_format_number(value.get('kruskal_h'))}")
+            if "effect" in fields:
+                pieces.append(f"ε²={_format_number(value.get('epsilon_squared'))}")
+            if "p" in fields:
+                pieces.append(f"p={_format_number(value.get('categorical_p'))}")
+            if "fdr" in fields:
+                pieces.append(
+                    "module-set FDR="
+                    + _format_number(value.get("categorical_fdr_across_modules"))
+                )
+            tested = value.get("levels_tested", value.get("clusters_tested", "")) or "none"
+            excluded = value.get(
+                "levels_excluded_small_n", value.get("clusters_excluded_small_n", "")
+            ) or "none"
+            pieces.append(
+                f"<br>tested: {html.escape(str(tested))}; "
+                f"excluded (&lt;{int(minimum_group_n)}): {html.escape(str(excluded))}"
+            )
+            axis_number = panel_index + 1
+            figure.add_annotation(
+                x=0.01, y=0.99,
+                xref="x domain" if axis_number == 1 else f"x{axis_number} domain",
+                yref="y domain" if axis_number == 1 else f"y{axis_number} domain",
+                text="; ".join(pieces), showarrow=False, xanchor="left", yanchor="top",
+                align="left", font={"size": 10, "color": "#27364B"},
+                bgcolor="rgba(255,255,255,0.82)",
+            )
+    figure.update_xaxes(title_text=category_label)
+    figure.update_yaxes(title_text=f"{feature_label} ({scale_label})", zeroline=True)
+    title = f"Module M{int(module)}: network-score distributions by {category_label}"
+    if module_definition:
+        title += f"<br><sup>{module_definition}</sup>"
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"}, template="plotly_white",
+        height=610 if nrows == 1 else 1050,
+        margin={"l": 60, "r": 25, "t": 175, "b": 60},
+        legend={
+            "orientation": "h", "y": 1.13, "x": 1, "xanchor": "right",
+            "groupclick": "togglegroup",
+        },
+    )
+    return figure
 
 
 def cluster_association_figure(

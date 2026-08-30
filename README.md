@@ -22,7 +22,15 @@ The app includes two explicitly separated module definitions:
   posterior `p < 0.05` or within-donor/module BH `FDR < 0.05`.
 - Aggregate cross-tissue (CT) and tissue-specific (TS) views.
 - Tissue-resolved CT pair and TS tissue views using the label **DLPFC**.
-- Diagnosis-specific scatter plots and OLS trends for Control, MCI, and AD.
+- Configurable grouped association plots: diagnosis (default), pooled donors,
+  clusters, CogDx, Braak, CERAD, ADNC, Parkinsonism, sex code, or APOE genotype.
+  Selected levels jointly control points, OLS visual guides, annotations, legends,
+  and downloads; point color remains independent and diagnosis remains marker shape.
+- Numeric/ordinal association outcomes can show Pearson or Spearman statistics;
+  CogDx, Braak, CERAD, ADNC, and Parkinsonism can instead be treated categorically.
+  Nominal clusters, diagnosis, sex, and APOE use Kruskal–Wallis/epsilon-squared only.
+- Configurable annotation fields, 5/10/20 minimum group sizes, 0.05/0.10 cutoffs,
+  and all/p-significant/FDR-significant/no-trend display rules.
 - A global association-correlation selector, defaulting to Spearman with Pearson
   available from the sidebar; it controls scatter annotations, heatmaps, the
   CT-vs-TS screen, and the primary statistics table.

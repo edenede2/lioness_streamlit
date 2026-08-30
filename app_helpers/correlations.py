@@ -76,6 +76,8 @@ def calculate_correlations(
     frame: pd.DataFrame,
     group_columns: list[str],
     outcomes: Iterable[str],
+    *,
+    min_group_n: int = 3,
 ) -> pd.DataFrame:
     """Calculate Pearson/Spearman statistics for metric_value and each outcome."""
     rows: list[dict[str, object]] = []
@@ -93,14 +95,28 @@ def calculate_correlations(
                 y = y_all.loc[valid]
                 n = int(valid.sum())
                 pearson_r = pearson_p = spearman_rho = spearman_p = np.nan
-                if n >= 3 and x.nunique() > 1 and y.nunique() > 1:
+                x_constant = x.nunique() <= 1
+                y_constant = y.nunique() <= 1
+                eligible = n >= int(min_group_n) and not x_constant and not y_constant
+                if eligible:
                     pearson_r, pearson_p = pearsonr(x, y)
                     spearman_rho, spearman_p = spearmanr(x, y)
+                if n < int(min_group_n):
+                    unavailable_reason = f"n < {int(min_group_n)}"
+                elif x_constant:
+                    unavailable_reason = "constant network score"
+                elif y_constant:
+                    unavailable_reason = "constant outcome"
+                else:
+                    unavailable_reason = ""
                 rows.append(
                     {
                         **base,
                         "outcome": outcome,
                         "n": n,
+                        "eligible": bool(eligible),
+                        "minimum_group_n": int(min_group_n),
+                        "unavailable_reason": unavailable_reason,
                         "pearson_r": pearson_r,
                         "pearson_p": pearson_p,
                         "spearman_rho": spearman_rho,
@@ -136,13 +152,13 @@ def calculate_categorical_associations(
         work = pd.DataFrame(
             {
                 "score": pd.to_numeric(group["metric_value"], errors="coerce"),
-                "category": pd.to_numeric(group[category_column], errors="coerce"),
+                "category": group[category_column],
             }
         ).dropna()
-        work = work.loc[np.isfinite(work["score"]) & np.isfinite(work["category"])]
+        work = work.loc[np.isfinite(work["score"])]
         counts = work.groupby("category", observed=True)["score"].size()
-        eligible = [int(value) for value in counts.index[counts.ge(int(min_group_n))]]
-        excluded = [int(value) for value in counts.index[counts.lt(int(min_group_n))]]
+        eligible = counts.index[counts.ge(int(min_group_n))].tolist()
+        excluded = counts.index[counts.lt(int(min_group_n))].tolist()
         samples = [
             work.loc[work["category"].eq(value), "score"].to_numpy(dtype=float)
             for value in eligible
@@ -166,20 +182,34 @@ def calculate_categorical_associations(
             "outcome": category_column,
             "n": int(len(work)),
             "n_tested": n_tested,
+            "levels_tested": ",".join(map(str, eligible)),
+            "levels_excluded_small_n": ",".join(map(str, excluded)),
+            "level_counts": "; ".join(
+                f"{value}: {int(counts.loc[value])}" for value in counts.index
+            ),
+            "level_medians": "; ".join(
+                f"{value}: {float(work.loc[work['category'].eq(value), 'score'].median()):.6g}"
+                for value in counts.index
+            ),
+            # Retain these aliases for the already-deployed cluster hot cache and
+            # backward-compatible downloads.
             "clusters_tested": ",".join(map(str, eligible)),
             "clusters_excluded_small_n": ",".join(map(str, excluded)),
             "kruskal_h": h_statistic,
             "kruskal_df": float(k_tested - 1) if k_tested >= 2 else np.nan,
+            "k_tested": k_tested,
             "epsilon_squared": epsilon_squared,
             "categorical_p": p_value,
             "min_group_n": int(min_group_n),
         }
+        # Keep the fixed Cluster 1–4 columns for old consumers, while generic
+        # category summaries are carried in a separate long table in the app.
         for label in (1, 2, 3, 4):
-            values = work.loc[work["category"].eq(label), "score"]
+            values = work.loc[
+                work["category"].astype(str).eq(str(label)), "score"
+            ]
             row[f"n_cluster_{label}"] = int(len(values))
-            row[f"median_cluster_{label}"] = (
-                float(values.median()) if not values.empty else np.nan
-            )
+            row[f"median_cluster_{label}"] = float(values.median()) if not values.empty else np.nan
         rows.append(row)
     return pd.DataFrame(rows)
 

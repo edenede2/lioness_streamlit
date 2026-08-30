@@ -297,7 +297,7 @@ def test_streamlit_smoke_lioness_and_bonobo_module_definitions() -> None:
     app = preserve_legacy_pills_state(app)
 
     outcome = widget_with_label(app.selectbox, "Association outcome")
-    assert len(outcome.options) == 13
+    assert len(outcome.options) == 16
     outcome.set_value("adnc")
     app = widget_with_label(app.selectbox, "Color points by").set_value(
         "age_at_death"
@@ -531,3 +531,40 @@ def test_streamlit_nominal_cluster_association_and_heatmap_render() -> None:
     app = association_type.set_value("Nominal ROSMAP clusters").run()
     assert_app_clean(app)
     assert widget_with_label(app.checkbox, "Show only rows with at least one cluster FDR < 0.05")
+
+
+def test_streamlit_configurable_grouped_and_ordinal_associations_render() -> None:
+    app = AppTest.from_file(APP, default_timeout=240).run()
+    assert_app_clean(app)
+    assert widget_with_label(app.selectbox, "Group correlations by").value == "diagnosis_group"
+    app = widget_with_label(app.selectbox, "Group correlations by").set_value(
+        "clusters"
+    ).run()
+    assert_app_clean(app)
+    levels = widget_with_label(app.multiselect, "Group levels")
+    assert set(levels.options) == {"Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4"}
+    app = levels.set_value([1.0, 2.0]).run()
+    assert_app_clean(app)
+    app = widget_with_label(app.selectbox, "Trend-line rule").set_value("none").run()
+    assert_app_clean(app)
+    grouped_table = next(
+        dataframe.value for dataframe in app.dataframe
+        if "grouping_variable" in dataframe.value.columns
+    )
+    assert set(grouped_table["grouping_variable"]) == {"clusters"}
+    assert set(grouped_table.loc[~grouped_table["is_pooled"], "grouping_level"]) == {"1", "2"}
+    assert {"pearson_r", "spearman_rho", "pearson_fdr_across_modules",
+            "spearman_fdr_across_modules"}.issubset(grouped_table.columns)
+
+    app = widget_with_label(app.selectbox, "Association outcome").set_value("cogdx").run()
+    assert_app_clean(app)
+    interpretation = widget_with_label(app.radio, "Outcome interpretation")
+    assert interpretation.value == "numeric"
+    app = interpretation.set_value("categorical").run()
+    assert_app_clean(app)
+    categorical_table = next(
+        dataframe.value for dataframe in app.dataframe
+        if "category_variable" in dataframe.value.columns
+    )
+    assert set(categorical_table["category_variable"]) == {"cogdx"}
+    assert not {"pearson_r", "spearman_rho"}.intersection(categorical_table.columns)

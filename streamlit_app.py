@@ -18,6 +18,7 @@ if not all(
     hasattr(_chart_helpers, name)
     for name in (
         "CONTINUOUS_COLOR_SCALES",
+        "categorical_association_figure",
         "EDGE_COMPONENT_LABELS",
         "edge_volcano_figure",
         "module_finder_figure",
@@ -31,6 +32,7 @@ if not all(
         "targeted_transform_heatmap_figure",
         "targeted_panel_overlap_figure",
         "clustered_correlation_group_order",
+        "grouped_association_figure",
     )
 ):
     _chart_helpers = importlib.reload(_chart_helpers)
@@ -39,8 +41,7 @@ from app_helpers.charts import (
     CONTINUOUS_COLOR_SCALES,
     EDGE_COMPONENT_LABELS,
     aggregate_to_long,
-    association_figure,
-    cluster_association_figure,
+    categorical_association_figure,
     cluster_association_heatmap_figure,
     classification_diagnostic_rows,
     correlation_heatmap_figure,
@@ -54,6 +55,7 @@ from app_helpers.charts import (
     mdc_overview_figure,
     mdc_resolved_heatmap_figure,
     mdc_resolved_module_figure,
+    grouped_association_figure,
     module_finder_figure,
     module_entropy_figure,
     module_region_composition_figure,
@@ -94,17 +96,23 @@ from app_helpers import data as _data_helpers
 
 if not all(
     hasattr(_data_helpers, name)
-    for name in ("collapse_pathway_mdc_rows", "SCORE_TRANSFORM_LABELS")
+    for name in (
+        "collapse_pathway_mdc_rows", "SCORE_TRANSFORM_LABELS",
+        "ASSOCIATION_GROUP_LABELS", "association_level_label",
+    )
 ):
     _data_helpers = importlib.reload(_data_helpers)
 
 from app_helpers.data import (
     ANALYSIS_SUBSET_LABELS,
+    ASSOCIATION_GROUP_LABELS,
+    ASSOCIATION_LEVEL_ORDERS,
     ASSOCIATION_OUTCOME_LABELS,
     BONOBO_EDGE_RULE_LABELS,
     BONOBO_FEATURE_LABELS,
     COLOR_LABELS,
     COMPONENT_ORDER,
+    CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES,
     DATA_DIR,
     DIFFERENTIAL_EDGE_RULE_LABELS,
     DIAGNOSIS_ORDER,
@@ -132,6 +140,8 @@ from app_helpers.data import (
     SCALE_LABELS,
     SCORE_TRANSFORM_LABELS,
     SCORE_NORMALIZATION_LABELS,
+    SELECTABLE_ASSOCIATION_OUTCOMES,
+    association_level_label,
     build_pathway_mdc_rows,
     collapse_pathway_mdc_rows,
     association_kegg_subtitles,
@@ -558,6 +568,26 @@ def attach_metadata(frame: pd.DataFrame) -> pd.DataFrame:
     return frame.merge(metadata[additional], on="sample_id", how="left", validate="many_to_one")
 
 
+def ordered_association_levels(frame: pd.DataFrame, variable: str) -> list[object]:
+    """Return observed non-missing category levels in a stable biological order."""
+
+    if variable == "__all__":
+        return ["__all__"]
+    observed = frame[variable].dropna().drop_duplicates().tolist()
+    observed_by_text = {str(value): value for value in observed}
+    ordered = [
+        observed_by_text[str(value)]
+        for value in ASSOCIATION_LEVEL_ORDERS.get(variable, [])
+        if str(value) in observed_by_text
+    ]
+    included = {str(value) for value in ordered}
+    extras = sorted(
+        (value for value in observed if str(value) not in included),
+        key=lambda value: str(value),
+    )
+    return [*ordered, *extras]
+
+
 def standardize_stored_associations(
     statistics: pd.DataFrame,
     *,
@@ -798,6 +828,7 @@ def cached_module_set_associations(
         "differential_fdr_scope": differential_fdr_scope,
         "differential_fdr_threshold": differential_fdr_threshold,
         "score_normalization": score_normalization,
+        "metric_scale": scale,
     }
     if resolved:
         source = load_resolved_scope(**scope_arguments)
@@ -843,6 +874,252 @@ def cached_module_set_associations(
             f"definition ({module_count} expected): {pooled_families.to_dict()}"
         )
     return pd.concat([group_statistics, pooled_statistics], ignore_index=True)
+
+
+def _association_scope_long(
+    *,
+    module_set: str,
+    estimator: str,
+    method: str,
+    resolved: bool,
+    feature: str,
+    scale: str,
+    components: tuple[str, ...],
+    diagnoses: tuple[str, ...],
+    edge_rule: str,
+    differential_edge_rule: str,
+    differential_fdr_scope: str,
+    differential_fdr_threshold: float,
+    score_normalization: str,
+    analysis_subset: str,
+) -> pd.DataFrame:
+    """Read only the selected score scope and attach the compact metadata table."""
+
+    scope_arguments = {
+        "method": method,
+        "module": None,
+        "metric_family": feature,
+        "module_set": module_set,
+        "estimator": estimator,
+        "edge_rule": edge_rule,
+        "differential_edge_rule": differential_edge_rule,
+        "differential_fdr_scope": differential_fdr_scope,
+        "differential_fdr_threshold": differential_fdr_threshold,
+        "score_normalization": score_normalization,
+        "metric_scale": scale,
+    }
+    if resolved:
+        source = load_resolved_scope(**scope_arguments)
+        source = source.loc[source["component"].isin(components)]
+        long = resolved_to_long(source, scale)
+    else:
+        source = load_aggregate_scope(**scope_arguments)
+        long = aggregate_to_long(source, scale)
+        long = long.loc[long["component"].isin(components)]
+    long = attach_metadata(long)
+    if differential_edge_rule != "all" and analysis_subset != "all_donors":
+        split_value = {
+            "discovery_ad_control": "Discovery",
+            "validation_ad_control": "Validation",
+            "mci_external": "MCI_external",
+        }[analysis_subset]
+        long = long.loc[long["ad_control_split"].eq(split_value)]
+    return long.loc[long["diagnosis_group"].isin(diagnoses)].copy()
+
+
+@st.cache_data(
+    show_spinner="Calculating grouped associations across the selected module set…",
+    max_entries=96,
+)
+def cached_grouped_module_set_associations(
+    module_set: str,
+    module_count: int,
+    estimator: str,
+    method: str,
+    resolved: bool,
+    feature: str,
+    phenotype: str,
+    scale: str,
+    components: tuple[str, ...],
+    diagnoses: tuple[str, ...],
+    grouping_variable: str,
+    grouping_levels: tuple[object, ...],
+    include_pooled: bool,
+    min_group_n: int,
+    edge_rule: str,
+    differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
+    differential_fdr_threshold: float = 0.05,
+    score_normalization: str = "standard_pruned",
+    analysis_subset: str = "all_donors",
+) -> pd.DataFrame:
+    """Return grouped Pearson/Spearman statistics with module-set BH FDR.
+
+    Diagnosis grouping reuses the compact stored correlation catalog. Other
+    grouping variables are calculated lazily from one feature/resolution scope.
+    Every cache-key field fixes a statistical family or donor filter.
+    """
+
+    min_group_n = int(min_group_n)
+    if grouping_variable == "diagnosis_group":
+        result = cached_module_set_associations(
+            module_set, module_count, estimator, method, resolved, feature,
+            phenotype, scale, components, tuple(str(value) for value in grouping_levels),
+            include_pooled, edge_rule, differential_edge_rule,
+            differential_fdr_scope, differential_fdr_threshold,
+            score_normalization, analysis_subset,
+        ).copy()
+        result["grouping_variable"] = "diagnosis_group"
+        result["grouping_level"] = result["diagnosis_group"].where(
+            ~result["diagnosis_group"].eq("All donors"), "__pooled__"
+        )
+        result["grouping_label"] = result["grouping_level"].replace(
+            {"__pooled__": "All displayed donors (pooled)"}
+        )
+        result["is_pooled"] = result["grouping_level"].eq("__pooled__")
+        result["minimum_group_n"] = min_group_n
+        result["eligible"] = result["n"].ge(min_group_n) & (
+            result["pearson_r"].notna() | result["spearman_rho"].notna()
+        )
+        result["unavailable_reason"] = np.where(
+            result["n"].lt(min_group_n), f"n < {min_group_n}",
+            np.where(result["eligible"], "", "constant or unavailable values"),
+        )
+        return result
+
+    long = _association_scope_long(
+        module_set=module_set, estimator=estimator, method=method,
+        resolved=resolved, feature=feature, scale=scale, components=components,
+        diagnoses=diagnoses, edge_rule=edge_rule,
+        differential_edge_rule=differential_edge_rule,
+        differential_fdr_scope=differential_fdr_scope,
+        differential_fdr_threshold=differential_fdr_threshold,
+        score_normalization=score_normalization, analysis_subset=analysis_subset,
+    )
+    if grouping_variable == "__all__":
+        long["grouping_variable"] = "__all__"
+        long["grouping_level"] = "__all__"
+    else:
+        long = long.loc[long[grouping_variable].notna()].copy()
+        long = long.loc[long[grouping_variable].isin(grouping_levels)].copy()
+        long["grouping_variable"] = grouping_variable
+        long["grouping_level"] = long[grouping_variable]
+
+    group_columns = [
+        "module", "metric_family", "component", "component_label",
+        "grouping_variable", "grouping_level",
+    ]
+    result = calculate_correlations(
+        long, group_columns=group_columns, outcomes=[phenotype],
+        min_group_n=min_group_n,
+    )
+    if not result.empty:
+        result = add_across_module_fdr(
+            result,
+            family_columns=[
+                "component", "outcome", "grouping_variable", "grouping_level",
+            ],
+        )
+        result["grouping_label"] = result["grouping_level"].map(
+            lambda value: association_level_label(grouping_variable, value)
+        )
+        # A string key avoids mixed numeric/"__pooled__" object columns in
+        # Streamlit/Arrow tables while preserving the human-readable label.
+        result["grouping_level"] = result["grouping_level"].astype(str)
+        result["is_pooled"] = False
+
+    if include_pooled and grouping_variable != "__all__" and not long.empty:
+        pooled = long.copy()
+        pooled["grouping_variable"] = grouping_variable
+        pooled["grouping_level"] = "__pooled__"
+        pooled_statistics = calculate_correlations(
+            pooled, group_columns=group_columns, outcomes=[phenotype],
+            min_group_n=min_group_n,
+        )
+        pooled_statistics = add_across_module_fdr(
+            pooled_statistics,
+            family_columns=[
+                "component", "outcome", "grouping_variable", "grouping_level",
+            ],
+        )
+        pooled_statistics["grouping_label"] = "All displayed donors (pooled)"
+        pooled_statistics["is_pooled"] = True
+        result = pd.concat([result, pooled_statistics], ignore_index=True)
+
+    if not result.empty:
+        family_sizes = result.loc[~result["is_pooled"]].groupby(
+            ["component", "outcome", "grouping_variable", "grouping_level"],
+            observed=True, dropna=False,
+        )["module"].nunique()
+        if not family_sizes.empty and not family_sizes.eq(int(module_count)).all():
+            raise ValueError(
+                "Grouped association families do not contain every module in the "
+                f"selected definition ({module_count} expected): {family_sizes.to_dict()}"
+            )
+    return result
+
+
+@st.cache_data(
+    show_spinner="Calculating categorical associations across the selected module set…",
+    max_entries=64,
+)
+def cached_categorical_module_set_associations(
+    module_set: str,
+    module_count: int,
+    estimator: str,
+    method: str,
+    resolved: bool,
+    feature: str,
+    category_variable: str,
+    scale: str,
+    components: tuple[str, ...],
+    diagnoses: tuple[str, ...],
+    category_levels: tuple[object, ...],
+    min_group_n: int,
+    edge_rule: str,
+    differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
+    differential_fdr_threshold: float = 0.05,
+    score_normalization: str = "standard_pruned",
+    analysis_subset: str = "all_donors",
+) -> pd.DataFrame:
+    """Return a generic Kruskal–Wallis/epsilon-squared module-set catalog."""
+
+    long = _association_scope_long(
+        module_set=module_set, estimator=estimator, method=method,
+        resolved=resolved, feature=feature, scale=scale, components=components,
+        diagnoses=diagnoses, edge_rule=edge_rule,
+        differential_edge_rule=differential_edge_rule,
+        differential_fdr_scope=differential_fdr_scope,
+        differential_fdr_threshold=differential_fdr_threshold,
+        score_normalization=score_normalization, analysis_subset=analysis_subset,
+    )
+    long = long.loc[
+        long[category_variable].notna()
+        & long[category_variable].isin(category_levels)
+    ].copy()
+    result = calculate_categorical_associations(
+        long,
+        ["module", "metric_family", "component", "component_label"],
+        category_column=category_variable,
+        min_group_n=int(min_group_n),
+    )
+    if result.empty:
+        return result
+    result["category_variable"] = category_variable
+    result = add_categorical_across_module_fdr(
+        result,
+        family_columns=["metric_family", "component", "outcome", "category_variable"],
+    )
+    family_sizes = result.groupby(
+        ["component", "outcome", "category_variable"], observed=True, sort=False,
+    )["module"].nunique()
+    if not family_sizes.empty and not family_sizes.eq(int(module_count)).all():
+        raise ValueError(
+            "Categorical association families do not contain every module in the "
+            f"selected definition ({module_count} expected): {family_sizes.to_dict()}"
+        )
+    return result
 
 
 def add_correlation_labels(frame: pd.DataFrame) -> pd.DataFrame:
@@ -2479,9 +2756,31 @@ with st.sidebar:
     )
     phenotype = st.selectbox(
         "Association outcome",
-        options=list(ASSOCIATION_OUTCOME_LABELS),
+        options=(
+            list(ASSOCIATION_OUTCOME_LABELS)
+            if active_view == "Associations"
+            else [*OUTCOME_LABELS, "clusters"]
+        ),
         format_func=lambda value: ASSOCIATION_OUTCOME_LABELS[value],
     )
+    if active_view == "Associations" and phenotype in SELECTABLE_ASSOCIATION_OUTCOMES:
+        association_interpretation = st.radio(
+            "Outcome interpretation",
+            options=["numeric", "categorical"],
+            format_func=lambda value: (
+                "Numeric / ordinal correlation"
+                if value == "numeric" else "Categorical comparison"
+            ),
+            horizontal=True,
+            help=(
+                "Numeric mode preserves ordered score information. Categorical mode treats "
+                "the codes as labels and uses a Kruskal–Wallis omnibus comparison."
+            ),
+        )
+    elif phenotype in CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES:
+        association_interpretation = "categorical"
+    else:
+        association_interpretation = "numeric"
     active_feature_labels = dict(
         FEATURE_LABELS if estimator == "lioness" else BONOBO_FEATURE_LABELS
     )
@@ -2590,28 +2889,122 @@ with st.sidebar:
             "Controls association scatter annotations, correlation heatmaps, the CT–TS "
             "screen, and the primary statistics table. Spearman is the default."
         ),
-        disabled=phenotype == "clusters",
+        disabled=association_interpretation == "categorical",
     )
     diagnoses = st.multiselect(
         "Diagnosis groups",
         options=DIAGNOSIS_ORDER,
         default=DIAGNOSIS_ORDER,
     )
-    show_pooled_association = (
-        st.checkbox(
-            "Show pooled association across displayed donors",
-            value=True,
+    grouping_variable = "diagnosis_group"
+    selected_group_levels: list[object] = list(diagnoses)
+    minimum_group_n = 10
+    annotation_fields: list[str] = ["n", "coefficient", "p", "fdr"]
+    trend_line_rule = "all"
+    association_significance_cutoff = 0.05
+    show_pooled_association = False
+    if active_view == "Associations":
+        association_metadata = cached_sample_metadata()
+        association_metadata = association_metadata.loc[
+            association_metadata["diagnosis_group"].isin(diagnoses)
+        ].copy()
+        if differential_edge_rule != "all" and analysis_subset != "all_donors":
+            selected_split = {
+                "discovery_ad_control": "Discovery",
+                "validation_ad_control": "Validation",
+                "mci_external": "MCI_external",
+            }[analysis_subset]
+            association_metadata = association_metadata.loc[
+                association_metadata["ad_control_split"].eq(selected_split)
+            ]
+        minimum_group_n = st.selectbox(
+            "Minimum category size", options=[5, 10, 20], index=1,
             help=(
-                "Adds one association and OLS trend using all donors that remain after "
-                "the diagnosis, cohort, tissue-component, and missing-value filters. "
-                "This is descriptive and may include between-diagnosis differences."
+                "Smaller groups remain visible, but their statistics and trend lines are "
+                "marked unavailable."
             ),
         )
-        if active_view == "Associations" and phenotype != "clusters"
-        else False
-    )
-    if active_view == "Associations" and phenotype == "clusters":
-        show_pooled_association = True
+        if association_interpretation == "numeric":
+            grouping_options = [
+                variable for variable in ASSOCIATION_GROUP_LABELS
+                if variable != phenotype
+            ]
+            grouping_variable = st.selectbox(
+                "Group correlations by",
+                options=grouping_options,
+                format_func=lambda value: ASSOCIATION_GROUP_LABELS[value],
+                index=grouping_options.index("diagnosis_group"),
+            )
+            available_group_levels = ordered_association_levels(
+                association_metadata, grouping_variable
+            )
+            selected_group_levels = st.multiselect(
+                "Group levels",
+                options=available_group_levels,
+                default=available_group_levels,
+                format_func=lambda value: association_level_label(grouping_variable, value),
+                disabled=grouping_variable == "__all__",
+                help="The selection controls points, trends, annotations, legends, and downloads.",
+            )
+            if grouping_variable == "__all__":
+                selected_group_levels = ["__all__"]
+            show_pooled_association = (
+                st.checkbox(
+                    "Show pooled association across displayed donors",
+                    value=True,
+                    help=(
+                        "The dashed pooled fit is recalculated after diagnosis, cohort, "
+                        "component, grouping-level, and missing-value filters."
+                    ),
+                )
+                if grouping_variable != "__all__" else False
+            )
+            annotation_fields = st.multiselect(
+                "Plot annotation fields",
+                options=["n", "coefficient", "p", "fdr"],
+                default=["n", "coefficient", "p", "fdr"],
+                format_func=lambda value: {
+                    "n": "Sample size (n)", "coefficient": "Correlation coefficient",
+                    "p": "Nominal p-value", "fdr": "Module-set FDR",
+                }[value],
+            )
+            trend_line_rule = st.selectbox(
+                "Trend-line rule",
+                options=["all", "p", "fdr", "none"],
+                format_func=lambda value: {
+                    "all": "All eligible groups", "p": "Nominal p below cutoff",
+                    "fdr": "Module-set FDR below cutoff", "none": "No trend lines",
+                }[value],
+            )
+            association_significance_cutoff = st.radio(
+                "Association significance cutoff",
+                options=[0.05, 0.10], index=0, horizontal=True,
+                format_func=lambda value: f"{value:.2f}" + (
+                    " (exploratory)" if value == 0.10 else ""
+                ),
+                disabled=trend_line_rule not in {"p", "fdr"},
+            )
+        else:
+            available_group_levels = ordered_association_levels(
+                association_metadata, phenotype
+            )
+            selected_group_levels = st.multiselect(
+                "Category levels",
+                options=available_group_levels,
+                default=available_group_levels,
+                format_func=lambda value: association_level_label(phenotype, value),
+                help="The selection controls displayed points and the omnibus test.",
+            )
+            annotation_fields = st.multiselect(
+                "Plot annotation fields",
+                options=["n", "h", "effect", "p", "fdr"],
+                default=["n", "h", "effect", "p", "fdr"],
+                format_func=lambda value: {
+                    "n": "Sample size (n)", "h": "Kruskal–Wallis H",
+                    "effect": "Epsilon-squared", "p": "Nominal p-value",
+                    "fdr": "Module-set FDR",
+                }[value],
+            )
     color_by = st.selectbox(
         "Color points by",
         options=list(COLOR_LABELS),
@@ -2621,12 +3014,26 @@ with st.sidebar:
         "Continuous color scale",
         options=list(CONTINUOUS_COLOR_SCALES),
         index=0,
-        disabled=color_by in {"diagnosis_group", "clusters"},
+        disabled=(
+            color_by in CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES
+            or (
+                active_view == "Associations"
+                and association_interpretation == "numeric"
+                and color_by == grouping_variable
+            )
+        ),
     )
     reverse_colorscale = st.checkbox(
         "Reverse continuous color scale",
         value=False,
-        disabled=color_by in {"diagnosis_group", "clusters"},
+        disabled=(
+            color_by in CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES
+            or (
+                active_view == "Associations"
+                and association_interpretation == "numeric"
+                and color_by == grouping_variable
+            )
+        ),
     )
 
 differential_caption = (
@@ -2662,13 +3069,13 @@ with st.spinner("Loading the selected module…"):
         )
         plot_data = aggregate_to_long(plot_data, scale)
         statistics = (
-            pd.DataFrame()
-            if phenotype == "clusters"
-            else cached_aggregate_stats(
+            cached_aggregate_stats(
                 module_set, estimator, method, module, phenotype, feature, edge_rule,
                 differential_edge_rule, differential_fdr_scope,
                 differential_fdr_threshold, score_normalization, analysis_subset,
             )
+            if active_view == "Statistics" and association_interpretation == "numeric"
+            else pd.DataFrame()
         )
         resolved = False
     else:
@@ -2679,13 +3086,13 @@ with st.spinner("Loading the selected module…"):
         )
         plot_data = resolved_to_long(plot_data, scale)
         statistics = (
-            pd.DataFrame()
-            if phenotype == "clusters"
-            else cached_resolved_stats(
+            cached_resolved_stats(
                 module_set, estimator, method, module, phenotype, feature, edge_rule,
                 differential_edge_rule, differential_fdr_scope,
                 differential_fdr_threshold, score_normalization, analysis_subset,
             )
+            if active_view == "Statistics" and association_interpretation == "numeric"
+            else pd.DataFrame()
         )
         resolved = True
 
@@ -2732,6 +3139,17 @@ plot_data = plot_data.loc[
     plot_data["diagnosis_group"].isin(diagnoses)
     & plot_data["component"].isin(selected_components)
 ].copy()
+if active_view == "Associations":
+    if association_interpretation == "numeric" and grouping_variable != "__all__":
+        plot_data = plot_data.loc[
+            plot_data[grouping_variable].notna()
+            & plot_data[grouping_variable].isin(selected_group_levels)
+        ].copy()
+    elif association_interpretation == "categorical":
+        plot_data = plot_data.loc[
+            plot_data[phenotype].notna()
+            & plot_data[phenotype].isin(selected_group_levels)
+        ].copy()
 if not statistics.empty:
     statistics = statistics.loc[
         statistics["diagnosis_group"].isin(diagnoses)
@@ -2864,25 +3282,23 @@ with st.expander(
     )
 
 if active_view == "Associations":
-    module_set_associations = cached_module_set_associations(
-        module_set,
-        module_count,
-        estimator,
-        method,
-        resolved,
-        feature,
-        phenotype,
-        scale,
-        tuple(selected_components),
-        tuple(diagnoses),
-        show_pooled_association,
-        edge_rule,
-        differential_edge_rule,
-        differential_fdr_scope,
-        differential_fdr_threshold,
-        score_normalization,
-        analysis_subset,
-    )
+    if association_interpretation == "numeric":
+        module_set_associations = cached_grouped_module_set_associations(
+            module_set, module_count, estimator, method, resolved, feature,
+            phenotype, scale, tuple(selected_components), tuple(diagnoses),
+            grouping_variable, tuple(selected_group_levels),
+            show_pooled_association, minimum_group_n, edge_rule,
+            differential_edge_rule, differential_fdr_scope,
+            differential_fdr_threshold, score_normalization, analysis_subset,
+        )
+    else:
+        module_set_associations = cached_categorical_module_set_associations(
+            module_set, module_count, estimator, method, resolved, feature,
+            phenotype, scale, tuple(selected_components), tuple(diagnoses),
+            tuple(selected_group_levels), minimum_group_n, edge_rule,
+            differential_edge_rule, differential_fdr_scope,
+            differential_fdr_threshold, score_normalization, analysis_subset,
+        )
     displayed_association_statistics = module_set_associations.loc[
         module_set_associations["module"].astype(int).eq(int(module))
     ].copy()
@@ -2892,16 +3308,19 @@ if active_view == "Associations":
         and analysis_subset == "all_donors"
         else "All displayed donors (pooled)"
     )
-    pooled_statistics = displayed_association_statistics.loc[
-        displayed_association_statistics["diagnosis_group"].eq("All donors")
-    ].copy()
     st.subheader("Phenotype association")
-    if phenotype == "clusters":
+    if association_interpretation == "categorical":
         st.caption(
-            f"Cluster labels are nominal categories, not numbers. Each panel shows the "
-            f"network-score distribution for Cluster 1–4. The Kruskal–Wallis omnibus "
-            f"test includes clusters with at least five displayed donors; smaller groups "
-            f"remain visible but are identified as excluded. Epsilon-squared is the effect "
+            (
+                "Cluster labels are nominal categories, not numbers. "
+                if phenotype == "clusters"
+                else f"{ASSOCIATION_OUTCOME_LABELS[phenotype]} is treated as a categorical outcome. "
+            )
+            +
+            "Each panel shows its network-score distributions; category codes are never "
+            "entered into Pearson or Spearman calculations. The Kruskal–Wallis omnibus "
+            f"test includes levels with at least {minimum_group_n} displayed donors; smaller "
+            "levels remain visible but are identified as excluded. Epsilon-squared is the effect "
             f"size. FDR is Benjamini–Hochberg adjusted only across the {module_count} "
             "modules in the selected definition for the fixed estimator, network method, "
             "feature, component, cohort, edge rule, and score normalization. Pearson, "
@@ -2909,60 +3328,69 @@ if active_view == "Associations":
         )
     else:
         st.caption(
-        f"Diagnosis-specific points with {correlation_method} correlation annotations and "
-        "ordinary least-squares trend lines. By default, a dashed pooled line and pooled "
-        "correlation summarize all displayed donors in addition to the within-diagnosis "
-        "associations. The pooled result is descriptive and can reflect between-diagnosis "
-        f"separation. Every Pearson and Spearman FDR is BH-adjusted only across the "
-        f"{module_count} modules in the selected module definition, while holding the "
-        "phenotype, feature, tissue component, diagnosis/cohort, estimator, network method, "
-        "edge rule, score scale, and correlation method fixed. Modules without a valid "
-        "correlation are not counted as tested hypotheses. Click a diagnosis "
-        "in the legend to hide or show its points and trend together. Point shape identifies "
-        "diagnosis; point color follows the selected color variable. Gray points have a missing "
-        "value for a continuous color variable. The OLS lines are visual guides and do not "
-        "change when Spearman is selected. Aggregate CT/TS panel subtitles use the "
-        "tissue-expanded KEGG result. Tissue-resolved TS subtitles use the corresponding "
-        "regional enrichment; CT-pair subtitles report both regions' FDRs for the pathway "
-        "with the strongest conservative joint regional support. Those two FDRs are regional "
-        "tests, not a newly combined pair-level p-value."
+            f"Correlations are grouped by {ASSOCIATION_GROUP_LABELS[grouping_variable]}; "
+            f"annotations report {correlation_method}, while OLS lines remain visual guides. "
+            "The selected levels control points, lines, annotations, legend groups, and "
+            "downloads together. Diagnosis remains a donor-inclusion filter and marker shape. "
+            f"Pearson and Spearman FDRs are BH-adjusted only across the {module_count} modules "
+            "while holding the module definition, estimator, method, feature, component, "
+            "outcome, cohort, edge rules, score handling, grouping variable, and grouping "
+            "level fixed. Missing and constant tests are excluded from the BH denominator. "
+            "The dashed pooled association, when enabled, is recalculated after every donor "
+            "and level filter. A legend entry toggles its correlation group's points and line "
+            "together. Aggregate and resolved KEGG subtitles remain component-specific."
         )
+    grouping_labels = {
+        str(value): association_level_label(
+            phenotype if association_interpretation == "categorical" else grouping_variable,
+            value,
+        )
+        for value in selected_group_levels
+    }
     figure = (
-        cluster_association_figure(
+        categorical_association_figure(
             plot_data,
-            displayed_association_statistics.loc[
-                displayed_association_statistics["diagnosis_group"].eq("All donors")
-            ],
+            displayed_association_statistics,
+            category_variable=phenotype,
+            category_label=ASSOCIATION_OUTCOME_LABELS[phenotype],
+            category_levels=selected_group_levels,
+            category_labels=grouping_labels,
             feature_label=active_feature_labels[feature],
             scale_label=SCALE_LABELS[scale],
             module=module,
+            minimum_group_n=minimum_group_n,
+            annotation_fields=annotation_fields,
             module_definition=module_set_label,
             kegg_subtitles=association_subtitles,
             hover_fields=HOVER_LABELS,
         )
-        if phenotype == "clusters"
-        else association_figure(
+        if association_interpretation == "categorical"
+        else grouped_association_figure(
             plot_data,
-            statistics,
+            displayed_association_statistics,
             phenotype=phenotype,
             phenotype_label=OUTCOME_LABELS[phenotype],
             feature_label=active_feature_labels[feature],
-            scale=scale,
             scale_label=SCALE_LABELS[scale],
-            diagnoses=diagnoses,
+            grouping_variable=grouping_variable,
+            grouping_levels=selected_group_levels,
+            grouping_labels=grouping_labels,
             module=module,
-            resolved=resolved,
             color_by=color_by,
             color_label=COLOR_LABELS[color_by],
             hover_fields=HOVER_LABELS,
             correlation_method=correlation_method.lower(),
+            annotation_fields=annotation_fields,
+            trend_line_rule=trend_line_rule,
+            significance_cutoff=association_significance_cutoff,
+            minimum_group_n=minimum_group_n,
+            show_pooled=show_pooled_association,
+            pooled_label=pooled_label,
             module_definition=module_set_label,
             continuous_colorscale=continuous_colorscale,
             reverse_colorscale=reverse_colorscale,
+            categorical_color_fields=CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES,
             kegg_subtitles=association_subtitles,
-            pooled_statistics=pooled_statistics,
-            pooled_label=pooled_label,
-            module_fdr_statistics=displayed_association_statistics,
         )
     )
     st.plotly_chart(
@@ -2974,13 +3402,13 @@ if active_view == "Associations":
                 "format": "png",
                 "filename": (
                     f"{download_prefix}M{module}_{phenotype}_{feature}_{method}_"
-                    f"{correlation_method.lower()}"
+                    f"{association_interpretation}_{correlation_method.lower()}"
                 ),
                 "scale": 3,
             },
         },
     )
-    public_columns = [
+    public_columns = list(dict.fromkeys([
         "sample_id",
         "diagnosis_group",
         "module",
@@ -2991,7 +3419,7 @@ if active_view == "Associations":
         phenotype,
         "lioness_method",
         *[column for column in HOVER_LABELS if column != phenotype],
-    ]
+    ]))
     public_plot_data = plot_data[public_columns].rename(
         columns={
             "metric_value": f"feature_{scale}",
@@ -3009,24 +3437,33 @@ if active_view == "Associations":
         mime="text/tab-separated-values",
     )
     association_table = displayed_association_statistics.copy()
-    association_table["diagnosis_group"] = association_table[
-        "diagnosis_group"
-    ].replace({"All donors": pooled_label})
+    if association_interpretation == "numeric":
+        association_table["grouping_label"] = association_table["grouping_label"].replace(
+            {"All displayed donors (pooled)": pooled_label}
+        )
+        if "diagnosis_group" in association_table:
+            association_table["diagnosis_group"] = association_table[
+                "diagnosis_group"
+            ].replace({"All donors": pooled_label})
+        else:
+            association_table["diagnosis_group"] = " / ".join(diagnoses)
     association_table.insert(0, "module_definition", module_set_label)
     association_columns = (
         [
             "module_definition", "module", "metric_family", "component_label",
-            "diagnosis_group", "outcome", "n", "n_tested",
-            "n_cluster_1", "n_cluster_2", "n_cluster_3", "n_cluster_4",
-            "median_cluster_1", "median_cluster_2", "median_cluster_3", "median_cluster_4",
-            "clusters_tested", "clusters_excluded_small_n", "kruskal_h",
+            "category_variable", "outcome", "n", "n_tested", "k_tested",
+            "level_counts", "level_medians",
+            "levels_tested", "levels_excluded_small_n", "kruskal_h",
             "kruskal_df", "epsilon_squared", "categorical_p",
             "categorical_fdr_across_modules", "categorical_fdr_module_family_n",
         ]
-        if phenotype == "clusters"
+        if association_interpretation == "categorical"
         else [
             "module_definition", "module", "metric_family", "component_label",
-            "diagnosis_group", "outcome", "n", "pearson_r", "pearson_p",
+            "diagnosis_group", "grouping_variable", "grouping_level",
+            "grouping_label", "is_pooled",
+            "outcome", "n", "minimum_group_n", "eligible", "unavailable_reason",
+            "pearson_r", "pearson_p",
             "pearson_fdr_across_modules", "pearson_fdr_module_family_n",
             "spearman_rho", "spearman_p", "spearman_fdr_across_modules",
             "spearman_fdr_module_family_n",
@@ -3034,7 +3471,7 @@ if active_view == "Associations":
     )
     with st.expander(
         "Kruskal–Wallis statistics · BH across modules"
-        if phenotype == "clusters"
+        if association_interpretation == "categorical"
         else "Pearson and Spearman statistics · BH across modules",
         expanded=False,
     ):
@@ -6073,6 +6510,16 @@ if active_view == "Methods & data":
         "For each estimator/method, module, feature, and CT/TS or resolved component, "
         "the app stores raw values, a robust-scale asinh transformation, and a rank "
         "inverse-normal Z-score calculated across all 450 donors."
+    )
+    st.markdown(
+        "**Grouped associations** use diagnosis by default and may instead stratify "
+        "correlations by clusters, CogDx, Braak, CERAD, ADNC, Parkinsonism, sex code, "
+        "or APOE genotype. Pearson and Spearman are calculated separately within each "
+        "eligible displayed level. Their BH FDR families contain only the 154 or 186 "
+        "modules in the selected definition, while holding every other analysis and "
+        "grouping field fixed; missing and constant tests are excluded from the denominator. "
+        "OLS trend lines are descriptive guides. Categorical comparisons use Kruskal–Wallis "
+        "and epsilon-squared and never correlate nominal codes."
     )
     st.markdown(
         "**ROSMAP clusters** are an unordered four-class donor partition available for "

@@ -13,6 +13,8 @@ sys.path.insert(0, str(APP_ROOT))
 from app_helpers.correlations import (  # noqa: E402
     add_across_module_fdr,
     benjamini_hochberg,
+    calculate_categorical_associations,
+    calculate_correlations,
 )
 from app_helpers.data import load_aggregate_statistics  # noqa: E402
 
@@ -77,3 +79,41 @@ def test_real_aggregate_fdr_families_contain_each_module_definition() -> None:
         assert set(adjusted["spearman_fdr_module_family_n"]) == {
             int(frame["spearman_p"].notna().sum())
         }
+
+
+def test_grouped_correlations_enforce_minimum_size_and_report_reason() -> None:
+    frame = pd.DataFrame(
+        {
+            "module": [1] * 12,
+            "group": ["large"] * 8 + ["small"] * 4,
+            "metric_value": np.arange(12, dtype=float),
+            "outcome": np.arange(12, dtype=float) * 2,
+        }
+    )
+    result = calculate_correlations(
+        frame, ["module", "group"], ["outcome"], min_group_n=5
+    ).set_index("group")
+    assert bool(result.loc["large", "eligible"])
+    assert np.isclose(result.loc["large", "spearman_rho"], 1.0)
+    assert not bool(result.loc["small", "eligible"])
+    assert np.isnan(result.loc["small", "pearson_r"])
+    assert result.loc["small", "unavailable_reason"] == "n < 5"
+
+
+def test_generic_categorical_association_supports_string_levels() -> None:
+    frame = pd.DataFrame(
+        {
+            "module": [1] * 18,
+            "component": ["CT"] * 18,
+            "apoe_genotype": ["ε2/ε3"] * 6 + ["ε3/ε3"] * 7 + ["ε4/ε4"] * 5,
+            "metric_value": [*range(6), *range(10, 17), *range(20, 25)],
+        }
+    )
+    result = calculate_categorical_associations(
+        frame, ["module", "component"],
+        category_column="apoe_genotype", min_group_n=6,
+    ).iloc[0]
+    assert set(result["levels_tested"].split(",")) == {"ε2/ε3", "ε3/ε3"}
+    assert result["levels_excluded_small_n"] == "ε4/ε4"
+    assert result["k_tested"] == 2
+    assert 0 <= result["epsilon_squared"] <= 1
