@@ -79,6 +79,12 @@ from app_helpers.charts import (
     targeted_transform_heatmap_figure,
     resolved_to_long,
 )
+
+from app_helpers import correlations as _correlation_helpers
+
+if getattr(_correlation_helpers, "GROUPED_ASSOCIATION_API_VERSION", 0) < 1:
+    _correlation_helpers = importlib.reload(_correlation_helpers)
+
 from app_helpers.correlations import (
     add_across_module_fdr,
     add_categorical_across_module_fdr,
@@ -91,6 +97,7 @@ from app_helpers.module_finder import (
     build_pooled_ct_ts_statistics,
 )
 from app_helpers.table_controls import filterable_dataframe
+from app_helpers.streamlit_compat import plotly_chart as render_plotly_chart
 from app_helpers.drive_data import data_source_label, ensure_data_path
 from app_helpers import data as _data_helpers
 
@@ -1624,7 +1631,7 @@ def render_targeted_prediction_view() -> None:
                         f"{label} ROC-AUC",
                         f"{float(value.iloc[0]):.3f}" if len(value) else "NA",
                     )
-        st.plotly_chart(
+        render_plotly_chart(
             prediction_performance_figure(
                 selected,
                 metric=primary_metric,
@@ -1641,7 +1648,7 @@ def render_targeted_prediction_view() -> None:
         ):
             comparisons = cached_targeted_prediction_table("primary_comparisons")
             if not comparisons.empty:
-                st.plotly_chart(
+                render_plotly_chart(
                     targeted_primary_comparison_figure(
                         comparisons,
                         title="Three prespecified primary paired hypotheses",
@@ -1683,7 +1690,7 @@ def render_targeted_prediction_view() -> None:
         if adjusted.empty:
             st.info("No CT/TS comparison is available for this selection.")
         else:
-            st.plotly_chart(
+            render_plotly_chart(
                 prediction_performance_figure(
                     adjusted,
                     metric=primary_metric,
@@ -1709,7 +1716,7 @@ def render_targeted_prediction_view() -> None:
                 ),
             )
             if not fold_performance.empty:
-                st.plotly_chart(
+                render_plotly_chart(
                     targeted_fold_robustness_figure(
                         fold_performance,
                         metric=primary_metric,
@@ -1789,7 +1796,7 @@ def render_targeted_prediction_view() -> None:
                     "These comparisons are exploratory. Positive oriented differences favor "
                     "asinh or RINT over Raw; global and within-outcome BH FDRs are both shown."
                 )
-                st.plotly_chart(
+                render_plotly_chart(
                     targeted_transform_comparison_figure(
                         transform_comparisons,
                         block_labels=PREDICTION_BLOCK_LABELS,
@@ -1799,7 +1806,7 @@ def render_targeted_prediction_view() -> None:
                     use_container_width=True,
                     config={"displaylogo": False},
                 )
-                st.plotly_chart(
+                render_plotly_chart(
                     targeted_transform_heatmap_figure(
                         transform_comparisons,
                         block_labels=PREDICTION_BLOCK_LABELS,
@@ -1833,7 +1840,7 @@ def render_targeted_prediction_view() -> None:
                     ),
                 )
                 if not overlap.empty:
-                    st.plotly_chart(
+                    render_plotly_chart(
                         targeted_panel_overlap_figure(
                             overlap,
                             title="Fold-specific panel overlap with Raw",
@@ -1882,7 +1889,7 @@ def render_targeted_prediction_view() -> None:
             if consensus.empty:
                 st.info("Consensus selection results are unavailable for this panel.")
             else:
-                st.plotly_chart(
+                render_plotly_chart(
                     targeted_selection_frequency_figure(
                         consensus,
                         title="Display-only consensus panel stability",
@@ -1963,7 +1970,7 @@ def render_targeted_prediction_view() -> None:
                 .size().rename("n").reset_index()
                 .rename(columns={"target": "actual", "predicted": "predicted_class"})
             )
-            st.plotly_chart(
+            render_plotly_chart(
                 prediction_confusion_figure(confusion, title="Donor-averaged OOF confusion matrix"),
                 use_container_width=True,
                 config={"displaylogo": False},
@@ -1986,13 +1993,13 @@ def render_targeted_prediction_view() -> None:
                         config={"displaylogo": False},
                     )
             if len([column for column in diagnostics if column.startswith("probability_")]) == 2:
-                st.plotly_chart(
+                render_plotly_chart(
                     prediction_threshold_figure(diagnostics, title="Donor-averaged OOF threshold diagnostics"),
                     use_container_width=True,
                     config={"displaylogo": False},
                 )
         else:
-            st.plotly_chart(
+            render_plotly_chart(
                 prediction_observed_figure(
                     diagnostics,
                     title="Observed versus donor-averaged OOF prediction",
@@ -2000,7 +2007,7 @@ def render_targeted_prediction_view() -> None:
                 use_container_width=True,
                 config={"displaylogo": False},
             )
-            st.plotly_chart(
+            render_plotly_chart(
                 prediction_error_figure(diagnostics, title="OOF residual diagnostics"),
                 use_container_width=True,
                 config={"displaylogo": False},
@@ -2061,7 +2068,7 @@ def render_targeted_prediction_view() -> None:
                 coefficients["predictor_block"].eq(coefficient_block)
                 & coefficients["model_variant"].eq(coefficient_variant)
             ].copy()
-            st.plotly_chart(
+            render_plotly_chart(
                 prediction_coefficient_figure(
                     shown,
                     title="Largest standardized outer-fold coefficients",
@@ -2299,7 +2306,7 @@ def render_prediction_view() -> None:
             model_labels=PREDICTION_MODEL_LABELS,
             title=f"Held-out {PREDICTION_OUTCOME_LABELS[outcome]} performance",
         )
-        st.plotly_chart(figure, use_container_width=True, config={"displaylogo": False})
+        render_plotly_chart(figure, use_container_width=True, config={"displaylogo": False})
         st.caption(
             "Lower is better for CogDx MAE. Higher is better for all other primary "
             "metrics; held-out R² may be negative when a model performs worse than "
@@ -2313,7 +2320,7 @@ def render_prediction_view() -> None:
         adjusted.loc[~adjusted["higher_is_better"].astype(bool), "value"] *= -1
         adjusted["metric"] = "primary_performance"
         if not adjusted.empty:
-            st.plotly_chart(
+            render_plotly_chart(
                 prediction_heatmap_figure(
                     adjusted,
                     metric="primary_performance",
@@ -2365,7 +2372,7 @@ def render_prediction_view() -> None:
         if bootstrap.empty:
             st.info("CT-versus-TS bootstrap comparisons are unavailable for this selection.")
         else:
-            st.plotly_chart(
+            render_plotly_chart(
                 prediction_ct_ts_figure(
                     bootstrap,
                     outcome_labels=PREDICTION_OUTCOME_LABELS,
@@ -2445,7 +2452,7 @@ def render_prediction_view() -> None:
                         config={"displaylogo": False},
                     )
             if not confusion.empty:
-                st.plotly_chart(
+                render_plotly_chart(
                     prediction_confusion_figure(
                         confusion, title="Held-out confusion matrix"
                     ),
@@ -2453,7 +2460,7 @@ def render_prediction_view() -> None:
                     config={"displaylogo": False},
                 )
             if outcome in {"diagnosis_binary", "parkinsonism"} and not diagnostics.empty:
-                st.plotly_chart(
+                render_plotly_chart(
                     prediction_threshold_figure(
                         diagnostics, title="Held-out threshold diagnostics"
                     ),
@@ -2463,7 +2470,7 @@ def render_prediction_view() -> None:
         elif diagnostics.empty:
             st.info("Held-out donor diagnostics are unavailable in the local cache.")
         else:
-            st.plotly_chart(
+            render_plotly_chart(
                 prediction_observed_figure(
                     diagnostics,
                     title=f"Observed versus held-out prediction: {PREDICTION_OUTCOME_LABELS[outcome]}",
@@ -2471,7 +2478,7 @@ def render_prediction_view() -> None:
                 use_container_width=True,
                 config={"displaylogo": False},
             )
-            st.plotly_chart(
+            render_plotly_chart(
                 prediction_error_figure(
                     diagnostics,
                     title="Held-out residual and error diagnostics",
@@ -2536,7 +2543,7 @@ def render_prediction_view() -> None:
                 coefficients["predictor_block"].eq(coefficient_block)
                 & coefficients["model_variant"].eq(coefficient_variant)
             ]
-            st.plotly_chart(
+            render_plotly_chart(
                 prediction_coefficient_figure(
                     shown,
                     title="Largest standardized module/component coefficients",
@@ -3393,7 +3400,7 @@ if active_view == "Associations":
             kegg_subtitles=association_subtitles,
         )
     )
-    st.plotly_chart(
+    render_plotly_chart(
         figure,
         use_container_width=True,
         config={
@@ -3589,7 +3596,7 @@ if active_view == "Correlation heatmaps":
         if cluster_table.empty:
             st.info("No nominal cluster associations meet the selected filters.")
         else:
-            st.plotly_chart(
+            render_plotly_chart(
                 cluster_association_heatmap_figure(
                     cluster_table,
                     title="ROSMAP cluster association effect sizes",
@@ -3982,7 +3989,7 @@ if active_view == "Correlation heatmaps":
             row_group_labels=row_group_labels,
             significance_threshold=0.05,
         )
-        st.plotly_chart(
+        render_plotly_chart(
             correlation_heatmap,
             use_container_width=True,
             config={
@@ -4067,7 +4074,7 @@ if active_view == "Feature distributions":
         bins=bins,
         module_definition=module_set_label,
     )
-    st.plotly_chart(
+    render_plotly_chart(
         distribution,
         use_container_width=True,
         config={
@@ -4565,7 +4572,7 @@ if active_view == "Module finder":
             minimum_ct_ts_difference=minimum_ct_ts_difference,
             minimum_ad_control_difference=minimum_ad_control_difference,
         )
-        st.plotly_chart(
+        render_plotly_chart(
             finder_figure,
             use_container_width=True,
             config={
@@ -4712,7 +4719,7 @@ if active_view == "Edge summaries":
     if edge_data.empty:
         st.info("No edge scopes remain for the current filters.")
     else:
-        st.plotly_chart(
+        render_plotly_chart(
             edge_summary_figure(
                 edge_data,
                 edge_metric,
@@ -4927,7 +4934,7 @@ if active_view == "Edge volcano":
             minimum_prevalence=minimum_prevalence,
             module_definition=module_set_label,
         )
-        st.plotly_chart(
+        render_plotly_chart(
             volcano,
             use_container_width=True,
             config={
@@ -5198,7 +5205,7 @@ if active_view == "MDC":
             module_definition=module_set_label,
             scale=mdc_scale,
         )
-        st.plotly_chart(
+        render_plotly_chart(
             selected_mdc_chart,
             use_container_width=True,
             config={
@@ -5248,7 +5255,7 @@ if active_view == "MDC":
         module_definition=module_set_label,
         scale=mdc_scale,
     )
-    st.plotly_chart(
+    render_plotly_chart(
         mdc_overview,
         use_container_width=True,
         config={
@@ -5304,7 +5311,7 @@ if active_view == "MDC":
         entropy_chart_columns, ["ts", "ct"], strict=True
     ):
         with chart_column:
-            st.plotly_chart(
+            render_plotly_chart(
                 mdc_entropy_figure(
                     displayed_mdc,
                     scope=entropy_scope,
@@ -5478,7 +5485,7 @@ if active_view == "MDC":
         if selected_resolved_mdc.empty:
             st.info("The selected module has no resolved MDC row under the current filters.")
         else:
-            st.plotly_chart(
+            render_plotly_chart(
                 mdc_resolved_module_figure(
                     selected_resolved_mdc,
                     mdc_threshold,
@@ -5491,7 +5498,7 @@ if active_view == "MDC":
         if resolved_mdc.empty:
             st.info("No resolved MDC rows remain under the current filters.")
         else:
-            st.plotly_chart(
+            render_plotly_chart(
                 mdc_resolved_heatmap_figure(
                     resolved_mdc,
                     mdc_threshold,
@@ -5739,7 +5746,7 @@ if active_view == "MDC":
                     f"{pathway_mdc_resolution}"
                 ),
             )
-            st.plotly_chart(
+            render_plotly_chart(
                 pathway_mdc_heatmap_figure(
                     pathway_summary,
                     scale=mdc_scale,
@@ -5764,7 +5771,7 @@ if active_view == "MDC":
                 .astype(str)
                 .eq(selected_pathway_id)
             ].copy()
-            st.plotly_chart(
+            render_plotly_chart(
                 pathway_mdc_detail_figure(
                     selected_pathway_rows,
                     pathway_id=selected_pathway_id,
@@ -6330,7 +6337,7 @@ if active_view == "Module details":
             "Median normalized entropy",
             f"{chart_module_details['tissue_entropy_normalized'].median():.3f}",
         )
-        st.plotly_chart(
+        render_plotly_chart(
             module_size_distribution_figure(
                 chart_module_details,
                 module_definition=module_set_label,
@@ -6339,7 +6346,7 @@ if active_view == "Module details":
             config={"displaylogo": False, "responsive": True},
             key=f"module_size_distribution_{module_set}_{module_type_scope}",
         )
-        st.plotly_chart(
+        render_plotly_chart(
             module_region_composition_figure(
                 chart_module_details,
                 module_definition=module_set_label,
@@ -6352,7 +6359,7 @@ if active_view == "Module details":
             },
             key=f"module_region_composition_{module_set}_{module_type_scope}",
         )
-        st.plotly_chart(
+        render_plotly_chart(
             module_entropy_figure(
                 chart_module_details,
                 selected_module=module,

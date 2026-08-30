@@ -9,6 +9,8 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 
+from app_helpers.streamlit_compat import normalize_width_kwargs, stretch_width_kwargs
+
 
 def _column_label(column: object, column_config: Mapping[object, object]) -> str:
     configured = column_config.get(column)
@@ -48,7 +50,7 @@ def filterable_dataframe(
         if st.button(
             "Reset row filters",
             key=reset_key,
-            use_container_width=True,
+            **stretch_width_kwargs(),
         ):
             for state_key in list(st.session_state):
                 if str(state_key).startswith(widget_prefix) and state_key != reset_key:
@@ -189,5 +191,5 @@ def filterable_dataframe(
     return st.dataframe(
         filtered,
         column_config=config or None,
-        **dataframe_kwargs,
+        **normalize_width_kwargs(dataframe_kwargs),
     )

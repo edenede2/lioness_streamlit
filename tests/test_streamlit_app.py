@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from pathlib import Path
 
 import pandas as pd
@@ -11,6 +12,7 @@ from app_helpers.correlations import (
 )
 
 import app_helpers.charts as chart_helpers
+import app_helpers.correlations as correlation_helpers
 
 
 APP = Path(__file__).resolve().parents[1] / "streamlit_app.py"
@@ -56,6 +58,16 @@ def test_streamlit_hot_reload_recovers_stale_chart_helper(monkeypatch) -> None:
     app = AppTest.from_file(APP, default_timeout=180).run()
     assert_app_clean(app)
     assert hasattr(chart_helpers, "CONTINUOUS_COLOR_SCALES")
+
+
+def test_streamlit_hot_reload_recovers_stale_correlation_helper(monkeypatch) -> None:
+    monkeypatch.delattr(correlation_helpers, "GROUPED_ASSOCIATION_API_VERSION")
+    app = AppTest.from_file(APP, default_timeout=180).run()
+    assert_app_clean(app)
+    assert correlation_helpers.GROUPED_ASSOCIATION_API_VERSION == 1
+    assert "min_group_n" in inspect.signature(
+        correlation_helpers.calculate_correlations
+    ).parameters
 
 
 def test_streamlit_table_value_filter_filters_rows_and_resets() -> None:

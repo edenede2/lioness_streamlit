@@ -10,6 +10,12 @@ import pandas as pd
 from scipy.stats import ConstantInputWarning, kruskal, pearsonr, spearmanr
 
 
+# Increment when the callable contract changes.  Streamlit Community Cloud can
+# retain this module across an entrypoint hot reload; the app uses this sentinel
+# to force a reload before importing helpers with a newer signature.
+GROUPED_ASSOCIATION_API_VERSION = 1
+
+
 def benjamini_hochberg(values: pd.Series) -> pd.Series:
     """Benjamini-Hochberg adjustment that preserves missing-value positions."""
     result = pd.Series(np.nan, index=values.index, dtype=float)
