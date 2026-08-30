@@ -1822,31 +1822,167 @@ def render_targeted_prediction_view() -> None:
                 "Independent eigengene-source comparisons are available only for the "
                 "all-edge Raw catalog. This selection retains the matched multi-tissue source."
             )
-        elif "targeted_eigengene_source_comparisons.parquet" not in manifest.get(
-            "files", {}
-        ):
-            st.info(
-                "Source-comparison intervals will appear after the first independent "
-                "regional eigengene source finishes and passes validation."
-            )
         else:
-            source_comparisons = cached_targeted_prediction_table(
-                "eigengene_source_comparisons",
+            source_performance = cached_targeted_prediction_table(
+                "oof_performance",
                 _targeted_filters(
                     evidence_tier=evidence_tier,
                     module_definition=module_definition,
                     network_method=network_method,
                     panel_strategy=panel_strategy,
                     model_outcome=outcome,
+                    edge_mask="all",
+                    score_normalization="standard_pruned",
                     score_transform="raw",
                 ),
             )
-            source_comparisons = source_comparisons.loc[
-                source_comparisons["source_a"].eq(eigengene_source)
-                | source_comparisons["source_b"].eq(eigengene_source)
+            completed_sources = {
+                source
+                for source, values in source_registry.items()
+                if bool(values.get("selectable", False))
+            }
+            source_performance = source_performance.loc[
+                source_performance["model_variant"].isin(transcriptomic_variants)
+                & source_performance["eigengene_source"].isin(completed_sources)
             ].copy()
+            source_variant_order = [
+                value
+                for value in (
+                    "transcriptomics_only",
+                    "covariates_plus_transcriptomics",
+                    "network_plus_transcriptomics",
+                    "covariates_plus_network_plus_transcriptomics",
+                )
+                if value in set(source_performance["model_variant"].astype(str))
+            ]
+            if source_variant_order:
+                source_variant = st.selectbox(
+                    "Source-comparison model",
+                    options=source_variant_order,
+                    format_func=lambda value: PREDICTION_MODEL_LABELS.get(value, value),
+                    key="targeted_eigengene_source_model_variant",
+                )
+                source_metric_rows = source_performance.loc[
+                    source_performance["model_variant"].eq(source_variant)
+                    & source_performance["metric"].eq(primary_metric)
+                ].copy()
+                if not source_metric_rows.empty:
+                    source_metric_rows["model_variant"] = source_metric_rows[
+                        "eigengene_source"
+                    ]
+                    render_plotly_chart(
+                        prediction_performance_figure(
+                            source_metric_rows,
+                            metric=primary_metric,
+                            block_labels=PREDICTION_BLOCK_LABELS,
+                            block_order=PREDICTION_BLOCK_ORDER,
+                            model_labels=EIGENGENE_SOURCE_LABELS,
+                            title="OOF performance by eigengene source",
+                        ),
+                        use_container_width=True,
+                        config={"displaylogo": False},
+                    )
+                predictor_counts = source_performance.loc[
+                    source_performance["model_variant"].eq(source_variant),
+                    [
+                        "eigengene_source", "predictor_block",
+                        "n_transcriptomic_predictors",
+                    ],
+                ].drop_duplicates()
+                if not predictor_counts.empty:
+                    predictor_counts["eigengene_source"] = predictor_counts[
+                        "eigengene_source"
+                    ].map(lambda value: EIGENGENE_SOURCE_LABELS.get(value, value))
+                    predictor_counts["predictor_block"] = predictor_counts[
+                        "predictor_block"
+                    ].map(lambda value: PREDICTION_BLOCK_LABELS.get(value, value))
+                    filterable_dataframe(
+                        predictor_counts.sort_values(
+                            ["eigengene_source", "n_transcriptomic_predictors"]
+                        ),
+                        table_key="targeted_eigengene_source_predictor_counts",
+                        table_name="Eigengene predictor counts",
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+                if st.checkbox(
+                    "Load outer-fold source robustness",
+                    value=False,
+                    key="targeted_load_eigengene_source_folds",
+                    help="Loads the larger fold-level table only when requested.",
+                ):
+                    source_folds = cached_targeted_prediction_table(
+                        "fold_performance",
+                        _targeted_filters(
+                            evidence_tier=evidence_tier,
+                            module_definition=module_definition,
+                            network_method=network_method,
+                            panel_strategy=panel_strategy,
+                            model_outcome=outcome,
+                            edge_mask="all",
+                            score_normalization="standard_pruned",
+                            score_transform="raw",
+                            model_variant=source_variant,
+                            metric=primary_metric,
+                        ),
+                    )
+                    source_folds = source_folds.loc[
+                        source_folds["eigengene_source"].isin(completed_sources)
+                    ].copy()
+                    if not source_folds.empty:
+                        source_folds["source_block"] = source_folds.apply(
+                            lambda row: (
+                                f"{row['predictor_block']}__{row['eigengene_source']}"
+                            ),
+                            axis=1,
+                        )
+                        source_block_labels = {
+                            value: (
+                                f"{PREDICTION_BLOCK_LABELS.get(value.split('__', 1)[0], value)} · "
+                                f"{EIGENGENE_SOURCE_LABELS.get(value.split('__', 1)[1], value)}"
+                            )
+                            for value in source_folds["source_block"].astype(str).unique()
+                        }
+                        source_folds["predictor_block"] = source_folds["source_block"]
+                        render_plotly_chart(
+                            targeted_fold_robustness_figure(
+                                source_folds,
+                                metric=primary_metric,
+                                block_labels=source_block_labels,
+                                title="Outer-fold robustness by eigengene source",
+                            ),
+                            use_container_width=True,
+                            config={"displaylogo": False},
+                        )
+            if "targeted_eigengene_source_comparisons.parquet" not in manifest.get(
+                "files", {}
+            ):
+                st.info(
+                    "Paired source-comparison intervals will appear after the first "
+                    "independent regional eigengene source finishes and passes validation."
+                )
+                source_comparisons = pd.DataFrame()
+            else:
+                source_comparisons = cached_targeted_prediction_table(
+                    "eigengene_source_comparisons",
+                    _targeted_filters(
+                        evidence_tier=evidence_tier,
+                        module_definition=module_definition,
+                        network_method=network_method,
+                        panel_strategy=panel_strategy,
+                        model_outcome=outcome,
+                        score_transform="raw",
+                    ),
+                )
+                source_comparisons = source_comparisons.loc[
+                    source_comparisons["source_a"].eq(eigengene_source)
+                    | source_comparisons["source_b"].eq(eigengene_source)
+                ].copy()
             if source_comparisons.empty:
-                st.info("No paired source comparison matches the selected analysis.")
+                if "targeted_eigengene_source_comparisons.parquet" in manifest.get(
+                    "files", {}
+                ):
+                    st.info("No paired source comparison matches the selected analysis.")
             else:
                 st.caption(
                     "Exploratory paired comparisons use identical donors and outer folds. "

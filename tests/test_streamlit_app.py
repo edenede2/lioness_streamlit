@@ -258,11 +258,15 @@ def test_targeted_prediction_view_defaults_to_primary_control_derived_analysis()
     assert widget_with_label(
         app.selectbox, "Targeted prediction outcome"
     ).value == "diagnosis_binary"
+    assert widget_with_label(
+        app.selectbox, "Eigengene source"
+    ).value == "matched_multitissue"
     assert {tab.label for tab in app.tabs}.issuperset(
         {
             "Summary",
             "CT versus TS",
             "Transformation sensitivity",
+            "Eigengene sources",
             "Panel selection",
             "OOF diagnostics",
             "Coefficients & KEGG",
