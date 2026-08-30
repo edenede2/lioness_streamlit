@@ -1302,7 +1302,9 @@ def render_targeted_prediction_view() -> None:
         and source in observed_sources
     ]
     selectable_sources.extend(
-        source for source in observed_sources if source not in selectable_sources
+        source
+        for source in observed_sources
+        if source not in source_registry and source not in selectable_sources
     )
     if masked_selection or score_transform != "raw":
         eigengene_source = (

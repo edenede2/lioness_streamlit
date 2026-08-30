@@ -42,6 +42,7 @@ from app_helpers.charts import (  # noqa: E402
     prediction_threshold_figure,
     resolved_to_long,
     targeted_fold_robustness_figure,
+    targeted_eigengene_source_comparison_figure,
     targeted_primary_comparison_figure,
     targeted_selection_frequency_figure,
 )
@@ -936,6 +937,41 @@ def test_targeted_prediction_charts_render_nested_cv_contract() -> None:
         title="Robustness",
     )
     assert len(robustness.data) == 2
+
+
+def test_eigengene_source_comparison_chart_uses_paired_intervals() -> None:
+    frame = pd.DataFrame(
+        {
+            "predictor_block": ["AC", "CT_pooled"],
+            "model_variant": [
+                "transcriptomics_only",
+                "covariates_plus_network_plus_transcriptomics",
+            ],
+            "source_a": ["single_region_full_tissue_l3"] * 2,
+            "source_a_label": ["Single-region modules: full tissue cohorts"] * 2,
+            "source_b_label": ["Matched multi-tissue modules"] * 2,
+            "performance_difference": [0.03, -0.01],
+            "ci_low": [-0.01, -0.04],
+            "ci_high": [0.07, 0.02],
+            "p_value": [0.12, 0.40],
+            "fdr_global": [0.24, 0.40],
+            "fdr_within_outcome": [0.20, 0.40],
+            "n_oof": [331, 331],
+        }
+    )
+    figure = targeted_eigengene_source_comparison_figure(
+        frame,
+        block_labels={"AC": "AC", "CT_pooled": "Pooled CT"},
+        model_labels={
+            "transcriptomics_only": "Transcriptomics only",
+            "covariates_plus_network_plus_transcriptomics": "All predictors",
+        },
+        title="Eigengene sources",
+    )
+    assert len(figure.data) == 1
+    assert len(figure.data[0].x) == 2
+    assert np.all(np.asarray(figure.data[0].error_x.array) >= 0)
+    assert np.all(np.asarray(figure.data[0].error_x.arrayminus) >= 0)
 
 
 def test_prediction_block_charts_use_ts_ct_pool_all_order() -> None:
