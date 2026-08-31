@@ -27,7 +27,58 @@
     "raw",
     "rint"
   ],
-  "created_utc": "2026-08-27T14:23:14.625618+00:00",
+  "created_utc": "2026-08-31T12:57:57.075446+00:00",
+  "eigengene_source_registry": {
+    "matched_multitissue": {
+      "kind": "matched_multitissue",
+      "label": "Matched multi-tissue modules",
+      "partition_level": 4,
+      "partition_level_indexing": "existing level-4 multi-tissue assignments",
+      "raw_configurations": 33500,
+      "selectable": true,
+      "status": "complete"
+    },
+    "single_region_complete_case_l3": {
+      "assignment_counts": {
+        "AC": 16132,
+        "DLPFC": 16511,
+        "PCG": 16328
+      },
+      "kind": "single_region",
+      "label": "Single-region modules: matched complete-expression donors",
+      "module_counts": {
+        "AC": 142,
+        "DLPFC": 122,
+        "PCG": 116
+      },
+      "partition_level": 3,
+      "partition_level_indexing": "fourth zero-indexed hierarchy level",
+      "raw_configurations": 0,
+      "selectable": false,
+      "status": "complete",
+      "tissue_scoped_modules": 380
+    },
+    "single_region_full_tissue_l3": {
+      "assignment_counts": {
+        "AC": 16005,
+        "DLPFC": 15284,
+        "PCG": 14961
+      },
+      "kind": "single_region",
+      "label": "Single-region modules: full tissue cohorts",
+      "module_counts": {
+        "AC": 118,
+        "DLPFC": 144,
+        "PCG": 106
+      },
+      "partition_level": 3,
+      "partition_level_indexing": "fourth zero-indexed hierarchy level",
+      "raw_configurations": 33500,
+      "selectable": true,
+      "status": "complete",
+      "tissue_scoped_modules": 368
+    }
+  },
   "evaluation_designs": {
     "differential_edge_sensitivity": "one_outer_cycle_with_frozen_all_edge_panel_and_regularization",
     "primary": "repeated_nested_cv",
@@ -55,7 +106,7 @@
   },
   "files": {
     "targeted_consensus_panels.parquet": {
-      "bytes": 108596,
+      "bytes": 109233,
       "columns": [
         "module",
         "selected_outer_folds",
@@ -70,15 +121,16 @@
         "selection_outcome",
         "score_transform",
         "transformation_role",
+        "eigengene_source",
         "kegg_annotation",
         "kegg_fdr",
         "kegg_role"
       ],
       "rows": 6038,
-      "sha256": "629735d18e72fb8cc85ce347266dfe30d9e96861d931e5b1d3119dc61a114e04"
+      "sha256": "741e99047c356a07046fb8106ce5bbd18770c4edfd73b1274d45f28dd5636fb6"
     },
     "targeted_consensus_transform_overlap.parquet": {
-      "bytes": 8566,
+      "bytes": 9197,
       "columns": [
         "module_definition",
         "network_method",
@@ -90,13 +142,49 @@
         "transformed_consensus_k",
         "shared_consensus_modules",
         "consensus_jaccard",
-        "shared_modules"
+        "shared_modules",
+        "eigengene_source"
       ],
       "rows": 24,
-      "sha256": "67ca051d137e328cee1244fc72877b2ce85a24354611cb5b6db88eebbf51e828"
+      "sha256": "af663d1f85847e0657a874f074147757bb8ccfa8db05c843e21ede2747af2637"
+    },
+    "targeted_eigengene_source_comparisons.parquet": {
+      "bytes": 67527,
+      "columns": [
+        "evaluation_design",
+        "evidence_tier",
+        "module_definition",
+        "network_method",
+        "panel_strategy",
+        "selection_outcome",
+        "model_outcome",
+        "edge_mask",
+        "score_normalization",
+        "score_transform",
+        "transformation_role",
+        "predictor_block",
+        "model_variant",
+        "selected_k",
+        "source_a",
+        "source_a_label",
+        "source_b",
+        "source_b_label",
+        "metric",
+        "positive_favors",
+        "n_oof",
+        "performance_difference",
+        "ci_low",
+        "ci_high",
+        "p_value",
+        "valid_resamples",
+        "fdr_global",
+        "fdr_within_outcome"
+      ],
+      "rows": 1340,
+      "sha256": "c39783979256354eda740acc06a918e22056aa3236d14859b2c1d732ba478ab0"
     },
     "targeted_fold_performance.parquet": {
-      "bytes": 2472550,
+      "bytes": 3226352,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -124,13 +212,14 @@
         "value",
         "status",
         "reason",
-        "n_transcriptomic_predictors"
+        "n_transcriptomic_predictors",
+        "eigengene_source"
       ],
-      "rows": 848000,
-      "sha256": "61bdd81e8f1b6132fe825ec48a76c9e0fd101d48bdf7f2308339e3a8bf022c1b"
+      "rows": 1086400,
+      "sha256": "75c2907842611151ff9b1b04de669ade69fe974db3bf275b90bd9e7d33a9c66b"
     },
     "targeted_inner_k_scores.parquet": {
-      "bytes": 194688,
+      "bytes": 195331,
       "columns": [
         "outer_repeat",
         "outer_fold",
@@ -145,10 +234,11 @@
         "network_method",
         "panel_strategy",
         "selection_outcome",
-        "transformation_role"
+        "transformation_role",
+        "eigengene_source"
       ],
       "rows": 27000,
-      "sha256": "da8d4e1791529f599865699eff3651c6e6797f6a94b698365e4031aabb6abed0"
+      "sha256": "ba172f3d449c1a5d481b87c7b342a9a2ac17545c8ea6ef050a84cf1826162d97"
     },
     "targeted_masked_fold_performance.parquet": {
       "bytes": 83278,
@@ -2483,7 +2573,7 @@
       "shards": 64
     },
     "targeted_masked_top_coefficients.parquet": {
-      "bytes": 891889,
+      "bytes": 894311,
       "columns": [
         "coefficient_label",
         "feature_name",
@@ -2503,19 +2593,23 @@
         "predictor_block",
         "model_variant",
         "selected_k",
+        "eigengene_source",
         "score_transform",
         "transformation_role",
         "module",
+        "eigengene_tissue",
+        "eigengene_source_module",
+        "eigengene_source_module_size",
         "display_feature",
         "kegg_annotation",
         "kegg_fdr",
         "kegg_role"
       ],
       "rows": 36987,
-      "sha256": "bb3b78567bc896c0a6cd2bc6173b8c52a1e67886b9a10dfe263c8757513d8f7c"
+      "sha256": "6d6e6e3fc7eeb3129be879b1b10d2beda24b22cc96eab90c66fd3268092b9106"
     },
     "targeted_oof_performance.parquet": {
-      "bytes": 179025,
+      "bytes": 228175,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -2535,10 +2629,13 @@
         "higher_is_better",
         "metric",
         "value",
-        "n_oof"
+        "n_oof",
+        "eigengene_source",
+        "n_network_predictors",
+        "n_transcriptomic_predictors"
       ],
-      "rows": 33920,
-      "sha256": "4b2d9a9c6e4cd6f2683efff1649b60ae8866ec0b71e4b128a45ac4cfb8ce1b04"
+      "rows": 43456,
+      "sha256": "f49fa38b37f0145b51f76fa0d77119a27c5e066c66f53beceb30a14a30b24b9e"
     },
     "targeted_oof_predictions.parquet": {
       "columns": [
@@ -2570,11 +2667,12 @@
         "probability_MCI",
         "selected_k_across_repeats",
         "selected_k",
-        "outer_repeats_averaged"
+        "outer_repeats_averaged",
+        "eigengene_source"
       ],
       "files": {
-        "asinh__exploratory__control_derived__control_anchored.parquet": {
-          "bytes": 3125614,
+        "asinh__exploratory__control_derived__control_anchored__not_applicable.parquet": {
+          "bytes": 3126916,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2604,13 +2702,14 @@
             "probability_MCI",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "eigengene_source"
           ],
           "rows": 379584,
-          "sha256": "5ac31ed5988e36500879cd11883040a50c4db267bb1e1c62c9156e957d069535"
+          "sha256": "4e1eafc5e34bb3a42d426760c7e1de46b78edcdb2093798fadcbb7dcb4bb394b"
         },
-        "asinh__primary__control_derived__control_anchored.parquet": {
-          "bytes": 107985,
+        "asinh__primary__control_derived__control_anchored__not_applicable.parquet": {
+          "bytes": 108614,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2640,13 +2739,14 @@
             "probability_MCI",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "eigengene_source"
           ],
           "rows": 7944,
-          "sha256": "4c83c86db458af849f7eb1935de71176789f3ac0da49cf428f705fba7d2d4e41"
+          "sha256": "8b68207917f374181b32e55726516cd4d92f13e5a1233a48c492c137fdedde78"
         },
-        "asinh__secondary__control_derived__control_anchored.parquet": {
-          "bytes": 1183641,
+        "asinh__secondary__control_derived__control_anchored__not_applicable.parquet": {
+          "bytes": 1184276,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2676,13 +2776,14 @@
             "probability_MCI",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "eigengene_source"
           ],
           "rows": 58828,
-          "sha256": "06e330073575cfc4d72ac6c4db8a57e2f6043c3f1f3fb1eda393d5c78510d28a"
+          "sha256": "f5a7ca23582e7a53a5cc63543118d1eb731e39bae418ec341f1aad85e704fc98"
         },
-        "asinh__secondary__full_cohort__control_anchored.parquet": {
-          "bytes": 106588,
+        "asinh__secondary__full_cohort__control_anchored__not_applicable.parquet": {
+          "bytes": 107217,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2712,13 +2813,14 @@
             "probability_MCI",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "eigengene_source"
           ],
           "rows": 7944,
-          "sha256": "d173407c7c8f252353864dc18ca0fef36ffeec2057a9cbd2b3c9154a9a73bd4d"
+          "sha256": "25ef9daf5be9fadfae446a3787bc58cf5993e637664dbd8e06cfd61a50e1b145"
         },
-        "asinh__secondary__full_cohort__standard.parquet": {
-          "bytes": 107676,
+        "asinh__secondary__full_cohort__standard__not_applicable.parquet": {
+          "bytes": 108305,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2748,13 +2850,14 @@
             "probability_MCI",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "eigengene_source"
           ],
           "rows": 7944,
-          "sha256": "0577de30c3bb0ee0d10ded409f7f8d0918952136ca67b4fbb75ad34f61a21dab"
+          "sha256": "ea051d8f704189bee9d11dfecd9a05b1f1213a0c38ec6f5b84762688740bfc05"
         },
-        "raw__exploratory__control_derived__control_anchored.parquet": {
-          "bytes": 9963282,
+        "raw__exploratory__control_derived__control_anchored__matched_multitissue.parquet": {
+          "bytes": 6021793,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2784,13 +2887,14 @@
             "probability_MCI",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "eigengene_source"
           ],
-          "rows": 866928,
-          "sha256": "79e7878a0eea59791451e6aa14b20e7f73ee77c80ebc6edce4c5fd6cb505aed9"
+          "rows": 433464,
+          "sha256": "0308be36494a6a5a45e652791ed4d872f3796c70a7e5f3bfe6dbf43333433a64"
         },
-        "raw__primary__control_derived__control_anchored.parquet": {
-          "bytes": 205042,
+        "raw__exploratory__control_derived__control_anchored__not_applicable.parquet": {
+          "bytes": 4038421,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2820,13 +2924,14 @@
             "probability_MCI",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "eigengene_source"
           ],
-          "rows": 15888,
-          "sha256": "bc559b06044a6af33665d4621592e9dd4aa4c07fc0a6713871a37d3124d79c35"
+          "rows": 433464,
+          "sha256": "6f17b5488d0dca9b75e6d092de87cd733f5eacdc1101f558398e01c51c6706fe"
         },
-        "raw__secondary__control_derived__control_anchored.parquet": {
-          "bytes": 2882339,
+        "raw__exploratory__control_derived__control_anchored__single_region_full_tissue_l3.parquet": {
+          "bytes": 5924413,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2856,13 +2961,14 @@
             "probability_MCI",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "eigengene_source"
           ],
-          "rows": 117656,
-          "sha256": "541092ca59ad485eba8753fefa7f2054fac3b43e27057e510f279b6fb2d517e6"
+          "rows": 433464,
+          "sha256": "644581720e3a14083db7bdf0e1da9ffd679edfcb45d6133e37489e90a1dbcd93"
         },
-        "raw__secondary__full_cohort__control_anchored.parquet": {
-          "bytes": 204830,
+        "raw__primary__control_derived__control_anchored__matched_multitissue.parquet": {
+          "bytes": 127780,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2892,13 +2998,14 @@
             "probability_MCI",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "eigengene_source"
           ],
-          "rows": 15888,
-          "sha256": "8f895fb8ce575716bc7f19885c96001507f2b523a8995a785d45b5cefc105247"
+          "rows": 7944,
+          "sha256": "d44b0a20fe4a0662b0069dc3e95ab14239c4d60c0b658f0f549a07c06a13a6a0"
         },
-        "raw__secondary__full_cohort__standard.parquet": {
-          "bytes": 204496,
+        "raw__primary__control_derived__control_anchored__not_applicable.parquet": {
+          "bytes": 106698,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2928,13 +3035,14 @@
             "probability_MCI",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "eigengene_source"
           ],
-          "rows": 15888,
-          "sha256": "5c34e5d1863ced49d7c2239e6fcde7591be4fce62f4db6182273373c15af79b2"
+          "rows": 7944,
+          "sha256": "b2b6cf179a33b3f56c210ffff04f388f76ccfbbad81e04549d53ea0aeb89df7b"
         },
-        "rint__exploratory__control_derived__control_anchored.parquet": {
-          "bytes": 3155369,
+        "raw__primary__control_derived__control_anchored__single_region_full_tissue_l3.parquet": {
+          "bytes": 111819,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -2964,13 +3072,384 @@
             "probability_MCI",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "eigengene_source"
+          ],
+          "rows": 7944,
+          "sha256": "f56605052b5d2e77fd0c02e7eb344099b3a4e306e9ed63053c3a1cd636571ef4"
+        },
+        "raw__secondary__control_derived__control_anchored__matched_multitissue.parquet": {
+          "bytes": 1772631,
+          "columns": [
+            "sample_id",
+            "evaluation_design",
+            "evidence_tier",
+            "module_definition",
+            "network_method",
+            "panel_strategy",
+            "selection_outcome",
+            "model_outcome",
+            "edge_mask",
+            "score_normalization",
+            "score_transform",
+            "transformation_role",
+            "predictor_block",
+            "model_variant",
+            "target",
+            "predicted",
+            "predicted_expected",
+            "probability_0",
+            "probability_1",
+            "probability_2",
+            "probability_3",
+            "probability_4",
+            "probability_5",
+            "probability_AD",
+            "probability_Control",
+            "probability_MCI",
+            "selected_k_across_repeats",
+            "selected_k",
+            "outer_repeats_averaged",
+            "eigengene_source"
+          ],
+          "rows": 58828,
+          "sha256": "2ed16bad151b2ae94f56eadf1af68353d1408210133168ce364e7a0f3e6ab768"
+        },
+        "raw__secondary__control_derived__control_anchored__not_applicable.parquet": {
+          "bytes": 1132296,
+          "columns": [
+            "sample_id",
+            "evaluation_design",
+            "evidence_tier",
+            "module_definition",
+            "network_method",
+            "panel_strategy",
+            "selection_outcome",
+            "model_outcome",
+            "edge_mask",
+            "score_normalization",
+            "score_transform",
+            "transformation_role",
+            "predictor_block",
+            "model_variant",
+            "target",
+            "predicted",
+            "predicted_expected",
+            "probability_0",
+            "probability_1",
+            "probability_2",
+            "probability_3",
+            "probability_4",
+            "probability_5",
+            "probability_AD",
+            "probability_Control",
+            "probability_MCI",
+            "selected_k_across_repeats",
+            "selected_k",
+            "outer_repeats_averaged",
+            "eigengene_source"
+          ],
+          "rows": 58828,
+          "sha256": "e57c87f3ac01f97bdfd634a45be2428e0fcef4d7049d277f88166863df5416f7"
+        },
+        "raw__secondary__control_derived__control_anchored__single_region_full_tissue_l3.parquet": {
+          "bytes": 1420396,
+          "columns": [
+            "sample_id",
+            "evaluation_design",
+            "evidence_tier",
+            "module_definition",
+            "network_method",
+            "panel_strategy",
+            "selection_outcome",
+            "model_outcome",
+            "edge_mask",
+            "score_normalization",
+            "score_transform",
+            "transformation_role",
+            "predictor_block",
+            "model_variant",
+            "target",
+            "predicted",
+            "predicted_expected",
+            "probability_0",
+            "probability_1",
+            "probability_2",
+            "probability_3",
+            "probability_4",
+            "probability_5",
+            "probability_AD",
+            "probability_Control",
+            "probability_MCI",
+            "selected_k_across_repeats",
+            "selected_k",
+            "outer_repeats_averaged",
+            "eigengene_source"
+          ],
+          "rows": 58828,
+          "sha256": "8e6e2428b5820ab1f717a4ce69d0f2f64d5a33c47b7b30698fd0f77f398f4d99"
+        },
+        "raw__secondary__full_cohort__control_anchored__matched_multitissue.parquet": {
+          "bytes": 126579,
+          "columns": [
+            "sample_id",
+            "evaluation_design",
+            "evidence_tier",
+            "module_definition",
+            "network_method",
+            "panel_strategy",
+            "selection_outcome",
+            "model_outcome",
+            "edge_mask",
+            "score_normalization",
+            "score_transform",
+            "transformation_role",
+            "predictor_block",
+            "model_variant",
+            "target",
+            "predicted",
+            "predicted_expected",
+            "probability_0",
+            "probability_1",
+            "probability_2",
+            "probability_3",
+            "probability_4",
+            "probability_5",
+            "probability_AD",
+            "probability_Control",
+            "probability_MCI",
+            "selected_k_across_repeats",
+            "selected_k",
+            "outer_repeats_averaged",
+            "eigengene_source"
+          ],
+          "rows": 7944,
+          "sha256": "566f6b6adaff92de95373b1e06bdfbe84e780306ccbc7f6e94cebb984bb4fb1f"
+        },
+        "raw__secondary__full_cohort__control_anchored__not_applicable.parquet": {
+          "bytes": 106992,
+          "columns": [
+            "sample_id",
+            "evaluation_design",
+            "evidence_tier",
+            "module_definition",
+            "network_method",
+            "panel_strategy",
+            "selection_outcome",
+            "model_outcome",
+            "edge_mask",
+            "score_normalization",
+            "score_transform",
+            "transformation_role",
+            "predictor_block",
+            "model_variant",
+            "target",
+            "predicted",
+            "predicted_expected",
+            "probability_0",
+            "probability_1",
+            "probability_2",
+            "probability_3",
+            "probability_4",
+            "probability_5",
+            "probability_AD",
+            "probability_Control",
+            "probability_MCI",
+            "selected_k_across_repeats",
+            "selected_k",
+            "outer_repeats_averaged",
+            "eigengene_source"
+          ],
+          "rows": 7944,
+          "sha256": "da7a6f29874174aba28e5f69633ae1674328cbaf847addfb3804678604b762e1"
+        },
+        "raw__secondary__full_cohort__control_anchored__single_region_full_tissue_l3.parquet": {
+          "bytes": 112186,
+          "columns": [
+            "sample_id",
+            "evaluation_design",
+            "evidence_tier",
+            "module_definition",
+            "network_method",
+            "panel_strategy",
+            "selection_outcome",
+            "model_outcome",
+            "edge_mask",
+            "score_normalization",
+            "score_transform",
+            "transformation_role",
+            "predictor_block",
+            "model_variant",
+            "target",
+            "predicted",
+            "predicted_expected",
+            "probability_0",
+            "probability_1",
+            "probability_2",
+            "probability_3",
+            "probability_4",
+            "probability_5",
+            "probability_AD",
+            "probability_Control",
+            "probability_MCI",
+            "selected_k_across_repeats",
+            "selected_k",
+            "outer_repeats_averaged",
+            "eigengene_source"
+          ],
+          "rows": 7944,
+          "sha256": "fb670ddd7b08b45914c31973f2c9d5eea2cb3c9c307e2beca511af68e8cdb072"
+        },
+        "raw__secondary__full_cohort__standard__matched_multitissue.parquet": {
+          "bytes": 126445,
+          "columns": [
+            "sample_id",
+            "evaluation_design",
+            "evidence_tier",
+            "module_definition",
+            "network_method",
+            "panel_strategy",
+            "selection_outcome",
+            "model_outcome",
+            "edge_mask",
+            "score_normalization",
+            "score_transform",
+            "transformation_role",
+            "predictor_block",
+            "model_variant",
+            "target",
+            "predicted",
+            "predicted_expected",
+            "probability_0",
+            "probability_1",
+            "probability_2",
+            "probability_3",
+            "probability_4",
+            "probability_5",
+            "probability_AD",
+            "probability_Control",
+            "probability_MCI",
+            "selected_k_across_repeats",
+            "selected_k",
+            "outer_repeats_averaged",
+            "eigengene_source"
+          ],
+          "rows": 7944,
+          "sha256": "adf33ce124f51dbf0b00cfab207f050551416b50ebc4b5383d9d0a9b30a70a1d"
+        },
+        "raw__secondary__full_cohort__standard__not_applicable.parquet": {
+          "bytes": 106661,
+          "columns": [
+            "sample_id",
+            "evaluation_design",
+            "evidence_tier",
+            "module_definition",
+            "network_method",
+            "panel_strategy",
+            "selection_outcome",
+            "model_outcome",
+            "edge_mask",
+            "score_normalization",
+            "score_transform",
+            "transformation_role",
+            "predictor_block",
+            "model_variant",
+            "target",
+            "predicted",
+            "predicted_expected",
+            "probability_0",
+            "probability_1",
+            "probability_2",
+            "probability_3",
+            "probability_4",
+            "probability_5",
+            "probability_AD",
+            "probability_Control",
+            "probability_MCI",
+            "selected_k_across_repeats",
+            "selected_k",
+            "outer_repeats_averaged",
+            "eigengene_source"
+          ],
+          "rows": 7944,
+          "sha256": "12be4d94b89cce716a0461183edc5749d46d5cf3661dab4232b370a610822633"
+        },
+        "raw__secondary__full_cohort__standard__single_region_full_tissue_l3.parquet": {
+          "bytes": 112141,
+          "columns": [
+            "sample_id",
+            "evaluation_design",
+            "evidence_tier",
+            "module_definition",
+            "network_method",
+            "panel_strategy",
+            "selection_outcome",
+            "model_outcome",
+            "edge_mask",
+            "score_normalization",
+            "score_transform",
+            "transformation_role",
+            "predictor_block",
+            "model_variant",
+            "target",
+            "predicted",
+            "predicted_expected",
+            "probability_0",
+            "probability_1",
+            "probability_2",
+            "probability_3",
+            "probability_4",
+            "probability_5",
+            "probability_AD",
+            "probability_Control",
+            "probability_MCI",
+            "selected_k_across_repeats",
+            "selected_k",
+            "outer_repeats_averaged",
+            "eigengene_source"
+          ],
+          "rows": 7944,
+          "sha256": "1e811cdbf1ec2eea7c27687ed293824adf62a26754afc9123c07a66e1759cd7f"
+        },
+        "rint__exploratory__control_derived__control_anchored__not_applicable.parquet": {
+          "bytes": 3156671,
+          "columns": [
+            "sample_id",
+            "evaluation_design",
+            "evidence_tier",
+            "module_definition",
+            "network_method",
+            "panel_strategy",
+            "selection_outcome",
+            "model_outcome",
+            "edge_mask",
+            "score_normalization",
+            "score_transform",
+            "transformation_role",
+            "predictor_block",
+            "model_variant",
+            "target",
+            "predicted",
+            "predicted_expected",
+            "probability_0",
+            "probability_1",
+            "probability_2",
+            "probability_3",
+            "probability_4",
+            "probability_5",
+            "probability_AD",
+            "probability_Control",
+            "probability_MCI",
+            "selected_k_across_repeats",
+            "selected_k",
+            "outer_repeats_averaged",
+            "eigengene_source"
           ],
           "rows": 379584,
-          "sha256": "d1d80e58aa20b2ba70d2a1246abd6bfd6020a7b21748be9bfaa2abb6f078307e"
+          "sha256": "0a8810e6f1d7b72132597f89b0ba60c505fab1a73746e1eb8cf52f719903bf69"
         },
-        "rint__primary__control_derived__control_anchored.parquet": {
-          "bytes": 106426,
+        "rint__primary__control_derived__control_anchored__not_applicable.parquet": {
+          "bytes": 107055,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -3000,13 +3479,14 @@
             "probability_MCI",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "eigengene_source"
           ],
           "rows": 7944,
-          "sha256": "3590e13bcdc67512cd9285e3540cfafa4df5155a9f08315d264c80891c1afc8f"
+          "sha256": "08ffd54502af2e5c7a312afb7ac4b0907deaf2230db785decf7e93048e2d1d17"
         },
-        "rint__secondary__control_derived__control_anchored.parquet": {
-          "bytes": 1169342,
+        "rint__secondary__control_derived__control_anchored__not_applicable.parquet": {
+          "bytes": 1169977,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -3036,13 +3516,14 @@
             "probability_MCI",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "eigengene_source"
           ],
           "rows": 58828,
-          "sha256": "7ce2faac2e661165caba9f9ad8a990ca9d982233d57680d28eab300c3faebadc"
+          "sha256": "dbdb24f7ac566c7442f6e783da2f18978e1f244375dbfabd17ccf92d5c245f2e"
         },
-        "rint__secondary__full_cohort__control_anchored.parquet": {
-          "bytes": 106482,
+        "rint__secondary__full_cohort__control_anchored__not_applicable.parquet": {
+          "bytes": 107111,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -3072,13 +3553,14 @@
             "probability_MCI",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "eigengene_source"
           ],
           "rows": 7944,
-          "sha256": "0c512106de740b18b915698acd4c3be0606ce6551fba9cf5d140db715404f124"
+          "sha256": "6cd40950fb0a381820f2940b450994ed92a52a2fe8d94d5e351efae175e934b7"
         },
-        "rint__secondary__full_cohort__standard.parquet": {
-          "bytes": 106183,
+        "rint__secondary__full_cohort__standard__not_applicable.parquet": {
+          "bytes": 106812,
           "columns": [
             "sample_id",
             "evaluation_design",
@@ -3108,17 +3590,18 @@
             "probability_MCI",
             "selected_k_across_repeats",
             "selected_k",
-            "outer_repeats_averaged"
+            "outer_repeats_averaged",
+            "eigengene_source"
           ],
           "rows": 7944,
-          "sha256": "94390ab2b5fd1ea394d6309acd9d540ae5f3678749b05529c323385ff433b09e"
+          "sha256": "3c598de9c21e6878bc641bc12ff29bc863fb5513a56ed762c9facef713331521"
         }
       },
-      "rows": 1956736,
-      "shards": 15
+      "rows": 2472860,
+      "shards": 25
     },
     "targeted_panel_selection.parquet": {
-      "bytes": 6860460,
+      "bytes": 6861318,
       "columns": [
         "module",
         "median_incremental_score",
@@ -3149,15 +3632,16 @@
         "selected_k",
         "selected",
         "transformation_role",
+        "eigengene_source",
         "kegg_annotation",
         "kegg_fdr",
         "kegg_role"
       ],
       "rows": 160950,
-      "sha256": "cc89936faeb8e311890d7fdd4286f50570a8a6f08778aee77b842306dcb4d998"
+      "sha256": "cc5b1f71c92ad0bfa2ffba2473f02fe9163e4a3137010d35b3a5b889b15157a1"
     },
     "targeted_panel_transform_overlap.parquet": {
-      "bytes": 31701,
+      "bytes": 32330,
       "columns": [
         "module_definition",
         "network_method",
@@ -3174,13 +3658,14 @@
         "jaccard",
         "raw_modules",
         "transformed_modules",
-        "shared_modules"
+        "shared_modules",
+        "eigengene_source"
       ],
       "rows": 600,
-      "sha256": "919fe5da464edd07435784bf3979a0fe7b53c306ffd0513e2506531f06d44401"
+      "sha256": "cc3a6a20b8b282c06e55af73ae36dd9af0a97fcf58be09992397fe4217ae1807"
     },
     "targeted_primary_comparisons.parquet": {
-      "bytes": 10532,
+      "bytes": 11163,
       "columns": [
         "evidence_tier",
         "score_transform",
@@ -3196,13 +3681,14 @@
         "ci_high",
         "p_value",
         "valid_resamples",
-        "fdr_primary_family"
+        "fdr_primary_family",
+        "eigengene_source"
       ],
       "rows": 3,
-      "sha256": "a101a6cde4ba91deda41e375d3758f03ad61a416cfae13d3d5528639215de2ca"
+      "sha256": "f194fea8ef4002deda2d71e4f0ecb8dd370401b029428d8659e54a137f8ab689"
     },
     "targeted_tier_comparisons.parquet": {
-      "bytes": 29870,
+      "bytes": 30499,
       "columns": [
         "evidence_tier",
         "module_definition",
@@ -3224,13 +3710,14 @@
         "valid_resamples",
         "fdr_tier_family",
         "fdr_within_outcome",
-        "fdr_global_exploratory"
+        "fdr_global_exploratory",
+        "eigengene_source"
       ],
       "rows": 350,
-      "sha256": "2bd081c1b844966019e03fad77a5b8055c5ccd24b6f37227f81380662547574c"
+      "sha256": "aecaf900e7331ecee860aaca22831f9a1f6509345ed96a8a8ad88ef7a6c19818"
     },
     "targeted_top_coefficients.parquet": {
-      "bytes": 10016919,
+      "bytes": 13229217,
       "columns": [
         "coefficient_label",
         "feature_name",
@@ -3252,17 +3739,21 @@
         "predictor_block",
         "model_variant",
         "selected_k",
+        "eigengene_source",
         "module",
+        "eigengene_tissue",
+        "eigengene_source_module",
+        "eigengene_source_module_size",
         "display_feature",
         "kegg_annotation",
         "kegg_fdr",
         "kegg_role"
       ],
-      "rows": 522060,
-      "sha256": "416820077f6704d28d6b8102da140e6276616c79667455000459c065073a1a2c"
+      "rows": 714751,
+      "sha256": "69bc75bd6c1a525aa0b2cc4f239396bd0ad5993d5506826a4bbdc270c564a2f3"
     },
     "targeted_transformation_comparisons.parquet": {
-      "bytes": 60910,
+      "bytes": 61535,
       "columns": [
         "evaluation_design",
         "evidence_tier",
@@ -3288,13 +3779,14 @@
         "p_value",
         "valid_resamples",
         "fdr_transform_global",
-        "fdr_transform_within_outcome"
+        "fdr_transform_within_outcome",
+        "eigengene_source"
       ],
       "rows": 1172,
-      "sha256": "308f40bde54b3787256301387e335a6d35bff781d177591c0a1288bf02bd1ed2"
+      "sha256": "cd64c46688d7125aba4fea8237bc4b5fec26166af83bd01e39c96f93fc4b8e95"
     },
     "targeted_transformation_status.parquet": {
-      "bytes": 8228,
+      "bytes": 8859,
       "columns": [
         "score_transform",
         "status",
@@ -3306,10 +3798,11 @@
         "observed_outer_folds",
         "completed_outer_folds",
         "outcomes",
-        "primary_scale"
+        "primary_scale",
+        "eigengene_source"
       ],
       "rows": 3,
-      "sha256": "867b747832e8d9a043e7622b41bd306c52ba0d7c920a53b03c664fc0807a7a21"
+      "sha256": "c211d65c63a16c5d93a347c6058842836cc512c547fe6300f809f655aa5a5623"
     }
   },
   "interim": true,
@@ -3345,6 +3838,7 @@
   "masked_sensitivity_available": true,
   "primary_default": {
     "edge_mask": "all",
+    "eigengene_source": "matched_multitissue",
     "model_outcome": "diagnosis_binary",
     "module_definition": "control_derived",
     "network_method": "control_anchored",
@@ -3369,7 +3863,7 @@
     "pseudonyms": 450
   },
   "publishable_milestone": true,
-  "schema_version": 4,
+  "schema_version": 5,
   "score_transformations": {
     "asinh": "arcsinh(metric_raw); robustness sensitivity and corrected legacy provenance",
     "comparison_tier": "exploratory",
@@ -3397,6 +3891,16 @@
   "standalone_transcriptomic_configurations": 16750,
   "standalone_transcriptomic_milestone_complete": true,
   "transcriptomic_comparator": {
+    "completed_eigengene_sources": [
+      "matched_multitissue",
+      "single_region_full_tissue_l3"
+    ],
+    "default_eigengene_source": "matched_multitissue",
+    "eigengene_source_configuration_counts": {
+      "matched_multitissue": 33500,
+      "single_region_full_tissue_l3": 33500
+    },
+    "expected_configurations_per_additional_source": 33500,
     "feature": "outer-training-fitted per-tissue module PCA1 eigengene",
     "model_variants": [
       "transcriptomics_only",
@@ -3406,6 +3910,7 @@
     ],
     "pooled_blocks": "AC, DLPFC, and PCG eigengenes concatenated without a second PCA",
     "preprocessing": "training-only median imputation, scaling, PCA loading, and sign alignment",
+    "source_comparisons": "exploratory paired donor-averaged OOF bootstrap comparisons",
     "tissue_pair_blocks": "eigengenes from the two represented tissues",
     "used_for_panel_selection": false
   },

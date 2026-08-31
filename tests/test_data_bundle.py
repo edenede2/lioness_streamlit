@@ -223,7 +223,12 @@ def test_primary_raw_eigengene_milestone_is_complete_and_selectable() -> None:
         "model_variant",
         "eigengene_source",
     ]
-    assert len(fold.loc[:, identity].drop_duplicates()) == 600
+    configurations = fold.loc[:, identity].drop_duplicates()
+    per_source = configurations.groupby("eigengene_source", observed=True).size()
+    assert per_source.to_dict() == {
+        "matched_multitissue": 600,
+        "single_region_full_tissue_l3": 600,
+    }
 
     all_raw = data.load_targeted_prediction_table(
         "fold_performance", score_transform="raw"
