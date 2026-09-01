@@ -926,13 +926,14 @@ def cached_grouped_module_set_associations(
 ) -> pd.DataFrame:
     """Return grouped Pearson/Spearman statistics with module-set BH FDR.
 
-    Diagnosis grouping reuses the compact stored correlation catalog. Other
-    grouping variables are calculated lazily from one feature/resolution scope.
-    Every cache-key field fixes a statistical family or donor filter.
+    Diagnosis grouping reuses the compact stored correlation catalog for network
+    features. Eigengenes and other grouping variables are calculated lazily from
+    one feature/resolution scope. Every cache-key field fixes a statistical family
+    or donor filter.
     """
 
     min_group_n = int(min_group_n)
-    if grouping_variable == "diagnosis_group":
+    if grouping_variable == "diagnosis_group" and feature != "eigengene":
         result = cached_module_set_associations(
             module_set, module_count, estimator, method, resolved, feature,
             phenotype, scale, components, tuple(str(value) for value in grouping_levels),
@@ -999,7 +1000,11 @@ def cached_grouped_module_set_associations(
             ["component", "outcome", "grouping_variable", "grouping_level"],
             observed=True, dropna=False,
         )["module"].nunique()
-        if not family_sizes.empty and not family_sizes.eq(int(module_count)).all():
+        if (
+            feature != "eigengene"
+            and not family_sizes.empty
+            and not family_sizes.eq(int(module_count)).all()
+        ):
             raise ValueError(
                 "Grouped association families do not contain every module in the "
                 f"selected definition ({module_count} expected): {family_sizes.to_dict()}"
@@ -1059,7 +1064,11 @@ def cached_categorical_module_set_associations(
     family_sizes = result.groupby(
         ["component", "outcome", "category_variable"], observed=True, sort=False,
     )["module"].nunique()
-    if not family_sizes.empty and not family_sizes.eq(int(module_count)).all():
+    if (
+        feature != "eigengene"
+        and not family_sizes.empty
+        and not family_sizes.eq(int(module_count)).all()
+    ):
         raise ValueError(
             "Categorical association families do not contain every module in the "
             f"selected definition ({module_count} expected): {family_sizes.to_dict()}"
@@ -3447,7 +3456,9 @@ with st.sidebar:
     )
     descriptive_eigengenes_available = (
         estimator == "lioness"
-        and active_view in {"Feature distributions", "Correlation heatmaps"}
+        and active_view in {
+            "Associations", "Feature distributions", "Correlation heatmaps",
+        }
         and descriptive_eigengene_data_available(module_set)
     )
     if descriptive_eigengenes_available:
