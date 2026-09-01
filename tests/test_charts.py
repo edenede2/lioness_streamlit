@@ -228,6 +228,12 @@ def test_configurable_grouped_scatter_controls_annotations_lines_and_legend() ->
         trend_line_rule="fdr", significance_cutoff=0.05,
         annotation_fields=["coefficient", "fdr"], minimum_group_n=10,
         categorical_color_fields={"clusters"}, show_pooled=False,
+        kegg_subtitles={
+            "CT": (
+                "KEGG enrichment (tissue-expanded): Metabolism / Lipid metabolism / "
+                "A deliberately long pathway name for wrapping | FDR=0.004"
+            )
+        },
     )
     legend_groups = {
         trace.legendgroup for trace in figure.data if bool(trace.showlegend)
@@ -242,6 +248,8 @@ def test_configurable_grouped_scatter_controls_annotations_lines_and_legend() ->
     statistic_text = " ".join(str(value.text) for value in figure.layout.annotations)
     assert "ρ=" in statistic_text and "module-set FDR=" in statistic_text
     assert "n=" not in statistic_text
+    assert str(figure.layout.annotations[0].text).count("<br>") >= 2
+    assert figure.layout.annotations[0].yanchor == "bottom"
 
 
 def test_generic_categorical_figure_uses_diagnosis_marker_shapes() -> None:
@@ -266,6 +274,12 @@ def test_generic_categorical_figure_uses_diagnosis_marker_shapes() -> None:
         frame, statistics, category_variable="braak_stage", category_label="Braak stage",
         category_levels=[1, 2], category_labels={"1": "Braak 1", "2": "Braak 2"},
         feature_label="Connectivity", scale_label="Raw", module=1,
+        kegg_subtitles={
+            "TS": (
+                "KEGG enrichment (tissue-expanded): Human Diseases / "
+                "Neurodegenerative disease / Alzheimer disease | FDR=0.012"
+            )
+        },
     )
     point_symbols = {
         trace.marker.symbol for trace in figure.data if trace.type == "scatter"
@@ -273,6 +287,8 @@ def test_generic_categorical_figure_uses_diagnosis_marker_shapes() -> None:
     assert point_symbols == {"circle", "square"}
     annotation = " ".join(str(value.text) for value in figure.layout.annotations)
     assert "ε²=" in annotation and "module-set FDR=" in annotation
+    assert str(figure.layout.annotations[0].text).count("<br>") >= 2
+    assert figure.layout.annotations[0].yanchor == "bottom"
 
 
 def test_association_scatter_adds_pooled_all_donor_statistics_and_trends() -> None:
@@ -363,6 +379,7 @@ def test_association_panels_show_scope_matched_kegg_subtitles() -> None:
         str(value.text) for value in aggregate_figure.layout.annotations[:2]
     ]
     assert all("KEGG enrichment (tissue-expanded)" in text for text in aggregate_titles)
+    assert all(text.count("<br>") >= 2 for text in aggregate_titles)
 
     resolved = load_resolved("control_anchored", 935, "connectivity")
     resolved_long = resolved_to_long(resolved, "rint")

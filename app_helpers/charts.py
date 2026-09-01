@@ -668,6 +668,74 @@ def _pooled_statistics_lookup(
     return match.iloc[0]
 
 
+def _association_subplot_titles(
+    component_pairs: Iterable[tuple[object, object]],
+    kegg_subtitles: dict[str, str],
+    *,
+    ncols: int,
+) -> tuple[list[str], int]:
+    """Return compact multi-line panel titles and the maximum subtitle depth.
+
+    KEGG annotations contain a scope, category, sub-category, pathway, and FDR.
+    Keeping that entire string on one line causes titles from adjacent panels to
+    overlap, especially in the three-column tissue-resolved layout.  The scope is
+    therefore placed on its own line and the biological annotation is wrapped to
+    the width available for the current number of subplot columns.
+    """
+
+    wrap_width = 42 if int(ncols) >= 3 else 66
+    titles: list[str] = []
+    maximum_subtitle_lines = 0
+    for component, component_label in component_pairs:
+        subtitle = str(kegg_subtitles.get(str(component), "") or "").strip()
+        if not subtitle:
+            titles.append(html.escape(str(component_label)))
+            continue
+        if ": " in subtitle:
+            scope, detail = subtitle.split(": ", 1)
+            subtitle_lines = [f"{scope}:"]
+            subtitle_lines.extend(
+                textwrap.wrap(
+                    detail,
+                    width=wrap_width,
+                    break_long_words=False,
+                    break_on_hyphens=False,
+                )
+                or [detail]
+            )
+        else:
+            subtitle_lines = textwrap.wrap(
+                subtitle,
+                width=wrap_width,
+                break_long_words=False,
+                break_on_hyphens=False,
+            ) or [subtitle]
+        maximum_subtitle_lines = max(maximum_subtitle_lines, len(subtitle_lines))
+        subtitle_html = "<br>".join(html.escape(line) for line in subtitle_lines)
+        titles.append(
+            f"<b>{html.escape(str(component_label))}</b><br>{subtitle_html}"
+        )
+    return titles, maximum_subtitle_lines
+
+
+def _association_vertical_spacing(nrows: int, subtitle_lines: int) -> float:
+    if int(nrows) <= 1:
+        return 0.08
+    return min(0.40, 0.24 + 0.025 * max(0, int(subtitle_lines) - 1))
+
+
+def _format_association_subplot_title_annotations(figure: go.Figure) -> None:
+    """Keep multi-line subplot titles above, rather than inside, plot domains."""
+
+    for annotation in figure.layout.annotations:
+        annotation.update(
+            font={"size": 12, "color": "#27364B"},
+            yanchor="bottom",
+            yshift=5,
+            align="center",
+        )
+
+
 def association_figure(
     frame: pd.DataFrame,
     statistics: pd.DataFrame,
@@ -710,28 +778,17 @@ def association_figure(
         if module_fdr_statistics is not None
         else pd.DataFrame()
     )
-    subplot_titles = []
-    for component, component_label in component_pairs:
-        subtitle = kegg_subtitles.get(str(component))
-        if not subtitle:
-            subplot_titles.append(html.escape(str(component_label)))
-            continue
-        wrapped = textwrap.wrap(
-            str(subtitle), width=58, break_long_words=False, break_on_hyphens=False
-        )
-        subtitle_html = "<br>".join(html.escape(line) for line in wrapped)
-        subplot_titles.append(
-            f"<b>{html.escape(str(component_label))}</b><br>{subtitle_html}"
-        )
+    subplot_titles, subtitle_lines = _association_subplot_titles(
+        component_pairs, kegg_subtitles, ncols=ncols
+    )
     fig = make_subplots(
         rows=nrows,
         cols=ncols,
         subplot_titles=subplot_titles,
         horizontal_spacing=0.08,
-        vertical_spacing=0.25 if nrows > 1 else 0.08,
+        vertical_spacing=_association_vertical_spacing(nrows, subtitle_lines),
     )
-    for annotation in fig.layout.annotations:
-        annotation.update(font={"size": 12, "color": "#27364B"})
+    _format_association_subplot_title_annotations(fig)
 
     categorical_cluster_color = color_by == "clusters"
     continuous_color = color_by not in {"diagnosis_group", "clusters"}
@@ -920,8 +977,17 @@ def association_figure(
             "xanchor": "left",
         },
         template="plotly_white",
-        height=590 if nrows == 1 else 1040,
-        margin={"l": 55, "r": 25, "t": 175, "b": 55},
+        height=(
+            590 + 22 * max(0, subtitle_lines - 1)
+            if nrows == 1
+            else 1040 + 42 * max(0, subtitle_lines - 1)
+        ),
+        margin={
+            "l": 55,
+            "r": 25,
+            "t": 175 + 14 * max(0, subtitle_lines - 1),
+            "b": 55,
+        },
         legend={
             "orientation": "h",
             "yanchor": "bottom",
@@ -1049,20 +1115,15 @@ def grouped_association_figure(
     ncols = 2 if len(component_pairs) <= 2 else 3
     nrows = math.ceil(len(component_pairs) / ncols)
     subtitles = kegg_subtitles or {}
-    subplot_titles = []
-    for component, label in component_pairs:
-        enrichment = subtitles.get(str(component), "")
-        subplot_titles.append(
-            html.escape(str(label))
-            if not enrichment
-            else f"<b>{html.escape(str(label))}</b><br>{html.escape(str(enrichment))}"
-        )
+    subplot_titles, subtitle_lines = _association_subplot_titles(
+        component_pairs, subtitles, ncols=ncols
+    )
     figure = make_subplots(
         rows=nrows, cols=ncols, subplot_titles=subplot_titles,
-        horizontal_spacing=0.08, vertical_spacing=0.25 if nrows > 1 else 0.08,
+        horizontal_spacing=0.08,
+        vertical_spacing=_association_vertical_spacing(nrows, subtitle_lines),
     )
-    for annotation in figure.layout.annotations:
-        annotation.update(font={"size": 12, "color": "#27364B"})
+    _format_association_subplot_title_annotations(figure)
 
     group_colors = {
         str(level): (
@@ -1249,8 +1310,17 @@ def grouped_association_figure(
         title += f"<br><sup>{module_definition}</sup>"
     figure.update_layout(
         title={"text": title, "x": 0.01, "xanchor": "left"}, template="plotly_white",
-        height=610 if nrows == 1 else 1060,
-        margin={"l": 55, "r": 25, "t": 180, "b": 55},
+        height=(
+            610 + 22 * max(0, subtitle_lines - 1)
+            if nrows == 1
+            else 1060 + 42 * max(0, subtitle_lines - 1)
+        ),
+        margin={
+            "l": 55,
+            "r": 25,
+            "t": 180 + 14 * max(0, subtitle_lines - 1),
+            "b": 55,
+        },
         legend={
             "orientation": "h", "yanchor": "bottom", "y": 1.14,
             "xanchor": "right", "x": 1, "groupclick": "togglegroup",
@@ -1294,15 +1364,15 @@ def categorical_association_figure(
     ncols = 2 if len(component_pairs) <= 2 else 3
     nrows = math.ceil(len(component_pairs) / ncols)
     subtitles = kegg_subtitles or {}
-    titles = [
-        html.escape(str(label)) if not subtitles.get(str(component))
-        else f"<b>{html.escape(str(label))}</b><br>{html.escape(str(subtitles[str(component)]))}"
-        for component, label in component_pairs
-    ]
+    titles, subtitle_lines = _association_subplot_titles(
+        component_pairs, subtitles, ncols=ncols
+    )
     figure = make_subplots(
         rows=nrows, cols=ncols, subplot_titles=titles,
-        horizontal_spacing=0.08, vertical_spacing=0.24 if nrows > 1 else 0.08,
+        horizontal_spacing=0.08,
+        vertical_spacing=_association_vertical_spacing(nrows, subtitle_lines),
     )
+    _format_association_subplot_title_annotations(figure)
     hover_fields = hover_fields or {}
     fields = set(annotation_fields)
     colors = {
@@ -1400,8 +1470,17 @@ def categorical_association_figure(
         title += f"<br><sup>{module_definition}</sup>"
     figure.update_layout(
         title={"text": title, "x": 0.01, "xanchor": "left"}, template="plotly_white",
-        height=610 if nrows == 1 else 1050,
-        margin={"l": 60, "r": 25, "t": 175, "b": 60},
+        height=(
+            610 + 22 * max(0, subtitle_lines - 1)
+            if nrows == 1
+            else 1050 + 42 * max(0, subtitle_lines - 1)
+        ),
+        margin={
+            "l": 60,
+            "r": 25,
+            "t": 175 + 14 * max(0, subtitle_lines - 1),
+            "b": 60,
+        },
         legend={
             "orientation": "h", "y": 1.13, "x": 1, "xanchor": "right",
             "groupclick": "togglegroup",
@@ -1428,21 +1507,17 @@ def cluster_association_figure(
     ncols = 2 if len(component_pairs) <= 2 else 3
     nrows = math.ceil(len(component_pairs) / ncols)
     subtitles = kegg_subtitles or {}
-    titles = []
-    for component, label in component_pairs:
-        enrichment = subtitles.get(str(component), "")
-        titles.append(
-            html.escape(str(label))
-            if not enrichment
-            else f"<b>{html.escape(str(label))}</b><br>{html.escape(str(enrichment))}"
-        )
+    titles, subtitle_lines = _association_subplot_titles(
+        component_pairs, subtitles, ncols=ncols
+    )
     figure = make_subplots(
         rows=nrows,
         cols=ncols,
         subplot_titles=titles,
         horizontal_spacing=0.08,
-        vertical_spacing=0.24 if nrows > 1 else 0.08,
+        vertical_spacing=_association_vertical_spacing(nrows, subtitle_lines),
     )
+    _format_association_subplot_title_annotations(figure)
     hover_fields = hover_fields or {}
     for index, (component, _label) in enumerate(component_pairs):
         row = index // ncols + 1
@@ -1515,8 +1590,17 @@ def cluster_association_figure(
     figure.update_layout(
         title={"text": title, "x": 0.01, "xanchor": "left"},
         template="plotly_white",
-        height=610 if nrows == 1 else 1050,
-        margin={"l": 60, "r": 25, "t": 175, "b": 60},
+        height=(
+            610 + 22 * max(0, subtitle_lines - 1)
+            if nrows == 1
+            else 1050 + 42 * max(0, subtitle_lines - 1)
+        ),
+        margin={
+            "l": 60,
+            "r": 25,
+            "t": 175 + 14 * max(0, subtitle_lines - 1),
+            "b": 60,
+        },
         legend={"orientation": "h", "y": 1.13, "x": 1, "xanchor": "right"},
     )
     return figure
