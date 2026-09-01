@@ -24,6 +24,8 @@ jobs:
           p=Path('data/control_derived/aggregate_plot_data.parquet')
           df=pd.read_parquet(p)
           sub=df[df['module'].isin([794,1150])].copy()
+          if 'metric_family' in sub.columns:
+              sub=sub[sub['metric_family'].eq('connectivity')]
           if 'lioness_method' in sub.columns:
               sub=sub[sub['lioness_method'].eq('control_anchored')]
           if 'estimator' in sub.columns:
