@@ -70,6 +70,39 @@ def test_grouped_correlations_read_one_narrow_module_at_a_time(monkeypatch) -> N
     ].eq(12).all()
 
 
+def test_grouped_correlation_matrix_keeps_level_fdr_families_separate(
+    monkeypatch,
+) -> None:
+    calls: list[int] = []
+
+    def fake_load(*args, module=None, **kwargs):
+        calls.append(int(module))
+        return _resolved_module(int(module))
+
+    monkeypatch.setattr(streaming, "load_resolved_scope", fake_load)
+    metadata = _metadata()
+    metadata["outcome_two"] = np.square(metadata["outcome"])
+    result = streaming.stream_grouped_correlation_matrix(
+        (1, 2), metadata, module_set="full_cohort", estimator="lioness",
+        method="control_anchored", resolved=True, feature="connectivity",
+        component=None, outcomes=("outcome", "outcome_two"), scale="rint",
+        diagnoses=("Control", "AD"), grouping_variable="clusters",
+        grouping_levels=(1, 2), min_group_n=3, edge_rule="all",
+        differential_edge_rule="all", differential_fdr_scope="global",
+        differential_fdr_threshold=0.05,
+        score_normalization="standard_pruned", analysis_subset="all_donors",
+    )
+
+    assert calls == [1, 2]
+    assert result.shape[0] == 2 * 2 * 2 * 2
+    assert set(result["grouping_level"]) == {1, 2}
+    assert result["pearson_fdr_module_family_n"].eq(2).all()
+    family_sizes = result.groupby(
+        ["component", "outcome", "grouping_level"], observed=True
+    )["module"].nunique()
+    assert family_sizes.eq(2).all()
+
+
 def test_pooled_correlations_apply_diagnosis_filter_per_module(monkeypatch) -> None:
     monkeypatch.setattr(
         streaming,

@@ -94,6 +94,7 @@ if getattr(_correlation_helpers, "GROUPED_ASSOCIATION_API_VERSION", 0) < 1:
 from app_helpers.correlations import (
     add_across_module_fdr,
     add_categorical_across_module_fdr,
+    benjamini_hochberg,
     calculate_categorical_associations,
     calculate_correlations,
 )
@@ -107,6 +108,7 @@ from app_helpers.streamlit_compat import plotly_chart as render_plotly_chart
 from app_helpers.streaming_associations import (
     stream_categorical_associations,
     stream_diagnosis_categorical_associations,
+    stream_grouped_correlation_matrix,
     stream_grouped_correlations,
     stream_pooled_correlations,
 )
@@ -1120,6 +1122,155 @@ def cached_module_correlations(
         outcomes=NUMERIC_OUTCOMES,
     )
     return add_correlation_labels(summary)
+
+
+@st.cache_data(
+    show_spinner="Calculating the selected module correlations by category…",
+    max_entries=6,
+)
+def cached_grouped_module_correlations(
+    module_set: str,
+    estimator: str,
+    method: str,
+    module: int,
+    resolved: bool,
+    diagnoses: tuple[str, ...],
+    grouping_variable: str,
+    grouping_levels: tuple[object, ...],
+    min_group_n: int,
+    edge_rule: str,
+    differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
+    differential_fdr_threshold: float = 0.05,
+    score_normalization: str = "standard_pruned",
+    analysis_subset: str = "all_donors",
+    cohort_scope: str = "complete_450",
+) -> pd.DataFrame:
+    """Return all-outcome correlations within selected category levels."""
+
+    if resolved:
+        source = load_resolved_scope(
+            method, module=module, module_set=module_set,
+            estimator=estimator, edge_rule=edge_rule,
+            differential_edge_rule=differential_edge_rule,
+            differential_fdr_scope=differential_fdr_scope,
+            differential_fdr_threshold=differential_fdr_threshold,
+            score_normalization=score_normalization,
+            cohort_scope=cohort_scope,
+        )
+        long = resolved_to_long(source, "rint")
+    else:
+        source = load_aggregate_scope(
+            method, module=module, module_set=module_set,
+            estimator=estimator, edge_rule=edge_rule,
+            differential_edge_rule=differential_edge_rule,
+            differential_fdr_scope=differential_fdr_scope,
+            differential_fdr_threshold=differential_fdr_threshold,
+            score_normalization=score_normalization,
+        )
+        long = aggregate_to_long(source, "rint")
+    long = attach_metadata(long, module_set=module_set, cohort_scope=cohort_scope)
+    long = long.loc[long["diagnosis_group"].isin(diagnoses)].copy()
+    if differential_edge_rule != "all" and analysis_subset != "all_donors":
+        split_value = {
+            "discovery_ad_control": "Discovery",
+            "validation_ad_control": "Validation",
+            "mci_external": "MCI_external",
+        }[analysis_subset]
+        long = long.loc[long["ad_control_split"].eq(split_value)].copy()
+    if grouping_variable == "__all__":
+        long["grouping_variable"] = "__all__"
+        long["grouping_level"] = "__all__"
+    else:
+        long = long.loc[
+            long[grouping_variable].notna()
+            & long[grouping_variable].isin(grouping_levels)
+        ].copy()
+        long["grouping_variable"] = grouping_variable
+        long["grouping_level"] = long[grouping_variable]
+    summary = calculate_correlations(
+        long,
+        group_columns=[
+            "module", "metric_family", "component", "component_label",
+            "grouping_variable", "grouping_level",
+        ],
+        outcomes=NUMERIC_OUTCOMES,
+        min_group_n=int(min_group_n),
+    )
+    if summary.empty:
+        return summary
+    # The selected-module displayed family stays independent for each level.
+    for method_name in ("pearson", "spearman"):
+        summary[f"{method_name}_fdr_displayed_family"] = summary.groupby(
+            ["grouping_variable", "grouping_level"],
+            observed=True,
+            dropna=False,
+        )[f"{method_name}_p"].transform(benjamini_hochberg)
+    summary["grouping_label"] = summary["grouping_level"].map(
+        lambda value: association_level_label(grouping_variable, value)
+    )
+    summary["diagnosis_group"] = summary["grouping_label"]
+    return add_correlation_labels(summary)
+
+
+@st.cache_data(
+    show_spinner="Calculating grouped correlations across all modules…",
+    max_entries=3,
+)
+def cached_grouped_all_module_correlations(
+    module_set: str,
+    estimator: str,
+    method: str,
+    resolved: bool,
+    feature: str,
+    component: str,
+    diagnoses: tuple[str, ...],
+    grouping_variable: str,
+    grouping_levels: tuple[object, ...],
+    min_group_n: int,
+    edge_rule: str,
+    differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
+    differential_fdr_threshold: float = 0.05,
+    score_normalization: str = "standard_pruned",
+    analysis_subset: str = "all_donors",
+    cohort_scope: str = "complete_450",
+) -> pd.DataFrame:
+    """Return a memory-bounded grouped module-by-outcome correlation catalog."""
+
+    module_ids = tuple(
+        sorted(cached_annotations(module_set)["module"].astype(int).unique())
+    )
+    result = stream_grouped_correlation_matrix(
+        module_ids,
+        cached_sample_metadata(module_set, cohort_scope),
+        module_set=module_set,
+        estimator=estimator,
+        method=method,
+        resolved=resolved,
+        feature=None if feature == "__all__" else feature,
+        component=None if component == "__all__" else component,
+        outcomes=tuple(NUMERIC_OUTCOMES),
+        scale="rint",
+        diagnoses=diagnoses,
+        grouping_variable=grouping_variable,
+        grouping_levels=grouping_levels,
+        min_group_n=int(min_group_n),
+        edge_rule=edge_rule,
+        differential_edge_rule=differential_edge_rule,
+        differential_fdr_scope=differential_fdr_scope,
+        differential_fdr_threshold=differential_fdr_threshold,
+        score_normalization=score_normalization,
+        analysis_subset=analysis_subset,
+        cohort_scope=cohort_scope,
+    )
+    if result.empty:
+        return result
+    result["grouping_label"] = result["grouping_level"].map(
+        lambda value: association_level_label(grouping_variable, value)
+    )
+    result["diagnosis_group"] = result["grouping_label"]
+    return add_correlation_labels(result)
 
 
 @st.cache_data(show_spinner="Calculating correlations across all modules…", max_entries=3)
@@ -3389,6 +3540,9 @@ with st.sidebar:
     selected_group_levels: list[object] = list(diagnoses)
     distribution_grouping_variable = "diagnosis_group"
     selected_distribution_levels: list[object] = list(diagnoses)
+    heatmap_grouping_variable = "diagnosis_group"
+    selected_heatmap_group_levels: list[object] = list(diagnoses)
+    heatmap_minimum_group_n = 10
     minimum_group_n = 10
     annotation_fields: list[str] = ["n", "coefficient", "p", "fdr"]
     trend_line_rule = "all"
@@ -3535,6 +3689,60 @@ with st.sidebar:
         )
         if distribution_grouping_variable == "__all__":
             selected_distribution_levels = ["__all__"]
+    if active_view == "Correlation heatmaps":
+        heatmap_metadata = cached_sample_metadata(module_set, cohort_scope)
+        heatmap_metadata = heatmap_metadata.loc[
+            heatmap_metadata["diagnosis_group"].isin(diagnoses)
+        ].copy()
+        if differential_edge_rule != "all" and analysis_subset != "all_donors":
+            selected_split = {
+                "discovery_ad_control": "Discovery",
+                "validation_ad_control": "Validation",
+                "mci_external": "MCI_external",
+            }[analysis_subset]
+            heatmap_metadata = heatmap_metadata.loc[
+                heatmap_metadata["ad_control_split"].eq(selected_split)
+            ]
+        heatmap_grouping_variable = st.selectbox(
+            "Group heatmap correlations by",
+            options=list(ASSOCIATION_GROUP_LABELS),
+            format_func=lambda value: ASSOCIATION_GROUP_LABELS[value],
+            index=list(ASSOCIATION_GROUP_LABELS).index("diagnosis_group"),
+            help=(
+                "Diagnosis remains the donor-inclusion filter. Non-diagnosis groups "
+                "are calculated lazily, one module at a time."
+            ),
+        )
+        if heatmap_grouping_variable == "diagnosis_group":
+            st.caption("Choose the diagnosis/cohort display in the heatmap controls.")
+        else:
+            available_heatmap_group_levels = ordered_association_levels(
+                heatmap_metadata, heatmap_grouping_variable
+            )
+            selected_heatmap_group_levels = st.multiselect(
+                "Heatmap group levels",
+                options=available_heatmap_group_levels,
+                default=available_heatmap_group_levels,
+                format_func=lambda value: association_level_label(
+                    heatmap_grouping_variable, value
+                ),
+                disabled=heatmap_grouping_variable == "__all__",
+                help=(
+                    "Only these category levels enter the correlations, heatmap rows, "
+                    "FDR families, table, and download."
+                ),
+            )
+            if heatmap_grouping_variable == "__all__":
+                selected_heatmap_group_levels = ["__all__"]
+            heatmap_minimum_group_n = st.selectbox(
+                "Heatmap minimum group size",
+                options=[5, 10, 20],
+                index=1,
+                help=(
+                    "Smaller groups remain represented by unavailable statistics and "
+                    "do not enter Benjamini–Hochberg correction."
+                ),
+            )
     color_by = st.selectbox(
         "Color points by",
         options=list(COLOR_LABELS),
@@ -4171,16 +4379,38 @@ if active_view == "Correlation heatmaps":
         horizontal=True,
     )
     st.caption(f"Correlation method: **{correlation_method}** (controlled in the sidebar).")
-    heatmap_diagnosis = st.selectbox(
-        "Diagnosis in heatmap",
-        options=["All donors", *diagnosis_options, "All diagnosis groups"],
-        index=3,
-        key="heatmap_diagnosis",
-        help=(
-            "All diagnosis groups displays pooled donors, Control, MCI, and AD together; "
-            "the group is included in each heatmap row and in the complete table."
-        ),
-    )
+    if heatmap_grouping_variable == "diagnosis_group":
+        heatmap_diagnosis = st.selectbox(
+            "Diagnosis in heatmap",
+            options=["All donors", *diagnosis_options, "All diagnosis groups"],
+            index=3,
+            key="heatmap_diagnosis",
+            help=(
+                "All diagnosis groups displays pooled donors, Control, MCI, and AD together; "
+                "the group is included in each heatmap row and in the complete table."
+            ),
+        )
+        heatmap_group_order = ["All donors", *diagnosis_options]
+        heatmap_context_label = heatmap_diagnosis
+        heatmap_file_group = heatmap_diagnosis
+    else:
+        if not selected_heatmap_group_levels:
+            st.warning("Select at least one heatmap group level in the sidebar.")
+            st.stop()
+        heatmap_diagnosis = "Selected category levels"
+        heatmap_group_order = [
+            association_level_label(heatmap_grouping_variable, value)
+            for value in selected_heatmap_group_levels
+        ]
+        heatmap_context_label = (
+            f"{ASSOCIATION_GROUP_LABELS[heatmap_grouping_variable]}: "
+            + ", ".join(heatmap_group_order)
+        )
+        heatmap_file_group = heatmap_grouping_variable
+        st.caption(
+            f"Within-category correlations for **{heatmap_context_label}**. "
+            "Diagnosis selections in the sidebar remain donor-inclusion filters."
+        )
     clustering_options = ["None", "Rows", "Columns", "Rows and columns"]
     if heatmap_mode.startswith("All"):
         clustering_options.extend(["Modules", "Modules and columns"])
@@ -4209,23 +4439,43 @@ if active_view == "Correlation heatmaps":
     row_group_labels: dict[str, str] | None = None
 
     if heatmap_mode.startswith("Selected module"):
-        correlation_table = cached_module_correlations(
-            module_set, estimator, method, module, resolved, edge_rule,
-            differential_edge_rule, differential_fdr_scope,
-            differential_fdr_threshold, score_normalization, analysis_subset,
-            cohort_scope,
-        )
-        if heatmap_diagnosis == "All diagnosis groups":
-            heatmap_data = correlation_table.copy()
-            heatmap_data["heatmap_row"] = (
-                heatmap_data["heatmap_row"]
-                + " · "
-                + heatmap_data["diagnosis_group"].astype(str)
+        if heatmap_grouping_variable == "diagnosis_group":
+            correlation_table = cached_module_correlations(
+                module_set, estimator, method, module, resolved, edge_rule,
+                differential_edge_rule, differential_fdr_scope,
+                differential_fdr_threshold, score_normalization, analysis_subset,
+                cohort_scope,
             )
+            if heatmap_diagnosis == "All diagnosis groups":
+                heatmap_data = correlation_table.copy()
+                heatmap_data["heatmap_row"] = (
+                    heatmap_data["heatmap_row"]
+                    + " · "
+                    + heatmap_data["diagnosis_group"].astype(str)
+                )
+            else:
+                heatmap_data = correlation_table.loc[
+                    correlation_table["diagnosis_group"].eq(heatmap_diagnosis)
+                ].copy()
         else:
-            heatmap_data = correlation_table.loc[
-                correlation_table["diagnosis_group"].eq(heatmap_diagnosis)
-            ].copy()
+            correlation_table = cached_grouped_module_correlations(
+                module_set, estimator, method, module, resolved,
+                tuple(diagnoses), heatmap_grouping_variable,
+                tuple(selected_heatmap_group_levels), heatmap_minimum_group_n,
+                edge_rule, differential_edge_rule, differential_fdr_scope,
+                differential_fdr_threshold, score_normalization,
+                analysis_subset, cohort_scope,
+            )
+            heatmap_data = correlation_table.copy()
+            if len(heatmap_group_order) > 1:
+                heatmap_data["heatmap_row"] = (
+                    heatmap_data["heatmap_row"]
+                    + " · "
+                    + heatmap_data["grouping_label"].astype(str)
+                )
+        if correlation_table.empty:
+            st.info("No correlations are available for the selected category levels.")
+            st.stop()
         fdr_column = (
             "pearson_fdr_displayed_family"
             if correlation_method == "Pearson"
@@ -4234,8 +4484,7 @@ if active_view == "Correlation heatmaps":
         component_rank = {value: index for index, value in enumerate(COMPONENT_ORDER)}
         feature_rank = {value: index for index, value in enumerate(FEATURE_LABELS)}
         diagnosis_rank = {
-            value: index
-            for index, value in enumerate(["All donors", *diagnosis_options])
+            value: index for index, value in enumerate(heatmap_group_order)
         }
         row_order_frame = (
             heatmap_data[
@@ -4255,11 +4504,17 @@ if active_view == "Correlation heatmaps":
         heatmap_title = (
             f"{module_set_label} · Module M{module}: all {ESTIMATOR_LABELS[estimator]} "
             "feature scores vs "
-            f"outcomes · {heatmap_diagnosis}"
+            f"outcomes · {heatmap_context_label}"
         )
         fdr_scope = (
             "Displayed-family FDR is Benjamini–Hochberg correction across every feature, "
-            "component, outcome, and diagnosis correlation calculated for this module."
+            "component, and outcome calculated for this module, separately within each "
+            "selected category level."
+            if heatmap_grouping_variable != "diagnosis_group"
+            else (
+                "Displayed-family FDR is Benjamini–Hochberg correction across every feature, "
+                "component, outcome, and diagnosis correlation calculated for this module."
+            )
         )
     else:
         all_feature = st.selectbox(
@@ -4303,29 +4558,57 @@ if active_view == "Correlation heatmaps":
                     "the heatmap and complete table."
                 ),
             )
-        correlation_table = cached_all_module_correlations(
-            module_set,
-            estimator,
-            method,
-            resolved,
-            all_feature,
-            all_component,
-            heatmap_diagnosis,
-            edge_rule,
-            differential_edge_rule,
-            differential_fdr_scope,
-            differential_fdr_threshold,
-            score_normalization,
-            analysis_subset,
-            cohort_scope,
-        )
+        if heatmap_grouping_variable == "diagnosis_group":
+            correlation_table = cached_all_module_correlations(
+                module_set,
+                estimator,
+                method,
+                resolved,
+                all_feature,
+                all_component,
+                heatmap_diagnosis,
+                edge_rule,
+                differential_edge_rule,
+                differential_fdr_scope,
+                differential_fdr_threshold,
+                score_normalization,
+                analysis_subset,
+                cohort_scope,
+            )
+        else:
+            correlation_table = cached_grouped_all_module_correlations(
+                module_set,
+                estimator,
+                method,
+                resolved,
+                all_feature,
+                all_component,
+                tuple(diagnoses),
+                heatmap_grouping_variable,
+                tuple(selected_heatmap_group_levels),
+                heatmap_minimum_group_n,
+                edge_rule,
+                differential_edge_rule,
+                differential_fdr_scope,
+                differential_fdr_threshold,
+                score_normalization,
+                analysis_subset,
+                cohort_scope,
+            )
+        if correlation_table.empty:
+            st.info("No correlations are available for the selected category levels.")
+            st.stop()
         correlation_table["feature_label"] = correlation_table["metric_family"].map(
             active_feature_labels
         )
         heatmap_data = correlation_table.copy()
         include_feature_in_row = all_feature == "__all__"
         include_component_in_row = all_component == "__all__"
-        include_group_in_row = heatmap_diagnosis == "All diagnosis groups"
+        include_group_in_row = (
+            heatmap_diagnosis == "All diagnosis groups"
+            if heatmap_grouping_variable == "diagnosis_group"
+            else len(heatmap_group_order) > 1
+        )
         heatmap_data["heatmap_row"] = heatmap_data["module"].map(
             lambda value: f"M{int(value)}"
         )
@@ -4356,8 +4639,7 @@ if active_view == "Correlation heatmaps":
             value: index for index, value in enumerate(active_feature_labels)
         }
         diagnosis_rank = {
-            value: index
-            for index, value in enumerate(["All donors", *diagnosis_options])
+            value: index for index, value in enumerate(heatmap_group_order)
         }
         component_order = COMPONENT_ORDER if resolved else ["CT", "TS"]
         component_rank = {
@@ -4410,7 +4692,7 @@ if active_view == "Correlation heatmaps":
             )
         heatmap_title = (
             f"{module_set_label}: {feature_title} · "
-            f"{component_title} · {heatmap_diagnosis}"
+            f"{component_title} · {heatmap_context_label}"
         )
         fdr_column = (
             "pearson_fdr_across_modules"
@@ -4419,8 +4701,10 @@ if active_view == "Correlation heatmaps":
         )
         fdr_scope = (
             f"FDR is Benjamini–Hochberg correction across the {module_count} modules "
-            "only, separately for each fixed feature, component, outcome, diagnosis/cohort, "
-            "and Pearson/Spearman method. Missing or constant tests are excluded."
+            "only, separately for each fixed feature, component, outcome, grouping "
+            "variable and grouping level, and Pearson/Spearman method. Category levels "
+            "are never combined into a groups-times-modules family. Missing or constant "
+            "tests are excluded."
         )
 
         heatmap_row_limit = st.selectbox(
@@ -4535,7 +4819,7 @@ if active_view == "Correlation heatmaps":
                 "toImageButtonOptions": {
                     "format": "png",
                     "filename": (
-                        f"{download_prefix}{method}_{heatmap_diagnosis}_"
+                        f"{download_prefix}{method}_{heatmap_file_group}_"
                         f"{correlation_method.lower()}_"
                         "correlation_heatmap"
                     ),
@@ -4559,9 +4843,15 @@ if active_view == "Correlation heatmaps":
         "component",
         "component_label",
         "diagnosis_group",
+        "grouping_variable",
+        "grouping_level",
+        "grouping_label",
         "outcome",
         "outcome_label",
         "n",
+        "minimum_group_n",
+        "eligible",
+        "unavailable_reason",
         "correlation_method",
         "correlation",
         "absolute_correlation",
@@ -4569,8 +4859,12 @@ if active_view == "Correlation heatmaps":
         "fdr",
         "pearson_r",
         "pearson_p",
+        "pearson_fdr_across_modules",
+        "pearson_fdr_module_family_n",
         "spearman_rho",
         "spearman_p",
+        "spearman_fdr_across_modules",
+        "spearman_fdr_module_family_n",
     ]
     correlation_columns = [
         column for column in correlation_columns if column in table_data.columns
@@ -4587,7 +4881,7 @@ if active_view == "Correlation heatmaps":
             "Download complete correlation table (TSV)",
             data=dataframe_to_tsv_bytes(table_data[correlation_columns]),
             file_name=(
-                f"{download_prefix}{method}_{heatmap_diagnosis}_"
+                f"{download_prefix}{method}_{heatmap_file_group}_"
                 "network_outcome_correlations.tsv"
             ),
             mime="text/tab-separated-values",

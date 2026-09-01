@@ -12,6 +12,7 @@ import pandas as pd
 from scipy import stats
 
 from app_helpers.correlations import (
+    add_across_module_fdr,
     benjamini_hochberg,
     calculate_categorical_associations,
     calculate_correlations,
@@ -211,6 +212,90 @@ def stream_grouped_correlations(
             )
         )
     return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
+
+
+@_serialized_heavy_read
+def stream_grouped_correlation_matrix(
+    modules: Iterable[int],
+    metadata: pd.DataFrame,
+    *,
+    module_set: str,
+    estimator: str,
+    method: str,
+    resolved: bool,
+    feature: str | None,
+    component: str | None,
+    outcomes: tuple[str, ...],
+    scale: str,
+    diagnoses: tuple[str, ...],
+    grouping_variable: str,
+    grouping_levels: tuple[object, ...],
+    min_group_n: int,
+    edge_rule: str,
+    differential_edge_rule: str,
+    differential_fdr_scope: str,
+    differential_fdr_threshold: float,
+    score_normalization: str,
+    analysis_subset: str,
+    cohort_scope: str = "complete_450",
+) -> pd.DataFrame:
+    """Calculate a grouped all-outcome matrix one module at a time.
+
+    Benjamini–Hochberg families are independent for each fixed grouping level,
+    feature, component, and outcome. Category levels are therefore never pooled
+    into a groups-times-modules correction family.
+    """
+
+    rows: list[pd.DataFrame] = []
+    metadata_columns = ["diagnosis_group", "ad_control_split", *outcomes]
+    if grouping_variable != "__all__":
+        metadata_columns.append(grouping_variable)
+    components = (component,) if component is not None else ()
+    for scores in _module_score_frames(
+        modules, module_set=module_set, estimator=estimator, method=method,
+        resolved=resolved, feature=feature, scale=scale, components=components,
+        edge_rule=edge_rule, differential_edge_rule=differential_edge_rule,
+        differential_fdr_scope=differential_fdr_scope,
+        differential_fdr_threshold=differential_fdr_threshold,
+        score_normalization=score_normalization, cohort_scope=cohort_scope,
+    ):
+        long = _attach_metadata(scores, metadata, metadata_columns)
+        long = _filter_analysis_rows(
+            long, diagnoses=diagnoses, analysis_subset=analysis_subset
+        )
+        if grouping_variable == "__all__":
+            long["grouping_variable"] = "__all__"
+            long["grouping_level"] = "__all__"
+        else:
+            long = long.loc[
+                long[grouping_variable].notna()
+                & long[grouping_variable].isin(grouping_levels)
+            ].copy()
+            long["grouping_variable"] = grouping_variable
+            long["grouping_level"] = long[grouping_variable]
+        if long.empty:
+            continue
+        rows.append(
+            calculate_correlations(
+                long,
+                group_columns=[
+                    "module", "metric_family", "component", "component_label",
+                    "grouping_variable", "grouping_level",
+                ],
+                outcomes=outcomes,
+                min_group_n=int(min_group_n),
+            )
+        )
+    if not rows:
+        return pd.DataFrame()
+    result = pd.concat(rows, ignore_index=True)
+    return add_across_module_fdr(
+        result,
+        family_columns=[
+            "metric_family", "component", "outcome",
+            "grouping_variable", "grouping_level",
+        ],
+    )
 
 
 @_serialized_heavy_read

@@ -606,3 +606,26 @@ def test_streamlit_configurable_grouped_and_ordinal_associations_render() -> Non
     )
     assert set(categorical_table["category_variable"]) == {"cogdx"}
     assert not {"pearson_r", "spearman_rho"}.intersection(categorical_table.columns)
+
+
+def test_numeric_correlation_heatmap_supports_selected_category_levels() -> None:
+    app = AppTest.from_file(APP, default_timeout=240).run()
+    assert_app_clean(app)
+    app = select_view(app, "Correlation heatmaps")
+    assert_app_clean(app)
+    grouping = widget_with_label(app.selectbox, "Group heatmap correlations by")
+    assert grouping.value == "diagnosis_group"
+    app = grouping.set_value("clusters").run()
+    assert_app_clean(app)
+    levels = widget_with_label(app.multiselect, "Heatmap group levels")
+    assert set(levels.options) == {"Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4"}
+    app = levels.set_value([1.0, 4.0]).run()
+    assert_app_clean(app)
+    grouped_table = next(
+        dataframe.value for dataframe in app.dataframe
+        if {"grouping_variable", "grouping_label", "correlation_method"}.issubset(
+            dataframe.value.columns
+        )
+    )
+    assert set(grouped_table["grouping_variable"]) == {"clusters"}
+    assert set(grouped_table["grouping_label"]) == {"Cluster 1", "Cluster 4"}
