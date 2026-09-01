@@ -133,6 +133,27 @@ def test_feature_distributions_support_non_diagnosis_grouping() -> None:
     assert set(summary["distribution_group"]) == {"Cluster 1", "Cluster 4"}
 
 
+def test_feature_distributions_can_use_tissue_module_eigengenes() -> None:
+    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = select_view(app, "Feature distributions")
+    assert_app_clean(app)
+    app = widget_with_label(app.selectbox, "Module").set_value(1918).run()
+    assert_app_clean(app)
+    feature = widget_with_label(app.selectbox, "Module feature")
+    assert "Module eigengene (PCA1 expression)" in feature.options
+    app = feature.set_value("eigengene").run()
+    assert_app_clean(app)
+    resolution = widget_with_label(app.radio, "Resolution")
+    assert resolution.options == ["Tissue resolved"]
+    assert resolution.value == "Tissue resolved"
+    components = widget_with_label(app.multiselect, "Tissue components")
+    assert set(components.options) == {"TS: AC", "TS: DLPFC", "TS: PCG"}
+    assert any(
+        "cross-tissue pair eigengene is not defined" in str(caption.value)
+        for caption in app.caption
+    )
+
+
 def test_association_view_defaults_to_pooled_all_donor_association() -> None:
     app = AppTest.from_file(APP, default_timeout=180).run()
     assert_app_clean(app)

@@ -804,7 +804,7 @@ def test_lioness_statistics_cover_all_twelve_outcomes() -> None:
 
 def test_feature_definitions_cover_lioness_and_bonobo_rules() -> None:
     definitions = data.load_feature_definitions()
-    assert set(definitions["estimator"]) == {"LIONESS", "BONOBO"}
+    assert set(definitions["estimator"]) == {"LIONESS", "BONOBO", "Expression"}
     assert set(
         definitions.loc[definitions["estimator"].eq("BONOBO"), "feature_family"]
     ) == {"connectivity", "positive_density", "negative_density"}
@@ -815,6 +815,12 @@ def test_feature_definitions_cover_lioness_and_bonobo_rules() -> None:
     )
     assert "posterior p<0.05" in bonobo_rules
     assert "BH FDR<0.05" in bonobo_rules
+    eigengene = definitions.loc[
+        definitions["estimator"].eq("Expression")
+        & definitions["feature_family"].eq("eigengene")
+    ]
+    assert len(eigengene) == 1
+    assert eigengene.iloc[0]["resolved_components"] == "TS_AC,TS_DLPFC,TS_PCGBA23"
 
 
 def test_control_derived_kegg_keeps_ts_modules_and_unavailable_annotations() -> None:
@@ -966,3 +972,35 @@ def test_shared_anonymous_samples_cover_all_estimators_and_module_sets() -> None
         )
         assert set(lioness["sample_id"]) == expected
         assert set(bonobo["sample_id"]) == expected
+
+
+def test_descriptive_eigengene_loader_is_tissue_specific_and_method_independent() -> None:
+    for module_set, module, method in (
+        ("full_cohort", 1918, "standard"),
+        ("control_derived", 121, "control_anchored"),
+    ):
+        assert data.descriptive_eigengene_data_available(module_set)
+        scores = data.load_resolved(
+            method, module, "eigengene", module_set=module_set
+        )
+        assert scores["sample_id"].nunique() == 450
+        assert set(scores["metric_family"]) == {"eigengene"}
+        assert set(scores["component"]) == {
+            "TS_AC", "TS_DLPFC", "TS_PCGBA23"
+        }
+        assert set(scores["component_class"]) == {"TS"}
+        assert not scores[
+            ["metric_raw", "metric_asinh", "metric_rint"]
+        ].isna().any().any()
+        assert not {"donor", "projid"}.intersection(scores.columns)
+
+    standard = data.load_resolved(
+        "standard", 1918, "eigengene", module_set="full_cohort"
+    ).sort_values(["sample_id", "component"])
+    anchored = data.load_resolved(
+        "control_anchored", 1918, "eigengene", module_set="full_cohort"
+    ).sort_values(["sample_id", "component"])
+    pd.testing.assert_series_equal(
+        standard["metric_raw"].reset_index(drop=True),
+        anchored["metric_raw"].reset_index(drop=True),
+    )

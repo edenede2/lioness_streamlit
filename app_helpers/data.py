@@ -377,6 +377,9 @@ FEATURE_LABELS = {
     "positive_abs_sum": "Positive absolute edge-weight sum",
     "negative_abs_sum": "Negative absolute edge-weight sum",
 }
+EIGENGENE_FEATURE_LABELS = {
+    "eigengene": "Module eigengene (PCA1 expression)",
+}
 BONOBO_FEATURE_LABELS = {
     "connectivity": "Connectivity",
     "positive_density": "Positive density",
@@ -423,6 +426,12 @@ def module_set_data_dir(module_set: str = "full_cohort") -> Path:
 
 def module_set_path(filename: str, module_set: str = "full_cohort") -> Path:
     return module_set_data_dir(module_set) / filename
+
+
+def descriptive_eigengene_data_available(module_set: str = "full_cohort") -> bool:
+    """Return whether tissue-specific descriptive eigengenes are deployed."""
+
+    return data_path_available(module_set_path("module_eigengenes.parquet", module_set))
 
 
 def estimator_path(
@@ -781,6 +790,18 @@ def load_resolved(
     score_normalization: str = "standard_pruned",
     cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
+    if (
+        estimator == "lioness"
+        and metric_family == "eigengene"
+        and cohort_scope == "complete_450"
+    ):
+        return load_descriptive_eigengene_scope(
+            method=method,
+            module=module,
+            metric_family=metric_family,
+            module_set=module_set,
+            include_embedded_metadata=True,
+        )
     columns = [
         "sample_id",
         "module",
@@ -831,6 +852,58 @@ def load_resolved(
     )
 
 
+def load_descriptive_eigengene_scope(
+    *,
+    method: str,
+    module: int | None = None,
+    metric_family: str | None = "eigengene",
+    component: str | None = None,
+    module_set: str = "full_cohort",
+    metric_scale: str | None = None,
+    include_embedded_metadata: bool = True,
+) -> pd.DataFrame:
+    """Read the method-independent, tissue-specific descriptive eigengenes."""
+
+    path = module_set_path("module_eigengenes.parquet", module_set)
+    if not data_path_available(path):
+        return pd.DataFrame()
+    filters: list[tuple[str, str, object]] = []
+    if module is not None:
+        filters.append(("module", "=", int(module)))
+    if metric_family is not None:
+        filters.append(("metric_family", "=", metric_family))
+    if component is not None:
+        filters.append(("component", "=", component))
+    metric_columns = (
+        [f"metric_{metric_scale}"]
+        if metric_scale is not None
+        else ["metric_raw", "metric_asinh", "metric_rint"]
+    )
+    columns = [
+        "sample_id",
+        "module",
+        "metric_family",
+        "component",
+        "component_class",
+        "component_label",
+        *metric_columns,
+    ]
+    result = _read_filtered(path, filters, columns)
+    if result.empty:
+        return result
+    result["lioness_method"] = method
+    if include_embedded_metadata:
+        metadata = load_sample_metadata(module_set=module_set)
+        embedded = ["sample_id", "diagnosis_group", *PHENOTYPE_LABELS]
+        result = result.merge(
+            metadata[embedded],
+            on="sample_id",
+            how="left",
+            validate="many_to_one",
+        )
+    return result
+
+
 def load_resolved_scope(
     method: str,
     module: int | None = None,
@@ -847,6 +920,20 @@ def load_resolved_scope(
     include_embedded_metadata: bool = True,
     cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
+    if (
+        estimator == "lioness"
+        and metric_family == "eigengene"
+        and cohort_scope == "complete_450"
+    ):
+        return load_descriptive_eigengene_scope(
+            method=method,
+            module=module,
+            metric_family=metric_family,
+            component=component,
+            module_set=module_set,
+            metric_scale=metric_scale,
+            include_embedded_metadata=include_embedded_metadata,
+        )
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
         filters.append(("module", "=", int(module)))
@@ -896,7 +983,25 @@ def load_resolved_scope(
             differential_fdr_threshold, score_normalization,
         )
     )
-    return _read_filtered(path, filters, columns)
+    result = _read_filtered(path, filters, columns)
+    if (
+        estimator == "lioness"
+        and metric_family is None
+        and cohort_scope == "complete_450"
+        and descriptive_eigengene_data_available(module_set)
+    ):
+        eigengenes = load_descriptive_eigengene_scope(
+            method=method,
+            module=module,
+            metric_family="eigengene",
+            component=component,
+            module_set=module_set,
+            metric_scale=metric_scale,
+            include_embedded_metadata=include_embedded_metadata,
+        )
+        if not eigengenes.empty:
+            result = pd.concat([result, eigengenes], ignore_index=True)
+    return result
 
 
 def load_aggregate_statistics(

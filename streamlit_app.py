@@ -122,6 +122,7 @@ if not all(
         "EIGENGENE_SOURCE_LABELS",
         "ASSOCIATION_GROUP_LABELS", "association_level_label",
         "PREDICTION_BLOCK_ORDER",
+        "EIGENGENE_FEATURE_LABELS", "descriptive_eigengene_data_available",
     )
 ):
     _data_helpers = importlib.reload(_data_helpers)
@@ -139,7 +140,9 @@ from app_helpers.data import (
     CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES,
     DATA_DIR,
     DIFFERENTIAL_EDGE_RULE_LABELS,
+    EIGENGENE_FEATURE_LABELS,
     DIAGNOSIS_ORDER,
+    EDGE_SCOPE_LABELS,
     FEATURE_LABELS,
     HOVER_LABELS,
     METHOD_LABELS,
@@ -175,6 +178,7 @@ from app_helpers.data import (
     association_kegg_subtitles,
     dataframe_to_tsv_bytes,
     differential_data_available,
+    descriptive_eigengene_data_available,
     differential_mdc_data_available,
     filter_kegg_enrichments,
     load_aggregate,
@@ -725,7 +729,11 @@ def cached_module_set_cluster_associations(
     selected_groups = list(diagnoses)
     if include_pooled:
         selected_groups.append("All donors")
-    if differential_edge_rule == "all" and cohort_scope == "complete_450":
+    if (
+        feature != "eigengene"
+        and differential_edge_rule == "all"
+        and cohort_scope == "complete_450"
+    ):
         result = load_cluster_association_statistics(
             module_set=module_set,
             estimator=estimator,
@@ -761,7 +769,11 @@ def cached_module_set_cluster_associations(
     families = result.groupby(
         ["component", "diagnosis_group"], observed=True, sort=False
     )["module"].nunique()
-    if not families.empty and not families.eq(int(module_count)).all():
+    if (
+        feature != "eigengene"
+        and not families.empty
+        and not families.eq(int(module_count)).all()
+    ):
         raise ValueError(
             "Nominal association families do not contain every module in the selected "
             f"definition ({module_count} expected): {families.to_dict()}"
@@ -1058,7 +1070,9 @@ def cached_categorical_module_set_associations(
 def add_correlation_labels(frame: pd.DataFrame) -> pd.DataFrame:
     result = frame.copy()
     result["outcome_label"] = result["outcome"].map(OUTCOME_LABELS)
-    result["feature_label"] = result["metric_family"].map(FEATURE_LABELS)
+    result["feature_label"] = result["metric_family"].map(
+        {**FEATURE_LABELS, **EIGENGENE_FEATURE_LABELS}
+    )
     result["heatmap_row"] = result["feature_label"] + " · " + result["component_label"]
     return result
 
@@ -1296,7 +1310,9 @@ def cached_all_module_correlations(
 
     # The diagnosis-stratified statistics are already stored. Reading them avoids
     # loading all donor-level values just to reconstruct Control/MCI/AD summaries.
-    if diagnosis != "All donors":
+    include_eigengenes = resolved and feature_filter in {None, "eigengene"}
+    include_stored_network = feature_filter != "eigengene"
+    if diagnosis != "All donors" and include_stored_network:
         statistic_arguments = {
             "method": method,
             "module": None,
@@ -1350,6 +1366,44 @@ def cached_all_module_correlations(
             ]
         summaries.append(group_summary)
 
+    if diagnosis != "All donors" and include_eigengenes:
+        module_ids = tuple(
+            sorted(cached_annotations(module_set)["module"].astype(int).unique())
+        )
+        requested_diagnoses = (
+            tuple(DIAGNOSIS_ORDER)
+            if diagnosis == "All diagnosis groups"
+            else (diagnosis,)
+        )
+        eigengene_summary = stream_grouped_correlation_matrix(
+            module_ids,
+            cached_sample_metadata(module_set, cohort_scope),
+            module_set=module_set,
+            estimator=estimator,
+            method=method,
+            resolved=True,
+            feature="eigengene",
+            component=component_filter,
+            outcomes=tuple(NUMERIC_OUTCOMES),
+            scale="rint",
+            diagnoses=requested_diagnoses,
+            grouping_variable="diagnosis_group",
+            grouping_levels=requested_diagnoses,
+            min_group_n=3,
+            edge_rule=edge_rule,
+            differential_edge_rule=differential_edge_rule,
+            differential_fdr_scope=differential_fdr_scope,
+            differential_fdr_threshold=differential_fdr_threshold,
+            score_normalization=score_normalization,
+            analysis_subset=analysis_subset,
+            cohort_scope=cohort_scope,
+        )
+        if not eigengene_summary.empty:
+            eigengene_summary["diagnosis_group"] = eigengene_summary[
+                "grouping_level"
+            ].astype(str)
+            summaries.append(eigengene_summary)
+
     # Pooled-donor correlations are intentionally calculated from the anonymous
     # donor rows because the original robustness tables are diagnosis-stratified.
     if diagnosis in {"All donors", "All diagnosis groups"}:
@@ -1375,6 +1429,8 @@ def cached_all_module_correlations(
             )
         )
 
+    if not summaries:
+        return pd.DataFrame()
     summary = pd.concat(summaries, ignore_index=True)
     summary = add_across_module_fdr(
         summary,
@@ -3389,6 +3445,13 @@ with st.sidebar:
     active_feature_labels = dict(
         FEATURE_LABELS if estimator == "lioness" else BONOBO_FEATURE_LABELS
     )
+    descriptive_eigengenes_available = (
+        estimator == "lioness"
+        and active_view in {"Feature distributions", "Correlation heatmaps"}
+        and descriptive_eigengene_data_available(module_set)
+    )
+    if descriptive_eigengenes_available:
+        active_feature_labels.update(EIGENGENE_FEATURE_LABELS)
     feature = st.selectbox(
         "Module feature",
         options=list(active_feature_labels),
@@ -3414,7 +3477,9 @@ with st.sidebar:
     else:
         bonobo_edge_subset = "All edges"
         edge_rule = "all"
-    differential_available = differential_data_available(module_set)
+    differential_available = (
+        feature != "eigengene" and differential_data_available(module_set)
+    )
     differential_edge_rule = st.radio(
         "AD–Control edge subset",
         options=list(DIFFERENTIAL_EDGE_RULE_LABELS) if differential_available else ["all"],
@@ -3426,7 +3491,10 @@ with st.sidebar:
         ),
     )
     if not differential_available:
-        st.caption("AD–Control filtered scores are not present in this deployed bundle.")
+        if feature == "eigengene":
+            st.caption("Edge-subset controls do not apply to expression eigengenes.")
+        else:
+            st.caption("AD–Control filtered scores are not present in this deployed bundle.")
         differential_fdr_scope = "global"
         differential_fdr_threshold = 0.05
     else:
@@ -3481,7 +3549,8 @@ with st.sidebar:
             )
     cohort_scope_options = ["complete_450"]
     if (
-        module_set == "all_donor_corrshrink_l4"
+        feature != "eigengene"
+        and module_set == "all_donor_corrshrink_l4"
         and capabilities.get("expanded_components", False)
         and estimator == "lioness"
         and differential_edge_rule == "all"
@@ -3499,10 +3568,16 @@ with st.sidebar:
     )
     resolution_options = (
         ["Tissue resolved"]
-        if cohort_scope == "maximum_component"
+        if cohort_scope == "maximum_component" or feature == "eigengene"
         else ["Aggregate CT / TS", "Tissue resolved"]
     )
     resolution = st.radio("Resolution", resolution_options)
+    if feature == "eigengene":
+        st.caption(
+            "Module eigengenes are tissue-specific PCA1 expression summaries for AC, "
+            "DLPFC, and PCG. They are independent of the selected LIONESS method and "
+            "edge filter; a cross-tissue pair eigengene is not defined."
+        )
     if cohort_scope == "maximum_component" and active_view in {
         "CT–TS screen", "Module finder"
     }:
@@ -3863,6 +3938,16 @@ available_components = (
     )
     .sort_values(["component_order", "component"])
 )
+if active_view == "Correlation heatmaps" and feature == "eigengene":
+    # The selected eigengene has only three tissue components, but the heatmap's
+    # "all features" mode must still be able to include the network CT pairs.
+    available_components = pd.DataFrame(
+        {
+            "component": COMPONENT_ORDER,
+            "component_label": [EDGE_SCOPE_LABELS[value] for value in COMPONENT_ORDER],
+            "component_order": list(range(len(COMPONENT_ORDER))),
+        }
+    )
 component_labels = dict(
     available_components[["component", "component_label"]].itertuples(index=False, name=None)
 )
@@ -4241,6 +4326,11 @@ if active_view == "Associations":
         )
 
 if active_view == "Correlation heatmaps":
+    heatmap_feature_labels = {
+        key: label
+        for key, label in active_feature_labels.items()
+        if resolved or key != "eigengene"
+    }
     heatmap_statistic_type = st.radio(
         "Association type",
         ["Numeric correlations", "Nominal ROSMAP clusters"],
@@ -4265,10 +4355,10 @@ if active_view == "Correlation heatmaps":
             index=0,
         )
         cluster_features = st.multiselect(
-            "Network features",
-            options=list(active_feature_labels),
-            default=list(active_feature_labels),
-            format_func=lambda value: active_feature_labels[value],
+            "Module scores",
+            options=list(heatmap_feature_labels),
+            default=list(heatmap_feature_labels),
+            format_func=lambda value: heatmap_feature_labels[value],
         )
         cluster_components = tuple(selected_components)
         if cluster_heatmap_diagnosis == "All donors":
@@ -4307,7 +4397,7 @@ if active_view == "Correlation heatmaps":
                     cluster_table["module"].astype(int).eq(int(module))
                 ]
             cluster_table["feature_label"] = cluster_table["metric_family"].map(
-                active_feature_labels
+                heatmap_feature_labels
             )
             cluster_table["base_component_label"] = cluster_table["component_label"]
             if len(display_groups) > 1:
@@ -4362,9 +4452,10 @@ if active_view == "Correlation heatmaps":
                 mime="text/tab-separated-values",
             )
         st.stop()
-    st.subheader("Network-score correlations across phenotypes and outcomes")
+    st.subheader("Module-score correlations across phenotypes and outcomes")
     st.caption(
-        "Heatmaps use donor-level Z-scored module features. Nominal fields such as sex code "
+        "Heatmaps use donor-level Z-scored network features and, when selected, "
+        "tissue-specific module eigengenes. Nominal fields such as sex code "
         "and APOE genotype remain available in hover but are excluded from Pearson/Spearman "
         "heatmaps because numeric correlation is not appropriate for unordered categories. "
         "CogDx, Braak, CERAD, ADNC, and Parkinsonism are source-coded ordinal/binary outcomes; "
@@ -4482,7 +4573,9 @@ if active_view == "Correlation heatmaps":
             else "spearman_fdr_displayed_family"
         )
         component_rank = {value: index for index, value in enumerate(COMPONENT_ORDER)}
-        feature_rank = {value: index for index, value in enumerate(FEATURE_LABELS)}
+        feature_rank = {
+            value: index for index, value in enumerate(heatmap_feature_labels)
+        }
         diagnosis_rank = {
             value: index for index, value in enumerate(heatmap_group_order)
         }
@@ -4502,8 +4595,7 @@ if active_view == "Correlation heatmaps":
         )
         row_order = row_order_frame["heatmap_row"].tolist()
         heatmap_title = (
-            f"{module_set_label} · Module M{module}: all {ESTIMATOR_LABELS[estimator]} "
-            "feature scores vs "
+            f"{module_set_label} · Module M{module}: all available module scores vs "
             f"outcomes · {heatmap_context_label}"
         )
         fdr_scope = (
@@ -4519,13 +4611,13 @@ if active_view == "Correlation heatmaps":
     else:
         all_feature = st.selectbox(
             "Features for all-module heatmap and table",
-            options=["__all__", *list(active_feature_labels)],
+            options=["__all__", *list(heatmap_feature_labels)],
             format_func=lambda value: (
-                f"All {ESTIMATOR_LABELS[estimator]} features"
+                "All available module scores"
                 if value == "__all__"
-                else active_feature_labels[value]
+                else heatmap_feature_labels[value]
             ),
-            index=1 + list(active_feature_labels).index(feature),
+            index=1 + list(heatmap_feature_labels).index(feature),
         )
         if resolved:
             component_options = available_components["component"].tolist()
@@ -4537,7 +4629,11 @@ if active_view == "Correlation heatmaps":
                     if value == "__all__"
                     else component_labels[value]
                 ),
-                index=1,
+                index=(
+                    1 + component_options.index("TS_AC")
+                    if all_feature == "eigengene" and "TS_AC" in component_options
+                    else 1
+                ),
                 help=(
                     "All components combines AC, DLPFC, PCG, AC–DLPFC, AC–PCG, "
                     "and DLPFC–PCG in the same heatmap and complete table."
@@ -4599,7 +4695,7 @@ if active_view == "Correlation heatmaps":
             st.info("No correlations are available for the selected category levels.")
             st.stop()
         correlation_table["feature_label"] = correlation_table["metric_family"].map(
-            active_feature_labels
+            heatmap_feature_labels
         )
         heatmap_data = correlation_table.copy()
         include_feature_in_row = all_feature == "__all__"
@@ -4636,7 +4732,7 @@ if active_view == "Correlation heatmaps":
             module_order = sorted(heatmap_data["module"].astype(int).unique())
         module_rank = {int(value): index for index, value in enumerate(module_order)}
         feature_rank = {
-            value: index for index, value in enumerate(active_feature_labels)
+            value: index for index, value in enumerate(heatmap_feature_labels)
         }
         diagnosis_rank = {
             value: index for index, value in enumerate(heatmap_group_order)
@@ -4674,9 +4770,9 @@ if active_view == "Correlation heatmaps":
                 .itertuples(index=False, name=None)
             )
         feature_title = (
-            f"all {len(active_feature_labels)} {ESTIMATOR_LABELS[estimator]} features"
+            f"all {len(heatmap_feature_labels)} available module scores"
             if all_feature == "__all__"
-            else active_feature_labels[all_feature]
+            else heatmap_feature_labels[all_feature]
         )
         if all_component == "__all__":
             component_title = (
@@ -4700,11 +4796,13 @@ if active_view == "Correlation heatmaps":
             else "spearman_fdr_across_modules"
         )
         fdr_scope = (
-            f"FDR is Benjamini–Hochberg correction across the {module_count} modules "
-            "only, separately for each fixed feature, component, outcome, grouping "
+            "FDR is Benjamini–Hochberg correction across only the eligible tested "
+            f"modules from the {module_count}-module definition, separately for each "
+            "fixed feature, component, outcome, grouping "
             "variable and grouping level, and Pearson/Spearman method. Category levels "
             "are never combined into a groups-times-modules family. Missing or constant "
-            "tests are excluded."
+            "tests and structurally unavailable tissue eigengenes are excluded; the "
+            "complete table reports the resulting family size."
         )
 
         heatmap_row_limit = st.selectbox(

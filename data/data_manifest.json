@@ -35,6 +35,63 @@
     "native_p05": "two-sided posterior covariance-edge p < 0.05"
   },
   "created_utc": "2026-08-22T18:52:50.363352+00:00",
+  "descriptive_eigengenes": {
+    "components": [
+      "TS_AC",
+      "TS_DLPFC",
+      "TS_PCGBA23"
+    ],
+    "ct_pair_eigengene_defined": false,
+    "definition": "Per-tissue module PCA1 after cohort-median imputation and gene standardization; sign aligned to mean standardized member-gene expression",
+    "files": {
+      "control_derived/module_eigengenes.parquet": {
+        "bytes": 8859326,
+        "modules": 186,
+        "relative_path": "control_derived/module_eigengenes.parquet",
+        "rows": 243900,
+        "schema": {
+          "component": "string",
+          "component_class": "string",
+          "component_label": "string",
+          "metric_asinh": "double",
+          "metric_family": "string",
+          "metric_raw": "double",
+          "metric_rint": "double",
+          "module": "int32",
+          "sample_id": "string"
+        },
+        "sha256": "32b0e12ad553f906951ac39c3cbfb9413f553b4068e2b89c5aa482299690709f",
+        "tissue_module_scores": 542
+      },
+      "full_cohort/module_eigengenes.parquet": {
+        "bytes": 6732280,
+        "modules": 154,
+        "relative_path": "module_eigengenes.parquet",
+        "rows": 185400,
+        "schema": {
+          "component": "string",
+          "component_class": "string",
+          "component_label": "string",
+          "metric_asinh": "double",
+          "metric_family": "string",
+          "metric_raw": "double",
+          "metric_rint": "double",
+          "module": "int32",
+          "sample_id": "string"
+        },
+        "sha256": "2e6eac7aa68850c57ae2deb66af924185477dfbc4bb47c9cb3846b88845ade91",
+        "tissue_module_scores": 412
+      }
+    },
+    "fit_cohort": "450 complete-tissue donors",
+    "intended_views": [
+      "Feature distributions",
+      "Correlation heatmaps"
+    ],
+    "minimum_mapped_genes": 3,
+    "prediction_reused": false,
+    "status": "complete"
+  },
   "diagnosis_counts_per_method": {
     "AD": 167,
     "Control": 164,
@@ -11121,6 +11178,22 @@
     "control_derived/module_details.tsv": {
       "bytes": 19567,
       "sha256": "5e4e60a51320e034cca24a5a0a85f0aefab6b2b6c99ea408e3046d596cd513c6"
+    },
+    "control_derived/module_eigengenes.parquet": {
+      "bytes": 8859326,
+      "rows": 243900,
+      "schema": {
+        "component": "string",
+        "component_class": "string",
+        "component_label": "string",
+        "metric_asinh": "double",
+        "metric_family": "string",
+        "metric_raw": "double",
+        "metric_rint": "double",
+        "module": "int32",
+        "sample_id": "string"
+      },
+      "sha256": "32b0e12ad553f906951ac39c3cbfb9413f553b4068e2b89c5aa482299690709f"
     },
     "control_derived/module_kegg_annotations.tsv": {
       "bytes": 73864,
@@ -23911,8 +23984,8 @@
       "sha256": "45993324aca572abd31694484a2234f63ac481151dbb294436d242c5dc496aba"
     },
     "feature_definitions.tsv": {
-      "bytes": 2366,
-      "sha256": "cc9ed6e69591beae32340d6463563bcbdde83354af31938aa2335b01e3de8d6e"
+      "bytes": 2636,
+      "sha256": "60223c6612d6b59cc4c0850df7d8696ab6faf1e78a5c9eb455e905396fa2f9e0"
     },
     "kegg_tissue_expanded_full.parquet": {
       "bytes": 667709,
@@ -23967,6 +24040,22 @@
     "module_details.tsv": {
       "bytes": 15888,
       "sha256": "ed81dddc506d38c1bdd01681c7cb07068bc0b96b111442212ae92be22bc450e6"
+    },
+    "module_eigengenes.parquet": {
+      "bytes": 6732280,
+      "rows": 185400,
+      "schema": {
+        "component": "string",
+        "component_class": "string",
+        "component_label": "string",
+        "metric_asinh": "double",
+        "metric_family": "string",
+        "metric_raw": "double",
+        "metric_rint": "double",
+        "module": "int32",
+        "sample_id": "string"
+      },
+      "sha256": "2e6eac7aa68850c57ae2deb66af924185477dfbc4bb47c9cb3846b88845ade91"
     },
     "module_kegg_annotations.tsv": {
       "bytes": 54181,
@@ -24388,6 +24477,12 @@
       "ct_unavailable_modules": [
         356
       ],
+      "descriptive_eigengenes": {
+        "available": true,
+        "file": "control_derived/module_eigengenes.parquet",
+        "rows": 243900,
+        "tissue_module_scores": 542
+      },
       "diagnosis_counts_per_method": {
         "AD": 167,
         "Control": 164,
@@ -35292,6 +35387,12 @@
         1508,
         1581
       ],
+      "descriptive_eigengenes": {
+        "available": true,
+        "file": "module_eigengenes.parquet",
+        "rows": 185400,
+        "tissue_module_scores": 412
+      },
       "diagnosis_counts_per_method": {
         "AD": 167,
         "Control": 164,
