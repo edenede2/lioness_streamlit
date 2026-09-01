@@ -1,0 +1,50 @@
+name: Extract donor module examples
+
+on:
+  push:
+    branches: [temp-donor-module-extract]
+
+permissions:
+  contents: read
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --quiet pandas pyarrow
+      - name: Extract module summaries
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+          p=Path('data/control_derived/aggregate_plot_data.parquet')
+          df=pd.read_parquet(p)
+          sub=df[df['module'].isin([794,1150])].copy()
+          if 'lioness_method' in sub.columns:
+              sub=sub[sub['lioness_method'].eq('control_anchored')]
+          if 'estimator' in sub.columns:
+              sub=sub[sub['estimator'].eq('lioness')]
+          if 'edge_rule' in sub.columns:
+              sub=sub[sub['edge_rule'].eq('all')]
+          if 'differential_edge_rule' in sub.columns:
+              sub=sub[sub['differential_edge_rule'].eq('all')]
+          rows=[]
+          for m in [794,1150]:
+              for g in ['Control','MCI','AD']:
+                  x=sub[(sub['module'].eq(m)) & (sub['diagnosis_group'].eq(g))]
+                  for col in ['CT_raw','TS_raw']:
+                      if col in x.columns:
+                          s=pd.to_numeric(x[col],errors='coerce').dropna()
+                          rows.append({'module':m,'diagnosis_group':g,'feature':col,'n':len(s),'median':s.median(),'mean':s.mean(),'q25':s.quantile(.25),'q75':s.quantile(.75)})
+          out=pd.DataFrame(rows)
+          out.to_csv('donor_module_examples.tsv',sep='\t',index=False)
+          print(out.to_string(index=False))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: donor-module-examples
+          path: donor_module_examples.tsv
