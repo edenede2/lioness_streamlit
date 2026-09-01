@@ -8,6 +8,7 @@ from collections.abc import Iterable
 
 import numpy as np
 import pandas as pd
+import plotly.express as px
 import streamlit as st
 
 # Streamlit Community Cloud may hot-reload this entrypoint while retaining an older
@@ -130,6 +131,7 @@ from app_helpers.data import (
     BONOBO_EDGE_RULE_LABELS,
     BONOBO_FEATURE_LABELS,
     COLOR_LABELS,
+    COHORT_SCOPE_LABELS,
     COMPONENT_ORDER,
     CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES,
     DATA_DIR,
@@ -145,6 +147,7 @@ from app_helpers.data import (
     FDR_THRESHOLD_LABELS,
     MODULE_SET_LABELS,
     MODULE_SET_METHODS,
+    PREDICTION_MODULE_SETS,
     NUMERIC_OUTCOMES,
     OUTCOME_LABELS,
     PHENOTYPE_LABELS,
@@ -163,6 +166,7 @@ from app_helpers.data import (
     SCORE_NORMALIZATION_LABELS,
     SELECTABLE_ASSOCIATION_OUTCOMES,
     association_level_label,
+    available_module_sets,
     build_pathway_mdc_rows,
     collapse_pathway_mdc_rows,
     association_kegg_subtitles,
@@ -183,6 +187,9 @@ from app_helpers.data import (
     load_mdc_resolved,
     load_module_annotations,
     load_module_details,
+    load_partition_comparison_summary,
+    load_partition_comparison_table,
+    load_partition_module_mapping,
     load_resolved,
     load_resolved_scope,
     load_resolved_statistics,
@@ -201,6 +208,7 @@ from app_helpers.data import (
     load_volcano_bins,
     load_volcano_candidates,
     module_label,
+    partition_comparison_available,
     prediction_data_available,
     targeted_prediction_data_available,
     require_data_files,
@@ -239,6 +247,21 @@ def cached_module_details(module_set: str) -> pd.DataFrame:
     return load_module_details(module_set=module_set)
 
 
+@st.cache_data(show_spinner=False)
+def cached_partition_comparison_summary() -> dict[str, object]:
+    return load_partition_comparison_summary()
+
+
+@st.cache_data(show_spinner=False)
+def cached_partition_module_mapping() -> pd.DataFrame:
+    return load_partition_module_mapping()
+
+
+@st.cache_data(show_spinner=False, max_entries=3)
+def cached_partition_comparison_table(name: str) -> pd.DataFrame:
+    return load_partition_comparison_table(name)
+
+
 @st.cache_data(show_spinner=False, max_entries=16)
 def cached_aggregate(
     module_set: str,
@@ -274,6 +297,7 @@ def cached_resolved(
     differential_fdr_scope: str = "global",
     differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
+    cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
     return load_resolved(
         method, module, feature, module_set=module_set,
@@ -282,12 +306,16 @@ def cached_resolved(
         differential_fdr_scope=differential_fdr_scope,
         differential_fdr_threshold=differential_fdr_threshold,
         score_normalization=score_normalization,
+        cohort_scope=cohort_scope,
     )
 
 
-@st.cache_data(show_spinner=False)
-def cached_sample_metadata() -> pd.DataFrame:
-    return load_sample_metadata()
+@st.cache_data(show_spinner=False, max_entries=3)
+def cached_sample_metadata(
+    module_set: str = "full_cohort",
+    cohort_scope: str = "complete_450",
+) -> pd.DataFrame:
+    return load_sample_metadata(module_set=module_set, cohort_scope=cohort_scope)
 
 
 @st.cache_data(show_spinner=False, max_entries=8)
@@ -465,6 +493,7 @@ def cached_resolved_stats(
     differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
+    cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
     return load_resolved_statistics(
         method, module, phenotype, feature, module_set=module_set,
@@ -474,6 +503,7 @@ def cached_resolved_stats(
         differential_fdr_threshold=differential_fdr_threshold,
         score_normalization=score_normalization,
         analysis_subset=analysis_subset,
+        cohort_scope=cohort_scope,
     )
 
 
@@ -582,8 +612,13 @@ def cached_tissue_mapping() -> pd.DataFrame:
     return load_tissue_mapping()
 
 
-def attach_metadata(frame: pd.DataFrame) -> pd.DataFrame:
-    metadata = cached_sample_metadata()
+def attach_metadata(
+    frame: pd.DataFrame,
+    *,
+    module_set: str = "full_cohort",
+    cohort_scope: str = "complete_450",
+) -> pd.DataFrame:
+    metadata = cached_sample_metadata(module_set, cohort_scope)
     additional = [
         column for column in metadata.columns if column == "sample_id" or column not in frame.columns
     ]
@@ -680,13 +715,14 @@ def cached_module_set_cluster_associations(
     differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
+    cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
     """Return Kruskal/epsilon-squared rows; never correlate cluster codes."""
 
     selected_groups = list(diagnoses)
     if include_pooled:
         selected_groups.append("All donors")
-    if differential_edge_rule == "all":
+    if differential_edge_rule == "all" and cohort_scope == "complete_450":
         result = load_cluster_association_statistics(
             module_set=module_set,
             estimator=estimator,
@@ -704,7 +740,7 @@ def cached_module_set_cluster_associations(
             sorted(cached_annotations(module_set)["module"].astype(int).unique())
         )
         result = stream_diagnosis_categorical_associations(
-            module_ids, cached_sample_metadata(), module_set=module_set,
+            module_ids, cached_sample_metadata(module_set, cohort_scope), module_set=module_set,
             estimator=estimator, method=method, resolved=resolved,
             feature=feature, category_variable="clusters", scale="raw",
             components=components, diagnoses=diagnoses,
@@ -713,7 +749,7 @@ def cached_module_set_cluster_associations(
             differential_fdr_scope=differential_fdr_scope,
             differential_fdr_threshold=differential_fdr_threshold,
             score_normalization=score_normalization,
-            analysis_subset=analysis_subset,
+            analysis_subset=analysis_subset, cohort_scope=cohort_scope,
         )
         result = add_categorical_across_module_fdr(
             result,
@@ -752,6 +788,7 @@ def cached_module_set_associations(
     differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
+    cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
     """Return Pearson/Spearman statistics with BH applied across modules only."""
 
@@ -761,6 +798,7 @@ def cached_module_set_associations(
             components, diagnoses, include_pooled, edge_rule,
             differential_edge_rule, differential_fdr_scope,
             differential_fdr_threshold, score_normalization, analysis_subset,
+            cohort_scope,
         )
 
     statistic_arguments = {
@@ -778,6 +816,7 @@ def cached_module_set_associations(
         "analysis_subset": analysis_subset,
     }
     if resolved:
+        statistic_arguments["cohort_scope"] = cohort_scope
         stored = load_resolved_statistics(**statistic_arguments)
     else:
         stored = load_aggregate_statistics(**statistic_arguments)
@@ -813,7 +852,7 @@ def cached_module_set_associations(
         sorted(cached_annotations(module_set)["module"].astype(int).unique())
     )
     pooled_statistics = stream_pooled_correlations(
-        module_ids, cached_sample_metadata(), module_set=module_set,
+        module_ids, cached_sample_metadata(module_set, cohort_scope), module_set=module_set,
         estimator=estimator, method=method, resolved=resolved, feature=feature,
         component=None, outcomes=(phenotype,), scale=scale,
         diagnoses=diagnoses, edge_rule=edge_rule,
@@ -821,6 +860,7 @@ def cached_module_set_associations(
         differential_fdr_scope=differential_fdr_scope,
         differential_fdr_threshold=differential_fdr_threshold,
         score_normalization=score_normalization, analysis_subset=analysis_subset,
+        cohort_scope=cohort_scope,
     )
     pooled_statistics = pooled_statistics.loc[
         pooled_statistics["component"].isin(components)
@@ -867,6 +907,7 @@ def cached_grouped_module_set_associations(
     differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
+    cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
     """Return grouped Pearson/Spearman statistics with module-set BH FDR.
 
@@ -883,6 +924,7 @@ def cached_grouped_module_set_associations(
             include_pooled, edge_rule, differential_edge_rule,
             differential_fdr_scope, differential_fdr_threshold,
             score_normalization, analysis_subset,
+            cohort_scope,
         ).copy()
         result["grouping_variable"] = "diagnosis_group"
         result["grouping_level"] = result["diagnosis_group"].where(
@@ -906,7 +948,7 @@ def cached_grouped_module_set_associations(
         sorted(cached_annotations(module_set)["module"].astype(int).unique())
     )
     result = stream_grouped_correlations(
-        module_ids, cached_sample_metadata(), module_set=module_set,
+        module_ids, cached_sample_metadata(module_set, cohort_scope), module_set=module_set,
         estimator=estimator, method=method, resolved=resolved, feature=feature,
         phenotype=phenotype, scale=scale, components=components,
         diagnoses=diagnoses, grouping_variable=grouping_variable,
@@ -916,6 +958,7 @@ def cached_grouped_module_set_associations(
         differential_fdr_scope=differential_fdr_scope,
         differential_fdr_threshold=differential_fdr_threshold,
         score_normalization=score_normalization, analysis_subset=analysis_subset,
+        cohort_scope=cohort_scope,
     )
     if not result.empty:
         result = add_across_module_fdr(
@@ -972,6 +1015,7 @@ def cached_categorical_module_set_associations(
     differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
+    cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
     """Return a generic Kruskal–Wallis/epsilon-squared module-set catalog."""
 
@@ -979,7 +1023,7 @@ def cached_categorical_module_set_associations(
         sorted(cached_annotations(module_set)["module"].astype(int).unique())
     )
     result = stream_categorical_associations(
-        module_ids, cached_sample_metadata(), module_set=module_set,
+        module_ids, cached_sample_metadata(module_set, cohort_scope), module_set=module_set,
         estimator=estimator, method=method, resolved=resolved, feature=feature,
         category_variable=category_variable, scale=scale, components=components,
         diagnoses=diagnoses, category_levels=category_levels,
@@ -988,6 +1032,7 @@ def cached_categorical_module_set_associations(
         differential_fdr_scope=differential_fdr_scope,
         differential_fdr_threshold=differential_fdr_threshold,
         score_normalization=score_normalization, analysis_subset=analysis_subset,
+        cohort_scope=cohort_scope,
     )
     if result.empty:
         return result
@@ -1028,6 +1073,7 @@ def cached_module_correlations(
     differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
+    cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
     if resolved:
         source = load_resolved_scope(
@@ -1037,6 +1083,7 @@ def cached_module_correlations(
             differential_fdr_scope=differential_fdr_scope,
             differential_fdr_threshold=differential_fdr_threshold,
             score_normalization=score_normalization,
+            cohort_scope=cohort_scope,
         )
         long = resolved_to_long(source, "rint")
     else:
@@ -1049,7 +1096,7 @@ def cached_module_correlations(
             score_normalization=score_normalization,
         )
         long = aggregate_to_long(source, "rint")
-    long = attach_metadata(long)
+    long = attach_metadata(long, module_set=module_set, cohort_scope=cohort_scope)
     if differential_edge_rule != "all" and analysis_subset != "all_donors":
         split_value = {
             "discovery_ad_control": "Discovery",
@@ -1089,6 +1136,7 @@ def cached_all_module_correlations(
     differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
+    cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
     feature_filter = None if feature == "__all__" else feature
     component_filter = None if component == "__all__" else component
@@ -1116,6 +1164,7 @@ def cached_all_module_correlations(
             stored = load_resolved_statistics(
                 **statistic_arguments,
                 component=component_filter,
+                cohort_scope=cohort_scope,
             )
             selected_components = tuple(
                 sorted(
@@ -1141,8 +1190,11 @@ def cached_all_module_correlations(
             phenotype=None,
         )
         if diagnosis == "All diagnosis groups":
+            stored_diagnoses = [*DIAGNOSIS_ORDER]
+            if cohort_scope == "maximum_component":
+                stored_diagnoses.append("Unclassified")
             group_summary = group_summary.loc[
-                group_summary["diagnosis_group"].isin(DIAGNOSIS_ORDER)
+                group_summary["diagnosis_group"].isin(stored_diagnoses)
             ]
         summaries.append(group_summary)
 
@@ -1154,16 +1206,20 @@ def cached_all_module_correlations(
         )
         summaries.append(
             stream_pooled_correlations(
-                module_ids, cached_sample_metadata(), module_set=module_set,
+                module_ids, cached_sample_metadata(module_set, cohort_scope), module_set=module_set,
                 estimator=estimator, method=method, resolved=resolved,
                 feature=feature_filter, component=component_filter,
                 outcomes=tuple(NUMERIC_OUTCOMES), scale="rint",
-                diagnoses=tuple(DIAGNOSIS_ORDER), edge_rule=edge_rule,
+                diagnoses=tuple(
+                    [*DIAGNOSIS_ORDER]
+                    + (["Unclassified"] if cohort_scope == "maximum_component" else [])
+                ), edge_rule=edge_rule,
                 differential_edge_rule=differential_edge_rule,
                 differential_fdr_scope=differential_fdr_scope,
                 differential_fdr_threshold=differential_fdr_threshold,
                 score_normalization=score_normalization,
                 analysis_subset=analysis_subset,
+                cohort_scope=cohort_scope,
             )
         )
 
@@ -2328,6 +2384,11 @@ def render_targeted_prediction_view() -> None:
 
 
 def render_prediction_view() -> None:
+    st.caption(
+        "Prediction catalogs are available only for the matched full-cohort and "
+        "Control-derived module definitions. The all-donor CorShrink definition was "
+        "intentionally added as a non-prediction analysis."
+    )
     """Render the leakage-reduced LIONESS held-out prediction catalog lazily."""
 
     targeted_available = targeted_prediction_data_available()
@@ -2374,7 +2435,7 @@ def render_prediction_view() -> None:
         )
         module_definition = st.selectbox(
             "Prediction module definition",
-            options=list(MODULE_SET_LABELS),
+            options=list(PREDICTION_MODULE_SETS),
             format_func=lambda value: MODULE_SET_LABELS[value],
             key="prediction_module_definition",
         )
@@ -2847,6 +2908,208 @@ st.markdown(
     "CT/TS and tissue-resolved components."
 )
 
+def render_partition_comparison_view() -> None:
+    st.header("Partition comparison")
+    st.caption(
+        "All-donor CorShrink M1 biological-L4 modules versus the existing matched-donor "
+        "full-cohort L4 modules. This contrast combines cohort expansion and correlation "
+        "shrinkage; it does not isolate either change. Module numbers are never treated "
+        "as equivalent across definitions."
+    )
+    if not partition_comparison_available():
+        st.info("The validated partition-comparison bundle is not available yet.")
+        return
+    summary = cached_partition_comparison_summary()
+    structure = summary.get("partition_comparison", summary)
+    columns = st.columns(5)
+    metrics = [
+        ("New modules", structure.get("new_modules")),
+        ("Matched modules", structure.get("matched_modules")),
+        ("Common tissue–genes", structure.get("common_nodes")),
+        ("ARI", structure.get("adjusted_rand_index")),
+        ("NMI", structure.get("normalized_mutual_information")),
+    ]
+    for column, (label, value) in zip(columns, metrics):
+        if isinstance(value, float):
+            column.metric(label, f"{value:.3f}")
+        else:
+            column.metric(label, f"{int(value):,}" if value is not None else "NA")
+    st.caption(
+        "ARI and NMI are calculated on the tissue–gene nodes retained by both "
+        "partitions. Coverage and overlap columns retain separate denominators for the "
+        "new and matched-donor definitions."
+    )
+
+    mapping = cached_partition_module_mapping()
+    tissue_overlap = cached_partition_comparison_table("tissue_gene_overlap")
+    if not tissue_overlap.empty:
+        st.subheader("Retained tissue–gene coverage")
+        filterable_dataframe(
+            tissue_overlap,
+            table_key="partition_tissue_gene_overlap",
+            table_name="Tissue-gene overlap",
+        )
+    new_details = cached_module_details("all_donor_corrshrink_l4").assign(
+        partition="All-donor CorShrink M1"
+    )
+    matched_details = cached_module_details("full_cohort").assign(
+        partition="Matched-donor full cohort"
+    )
+    structural = pd.concat([new_details, matched_details], ignore_index=True)
+    size_tab, entropy_tab, type_tab = st.tabs(
+        ["Module sizes", "Tissue-mixing entropy", "CT/TS composition"]
+    )
+    with size_tab:
+        render_plotly_chart(
+            px.histogram(
+                structural, x="module_size", color="partition", barmode="overlay",
+                opacity=0.65, marginal="box", nbins=35,
+                labels={"module_size": "Genes per module"},
+                title="Module-size distributions",
+            ),
+            key="partition_size_distribution",
+        )
+    with entropy_tab:
+        render_plotly_chart(
+            px.histogram(
+                structural, x="tissue_entropy_normalized", color="partition",
+                barmode="overlay", opacity=0.65, marginal="box", nbins=25,
+                labels={"tissue_entropy_normalized": "Normalized Shannon entropy"},
+                title="Continuous tissue-mixing distributions",
+            ),
+            key="partition_entropy_distribution",
+        )
+    with type_tab:
+        type_counts = (
+            structural.groupby(["partition", "cluster_type"], observed=True)
+            .size().rename("modules").reset_index()
+        )
+        type_counts["proportion"] = type_counts["modules"] / type_counts.groupby(
+            "partition", observed=True
+        )["modules"].transform("sum")
+        render_plotly_chart(
+            px.bar(
+                type_counts, x="partition", y="proportion", color="cluster_type",
+                barmode="stack", text="modules", title="CT/TS module proportions",
+                labels={"proportion": "Proportion of modules", "cluster_type": "Type"},
+            ),
+            key="partition_ct_ts_proportions",
+        )
+    mapping_mode = st.radio(
+        "Module correspondence",
+        options=["best_many_to_one", "maximum_weight_one_to_one"],
+        format_func=lambda value: {
+            "best_many_to_one": "Best overlap (many-to-one)",
+            "maximum_weight_one_to_one": "Maximum-weight one-to-one",
+        }[value],
+        horizontal=True,
+    )
+    selected_mapping = mapping.loc[mapping["mapping"].eq(mapping_mode)].copy()
+    left, right = st.columns([1.1, 1])
+    with left:
+        figure = px.histogram(
+            selected_mapping,
+            x="jaccard",
+            nbins=30,
+            title="Distribution of module-overlap Jaccard values",
+            labels={"jaccard": "Tissue–gene Jaccard", "count": "Module pairs"},
+        )
+        render_plotly_chart(figure, key=f"partition_jaccard_{mapping_mode}")
+    with right:
+        selected_new_module = st.selectbox(
+            "New all-donor CorShrink module",
+            options=sorted(selected_mapping["new_module"].astype(int).unique()),
+            format_func=lambda value: f"New M{value}",
+        )
+        selected_pair = selected_mapping.loc[
+            selected_mapping["new_module"].astype(int).eq(int(selected_new_module))
+        ]
+        st.dataframe(selected_pair, width="stretch", hide_index=True)
+    filterable_dataframe(
+        selected_mapping.sort_values("jaccard", ascending=False),
+        table_key=f"partition_mapping_{mapping_mode}",
+        table_name="Module correspondence table",
+    )
+
+    association = cached_partition_comparison_table("association_concordance")
+    mdc = cached_partition_comparison_table("mdc_concordance")
+    kegg = cached_partition_comparison_table("kegg_concordance")
+    association_tab, mdc_tab, kegg_tab = st.tabs(
+        ["Association concordance", "MDC concordance", "KEGG overlap"]
+    )
+    with association_tab:
+        if association.empty:
+            st.info("Association concordance will appear after the new statistics finish.")
+        else:
+            filters = {}
+            filter_columns = [
+                column for column in (
+                    "lioness_method", "metric_family", "component", "phenotype",
+                    "diagnosis_group", "scale", "correlation_method",
+                ) if column in association
+            ]
+            controls = st.columns(min(3, max(1, len(filter_columns))))
+            for index, column in enumerate(filter_columns):
+                options = sorted(association[column].dropna().astype(str).unique())
+                filters[column] = controls[index % len(controls)].selectbox(
+                    column.replace("_", " ").title(), options,
+                    key=f"partition_assoc_{column}",
+                )
+            view = association.copy()
+            for column, value in filters.items():
+                view = view.loc[view[column].astype(str).eq(value)]
+            if {"new_effect", "matched_effect"}.issubset(view.columns):
+                figure = px.scatter(
+                    view, x="matched_effect", y="new_effect", color="component"
+                    if "component" in view else None,
+                    hover_data=[
+                        column for column in (
+                            "new_module", "matched_module", "jaccard",
+                            "new_fdr", "matched_fdr",
+                        ) if column in view
+                    ],
+                    title="Matched-module association effects",
+                )
+                low = min(view["matched_effect"].min(), view["new_effect"].min())
+                high = max(view["matched_effect"].max(), view["new_effect"].max())
+                figure.add_shape(type="line", x0=low, y0=low, x1=high, y1=high,
+                                 line=dict(color="gray", dash="dash"))
+                render_plotly_chart(figure, key="partition_association_concordance")
+            filterable_dataframe(
+                view, table_key="partition_association_table",
+                table_name="Association concordance table",
+            )
+    with mdc_tab:
+        if mdc.empty:
+            st.info("MDC concordance will appear after the new permutation run finishes.")
+        else:
+            if {"new_log2_mdc", "matched_log2_mdc"}.issubset(mdc.columns):
+                figure = px.scatter(
+                    mdc, x="matched_log2_mdc", y="new_log2_mdc",
+                    color="component" if "component" in mdc else None,
+                    hover_data=[
+                        column for column in (
+                            "new_module", "matched_module", "jaccard",
+                            "new_directional_fdr", "matched_directional_fdr",
+                        ) if column in mdc
+                    ],
+                    title="Matched-module MDC concordance",
+                )
+                render_plotly_chart(figure, key="partition_mdc_concordance")
+            filterable_dataframe(
+                mdc, table_key="partition_mdc_table",
+                table_name="MDC concordance table",
+            )
+    with kegg_tab:
+        if kegg.empty:
+            st.info("KEGG overlap will appear after enrichment finishes.")
+        else:
+            filterable_dataframe(
+                kegg, table_key="partition_kegg_table",
+                table_name="KEGG overlap table",
+            )
+
+
 view_options = [
     "Associations",
     "Feature distributions",
@@ -2860,6 +3123,7 @@ view_options = [
     "Statistics",
     "KEGG enrichment",
     "Module details",
+    "Partition comparison",
     "Methods & data",
 ]
 active_view = st.pills(
@@ -2877,17 +3141,20 @@ if active_view is None:
 if active_view == "Prediction":
     render_prediction_view()
     st.stop()
+if active_view == "Partition comparison":
+    render_partition_comparison_view()
+    st.stop()
 
 with st.sidebar:
     st.header("Plot controls")
     st.caption(f"Data source: {data_source_label()}")
     module_set = st.selectbox(
         "Module definition",
-        options=list(MODULE_SET_LABELS),
+        options=list(available_module_sets()),
         format_func=lambda value: MODULE_SET_LABELS[value],
         index=0,
         help=(
-            "Identically numbered modules in the two definitions have different gene "
+            "Identically numbered modules in different definitions have different gene "
             "memberships and are always loaded from separate data bundles."
         ),
     )
@@ -2903,9 +3170,10 @@ with st.sidebar:
         )
         st.stop()
     module_details = cached_module_details(module_set)
+    allowed_estimators = list(module_manifest.get("estimators", ["lioness", "bonobo"]))
     estimator = st.radio(
         "Network estimator",
-        options=list(ESTIMATOR_LABELS),
+        options=allowed_estimators,
         format_func=lambda value: ESTIMATOR_LABELS[value],
         horizontal=True,
     )
@@ -2914,6 +3182,16 @@ with st.sidebar:
         if estimator == "lioness"
         else ["bonobo"]
     )
+    capabilities = module_manifest.get("capabilities", {})
+    if active_view in {"Edge summaries", "Edge volcano"} and not capabilities.get(
+        "differential_edges" if active_view == "Edge volcano" else "edge_summaries",
+        True,
+    ):
+        st.info(
+            f"{active_view} was intentionally not calculated for {module_set_label}. "
+            "Select one of the existing module definitions to use this view."
+        )
+        st.stop()
     method = st.radio(
         "Network method",
         options=allowed_methods,
@@ -3049,7 +3327,39 @@ with st.sidebar:
                     "negative_abs_sum": "Negative contribution per retained edge",
                 }
             )
-    resolution = st.radio("Resolution", ["Aggregate CT / TS", "Tissue resolved"])
+    cohort_scope_options = ["complete_450"]
+    if (
+        module_set == "all_donor_corrshrink_l4"
+        and capabilities.get("expanded_components", False)
+        and estimator == "lioness"
+        and differential_edge_rule == "all"
+    ):
+        cohort_scope_options.append("maximum_component")
+    cohort_scope = st.radio(
+        "Donor cohort scope",
+        options=cohort_scope_options,
+        format_func=lambda value: COHORT_SCOPE_LABELS[value],
+        help=(
+            "The maximum-component sensitivity uses every donor available separately "
+            "for each tissue or tissue pair. Pooled CT/TS remains restricted to the "
+            "same 450 complete-tissue donors used by the matched-partition comparison."
+        ),
+    )
+    resolution_options = (
+        ["Tissue resolved"]
+        if cohort_scope == "maximum_component"
+        else ["Aggregate CT / TS", "Tissue resolved"]
+    )
+    resolution = st.radio("Resolution", resolution_options)
+    if cohort_scope == "maximum_component" and active_view in {
+        "CT–TS screen", "Module finder"
+    }:
+        st.info(
+            "This screen compares pooled CT with pooled TS and is therefore available "
+            "only in the common 450-donor cohort. The maximum-component sensitivity "
+            "contains resolved tissues and tissue pairs with different donor sets."
+        )
+        st.stop()
     scale = st.selectbox(
         "Feature scale",
         options=list(SCALE_LABELS),
@@ -3066,10 +3376,13 @@ with st.sidebar:
         ),
         disabled=association_interpretation == "categorical",
     )
+    diagnosis_options = [*DIAGNOSIS_ORDER]
+    if cohort_scope == "maximum_component":
+        diagnosis_options.append("Unclassified")
     diagnoses = st.multiselect(
         "Diagnosis groups",
-        options=DIAGNOSIS_ORDER,
-        default=DIAGNOSIS_ORDER,
+        options=diagnosis_options,
+        default=diagnosis_options,
     )
     grouping_variable = "diagnosis_group"
     selected_group_levels: list[object] = list(diagnoses)
@@ -3079,7 +3392,7 @@ with st.sidebar:
     association_significance_cutoff = 0.05
     show_pooled_association = False
     if active_view == "Associations":
-        association_metadata = cached_sample_metadata()
+        association_metadata = cached_sample_metadata(module_set, cohort_scope)
         association_metadata = association_metadata.loc[
             association_metadata["diagnosis_group"].isin(diagnoses)
         ].copy()
@@ -3228,7 +3541,7 @@ st.caption(
 download_prefix = (
     f"{module_set}__{estimator}__{edge_rule}__{differential_edge_rule}__"
     f"{differential_fdr_scope}__fdr{differential_fdr_threshold:.2f}__"
-    f"{score_normalization}__"
+    f"{score_normalization}__{cohort_scope}__"
 )
 
 if not diagnoses:
@@ -3257,7 +3570,7 @@ with st.spinner("Loading the selected module…"):
         plot_data = cached_resolved(
             module_set, estimator, method, module, feature, edge_rule,
             differential_edge_rule, differential_fdr_scope,
-            differential_fdr_threshold, score_normalization,
+            differential_fdr_threshold, score_normalization, cohort_scope,
         )
         plot_data = resolved_to_long(plot_data, scale)
         statistics = (
@@ -3265,13 +3578,16 @@ with st.spinner("Loading the selected module…"):
                 module_set, estimator, method, module, phenotype, feature, edge_rule,
                 differential_edge_rule, differential_fdr_scope,
                 differential_fdr_threshold, score_normalization, analysis_subset,
+                cohort_scope,
             )
             if active_view == "Statistics" and association_interpretation == "numeric"
             else pd.DataFrame()
         )
         resolved = True
 
-plot_data = attach_metadata(plot_data)
+plot_data = attach_metadata(
+    plot_data, module_set=module_set, cohort_scope=cohort_scope
+)
 if differential_edge_rule != "all" and analysis_subset != "all_donors":
     selected_split = {
         "discovery_ad_control": "Discovery",
@@ -3465,6 +3781,7 @@ if active_view == "Associations":
             show_pooled_association, minimum_group_n, edge_rule,
             differential_edge_rule, differential_fdr_scope,
             differential_fdr_threshold, score_normalization, analysis_subset,
+            cohort_scope,
         )
     else:
         module_set_associations = cached_categorical_module_set_associations(
@@ -3473,6 +3790,7 @@ if active_view == "Associations":
             tuple(selected_group_levels), minimum_group_n, edge_rule,
             differential_edge_rule, differential_fdr_scope,
             differential_fdr_threshold, score_normalization, analysis_subset,
+            cohort_scope,
         )
     displayed_association_statistics = module_set_associations.loc[
         module_set_associations["module"].astype(int).eq(int(module))
@@ -3688,7 +4006,7 @@ if active_view == "Correlation heatmaps":
         )
         cluster_heatmap_diagnosis = st.selectbox(
             "Diagnosis/cohort in cluster heatmap",
-            ["All donors", *DIAGNOSIS_ORDER, "All diagnosis groups"],
+            ["All donors", *diagnosis_options, "All diagnosis groups"],
             index=0,
         )
         cluster_features = st.multiselect(
@@ -3699,13 +4017,13 @@ if active_view == "Correlation heatmaps":
         )
         cluster_components = tuple(selected_components)
         if cluster_heatmap_diagnosis == "All donors":
-            requested_diagnoses = tuple(DIAGNOSIS_ORDER)
+            requested_diagnoses = tuple(diagnosis_options)
             include_cluster_pooled = True
             display_groups = ["All donors"]
         elif cluster_heatmap_diagnosis == "All diagnosis groups":
-            requested_diagnoses = tuple(DIAGNOSIS_ORDER)
+            requested_diagnoses = tuple(diagnosis_options)
             include_cluster_pooled = True
-            display_groups = ["All donors", *DIAGNOSIS_ORDER]
+            display_groups = ["All donors", *diagnosis_options]
         else:
             requested_diagnoses = (cluster_heatmap_diagnosis,)
             include_cluster_pooled = False
@@ -3717,6 +4035,7 @@ if active_view == "Correlation heatmaps":
                 include_cluster_pooled, edge_rule, differential_edge_rule,
                 differential_fdr_scope, differential_fdr_threshold,
                 score_normalization, analysis_subset,
+                cohort_scope,
             )
             for selected_feature in cluster_features
         ]
@@ -3807,7 +4126,7 @@ if active_view == "Correlation heatmaps":
     st.caption(f"Correlation method: **{correlation_method}** (controlled in the sidebar).")
     heatmap_diagnosis = st.selectbox(
         "Diagnosis in heatmap",
-        options=["All donors", *DIAGNOSIS_ORDER, "All diagnosis groups"],
+        options=["All donors", *diagnosis_options, "All diagnosis groups"],
         index=3,
         key="heatmap_diagnosis",
         help=(
@@ -3847,6 +4166,7 @@ if active_view == "Correlation heatmaps":
             module_set, estimator, method, module, resolved, edge_rule,
             differential_edge_rule, differential_fdr_scope,
             differential_fdr_threshold, score_normalization, analysis_subset,
+            cohort_scope,
         )
         if heatmap_diagnosis == "All diagnosis groups":
             heatmap_data = correlation_table.copy()
@@ -3868,7 +4188,7 @@ if active_view == "Correlation heatmaps":
         feature_rank = {value: index for index, value in enumerate(FEATURE_LABELS)}
         diagnosis_rank = {
             value: index
-            for index, value in enumerate(["All donors", *DIAGNOSIS_ORDER])
+            for index, value in enumerate(["All donors", *diagnosis_options])
         }
         row_order_frame = (
             heatmap_data[
@@ -3950,6 +4270,7 @@ if active_view == "Correlation heatmaps":
             differential_fdr_threshold,
             score_normalization,
             analysis_subset,
+            cohort_scope,
         )
         correlation_table["feature_label"] = correlation_table["metric_family"].map(
             active_feature_labels
@@ -3989,7 +4310,7 @@ if active_view == "Correlation heatmaps":
         }
         diagnosis_rank = {
             value: index
-            for index, value in enumerate(["All donors", *DIAGNOSIS_ORDER])
+            for index, value in enumerate(["All donors", *diagnosis_options])
         }
         component_order = COMPONENT_ORDER if resolved else ["CT", "TS"]
         component_rank = {
@@ -4297,6 +4618,8 @@ if active_view == "CT–TS screen":
             ("CT", "TS"), (screen_diagnosis,), False, edge_rule,
             differential_edge_rule, differential_fdr_scope,
             differential_fdr_threshold, score_normalization, analysis_subset,
+            cohort_scope,
+            cohort_scope,
         )
         wide = cluster_screen.pivot_table(
             index="module",
@@ -4484,6 +4807,7 @@ if active_view == "Module finder":
             ("CT", "TS"), tuple(DIAGNOSIS_ORDER), True, edge_rule,
             differential_edge_rule, differential_fdr_scope,
             differential_fdr_threshold, score_normalization, analysis_subset,
+            cohort_scope,
         )
         effect = cluster_finder_stats.pivot_table(
             index="module", columns=["diagnosis_group", "component"],
@@ -6059,6 +6383,7 @@ if active_view == "Statistics":
             tuple(selected_components), tuple(diagnoses), True, edge_rule,
             differential_edge_rule, differential_fdr_scope,
             differential_fdr_threshold, score_normalization, analysis_subset,
+            cohort_scope,
         )
         cluster_statistics = cluster_statistics.loc[
             cluster_statistics["module"].astype(int).eq(int(module))
@@ -6689,11 +7014,17 @@ if active_view == "Methods & data":
         "inverse-normal Z-score calculated across all 450 donors."
     )
     st.markdown(
+        "For the all-donor CorShrink maximum-component sensitivity, transformations are "
+        "instead fitted independently within each method, module, feature, and resolved "
+        "component across that component's available donors. Pooled CT/TS remains limited "
+        "to the comparable 450-donor cohort."
+    )
+    st.markdown(
         "**Grouped associations** use diagnosis by default and may instead stratify "
         "correlations by clusters, CogDx, Braak, CERAD, ADNC, Parkinsonism, sex code, "
         "or APOE genotype. Pearson and Spearman are calculated separately within each "
-        "eligible displayed level. Their BH FDR families contain only the 154 or 186 "
-        "modules in the selected definition, while holding every other analysis and "
+        "eligible displayed level. Their BH FDR families contain only the modules in "
+        "the selected definition (138, 154, or 186), while holding every other analysis and "
         "grouping field fixed; missing and constant tests are excluded from the denominator. "
         "OLS trend lines are descriptive guides. Categorical comparisons use Kruskal–Wallis "
         "and epsilon-squared and never correlate nominal codes."

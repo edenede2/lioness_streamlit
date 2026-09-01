@@ -388,7 +388,7 @@ def test_pathway_mdc_join_uses_component_matched_kegg_fdrs() -> None:
         "CT_AC__PCGBA23",
         "CT_DLPFC__PCGBA23",
     }
-    for module_set in data.MODULE_SET_LABELS:
+    for module_set in data.available_module_sets():
         rows = data.build_pathway_mdc_rows(
             data.load_mdc_summary(module_set),
             data.load_mdc_resolved(module_set),
@@ -512,7 +512,7 @@ def test_kegg_contains_valid_whole_and_per_region_statistics() -> None:
         "PCG": ("p_PCGBA23", "fdr_PCGBA23", "significant_PCGBA23"),
     }
     manifest = data.load_data_manifest()
-    for module_set in data.MODULE_SET_LABELS:
+    for module_set in data.available_module_sets():
         frame = data.load_kegg(module_set=module_set)
         assert {"p", "fdr", "significant"}.issubset(frame.columns)
         assert not any("MFBA9BA46" in column for column in frame.columns)

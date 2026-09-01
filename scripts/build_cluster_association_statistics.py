@@ -168,10 +168,14 @@ def _statistics_for_file(
 
 def build_statistics(data_root: Path, metadata: pd.DataFrame) -> pd.DataFrame:
     frames: list[pd.DataFrame] = []
-    for module_set, directory in (
+    module_sets = [
         ("full_cohort", data_root),
         ("control_derived", data_root / "control_derived"),
-    ):
+    ]
+    new_directory = data_root / "all_donor_corrshrink_l4"
+    if (new_directory / "aggregate_plot_data.parquet").exists():
+        module_sets.append(("all_donor_corrshrink_l4", new_directory))
+    for module_set, directory in module_sets:
         for resolution in ("aggregate", "resolved"):
             filename = f"{resolution}_plot_data.parquet"
             frames.append(
@@ -184,17 +188,18 @@ def build_statistics(data_root: Path, metadata: pd.DataFrame) -> pd.DataFrame:
                     resolution=resolution,
                 )
             )
-            for edge_rule in ("all", "native_p05", "bh_fdr05"):
-                frames.append(
-                    _statistics_for_file(
-                        directory / "bonobo" / edge_rule / filename,
-                        metadata,
-                        module_set=module_set,
-                        estimator="bonobo",
-                        edge_rule=edge_rule,
-                        resolution=resolution,
+            if (directory / "bonobo").exists():
+                for edge_rule in ("all", "native_p05", "bh_fdr05"):
+                    frames.append(
+                        _statistics_for_file(
+                            directory / "bonobo" / edge_rule / filename,
+                            metadata,
+                            module_set=module_set,
+                            estimator="bonobo",
+                            edge_rule=edge_rule,
+                            resolution=resolution,
+                        )
                     )
-                )
     result = pd.concat(frames, ignore_index=True)
     result["clusters_are_nominal"] = True
     result["numeric_correlation_used"] = False

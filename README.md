@@ -3,18 +3,22 @@
 A GitHub-ready Streamlit app for exploring the completed ROSMAP LIONESS and
 BONOBO analyses.
 
-The app includes two explicitly separated module definitions:
+The app includes three explicitly separated module definitions:
 
 - **Full-cohort L4 modules (154)**, including M1918, with Standard and
   Control-referenced LIONESS results.
 - **Control-derived L4 modules (186)** with Control-referenced LIONESS results.
-  Identically numbered modules in the two sets are not interchangeable.
+- **All-donor CorShrink M1 L4 modules (138)** with Standard and Control-referenced
+  LIONESS, KEGG, MDC, module-composition, and partition-comparison results. Predictions,
+  BONOBO, differential-edge views, and edge summaries are intentionally unavailable for
+  this definition. Identically numbered modules in different sets are not interchangeable.
 - A compact repository hot cache for aggregate views and shared metadata. Large
   tissue-resolved, edge-level, BONOBO, and differential tables remain in Google
   Drive and are fetched only when their analysis view needs them. The view pills
   are lazy, so hidden views do not execute or perform I/O on every rerun.
-- Standard and Control-referenced LIONESS, plus all-donor empirical-Bayes
-  BONOBO for both module definitions.
+- Standard and Control-referenced LIONESS where declared by each bundle, plus
+  all-donor empirical-Bayes BONOBO for the original full-cohort and Control-derived
+  definitions.
 - Twelve numeric outcomes: five cognitive/motor phenotypes, age, education,
   CogDx, Braak, CERAD, ADNC, and Parkinsonism.
 - Six LIONESS feature families and three parallel BONOBO feature families.
@@ -446,6 +450,10 @@ python scripts/validate_public_bundle.py /path/to/data
 - Google Drive `data/`: the existing 154-module full-cohort bundle.
 - Google Drive `data/control_derived/`: the isolated 186-module Control-derived bundle. It has
   its own plot data, statistics, KEGG, MDC, annotations, and module-details files.
+- Google Drive `data/all_donor_corrshrink_l4/`: the isolated 138-module all-donor
+  CorShrink bundle. Its `expanded/` shards contain resolved-component sensitivity
+  scores using AC=730, DLPFC=1,216, PCG=659, AC-DLPFC=694, AC-PCG=478, and
+  DLPFC-PCG=640 available donors; pooled CT/TS remains on the common 450 donors.
 - `aggregate_plot_data.parquet`: LIONESS CT/TS raw, asinh, and Z-score features.
 - `resolved_plot_data.parquet`: LIONESS DLPFC/AC/PCG tissue and tissue-pair features.
 - `bonobo/{all,native_p05,bh_fdr05}/`: separately queryable BONOBO plot and
@@ -472,9 +480,11 @@ python scripts/validate_public_bundle.py /path/to/data
 
 Association FDR correction is performed separately by module definition,
 estimator/network method, component family, correlation method, and BONOBO edge
-rule. The expanded global columns apply Benjamini-Hochberg correction over all 12
-numeric outcomes; primary-five global columns are retained for backward comparison,
-and within-outcome columns correct each outcome family. The
+rule. The displayed module-set FDR applies Benjamini-Hochberg across the 138, 154,
+or 186 modules only while holding the outcome, donor group/grouping level, feature,
+component, cohort scope, and remaining analysis fields fixed. Legacy all-12 global,
+primary-five, and within-outcome columns remain available in downloads for backward
+comparison. The
 whole-regions KEGG FDR is corrected within each module across pathways reported by
 the tissue-expanded test. Each AC, DLPFC, and PCG FDR is corrected separately within
 its module and region across the stable set of 350 KEGG pathways; pathways below the
@@ -512,7 +522,7 @@ and CT edges. Adjacencies use signedAlt with beta 3 for TS and beta 2 for CT.
 
 Each module definition has its matching MDC source and uses 200 sample permutations
 plus 200 gene permutations. For each edge scope and direction, permutation p-values
-were Benjamini-Hochberg adjusted across the modules in that definition (154 or 186).
+were Benjamini-Hochberg adjusted across the modules in that definition (138, 154, or 186).
 The displayed directional FDR is the maximum of the sample-permutation and
 gene-permutation q-values for the observed direction.
 

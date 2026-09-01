@@ -49,6 +49,7 @@ def _module_score_frames(
     differential_fdr_scope: str,
     differential_fdr_threshold: float,
     score_normalization: str,
+    cohort_scope: str = "complete_450",
 ) -> Iterator[pd.DataFrame]:
     """Yield one narrow donor-score frame at a time.
 
@@ -70,6 +71,8 @@ def _module_score_frames(
         "metric_scale": scale,
         "include_embedded_metadata": False,
     }
+    if resolved:
+        common["cohort_scope"] = cohort_scope
     selected_components = set(components or ())
     for module in modules:
         if resolved:
@@ -159,6 +162,7 @@ def stream_grouped_correlations(
     differential_fdr_threshold: float,
     score_normalization: str,
     analysis_subset: str,
+    cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
     """Calculate grouped correlations while retaining one module in memory."""
 
@@ -173,6 +177,7 @@ def stream_grouped_correlations(
         differential_fdr_scope=differential_fdr_scope,
         differential_fdr_threshold=differential_fdr_threshold,
         score_normalization=score_normalization,
+        cohort_scope=cohort_scope,
     ):
         long = _attach_metadata(scores, metadata, metadata_columns)
         long = _filter_analysis_rows(
@@ -230,6 +235,7 @@ def stream_categorical_associations(
     differential_fdr_threshold: float,
     score_normalization: str,
     analysis_subset: str,
+    cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
     """Calculate Kruskal–Wallis rows while retaining one module in memory."""
 
@@ -241,6 +247,7 @@ def stream_categorical_associations(
         differential_fdr_scope=differential_fdr_scope,
         differential_fdr_threshold=differential_fdr_threshold,
         score_normalization=score_normalization,
+        cohort_scope=cohort_scope,
     ):
         long = _attach_metadata(
             scores, metadata,
@@ -288,6 +295,7 @@ def stream_diagnosis_categorical_associations(
     differential_fdr_threshold: float,
     score_normalization: str,
     analysis_subset: str,
+    cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
     """Calculate category effects per diagnosis and optionally all donors."""
 
@@ -299,6 +307,7 @@ def stream_diagnosis_categorical_associations(
         differential_fdr_scope=differential_fdr_scope,
         differential_fdr_threshold=differential_fdr_threshold,
         score_normalization=score_normalization,
+        cohort_scope=cohort_scope,
     ):
         long = _attach_metadata(
             scores, metadata,
@@ -349,6 +358,7 @@ def stream_pooled_correlations(
     differential_fdr_threshold: float,
     score_normalization: str,
     analysis_subset: str,
+    cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
     """Calculate pooled all-donor heatmap statistics one module at a time."""
 
@@ -361,6 +371,7 @@ def stream_pooled_correlations(
         differential_fdr_scope=differential_fdr_scope,
         differential_fdr_threshold=differential_fdr_threshold,
         score_normalization=score_normalization,
+        cohort_scope=cohort_scope,
     ):
         long = _attach_metadata(
             scores, metadata,

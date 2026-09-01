@@ -25,8 +25,12 @@ DIAGNOSIS_COLORS = {
     "Control": "#2C7FB8",
     "MCI": "#D8A500",
     "AD": "#E66101",
+    "Unclassified": "#7A8793",
 }
-DIAGNOSIS_SYMBOLS = {"Control": "circle", "MCI": "diamond", "AD": "square"}
+DIAGNOSIS_SYMBOLS = {
+    "Control": "circle", "MCI": "diamond", "AD": "square",
+    "Unclassified": "x",
+}
 CLUSTER_COLORS = {1: "#3B4CC0", 2: "#20A486", 3: "#F6C141", 4: "#D1495B"}
 MDC_DIRECTION_COLORS = {
     "Higher in AD": "#E66101",

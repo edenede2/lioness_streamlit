@@ -43,7 +43,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--remote-directory",
         default="prediction",
-        help="Directory below the configured Drive root (for example prediction_targeted).",
+        help=(
+            "Directory below the configured Drive root (for example "
+            "prediction_targeted). Use an empty value to synchronize a complete public "
+            "data bundle directly below the root."
+        ),
     )
     parser.add_argument(
         "--manifest-name",
@@ -110,7 +114,7 @@ def main() -> None:
     if not (local_root / args.manifest_name).is_file():
         raise FileNotFoundError("Prediction public manifest is missing from the local bundle")
     remote_directory = str(args.remote_directory).strip("/")
-    if not remote_directory or ".." in Path(remote_directory).parts:
+    if ".." in Path(remote_directory).parts:
         raise ValueError("--remote-directory must be a safe path below the Drive root")
     credentials = service_account.Credentials.from_service_account_info(
         json.loads(args.credentials.read_text(encoding="utf-8")), scopes=[DRIVE_SCOPE]
@@ -129,7 +133,7 @@ def main() -> None:
     uploaded = updated = reused = created_folders = 0
     for local in sorted(path for path in local_root.rglob("*") if path.is_file()):
         local_relative = local.relative_to(local_root).as_posix()
-        remote_relative = f"{remote_directory}/{local_relative}"
+        remote_relative = f"{remote_directory}/{local_relative}".strip("/")
         parent_relative = Path(remote_relative).parent.as_posix()
         if parent_relative == ".":
             parent_relative = ""

@@ -20,14 +20,22 @@ APP_ROOT = Path(__file__).resolve().parents[1]
 MODULE_SET_LABELS = {
     "full_cohort": "Full-cohort L4 modules (154)",
     "control_derived": "Control-derived L4 modules (186)",
+    "all_donor_corrshrink_l4": "All-donor CorShrink M1 L4 modules",
 }
 MODULE_SET_DIRS = {
     "full_cohort": DATA_DIR,
     "control_derived": DATA_DIR / "control_derived",
+    "all_donor_corrshrink_l4": DATA_DIR / "all_donor_corrshrink_l4",
 }
 MODULE_SET_METHODS = {
     "full_cohort": ("standard", "control_anchored"),
     "control_derived": ("control_anchored",),
+    "all_donor_corrshrink_l4": ("standard", "control_anchored"),
+}
+PREDICTION_MODULE_SETS = ("full_cohort", "control_derived")
+COHORT_SCOPE_LABELS = {
+    "complete_450": "Complete-tissue comparison cohort (450)",
+    "maximum_component": "Maximum component cohort",
 }
 ESTIMATOR_LABELS = {
     "lioness": "LIONESS",
@@ -132,6 +140,9 @@ TARGETED_PREDICTION_FILES = {
     "masked_oof_predictions": TARGETED_PREDICTION_DIR / "targeted_masked_oof_predictions.parquet",
 }
 CLUSTER_ASSOCIATION_STATS = DATA_DIR / "cluster_association_statistics.parquet"
+PARTITION_COMPARISON_DIR = (
+    DATA_DIR / "all_donor_corrshrink_l4" / "partition_comparison"
+)
 
 PREDICTION_OUTCOME_LABELS = {
     "diagnosis_binary": "Diagnosis: AD versus Control",
@@ -467,6 +478,26 @@ def differential_estimator_path(
     )
 
 
+def cohort_resolved_path(
+    filename: str,
+    module_set: str,
+    estimator: str,
+    method: str,
+    edge_rule: str,
+    cohort_scope: str,
+) -> Path:
+    if cohort_scope == "complete_450":
+        return estimator_path(filename, module_set, estimator, edge_rule)
+    if cohort_scope != "maximum_component":
+        raise ValueError(f"Unknown cohort scope: {cohort_scope}")
+    if module_set != "all_donor_corrshrink_l4" or estimator != "lioness" or edge_rule != "all":
+        raise ValueError("Maximum-component data are available only for all-edge LIONESS")
+    expanded = module_set_data_dir(module_set) / "expanded"
+    if filename == "resolved_plot_data.parquet":
+        return expanded / method / filename
+    return expanded / filename
+
+
 def differential_data_available(module_set: str = "full_cohort") -> bool:
     return data_path_available(
         module_set_data_dir(module_set)
@@ -488,6 +519,62 @@ def differential_mdc_data_available(module_set: str = "full_cohort") -> bool:
     )
 
 
+def available_module_sets() -> tuple[str, ...]:
+    """Return module definitions declared complete by the deploy manifest."""
+
+    try:
+        manifest = json.loads(ensure_data_path(DATA_MANIFEST).read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return tuple(
+            key for key in ("full_cohort", "control_derived")
+            if data_path_available(module_set_path("module_details.tsv", key))
+        )
+    declared = manifest.get("module_sets", {})
+    return tuple(
+        key for key in MODULE_SET_LABELS
+        if key in declared
+        and declared[key].get("status", "complete") == "complete"
+        and data_path_available(module_set_path("module_details.tsv", key))
+    )
+
+
+def partition_comparison_available() -> bool:
+    return all(
+        data_path_available(PARTITION_COMPARISON_DIR / filename)
+        for filename in ("summary.json", "module_mapping.tsv")
+    )
+
+
+def load_partition_comparison_summary() -> dict[str, object]:
+    path = ensure_data_path(PARTITION_COMPARISON_DIR / "summary.json")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def load_partition_module_mapping() -> pd.DataFrame:
+    path = ensure_data_path(PARTITION_COMPARISON_DIR / "module_mapping.tsv")
+    return pd.read_csv(path, sep="\t")
+
+
+def load_partition_comparison_table(name: str) -> pd.DataFrame:
+    allowed = {
+        "association_concordance": "association_concordance.parquet",
+        "mdc_concordance": "mdc_concordance.parquet",
+        "kegg_concordance": "kegg_concordance.tsv",
+        "tissue_gene_overlap": "tissue_gene_overlap.tsv",
+    }
+    if name not in allowed:
+        raise ValueError(f"Unknown partition comparison table: {name}")
+    path = PARTITION_COMPARISON_DIR / allowed[name]
+    if not data_path_available(path):
+        return pd.DataFrame()
+    materialized = ensure_data_path(path)
+    return (
+        pd.read_parquet(materialized)
+        if materialized.suffix == ".parquet"
+        else pd.read_csv(materialized, sep="\t")
+    )
+
+
 def require_data_files() -> None:
     """Raise a useful error if the GitHub data bundle was not built."""
     required = [
@@ -497,31 +584,54 @@ def require_data_files() -> None:
         DATA_MANIFEST,
         CLUSTER_ASSOCIATION_STATS,
     ]
-    for module_set in MODULE_SET_DIRS:
+    module_sets = available_module_sets()
+    manifest = json.loads(ensure_data_path(DATA_MANIFEST).read_text(encoding="utf-8"))
+    for module_set in module_sets:
+        module_manifest = manifest.get("module_sets", {}).get(module_set, {})
         required.extend(
             module_set_path(filename, module_set) for filename in MODULE_SET_FILENAMES
         )
-        for edge_rule in ("all", *BONOBO_EDGE_RULE_LABELS):
-            required.extend(
-                estimator_path(filename, module_set, "bonobo", edge_rule)
-                for filename in (
-                    "aggregate_plot_data.parquet",
-                    "resolved_plot_data.parquet",
-                    "aggregate_statistics.parquet",
-                    "resolved_statistics.parquet",
+        if "bonobo" in module_manifest.get("estimators", ["lioness", "bonobo"]):
+            for edge_rule in ("all", *BONOBO_EDGE_RULE_LABELS):
+                required.extend(
+                    estimator_path(filename, module_set, "bonobo", edge_rule)
+                    for filename in (
+                        "aggregate_plot_data.parquet",
+                        "resolved_plot_data.parquet",
+                        "aggregate_statistics.parquet",
+                        "resolved_statistics.parquet",
+                    )
                 )
-            )
-            required.append(
+                required.append(
+                    module_set_data_dir(module_set)
+                    / "edge_summaries"
+                    / f"bonobo__{edge_rule}.parquet"
+                )
+        if module_manifest.get("capabilities", {}).get("edge_summaries", True):
+            required.extend(
                 module_set_data_dir(module_set)
                 / "edge_summaries"
-                / f"bonobo__{edge_rule}.parquet"
+                / f"lioness__{method}.parquet"
+                for method in MODULE_SET_METHODS[module_set]
             )
-        required.extend(
-            module_set_data_dir(module_set)
-            / "edge_summaries"
-            / f"lioness__{method}.parquet"
-            for method in MODULE_SET_METHODS[module_set]
-        )
+        if module_manifest.get("capabilities", {}).get("expanded_components", False):
+            required.extend(
+                module_set_data_dir(module_set)
+                / "expanded"
+                / method
+                / "resolved_plot_data.parquet"
+                for method in MODULE_SET_METHODS[module_set]
+            )
+            required.extend(
+                [
+                    module_set_data_dir(module_set)
+                    / "expanded"
+                    / "resolved_statistics.parquet",
+                    module_set_data_dir(module_set)
+                    / "expanded"
+                    / "sample_metadata.parquet",
+                ]
+            )
     missing = [
         str(path.relative_to(APP_ROOT)) if path.is_relative_to(APP_ROOT) else str(path)
         for path in required
@@ -669,6 +779,7 @@ def load_resolved(
     differential_fdr_scope: str = "global",
     differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
+    cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
     columns = [
         "sample_id",
@@ -697,12 +808,20 @@ def load_resolved(
                 "ad_control_split",
             ]
         )
-    return _read_filtered(
-        differential_estimator_path(
+    path = (
+        cohort_resolved_path(
+            "resolved_plot_data.parquet", module_set, estimator, method,
+            edge_rule, cohort_scope,
+        )
+        if cohort_scope != "complete_450"
+        else differential_estimator_path(
             "resolved_plot_data.parquet", module_set, estimator, method, edge_rule,
             differential_edge_rule, differential_fdr_scope,
             differential_fdr_threshold, score_normalization,
-        ),
+        )
+    )
+    return _read_filtered(
+        path,
         [
             ("lioness_method", "=", method),
             ("module", "=", int(module)),
@@ -726,6 +845,7 @@ def load_resolved_scope(
     score_normalization: str = "standard_pruned",
     metric_scale: str | None = None,
     include_embedded_metadata: bool = True,
+    cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
@@ -764,13 +884,19 @@ def load_resolved_scope(
                 "ad_control_split",
             ]
         )
-    return _read_filtered(
-        differential_estimator_path(
+    path = (
+        cohort_resolved_path(
+            "resolved_plot_data.parquet", module_set, estimator, method,
+            edge_rule, cohort_scope,
+        )
+        if cohort_scope != "complete_450"
+        else differential_estimator_path(
             "resolved_plot_data.parquet", module_set, estimator, method, edge_rule,
             differential_edge_rule, differential_fdr_scope,
             differential_fdr_threshold, score_normalization,
-        ), filters, columns
+        )
     )
+    return _read_filtered(path, filters, columns)
 
 
 def load_aggregate_statistics(
@@ -823,6 +949,7 @@ def load_resolved_statistics(
     analysis_subset: str = "all_donors",
     component: str | None = None,
     diagnosis_group: str | None = None,
+    cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
@@ -837,13 +964,19 @@ def load_resolved_statistics(
         filters.append(("diagnosis_group", "=", diagnosis_group))
     if differential_edge_rule != "all":
         filters.append(("analysis_subset", "=", analysis_subset))
-    return _read_filtered(
-        differential_estimator_path(
+    path = (
+        cohort_resolved_path(
+            "resolved_statistics.parquet", module_set, estimator, method,
+            edge_rule, cohort_scope,
+        )
+        if cohort_scope != "complete_450"
+        else differential_estimator_path(
             "resolved_statistics.parquet", module_set, estimator, method, edge_rule,
             differential_edge_rule, differential_fdr_scope,
             differential_fdr_threshold, score_normalization,
-        ), filters
+        )
     )
+    return _read_filtered(path, filters)
 
 
 def load_module_annotations(module_set: str = "full_cohort") -> pd.DataFrame:
@@ -899,8 +1032,28 @@ def load_tissue_mapping() -> pd.DataFrame:
     return pd.read_csv(ensure_data_path(TISSUE_MAPPING), sep="\t")
 
 
-def load_sample_metadata() -> pd.DataFrame:
-    return pd.read_parquet(ensure_data_path(SAMPLE_METADATA))
+def load_sample_metadata(
+    module_set: str = "full_cohort",
+    cohort_scope: str = "complete_450",
+) -> pd.DataFrame:
+    """Load pseudonymized donor metadata for the selected cohort grain.
+
+    The shared 450-donor table remains the default for every existing module
+    definition.  The all-donor CorShrink sensitivity uses a separate union of
+    donors observed in at least one resolved component; keeping that table
+    namespaced prevents accidental joins between cohort scopes.
+    """
+
+    if cohort_scope == "complete_450":
+        path = SAMPLE_METADATA
+    elif module_set == "all_donor_corrshrink_l4" and cohort_scope == "maximum_component":
+        path = module_set_data_dir(module_set) / "expanded" / "sample_metadata.parquet"
+    else:
+        raise ValueError(
+            "Maximum-component metadata are available only for the "
+            "all-donor CorShrink module definition"
+        )
+    return pd.read_parquet(ensure_data_path(path))
 
 
 def load_cluster_association_statistics(
