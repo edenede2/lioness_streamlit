@@ -250,6 +250,17 @@ def test_configurable_grouped_scatter_controls_annotations_lines_and_legend() ->
     assert "n=" not in statistic_text
     assert str(figure.layout.annotations[0].text).count("<br>") >= 2
     assert figure.layout.annotations[0].yanchor == "bottom"
+    statistic_annotations = [
+        annotation for annotation in figure.layout.annotations
+        if "module-set FDR=" in str(annotation.text)
+    ]
+    assert statistic_annotations
+    assert all(annotation.y == 1.0 for annotation in statistic_annotations)
+    assert all(annotation.yanchor == "bottom" for annotation in statistic_annotations)
+    assert figure.layout.annotations[0].yshift > statistic_annotations[0].yshift
+    assert figure.layout.legend.orientation == "h"
+    assert figure.layout.legend.yanchor == "bottom"
+    assert figure.layout.legend.y > 1.0
 
 
 def test_generic_categorical_figure_uses_diagnosis_marker_shapes() -> None:
@@ -289,6 +300,14 @@ def test_generic_categorical_figure_uses_diagnosis_marker_shapes() -> None:
     assert "ε²=" in annotation and "module-set FDR=" in annotation
     assert str(figure.layout.annotations[0].text).count("<br>") >= 2
     assert figure.layout.annotations[0].yanchor == "bottom"
+    statistic_annotation = next(
+        value for value in figure.layout.annotations
+        if "module-set FDR=" in str(value.text)
+    )
+    assert statistic_annotation.y == 1.0
+    assert statistic_annotation.yanchor == "bottom"
+    assert figure.layout.annotations[0].yshift > statistic_annotation.yshift
+    assert figure.layout.legend.y > 1.0
 
 
 def test_association_scatter_adds_pooled_all_donor_statistics_and_trends() -> None:
@@ -343,6 +362,13 @@ def test_association_scatter_adds_pooled_all_donor_statistics_and_trends() -> No
         "ρ=" in text and "p=" in text and "panel FDR=" in text
         for text in pooled_annotations
     )
+    pooled_stat_annotations = [
+        annotation for annotation in figure.layout.annotations
+        if "All donors (pooled)" in str(annotation.text)
+    ]
+    assert all(annotation.y == 1.0 for annotation in pooled_stat_annotations)
+    assert all(annotation.yanchor == "bottom" for annotation in pooled_stat_annotations)
+    assert figure.layout.legend.y > 1.0
 
 
 def test_association_panels_show_scope_matched_kegg_subtitles() -> None:

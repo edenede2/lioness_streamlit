@@ -718,10 +718,10 @@ def _association_subplot_titles(
     return titles, maximum_subtitle_lines
 
 
-def _association_vertical_spacing(nrows: int, subtitle_lines: int) -> float:
+def _association_vertical_spacing(nrows: int, annotation_lines: int) -> float:
     if int(nrows) <= 1:
         return 0.08
-    return min(0.40, 0.24 + 0.025 * max(0, int(subtitle_lines) - 1))
+    return min(0.46, 0.24 + 0.022 * max(0, int(annotation_lines) - 1))
 
 
 def _format_association_subplot_title_annotations(figure: go.Figure) -> None:
@@ -734,6 +734,91 @@ def _format_association_subplot_title_annotations(figure: go.Figure) -> None:
             yshift=5,
             align="center",
         )
+
+
+def _association_stat_line_count(text: str | None) -> int:
+    """Count rendered lines in a Plotly HTML annotation."""
+
+    if not text:
+        return 0
+    return str(text).count("<br>") + 1
+
+
+def _place_association_statistics_above_panel(
+    figure: go.Figure,
+    *,
+    panel_index: int,
+    text: str,
+    bgcolor: str = "rgba(255,255,255,0.86)",
+    border: bool = True,
+) -> int:
+    """Place component statistics above the axes and below the KEGG title."""
+
+    line_count = _association_stat_line_count(text)
+    if line_count == 0:
+        return 0
+    axis_number = int(panel_index) + 1
+    xref = "x domain" if axis_number == 1 else f"x{axis_number} domain"
+    yref = "y domain" if axis_number == 1 else f"y{axis_number} domain"
+    # make_subplots creates the component/KEGG titles first, in panel order.
+    # Raise each title by the rendered height of its statistics block.
+    figure.layout.annotations[panel_index].update(
+        yshift=11 + 12 * line_count,
+    )
+    annotation: dict[str, object] = {
+        "x": 0.01,
+        "y": 1.0,
+        "xref": xref,
+        "yref": yref,
+        "text": text,
+        "showarrow": False,
+        "align": "left",
+        "xanchor": "left",
+        "yanchor": "bottom",
+        "yshift": 5,
+        "font": {"size": 9, "color": "#27364B"},
+        "bgcolor": bgcolor,
+    }
+    if border:
+        annotation.update(
+            {
+                "bordercolor": "rgba(90,110,130,0.28)",
+                "borderwidth": 1,
+            }
+        )
+    figure.add_annotation(**annotation)
+    return line_count
+
+
+def _association_layout_metrics(
+    *,
+    nrows: int,
+    subtitle_lines: int,
+    statistic_lines: int,
+    single_row_base_height: int,
+    multi_row_base_height: int,
+    base_top_margin: int,
+    bottom_margin: int,
+) -> tuple[int, int, float]:
+    """Reserve pixel space and position the legend above every panel annotation."""
+
+    subtitle_extra = max(0, int(subtitle_lines) - 1)
+    statistic_lines = max(0, int(statistic_lines))
+    if int(nrows) == 1:
+        height = single_row_base_height + 22 * subtitle_extra + 13 * statistic_lines
+        minimum_plot_height = 340
+    else:
+        height = multi_row_base_height + 42 * subtitle_extra + 24 * statistic_lines
+        minimum_plot_height = 720
+    panel_stack_pixels = 18 + 14 * (int(subtitle_lines) + 1) + 12 * statistic_lines
+    top_margin = max(
+        base_top_margin + 14 * subtitle_extra + 12 * statistic_lines,
+        panel_stack_pixels + 100,
+    )
+    height = max(height, top_margin + int(bottom_margin) + minimum_plot_height)
+    plot_height = max(1, height - top_margin - int(bottom_margin))
+    legend_y = 1.0 + (panel_stack_pixels + 12) / plot_height
+    return int(height), int(top_margin), float(legend_y)
 
 
 def association_figure(
@@ -778,6 +863,7 @@ def association_figure(
         if module_fdr_statistics is not None
         else pd.DataFrame()
     )
+    maximum_statistic_lines = len(diagnoses) + int(not pooled_statistics.empty)
     subplot_titles, subtitle_lines = _association_subplot_titles(
         component_pairs, kegg_subtitles, ncols=ncols
     )
@@ -786,7 +872,9 @@ def association_figure(
         cols=ncols,
         subplot_titles=subplot_titles,
         horizontal_spacing=0.08,
-        vertical_spacing=_association_vertical_spacing(nrows, subtitle_lines),
+        vertical_spacing=_association_vertical_spacing(
+            nrows, subtitle_lines + maximum_statistic_lines
+        ),
     )
     _format_association_subplot_title_annotations(fig)
 
@@ -946,23 +1034,11 @@ def association_figure(
                 f"{_pooled_stat_text(pooled_stat, correlation_method)}",
             )
 
-        axis_number = index + 1
-        xref = "x domain" if axis_number == 1 else f"x{axis_number} domain"
-        yref = "y domain" if axis_number == 1 else f"y{axis_number} domain"
-        fig.add_annotation(
-            x=0.01,
-            y=0.99,
-            xref=xref,
-            yref=yref,
+        _place_association_statistics_above_panel(
+            fig,
+            panel_index=index,
             text="<br>".join(stat_lines),
-            showarrow=False,
-            align="left",
-            xanchor="left",
-            yanchor="top",
-            font={"size": 10, "color": "#27364B"},
-            bgcolor="rgba(255,255,255,0.78)",
-            bordercolor="rgba(90,110,130,0.28)",
-            borderwidth=1,
+            bgcolor="rgba(255,255,255,0.86)",
         )
 
     fig.update_xaxes(title_text=f"{feature_label} ({scale_label})", zeroline=True)
@@ -970,6 +1046,15 @@ def association_figure(
     title_text = f"Module M{int(module)}: {phenotype_label} vs {feature_label}"
     if module_definition:
         title_text += f"<br><sup>{module_definition}</sup>"
+    figure_height, top_margin, legend_y = _association_layout_metrics(
+        nrows=nrows,
+        subtitle_lines=subtitle_lines,
+        statistic_lines=maximum_statistic_lines,
+        single_row_base_height=590,
+        multi_row_base_height=1040,
+        base_top_margin=195,
+        bottom_margin=55,
+    )
     fig.update_layout(
         title={
             "text": title_text,
@@ -977,23 +1062,19 @@ def association_figure(
             "xanchor": "left",
         },
         template="plotly_white",
-        height=(
-            590 + 22 * max(0, subtitle_lines - 1)
-            if nrows == 1
-            else 1040 + 42 * max(0, subtitle_lines - 1)
-        ),
+        height=figure_height,
         margin={
             "l": 55,
             "r": 25,
-            "t": 175 + 14 * max(0, subtitle_lines - 1),
+            "t": top_margin,
             "b": 55,
         },
         legend={
             "orientation": "h",
             "yanchor": "bottom",
-            "y": 1.14,
-            "xanchor": "right",
-            "x": 1,
+            "y": legend_y,
+            "xanchor": "center",
+            "x": 0.5,
             "groupclick": "togglegroup",
         },
         hoverlabel={"font_size": 13},
@@ -1114,6 +1195,7 @@ def grouped_association_figure(
     component_pairs = list(components.itertuples(index=False, name=None))
     ncols = 2 if len(component_pairs) <= 2 else 3
     nrows = math.ceil(len(component_pairs) / ncols)
+    maximum_statistic_lines = len(levels) + int(show_pooled)
     subtitles = kegg_subtitles or {}
     subplot_titles, subtitle_lines = _association_subplot_titles(
         component_pairs, subtitles, ncols=ncols
@@ -1121,7 +1203,9 @@ def grouped_association_figure(
     figure = make_subplots(
         rows=nrows, cols=ncols, subplot_titles=subplot_titles,
         horizontal_spacing=0.08,
-        vertical_spacing=_association_vertical_spacing(nrows, subtitle_lines),
+        vertical_spacing=_association_vertical_spacing(
+            nrows, subtitle_lines + maximum_statistic_lines
+        ),
     )
     _format_association_subplot_title_annotations(figure)
 
@@ -1292,15 +1376,11 @@ def grouped_association_figure(
                 annotation_lines.insert(0, f"<b>{html.escape(pooled_label)}</b>: {pooled_text}")
 
         if annotation_lines:
-            axis_number = panel_index + 1
-            figure.add_annotation(
-                x=0.01, y=0.99,
-                xref="x domain" if axis_number == 1 else f"x{axis_number} domain",
-                yref="y domain" if axis_number == 1 else f"y{axis_number} domain",
-                text="<br>".join(annotation_lines), showarrow=False, align="left",
-                xanchor="left", yanchor="top", font={"size": 10, "color": "#27364B"},
-                bgcolor="rgba(255,255,255,0.80)",
-                bordercolor="rgba(90,110,130,0.28)", borderwidth=1,
+            _place_association_statistics_above_panel(
+                figure,
+                panel_index=panel_index,
+                text="<br>".join(annotation_lines),
+                bgcolor="rgba(255,255,255,0.86)",
             )
 
     figure.update_xaxes(title_text=f"{feature_label} ({scale_label})", zeroline=True)
@@ -1308,22 +1388,28 @@ def grouped_association_figure(
     title = f"Module M{int(module)}: {phenotype_label} vs {feature_label}"
     if module_definition:
         title += f"<br><sup>{module_definition}</sup>"
+    figure_height, top_margin, legend_y = _association_layout_metrics(
+        nrows=nrows,
+        subtitle_lines=subtitle_lines,
+        statistic_lines=maximum_statistic_lines,
+        single_row_base_height=610,
+        multi_row_base_height=1060,
+        base_top_margin=200,
+        bottom_margin=55,
+    )
     figure.update_layout(
         title={"text": title, "x": 0.01, "xanchor": "left"}, template="plotly_white",
-        height=(
-            610 + 22 * max(0, subtitle_lines - 1)
-            if nrows == 1
-            else 1060 + 42 * max(0, subtitle_lines - 1)
-        ),
+        height=figure_height,
         margin={
             "l": 55,
             "r": 25,
-            "t": 180 + 14 * max(0, subtitle_lines - 1),
+            "t": top_margin,
             "b": 55,
         },
         legend={
-            "orientation": "h", "yanchor": "bottom", "y": 1.14,
-            "xanchor": "right", "x": 1, "groupclick": "togglegroup",
+            "orientation": "h", "yanchor": "bottom",
+            "y": legend_y,
+            "xanchor": "center", "x": 0.5, "groupclick": "togglegroup",
         },
         hoverlabel={"font_size": 13},
     )
@@ -1363,6 +1449,7 @@ def categorical_association_figure(
     component_pairs = list(components.itertuples(index=False, name=None))
     ncols = 2 if len(component_pairs) <= 2 else 3
     nrows = math.ceil(len(component_pairs) / ncols)
+    maximum_statistic_lines = 2
     subtitles = kegg_subtitles or {}
     titles, subtitle_lines = _association_subplot_titles(
         component_pairs, subtitles, ncols=ncols
@@ -1370,7 +1457,9 @@ def categorical_association_figure(
     figure = make_subplots(
         rows=nrows, cols=ncols, subplot_titles=titles,
         horizontal_spacing=0.08,
-        vertical_spacing=_association_vertical_spacing(nrows, subtitle_lines),
+        vertical_spacing=_association_vertical_spacing(
+            nrows, subtitle_lines + maximum_statistic_lines
+        ),
     )
     _format_association_subplot_title_annotations(figure)
     hover_fields = hover_fields or {}
@@ -1454,35 +1543,40 @@ def categorical_association_figure(
                 f"<br>tested: {html.escape(str(tested))}; "
                 f"excluded (&lt;{int(minimum_group_n)}): {html.escape(str(excluded))}"
             )
-            axis_number = panel_index + 1
-            figure.add_annotation(
-                x=0.01, y=0.99,
-                xref="x domain" if axis_number == 1 else f"x{axis_number} domain",
-                yref="y domain" if axis_number == 1 else f"y{axis_number} domain",
-                text="; ".join(pieces), showarrow=False, xanchor="left", yanchor="top",
-                align="left", font={"size": 10, "color": "#27364B"},
-                bgcolor="rgba(255,255,255,0.82)",
+            _place_association_statistics_above_panel(
+                figure,
+                panel_index=panel_index,
+                text="; ".join(pieces),
+                bgcolor="rgba(255,255,255,0.88)",
+                border=False,
             )
     figure.update_xaxes(title_text=category_label)
     figure.update_yaxes(title_text=f"{feature_label} ({scale_label})", zeroline=True)
     title = f"Module M{int(module)}: network-score distributions by {category_label}"
     if module_definition:
         title += f"<br><sup>{module_definition}</sup>"
+    figure_height, top_margin, legend_y = _association_layout_metrics(
+        nrows=nrows,
+        subtitle_lines=subtitle_lines,
+        statistic_lines=maximum_statistic_lines,
+        single_row_base_height=610,
+        multi_row_base_height=1050,
+        base_top_margin=195,
+        bottom_margin=60,
+    )
     figure.update_layout(
         title={"text": title, "x": 0.01, "xanchor": "left"}, template="plotly_white",
-        height=(
-            610 + 22 * max(0, subtitle_lines - 1)
-            if nrows == 1
-            else 1050 + 42 * max(0, subtitle_lines - 1)
-        ),
+        height=figure_height,
         margin={
             "l": 60,
             "r": 25,
-            "t": 175 + 14 * max(0, subtitle_lines - 1),
+            "t": top_margin,
             "b": 60,
         },
         legend={
-            "orientation": "h", "y": 1.13, "x": 1, "xanchor": "right",
+            "orientation": "h", "yanchor": "bottom",
+            "y": legend_y,
+            "x": 0.5, "xanchor": "center",
             "groupclick": "togglegroup",
         },
     )
@@ -1506,6 +1600,7 @@ def cluster_association_figure(
     component_pairs = list(components.itertuples(index=False, name=None))
     ncols = 2 if len(component_pairs) <= 2 else 3
     nrows = math.ceil(len(component_pairs) / ncols)
+    maximum_statistic_lines = 2
     subtitles = kegg_subtitles or {}
     titles, subtitle_lines = _association_subplot_titles(
         component_pairs, subtitles, ncols=ncols
@@ -1515,7 +1610,9 @@ def cluster_association_figure(
         cols=ncols,
         subplot_titles=titles,
         horizontal_spacing=0.08,
-        vertical_spacing=_association_vertical_spacing(nrows, subtitle_lines),
+        vertical_spacing=_association_vertical_spacing(
+            nrows, subtitle_lines + maximum_statistic_lines
+        ),
     )
     _format_association_subplot_title_annotations(figure)
     hover_fields = hover_fields or {}
@@ -1568,40 +1665,42 @@ def cluster_association_figure(
                 f"module-set FDR={_format_number(value.get('categorical_fdr_across_modules'))}"
                 f"<br>tested clusters: {tested}; excluded (&lt;5): {excluded}"
             )
-            axis_number = index + 1
-            figure.add_annotation(
-                x=0.01,
-                y=0.99,
-                xref="x domain" if axis_number == 1 else f"x{axis_number} domain",
-                yref="y domain" if axis_number == 1 else f"y{axis_number} domain",
+            _place_association_statistics_above_panel(
+                figure,
+                panel_index=index,
                 text=text,
-                showarrow=False,
-                xanchor="left",
-                yanchor="top",
-                align="left",
-                font={"size": 10, "color": "#27364B"},
-                bgcolor="rgba(255,255,255,0.82)",
+                bgcolor="rgba(255,255,255,0.88)",
+                border=False,
             )
     figure.update_xaxes(title_text="Nominal donor cluster")
     figure.update_yaxes(title_text=f"{feature_label} ({scale_label})", zeroline=True)
     title = f"Module M{int(module)}: network-score distributions by ROSMAP cluster"
     if module_definition:
         title += f"<br><sup>{module_definition}</sup>"
+    figure_height, top_margin, legend_y = _association_layout_metrics(
+        nrows=nrows,
+        subtitle_lines=subtitle_lines,
+        statistic_lines=maximum_statistic_lines,
+        single_row_base_height=610,
+        multi_row_base_height=1050,
+        base_top_margin=195,
+        bottom_margin=60,
+    )
     figure.update_layout(
         title={"text": title, "x": 0.01, "xanchor": "left"},
         template="plotly_white",
-        height=(
-            610 + 22 * max(0, subtitle_lines - 1)
-            if nrows == 1
-            else 1050 + 42 * max(0, subtitle_lines - 1)
-        ),
+        height=figure_height,
         margin={
             "l": 60,
             "r": 25,
-            "t": 175 + 14 * max(0, subtitle_lines - 1),
+            "t": top_margin,
             "b": 60,
         },
-        legend={"orientation": "h", "y": 1.13, "x": 1, "xanchor": "right"},
+        legend={
+            "orientation": "h", "yanchor": "bottom",
+            "y": legend_y,
+            "x": 0.5, "xanchor": "center",
+        },
     )
     return figure
 
