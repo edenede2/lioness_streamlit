@@ -37,6 +37,7 @@ if not all(
         "targeted_panel_overlap_figure",
         "clustered_correlation_group_order",
         "grouped_association_figure",
+        "DISTRIBUTION_GROUPING_API_VERSION",
     )
 ):
     _chart_helpers = importlib.reload(_chart_helpers)
@@ -3386,6 +3387,8 @@ with st.sidebar:
     )
     grouping_variable = "diagnosis_group"
     selected_group_levels: list[object] = list(diagnoses)
+    distribution_grouping_variable = "diagnosis_group"
+    selected_distribution_levels: list[object] = list(diagnoses)
     minimum_group_n = 10
     annotation_fields: list[str] = ["n", "coefficient", "p", "fdr"]
     trend_line_rule = "all"
@@ -3493,6 +3496,45 @@ with st.sidebar:
                     "fdr": "Module-set FDR",
                 }[value],
             )
+    if active_view == "Feature distributions":
+        distribution_metadata = cached_sample_metadata(module_set, cohort_scope)
+        distribution_metadata = distribution_metadata.loc[
+            distribution_metadata["diagnosis_group"].isin(diagnoses)
+        ].copy()
+        if differential_edge_rule != "all" and analysis_subset != "all_donors":
+            selected_split = {
+                "discovery_ad_control": "Discovery",
+                "validation_ad_control": "Validation",
+                "mci_external": "MCI_external",
+            }[analysis_subset]
+            distribution_metadata = distribution_metadata.loc[
+                distribution_metadata["ad_control_split"].eq(selected_split)
+            ]
+        distribution_grouping_variable = st.selectbox(
+            "Group distributions by",
+            options=list(ASSOCIATION_GROUP_LABELS),
+            format_func=lambda value: ASSOCIATION_GROUP_LABELS[value],
+            index=list(ASSOCIATION_GROUP_LABELS).index("diagnosis_group"),
+            help=(
+                "Diagnosis remains the donor-inclusion filter. This selection controls "
+                "how the retained donors are divided into distribution traces and summary rows."
+            ),
+        )
+        available_distribution_levels = ordered_association_levels(
+            distribution_metadata, distribution_grouping_variable
+        )
+        selected_distribution_levels = st.multiselect(
+            "Distribution group levels",
+            options=available_distribution_levels,
+            default=available_distribution_levels,
+            format_func=lambda value: association_level_label(
+                distribution_grouping_variable, value
+            ),
+            disabled=distribution_grouping_variable == "__all__",
+            help="Selected levels control traces, legend entries, summaries, and downloads.",
+        )
+        if distribution_grouping_variable == "__all__":
+            selected_distribution_levels = ["__all__"]
     color_by = st.selectbox(
         "Color points by",
         options=list(COLOR_LABELS),
@@ -3641,6 +3683,11 @@ if active_view == "Associations":
             plot_data[phenotype].notna()
             & plot_data[phenotype].isin(selected_group_levels)
         ].copy()
+elif active_view == "Feature distributions" and distribution_grouping_variable != "__all__":
+    plot_data = plot_data.loc[
+        plot_data[distribution_grouping_variable].notna()
+        & plot_data[distribution_grouping_variable].isin(selected_distribution_levels)
+    ].copy()
 if not statistics.empty:
     statistics = statistics.loc[
         statistics["diagnosis_group"].isin(diagnoses)
@@ -4547,23 +4594,43 @@ if active_view == "Correlation heatmaps":
         )
 if active_view == "Feature distributions":
     st.subheader("Donor-level feature distributions")
+    if not selected_distribution_levels:
+        st.warning("Select at least one distribution group level in the sidebar.")
+        st.stop()
+    distribution_plot_data = plot_data.copy()
+    if distribution_grouping_variable == "__all__":
+        distribution_plot_data["distribution_group"] = "All displayed donors"
+        distribution_groups = ["All displayed donors"]
+    else:
+        distribution_plot_data["distribution_group"] = distribution_plot_data[
+            distribution_grouping_variable
+        ].map(
+            lambda value: association_level_label(distribution_grouping_variable, value)
+        )
+        distribution_groups = [
+            association_level_label(distribution_grouping_variable, value)
+            for value in selected_distribution_levels
+        ]
     st.caption(
         "These views use only the selected module feature; no phenotype is on an axis. "
-        "Histogram heights are probability densities so diagnosis groups with different sample "
-        "sizes remain comparable."
+        f"Distributions are grouped by {ASSOCIATION_GROUP_LABELS[distribution_grouping_variable]}. "
+        "Histogram heights are probability densities so groups with different sample sizes "
+        "remain comparable."
     )
     chart_col, bin_col = st.columns([1, 2])
     chart_type = chart_col.radio("Distribution view", ["Histogram", "Violin"], horizontal=True)
     bins = bin_col.slider("Histogram bins", 10, 80, 30, disabled=chart_type != "Histogram")
     distribution = distribution_figure(
-        plot_data,
+        distribution_plot_data,
         feature_label=active_feature_labels[feature],
         scale_label=SCALE_LABELS[scale],
-        diagnoses=diagnoses,
+        diagnoses=distribution_groups,
         module=module,
         chart_type=chart_type,
         bins=bins,
         module_definition=module_set_label,
+        group_column="distribution_group",
+        group_label=ASSOCIATION_GROUP_LABELS[distribution_grouping_variable],
     )
     render_plotly_chart(
         distribution,
@@ -4579,8 +4646,13 @@ if active_view == "Feature distributions":
             },
         },
     )
-    summary = distribution_summary(plot_data)
+    summary = distribution_summary(
+        distribution_plot_data,
+        group_column="distribution_group",
+        group_label="distribution_group",
+    )
     summary.insert(0, "module_definition", module_set_label)
+    summary.insert(1, "grouping_variable", distribution_grouping_variable)
     with st.expander("Distribution summary table", expanded=False):
         filterable_dataframe(
             summary,
@@ -4593,7 +4665,8 @@ if active_view == "Feature distributions":
             "Download distribution summary (TSV)",
             data=dataframe_to_tsv_bytes(summary),
             file_name=(
-                f"{download_prefix}M{module}_{feature}_{method}_distribution_summary.tsv"
+                f"{download_prefix}M{module}_{feature}_{method}_"
+                f"{distribution_grouping_variable}_distribution_summary.tsv"
             ),
             mime="text/tab-separated-values",
         )

@@ -111,6 +111,28 @@ def test_every_lazy_analysis_view_renders_cleanly() -> None:
         assert_app_clean(app)
 
 
+def test_feature_distributions_support_non_diagnosis_grouping() -> None:
+    app = AppTest.from_file(APP, default_timeout=180).run()
+    assert_app_clean(app)
+    app = select_view(app, "Feature distributions")
+    assert_app_clean(app)
+    grouping = widget_with_label(app.selectbox, "Group distributions by")
+    assert grouping.value == "diagnosis_group"
+    app = grouping.set_value("clusters").run()
+    assert_app_clean(app)
+    levels = widget_with_label(app.multiselect, "Distribution group levels")
+    assert set(levels.options) == {"Cluster 1", "Cluster 2", "Cluster 3", "Cluster 4"}
+    app = levels.set_value([1.0, 4.0]).run()
+    assert_app_clean(app)
+    summary = next(
+        dataframe.value for dataframe in app.dataframe
+        if "grouping_variable" in dataframe.value.columns
+        and "distribution_group" in dataframe.value.columns
+    )
+    assert set(summary["grouping_variable"]) == {"clusters"}
+    assert set(summary["distribution_group"]) == {"Cluster 1", "Cluster 4"}
+
+
 def test_association_view_defaults_to_pooled_all_donor_association() -> None:
     app = AppTest.from_file(APP, default_timeout=180).run()
     assert_app_clean(app)

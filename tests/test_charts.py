@@ -20,6 +20,7 @@ from app_helpers.charts import (  # noqa: E402
     clustered_correlation_group_order,
     correlation_heatmap_figure,
     distribution_figure,
+    distribution_summary,
     edge_volcano_figure,
     edge_summary_figure,
     grouped_association_figure,
@@ -174,6 +175,29 @@ def test_scatter_and_distribution_chart_paths() -> None:
     )
     assert len(histogram.data) == 6
     assert all(trace.histnorm == "probability density" for trace in histogram.data)
+
+    grouped = long.loc[long["diagnosis_group"].isin(["Control", "AD"])].copy()
+    grouped["distribution_group"] = grouped["diagnosis_group"].map(
+        {"Control": "Cluster 1", "AD": "Cluster 4"}
+    )
+    cluster_histogram = distribution_figure(
+        grouped,
+        feature_label="Connectivity",
+        scale_label="Z-score",
+        diagnoses=["Cluster 1", "Cluster 4"],
+        module=935,
+        chart_type="Histogram",
+        group_column="distribution_group",
+        group_label="ROSMAP clusters",
+    )
+    assert len(cluster_histogram.data) == 4
+    assert {trace.name for trace in cluster_histogram.data} == {"Cluster 1", "Cluster 4"}
+    assert all("ROSMAP clusters" in trace.hovertemplate for trace in cluster_histogram.data)
+    grouped_summary = distribution_summary(
+        grouped, group_column="distribution_group", group_label="distribution_group"
+    )
+    assert set(grouped_summary["distribution_group"]) == {"Cluster 1", "Cluster 4"}
+    assert len(grouped_summary) == 4
 
 
 def test_configurable_grouped_scatter_controls_annotations_lines_and_legend() -> None:

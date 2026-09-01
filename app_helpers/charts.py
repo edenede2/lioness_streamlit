@@ -19,6 +19,7 @@ from sklearn.metrics import precision_recall_curve, roc_curve
 
 
 PREDICTION_BLOCK_ORDERING_API_VERSION = 1
+DISTRIBUTION_GROUPING_API_VERSION = 1
 
 
 DIAGNOSIS_COLORS = {
@@ -1602,9 +1603,24 @@ def distribution_figure(
     chart_type: str,
     bins: int = 30,
     module_definition: str | None = None,
+    group_column: str = "diagnosis_group",
+    group_label: str = "Diagnosis group",
 ) -> go.Figure:
-    """Build diagnosis-colored feature distributions without a phenotype axis."""
-    diagnoses = list(diagnoses)
+    """Build category-colored feature distributions without a phenotype axis.
+
+    ``diagnoses`` is retained as the public argument name for backward
+    compatibility; when ``group_column`` differs from ``diagnosis_group`` it
+    contains the ordered display values of the selected grouping variable.
+    """
+    groups = list(diagnoses)
+    qualitative_colors = [
+        "#2C7FB8", "#E66101", "#20A486", "#D1495B", "#6A51A3",
+        "#D8A500", "#C44E8A", "#7A8793", "#1B9E77", "#7570B3",
+    ]
+    group_colors = {
+        group: DIAGNOSIS_COLORS.get(str(group), qualitative_colors[index % len(qualitative_colors)])
+        for index, group in enumerate(groups)
+    }
     components = (
         frame[["component", "component_label"]]
         .drop_duplicates()
@@ -1625,15 +1641,15 @@ def distribution_figure(
         row = index // ncols + 1
         col = index % ncols + 1
         panel = frame.loc[frame["component"].eq(component)]
-        for diagnosis in diagnoses:
-            group = panel.loc[panel["diagnosis_group"].eq(diagnosis)].dropna(
+        for group_value in groups:
+            group = panel.loc[panel[group_column].eq(group_value)].dropna(
                 subset=["metric_value"]
             )
             if group.empty:
                 continue
             common = {
-                "name": diagnosis,
-                "legendgroup": diagnosis,
+                "name": str(group_value),
+                "legendgroup": str(group_value),
                 "showlegend": index == 0,
             }
             if chart_type == "Histogram":
@@ -1642,9 +1658,9 @@ def distribution_figure(
                     histnorm="probability density",
                     nbinsx=bins,
                     opacity=0.52,
-                    marker_color=DIAGNOSIS_COLORS[diagnosis],
+                    marker_color=group_colors[group_value],
                     hovertemplate=(
-                        f"Diagnosis: {diagnosis}<br>"
+                        f"{group_label}: {group_value}<br>"
                         "Value: %{x:.3f}<br>Density: %{y:.3f}<extra></extra>"
                     ),
                     **common,
@@ -1652,18 +1668,18 @@ def distribution_figure(
             else:
                 trace = go.Violin(
                     x=group["metric_value"],
-                    y=[diagnosis] * len(group),
+                    y=[str(group_value)] * len(group),
                     orientation="h",
                     side="positive",
                     width=1.6,
                     points="outliers",
                     box_visible=True,
                     meanline_visible=True,
-                    line_color=DIAGNOSIS_COLORS[diagnosis],
-                    fillcolor=DIAGNOSIS_COLORS[diagnosis],
+                    line_color=group_colors[group_value],
+                    fillcolor=group_colors[group_value],
                     opacity=0.55,
                     hovertemplate=(
-                        f"Diagnosis: {diagnosis}<br>"
+                        f"{group_label}: {group_value}<br>"
                         "Value: %{x:.3f}<extra></extra>"
                     ),
                     **common,
@@ -1695,10 +1711,17 @@ def distribution_figure(
     return fig
 
 
-def distribution_summary(frame: pd.DataFrame) -> pd.DataFrame:
+def distribution_summary(
+    frame: pd.DataFrame,
+    group_column: str = "diagnosis_group",
+    group_label: str | None = None,
+) -> pd.DataFrame:
+    """Summarize distributions by component and the selected category."""
+
+    output_group_column = group_label or group_column
     summary = (
         frame.dropna(subset=["metric_value"])
-        .groupby(["component_label", "diagnosis_group"], observed=True)["metric_value"]
+        .groupby(["component_label", group_column], observed=True)["metric_value"]
         .agg(
             n="count",
             mean="mean",
@@ -1711,6 +1734,8 @@ def distribution_summary(frame: pd.DataFrame) -> pd.DataFrame:
         )
         .reset_index()
     )
+    if output_group_column != group_column:
+        summary = summary.rename(columns={group_column: output_group_column})
     numeric = summary.select_dtypes(include="number").columns.difference(["n"])
     summary[numeric] = summary[numeric].round(4)
     return summary
