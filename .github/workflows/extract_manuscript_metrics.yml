@@ -1,0 +1,46 @@
+name: Extract manuscript metrics
+
+on:
+  push:
+    branches: [temp-extract-manuscript-metrics]
+
+permissions:
+  contents: read
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --quiet pandas pyarrow
+      - name: Extract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+          root=Path('data/prediction_targeted')
+          perf=pd.read_parquet(root/'targeted_oof_performance.parquet')
+          primary=pd.read_parquet(root/'targeted_primary_comparisons.parquet')
+          tier=pd.read_parquet(root/'targeted_tier_comparisons.parquet')
+          src=pd.read_parquet(root/'targeted_eigengene_source_comparisons.parquet')
+          base=perf[(perf.evidence_tier=='primary')&(perf.module_definition=='control_derived')&(perf.network_method=='control_anchored')&(perf.model_outcome=='diagnosis_binary')&(perf.edge_mask=='all')&(perf.score_normalization=='standard_pruned')&(perf.score_transform=='raw')&(perf.metric=='roc_auc')].copy()
+          cols=[c for c in ['evaluation_design','evidence_tier','module_definition','network_method','panel_strategy','selection_outcome','model_outcome','predictor_block','model_variant','selected_k','value','n_oof','eigengene_source','n_network_predictors','n_transcriptomic_predictors'] if c in base.columns]
+          base[cols].sort_values(['panel_strategy','predictor_block','model_variant','eigengene_source']).to_csv('primary_raw_performance.tsv',sep='\t',index=False)
+          sec=perf[(perf.module_definition=='control_derived')&(perf.network_method=='control_anchored')&(perf.model_outcome=='diagnosis_binary')&(perf.edge_mask=='all')&(perf.score_normalization=='standard_pruned')&(perf.score_transform=='raw')&(perf.metric=='roc_auc')].copy()
+          sec[cols].sort_values(['evidence_tier','panel_strategy','predictor_block','model_variant','eigengene_source']).to_csv('all_raw_ad_performance.tsv',sep='\t',index=False)
+          primary.to_csv('primary_comparisons.tsv',sep='\t',index=False)
+          tier[(tier.model_outcome=='diagnosis_binary')&(tier.score_transform=='raw')].to_csv('tier_ad_raw_comparisons.tsv',sep='\t',index=False)
+          src[(src.model_outcome=='diagnosis_binary')&(src.score_transform=='raw')].to_csv('eigengene_source_ad_raw_comparisons.tsv',sep='\t',index=False)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: manuscript-metrics
+          path: |
+            primary_raw_performance.tsv
+            all_raw_ad_performance.tsv
+            primary_comparisons.tsv
+            tier_ad_raw_comparisons.tsv
+            eigengene_source_ad_raw_comparisons.tsv
