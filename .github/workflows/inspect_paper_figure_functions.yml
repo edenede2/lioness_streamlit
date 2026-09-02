@@ -1,0 +1,43 @@
+name: Inspect paper figure functions
+
+on:
+  push:
+    branches: [temp-paper-figure-export]
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --quiet -r requirements.txt
+      - name: Inspect plotting functions
+        run: |
+          python - <<'PY'
+          import inspect
+          from pathlib import Path
+          from app_helpers import charts
+          names = [
+              'mdc_resolved_module_figure',
+              'mdc_resolved_heatmap_figure',
+              'distribution_figure',
+              'targeted_primary_comparison_figure',
+              'prediction_performance_figure',
+              'targeted_eigengene_source_comparison_figure',
+          ]
+          out=[]
+          for name in names:
+              fn=getattr(charts,name)
+              out.append(f'### {name}\nSIGNATURE: {inspect.signature(fn)}\n\n{inspect.getsource(fn)}\n')
+          Path('paper_figure_functions.txt').write_text('\n'.join(out))
+          print('\n'.join(x.split('\n',2)[0]+'\n'+x.split('\n',2)[1] for x in out))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paper-figure-functions
+          path: paper_figure_functions.txt
