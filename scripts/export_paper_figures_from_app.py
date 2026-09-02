@@ -1,0 +1,243 @@
+#!/usr/bin/env python3
+"""Export manuscript-ready static images using the Streamlit app's plotting functions.
+
+This temporary helper does not implement new scientific plots. It imports the exact
+plot functions used by the app, applies manuscript-specific data filters, and changes
+only output dimensions/font sizing before static export.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+from app_helpers.charts import (
+    aggregate_to_long,
+    distribution_figure,
+    mdc_overview_figure,
+    mdc_resolved_heatmap_figure,
+    mdc_resolved_module_figure,
+    prediction_performance_figure,
+    targeted_primary_comparison_figure,
+)
+from app_helpers.data import PREDICTION_BLOCK_LABELS, PREDICTION_MODEL_LABELS
+
+ROOT = Path(__file__).resolve().parents[1]
+OUT = ROOT / "paper_figures"
+OUT.mkdir(exist_ok=True)
+
+
+def paper_style(fig, *, width: int, height: int | None = None, title_size: int = 21):
+    fig.update_layout(
+        width=width,
+        height=height or fig.layout.height,
+        font={"family": "Arial, Helvetica, sans-serif", "size": 16, "color": "#111111"},
+        title_font={"family": "Arial, Helvetica, sans-serif", "size": title_size, "color": "#111111"},
+        paper_bgcolor="white",
+        plot_bgcolor="white",
+    )
+    fig.update_xaxes(title_font={"size": 17}, tickfont={"size": 14})
+    fig.update_yaxes(title_font={"size": 17}, tickfont={"size": 14})
+    if fig.layout.legend:
+        fig.update_layout(legend_font={"size": 14})
+    for trace in fig.data:
+        if getattr(trace, "type", None) == "heatmap":
+            trace.update(textfont={"size": 14})
+    return fig
+
+
+def save(fig, stem: str, width: int, height: int | None = None) -> None:
+    fig = paper_style(fig, width=width, height=height)
+    actual_height = height or fig.layout.height
+    fig.write_html(OUT / f"{stem}.html", include_plotlyjs="cdn")
+    fig.write_image(OUT / f"{stem}.svg", format="svg", width=width, height=actual_height)
+    fig.write_image(OUT / f"{stem}.pdf", format="pdf", width=width, height=actual_height)
+    fig.write_image(OUT / f"{stem}.png", format="png", width=width, height=actual_height, scale=2)
+
+
+# Figure 1 panels: existing MDC overview plot from the UI for each module definition.
+full_mdc = pd.read_csv(ROOT / "data/mdc_ad_vs_control_summary.tsv", sep="\t")
+control_mdc = pd.read_csv(ROOT / "data/control_derived/mdc_ad_vs_control_summary.tsv", sep="\t")
+fig1a = mdc_overview_figure(
+    full_mdc,
+    selected_module=1014,
+    threshold=0.05,
+    module_definition="Full-cohort L4 modules",
+    scale="raw",
+)
+fig1b = mdc_overview_figure(
+    control_mdc,
+    selected_module=1150,
+    threshold=0.05,
+    module_definition="Control-derived L4 modules",
+    scale="raw",
+)
+save(fig1a, "Figure_1A_full_cohort_MDC_overview", 1100, 720)
+save(fig1b, "Figure_1B_control_derived_MDC_overview", 1100, 720)
+
+# Figure 2: existing resolved MDC heatmap, restricted to manuscript OXPHOS examples.
+resolved = pd.read_csv(ROOT / "data/control_derived/mdc_resolved_ad_vs_control.tsv", sep="\t")
+selected_modules = [902, 1138, 1148, 1150]
+resolved_selected = resolved.loc[resolved["module"].isin(selected_modules)].copy()
+fig2 = mdc_resolved_heatmap_figure(
+    resolved_selected,
+    threshold=0.05,
+    selected_module=1150,
+    module_definition="Control-derived L4 modules",
+    scale="raw",
+)
+save(fig2, "Figure_2_resolved_MDC_OXPHOS_modules", 1250, 700)
+
+fig2b = mdc_resolved_module_figure(
+    resolved.loc[resolved["module"].eq(1150)].copy(),
+    threshold=0.05,
+    module_definition="Control-derived L4 modules",
+    scale="raw",
+)
+save(fig2b, "Figure_2_alt_M1150_resolved_MDC", 1200, 620)
+
+# Figure 3 and Supplementary Figure 1: existing donor-level violin plots.
+aggregate = pd.read_parquet(ROOT / "data/control_derived/aggregate_plot_data.parquet")
+
+
+def donor_panel(module: int):
+    work = aggregate.loc[aggregate["module"].eq(module)].copy()
+    if "metric_family" in work:
+        work = work.loc[work["metric_family"].eq("connectivity")]
+    if "lioness_method" in work:
+        work = work.loc[work["lioness_method"].eq("control_anchored")]
+    if "network_method" in work:
+        work = work.loc[work["network_method"].eq("control_anchored")]
+    if "estimator" in work:
+        work = work.loc[work["estimator"].eq("lioness")]
+    if "edge_rule" in work:
+        work = work.loc[work["edge_rule"].eq("all")]
+    if "differential_edge_rule" in work:
+        work = work.loc[work["differential_edge_rule"].eq("all")]
+    if "score_normalization" in work:
+        preferred = work.loc[work["score_normalization"].eq("standard_pruned")]
+        if not preferred.empty:
+            work = preferred
+    if "sample_id" in work and work["sample_id"].duplicated().any():
+        identifying = [c for c in ["sample_id", "diagnosis_group", "CT_raw", "TS_raw"] if c in work]
+        work = work.drop_duplicates(identifying)
+    long = aggregate_to_long(work, "raw")
+    return distribution_figure(
+        long,
+        feature_label="Connectivity",
+        scale_label="Raw",
+        diagnoses=["Control", "MCI", "AD"],
+        module=module,
+        chart_type="Violin",
+        module_definition="Control-derived L4 modules · Control-anchored LIONESS",
+    )
+
+
+save(donor_panel(1150), "Figure_3_M1150_donor_connectivity", 1250, 610)
+save(donor_panel(794), "Figure_S1_M794_donor_connectivity", 1250, 610)
+
+# Figure 4: exact primary-paired-comparison forest plot from the targeted prediction UI.
+comparisons = pd.read_parquet(ROOT / "data/prediction_targeted/targeted_primary_comparisons.parquet")
+if "score_transform" in comparisons:
+    raw = comparisons.loc[comparisons["score_transform"].eq("raw")]
+    if not raw.empty:
+        comparisons = raw
+fig4 = targeted_primary_comparison_figure(
+    comparisons,
+    title="AD vs Control: prespecified primary prediction comparisons",
+)
+save(fig4, "Figure_4_primary_prediction_comparisons", 1250, 560)
+
+# Figure 5: exact app performance chart for the targeted pooled-CT panel.
+perf = pd.read_parquet(ROOT / "data/prediction_targeted/targeted_oof_performance.parquet")
+mask = (
+    perf["evidence_tier"].eq("primary")
+    & perf["module_definition"].eq("control_derived")
+    & perf["network_method"].eq("control_anchored")
+    & perf["panel_strategy"].eq("tissue_neutral_ad")
+    & perf["model_outcome"].eq("diagnosis_binary")
+    & perf["predictor_block"].eq("CT_pooled")
+    & perf["edge_mask"].eq("all")
+    & perf["score_normalization"].eq("standard_pruned")
+    & perf["score_transform"].eq("raw")
+    & perf["metric"].eq("roc_auc")
+)
+p = perf.loc[mask].copy()
+transcriptomic_variants = {
+    "transcriptomics_only",
+    "covariates_plus_transcriptomics",
+    "network_plus_transcriptomics",
+    "covariates_plus_network_plus_transcriptomics",
+}
+keep = []
+for _, row in p.iterrows():
+    variant = str(row["model_variant"])
+    source = str(row.get("eigengene_source", "not_applicable"))
+    if variant in transcriptomic_variants:
+        keep.append(source == "matched_multitissue")
+    else:
+        keep.append(source in {"not_applicable", "nan", "None"})
+p = p.loc[np.asarray(keep, dtype=bool)].copy()
+wanted = [
+    "covariates",
+    "transcriptomics_only",
+    "network_only",
+    "covariates_plus_transcriptomics",
+    "covariates_plus_network",
+    "network_plus_transcriptomics",
+    "covariates_plus_network_plus_transcriptomics",
+]
+p = p.loc[p["model_variant"].isin(wanted)]
+fig5 = prediction_performance_figure(
+    p,
+    metric="roc_auc",
+    block_labels=PREDICTION_BLOCK_LABELS,
+    block_order=["CT_pooled"],
+    model_labels=PREDICTION_MODEL_LABELS,
+    title="AD vs Control: targeted pooled CT prediction",
+)
+fig5.update_yaxes(title_text="ROC-AUC", range=[0.45, 0.90])
+save(fig5, "Figure_5_targeted_CT_prediction_models", 1350, 650)
+
+captions = """# Manuscript figure captions
+
+## Figure 1 | Module differential connectivity in full-cohort and Control-derived networks.
+**A**, MDC overview for the 154 full-cohort Level-4 modules. **B**, MDC overview for the 186 Control-derived Level-4 modules. MDC is the AD-to-Control ratio of within-module connectivity magnitude; the dashed reference corresponds to equal connectivity between groups (MDC = 1). The figures were generated with the `mdc_overview_figure` function used by the Streamlit application. Directional significance is based on the app's stored permutation-test FDR at the 0.05 threshold.
+
+## Figure 2 | Anatomically resolved MDC in selected OXPHOS-enriched Control-derived modules.
+Resolved MDC values are shown for within-region components (AC, DLPFC, and PCG) and cross-region components (AC-DLPFC, AC-PCG, and DLPFC-PCG) in modules M902, M1138, M1148, and M1150. Values are displayed as raw MDC ratios, while the app uses log-symmetric colors centered on MDC = 1. Stars indicate directional FDR < 0.05. The figure was generated with the application's `mdc_resolved_heatmap_figure` function. An alternative single-module bar representation for M1150 is supplied as `Figure_2_alt_M1150_resolved_MDC` using the app's `mdc_resolved_module_figure` function.
+
+## Figure 3 | Donor-level connectivity in Control-derived module M1150.
+Raw Control-anchored LIONESS connectivity scores are shown for pooled cross-region (CT) and within-region (TS) components across Control, MCI, and AD donors. Violin distributions, box summaries, means, and displayed outliers follow the Streamlit application's `distribution_figure` implementation. Module membership was fixed from the Control-derived Level-4 partition. The corresponding app plot for M794 is supplied as Supplementary Figure S1.
+
+## Figure 4 | Prespecified paired comparisons of AD-versus-Control prediction performance.
+Paired differences in donor-level out-of-fold ROC-AUC are shown for the three prespecified primary comparisons: targeted CT versus all-module CT, targeted CT plus covariates versus covariates alone, and targeted CT versus TS using the tissue-neutral targeted module identities. Horizontal intervals show 95% confidence intervals from 2,000 paired bootstrap resamples of the out-of-fold donors. The vertical line denotes no difference. FDR correction was applied across the three primary comparisons. The plot was generated using the application's `targeted_primary_comparison_figure` function.
+
+## Figure 5 | AD-versus-Control performance of connectivity and transcriptomic models in the targeted CT panel.
+Donor-level out-of-fold ROC-AUC is shown for the demographic/APOE baseline, matched-module transcriptomic eigengenes, CT connectivity, and covariate-adjusted or joint models using the tissue-neutral targeted panel and pooled CT predictor block. All values are from the repeated nested cross-validation catalog using Raw, all-edge, standard-pruned Control-anchored LIONESS scores. Matched multi-tissue eigengenes are used for transcriptomic-containing models. The plot was generated using the application's `prediction_performance_figure` function.
+"""
+(OUT / "captions.md").write_text(captions)
+
+manifest = {
+    "app_master_commit": "5afebf3610b41e01dee2ad9e693579691e22de38",
+    "note": (
+        "All scientific plots were produced by plotting functions imported directly "
+        "from app_helpers/charts.py. Only output dimensions/font sizing and "
+        "manuscript-specific input filtering were applied after figure creation."
+    ),
+    "figures": [
+        "Figure_1A_full_cohort_MDC_overview",
+        "Figure_1B_control_derived_MDC_overview",
+        "Figure_2_resolved_MDC_OXPHOS_modules",
+        "Figure_2_alt_M1150_resolved_MDC",
+        "Figure_3_M1150_donor_connectivity",
+        "Figure_S1_M794_donor_connectivity",
+        "Figure_4_primary_prediction_comparisons",
+        "Figure_5_targeted_CT_prediction_models",
+    ],
+}
+(OUT / "export_manifest.json").write_text(json.dumps(manifest, indent=2))
+print(json.dumps(manifest, indent=2))
