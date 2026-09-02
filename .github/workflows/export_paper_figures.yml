@@ -20,7 +20,7 @@ jobs:
           pip install --quiet -r requirements.txt
           pip install --quiet kaleido==0.2.1
       - name: Export figures using app plotting functions
-        run: python scripts/export_paper_figures_from_app.py
+        run: PYTHONPATH=. python scripts/export_paper_figures_from_app.py
       - uses: actions/upload-artifact@v4
         with:
           name: manuscript-figures-from-streamlit
