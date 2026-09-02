@@ -1,0 +1,55 @@
+name: Extract cognitive association candidates
+
+on:
+  push:
+    branches: [temp-paper-figure-export]
+
+permissions:
+  contents: read
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --quiet pandas pyarrow scipy
+      - name: Extract candidates
+        run: |
+          python - <<'PY'
+          import pandas as pd, numpy as np
+          from pathlib import Path
+
+          phenos=['cogn_global','cogng_demog_slope','cogng_path_slope']
+          roots={'full_cohort':Path('data'),'control_derived':Path('data/control_derived')}
+          outs=[]
+          schemas=[]
+          for mset, root in roots.items():
+              for resolution, fname in [('aggregate','aggregate_statistics.parquet'),('resolved','resolved_statistics.parquet')]:
+                  df=pd.read_parquet(root/fname)
+                  schemas.append((mset,resolution,list(df.columns)))
+                  sub=df[(df['lioness_method']=='control_anchored') & (df['metric_family']=='connectivity') & (df['phenotype'].isin(phenos)) & (df['scale']=='asinh')].copy()
+                  print('\nSCHEMA',mset,resolution,list(df.columns))
+                  print('shape filtered',sub.shape)
+                  print(sub.head(3).to_string(index=False))
+                  # retain standard correlation fields and all FDR-like columns for review
+                  outs.append(sub)
+          allstats=pd.concat(outs,ignore_index=True,sort=False)
+          allstats.to_parquet('cognitive_stats_asinh.parquet',index=False)
+
+          # Compact table with useful fields, whatever exact names exist.
+          wanted=['module','lioness_method','metric_family','phenotype','diagnosis_group','scale','correlation_method','component','component_class','component_label','n','correlation','p_value','fdr','module_fdr','global_fdr','fdr_global','fdr_per_module','q_value','significant_fdr_05']
+          cols=[c for c in wanted if c in allstats.columns]
+          compact=allstats[cols].copy()
+          compact.to_csv('cognitive_stats_asinh_compact.tsv',sep='\t',index=False)
+          print('\nCOMPACT COLUMNS',cols)
+          print(compact.head(20).to_string(index=False))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cognitive-association-candidates
+          path: |
+            cognitive_stats_asinh.parquet
+            cognitive_stats_asinh_compact.tsv
