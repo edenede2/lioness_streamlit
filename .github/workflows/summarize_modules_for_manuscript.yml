@@ -1,0 +1,57 @@
+name: Summarize manuscript modules
+
+on:
+  push:
+    branches: [temp-paper-figure-export]
+
+permissions:
+  contents: read
+
+jobs:
+  summarize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install --quiet pandas
+      - name: Summarize module composition
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          from pathlib import Path
+
+          rows=[]
+          for key, path in [
+              ('full_cohort', Path('data/module_details.tsv')),
+              ('control_derived', Path('data/control_derived/module_details.tsv')),
+          ]:
+              df=pd.read_csv(path, sep='\t')
+              counts=df['cluster_type'].value_counts().to_dict()
+              sizes=pd.to_numeric(df['module_size'])
+              dom=df['dominant_tissue'].value_counts().to_dict()
+              maxprop=df[['proportion_ac','proportion_dlpfc','proportion_pcg']].max(axis=1)
+              rows.append({
+                  'module_definition': key,
+                  'n_modules': len(df),
+                  'n_CT': int(counts.get('CT',0)),
+                  'n_TS': int(counts.get('TS',0)),
+                  'size_min': int(sizes.min()),
+                  'size_median': float(sizes.median()),
+                  'size_mean': float(sizes.mean()),
+                  'size_max': int(sizes.max()),
+                  'dominant_AC': int(dom.get('AC',0)),
+                  'dominant_DLPFC': int(dom.get('DLPFC',0)),
+                  'dominant_PCG': int(dom.get('PCG',0)),
+                  'n_maxprop_ge_095': int((maxprop >= 0.95).sum()),
+                  'n_maxprop_lt_095': int((maxprop < 0.95).sum()),
+              })
+          out=pd.DataFrame(rows)
+          out.to_csv('module_summary.tsv', sep='\t', index=False)
+          print(out.to_string(index=False))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: manuscript-module-summary
+          path: module_summary.tsv
