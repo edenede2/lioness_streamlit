@@ -15,7 +15,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install --quiet pandas pyarrow scipy
+      - run: pip install --quiet pandas pyarrow scipy gdown
+      - name: Download full statistics from Drive
+        run: |
+          mkdir -p /tmp/lioness/full /tmp/lioness/control
+          gdown --quiet 13AAp72UmUPvUWnHnKQWIiwOSSnJfivn0 -O /tmp/lioness/full/aggregate_statistics.parquet
+          gdown --quiet 1u299uh8nR_A08zfO1Ydb50hCCjN6Txbf -O /tmp/lioness/full/resolved_statistics.parquet
+          gdown --quiet 1mX5KTDU-H1Ieo7gxdsoHwXEdUuivyFKN -O /tmp/lioness/control/aggregate_statistics.parquet
+          gdown --quiet 1Yc7PyS4hpZnhAVjEQKtiw69DfSgwq5kw -O /tmp/lioness/control/resolved_statistics.parquet
+          gdown --quiet 1wVr5yagm0mG_UpTtoVzSnaSS3dhhoEze -O /tmp/lioness/control/aggregate_plot_data.parquet
       - name: Extract candidates
         run: |
           python - <<'PY'
@@ -25,72 +33,51 @@ jobs:
 
           phenos=['cogn_global','cogng_demog_slope','cogng_path_slope']
           diagnoses=['Control','MCI','AD']
-          roots={'full_cohort':Path('data'),'control_derived':Path('data/control_derived')}
+          roots={'full_cohort':Path('/tmp/lioness/full'),'control_derived':Path('/tmp/lioness/control')}
 
           def bh(p):
               p=pd.to_numeric(p,errors='coerce').to_numpy(float)
-              q=np.full(len(p),np.nan)
-              ok=np.isfinite(p)
-              vals=p[ok]
+              q=np.full(len(p),np.nan); ok=np.isfinite(p); vals=p[ok]
               if len(vals)==0: return q
-              order=np.argsort(vals)
-              ranked=vals[order]
+              order=np.argsort(vals); ranked=vals[order]
               adj=ranked*len(ranked)/np.arange(1,len(ranked)+1)
-              adj=np.minimum.accumulate(adj[::-1])[::-1]
-              adj=np.clip(adj,0,1)
-              tmp=np.empty(len(vals)); tmp[order]=adj
-              q[ok]=tmp
+              adj=np.minimum.accumulate(adj[::-1])[::-1]; adj=np.clip(adj,0,1)
+              tmp=np.empty(len(vals)); tmp[order]=adj; q[ok]=tmp
               return q
 
-          all_long=[]
-          pattern_rows=[]
+          all_long=[]; pattern_rows=[]
           for mset,root in roots.items():
               agg=pd.read_parquet(root/'aggregate_statistics.parquet')
               res=pd.read_parquet(root/'resolved_statistics.parquet')
-              print('\nSCHEMA',mset,'aggregate',list(agg.columns))
-              print('SCHEMA',mset,'resolved',list(res.columns))
               agg=agg[(agg['lioness_method']=='control_anchored') & (agg['metric_family']=='connectivity') & (agg['phenotype'].isin(phenos)) & (agg['diagnosis_group'].isin(diagnoses))].copy()
               res=res[(res['lioness_method']=='control_anchored') & (res['metric_family']=='connectivity') & (res['phenotype'].isin(phenos)) & (res['diagnosis_group'].isin(diagnoses))].copy()
 
-              # Aggregate CT/TS to long format and compute module-set BH separately for each phenotype/diagnosis/component.
               parts=[]
               for comp in ['CT','TS']:
-                  x=agg.copy()
-                  x['component']=comp
+                  x=agg.copy(); x['component']=comp
                   x['rho']=pd.to_numeric(x[f'rho_{comp}'],errors='coerce')
                   x['p_spearman']=pd.to_numeric(x[f'p_spearman_{comp}'],errors='coerce')
                   x['n_assoc']=pd.to_numeric(x['n'],errors='coerce')
                   parts.append(x[['module','phenotype','diagnosis_group','component','rho','p_spearman','n_assoc']])
-              along=pd.concat(parts,ignore_index=True)
-              along['resolution']='aggregate'; along['module_definition']=mset
-              along['q_module_set']=np.nan
-              for _,idx in along.groupby(['phenotype','diagnosis_group','component']).groups.items():
-                  along.loc[idx,'q_module_set']=bh(along.loc[idx,'p_spearman'])
+              along=pd.concat(parts,ignore_index=True); along['resolution']='aggregate'; along['module_definition']=mset; along['q_module_set']=np.nan
+              for _,idx in along.groupby(['phenotype','diagnosis_group','component']).groups.items(): along.loc[idx,'q_module_set']=bh(along.loc[idx,'p_spearman'])
 
-              rlong=res[['module','phenotype','diagnosis_group','component','component_class','component_label','rho','p_spearman','n']].copy()
-              rlong=rlong.rename(columns={'n':'n_assoc'})
-              rlong['resolution']='resolved'; rlong['module_definition']=mset
-              rlong['q_module_set']=np.nan
-              for _,idx in rlong.groupby(['phenotype','diagnosis_group','component']).groups.items():
-                  rlong.loc[idx,'q_module_set']=bh(rlong.loc[idx,'p_spearman'])
-
+              rlong=res[['module','phenotype','diagnosis_group','component','component_class','component_label','rho','p_spearman','n']].copy().rename(columns={'n':'n_assoc'})
+              rlong['resolution']='resolved'; rlong['module_definition']=mset; rlong['q_module_set']=np.nan
+              for _,idx in rlong.groupby(['phenotype','diagnosis_group','component']).groups.items(): rlong.loc[idx,'q_module_set']=bh(rlong.loc[idx,'p_spearman'])
               all_long.extend([along,rlong])
 
-              # Pattern A: resolved CT significant while none of the three TS components is significant.
               for (module,pheno,diag),g in rlong.groupby(['module','phenotype','diagnosis_group']):
-                  ct=g[g['component_class'].eq('CT')]
-                  ts=g[g['component_class'].eq('TS')]
+                  ct=g[g['component_class'].eq('CT')]; ts=g[g['component_class'].eq('TS')]
                   if ct.empty or ts.empty: continue
-                  sigct=ct[ct['q_module_set']<0.05].sort_values(['q_module_set','rho'],key=lambda s: s.abs() if s.name=='rho' else s)
+                  sigct=ct[ct['q_module_set']<0.05].sort_values(['q_module_set'])
                   if not sigct.empty and not (ts['q_module_set']<0.05).any():
                       best=sigct.iloc[0]
                       pattern_rows.append({'pattern':'CT_pair_only','module_definition':mset,'module':int(module),'phenotype':pheno,'diagnosis_group':diag,'component':best['component'],'rho':best['rho'],'p':best['p_spearman'],'q':best['q_module_set'],'min_TS_q':float(ts['q_module_set'].min()),'max_abs_TS_rho':float(ts['rho'].abs().max())})
 
-              # Pattern B: diagnosis-specific component, significant in exactly one diagnosis and q>=0.10 in the other two.
               for (module,pheno,comp),g in rlong.groupby(['module','phenotype','component']):
                   if set(g['diagnosis_group']) != set(diagnoses): continue
-                  sig=g[g['q_module_set']<0.05]
-                  nonsig=g[g['q_module_set']>=0.10]
+                  sig=g[g['q_module_set']<0.05]; nonsig=g[g['q_module_set']>=0.10]
                   if len(sig)==1 and len(nonsig)==2:
                       best=sig.iloc[0]
                       pattern_rows.append({'pattern':'diagnosis_specific','module_definition':mset,'module':int(module),'phenotype':pheno,'diagnosis_group':best['diagnosis_group'],'component':comp,'rho':best['rho'],'p':best['p_spearman'],'q':best['q_module_set'],'other_min_q':float(nonsig['q_module_set'].min()),'other_max_abs_rho':float(nonsig['rho'].abs().max())})
@@ -99,32 +86,21 @@ jobs:
           allstats.to_csv('cognitive_associations_spearman_moduleFDR.tsv',sep='\t',index=False)
           patterns=pd.DataFrame(pattern_rows)
           if not patterns.empty:
-              patterns['abs_rho']=patterns['rho'].abs()
-              patterns=patterns.sort_values(['pattern','q','abs_rho'],ascending=[True,True,False])
+              patterns['abs_rho']=patterns['rho'].abs(); patterns=patterns.sort_values(['pattern','q','abs_rho'],ascending=[True,True,False])
           patterns.to_csv('cognitive_association_patterns.tsv',sep='\t',index=False)
-          print('\nTOP PATTERNS')
-          print(patterns.head(80).to_string(index=False) if not patterns.empty else 'none')
+          print('\nTOP PATTERNS\n', patterns.head(100).to_string(index=False) if not patterns.empty else 'none')
+          print('\nMANUSCRIPT MODULES\n',allstats[allstats['module'].isin([794,902,1138,1148,1150])].sort_values(['module','phenotype','diagnosis_group','resolution','component']).to_string(index=False))
 
-          # Explicitly print manuscript modules.
-          print('\nMANUSCRIPT MODULES')
-          print(allstats[allstats['module'].isin([794,902,1138,1148,1150])].sort_values(['module','phenotype','diagnosis_group','resolution','component']).to_string(index=False))
-
-          # Raw vs asinh distribution summaries for existing donor-level examples.
+          dat=pd.read_parquet('/tmp/lioness/control/aggregate_plot_data.parquet')
+          dat=dat[(dat['lioness_method']=='control_anchored') & (dat['metric_family']=='connectivity') & (dat['module'].isin([794,1150]))].copy()
           dist=[]
-          for mset,root in roots.items():
-              dat=pd.read_parquet(root/'aggregate_plot_data.parquet')
-              dat=dat[(dat['lioness_method']=='control_anchored') & (dat['metric_family']=='connectivity') & (dat['module'].isin([794,1150]))].copy()
-              for module,g in dat.groupby('module'):
-                  for comp in ['CT','TS']:
-                      for scale in ['raw','asinh']:
-                          col=f'{comp}_{scale}'
-                          vals=pd.to_numeric(g[col],errors='coerce').dropna().to_numpy(float)
-                          if len(vals)==0: continue
-                          dist.append({'module_definition':mset,'module':int(module),'component':comp,'scale':scale,'n':len(vals),'skew':float(skew(vals,bias=False)),'excess_kurtosis':float(kurtosis(vals,bias=False)),'p01':float(np.quantile(vals,.01)),'p25':float(np.quantile(vals,.25)),'median':float(np.median(vals)),'p75':float(np.quantile(vals,.75)),'p99':float(np.quantile(vals,.99)),'min':float(vals.min()),'max':float(vals.max())})
-          dist=pd.DataFrame(dist)
-          dist.to_csv('raw_vs_asinh_distribution_summary.tsv',sep='\t',index=False)
-          print('\nRAW VS ASINH')
-          print(dist.to_string(index=False))
+          for module,g in dat.groupby('module'):
+              for comp in ['CT','TS']:
+                  for scale in ['raw','asinh']:
+                      vals=pd.to_numeric(g[f'{comp}_{scale}'],errors='coerce').dropna().to_numpy(float)
+                      dist.append({'module':int(module),'component':comp,'scale':scale,'n':len(vals),'skew':float(skew(vals,bias=False)),'excess_kurtosis':float(kurtosis(vals,bias=False)),'p01':float(np.quantile(vals,.01)),'p25':float(np.quantile(vals,.25)),'median':float(np.median(vals)),'p75':float(np.quantile(vals,.75)),'p99':float(np.quantile(vals,.99)),'min':float(vals.min()),'max':float(vals.max())})
+          dist=pd.DataFrame(dist); dist.to_csv('raw_vs_asinh_distribution_summary.tsv',sep='\t',index=False)
+          print('\nRAW VS ASINH\n',dist.to_string(index=False))
           PY
       - uses: actions/upload-artifact@v4
         with:
