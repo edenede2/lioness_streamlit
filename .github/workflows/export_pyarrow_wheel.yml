@@ -2,7 +2,8 @@ name: Export pyarrow wheel
 
 on:
   push:
-    branches: [temp-paper-figure-export]
+    branches:
+      - temp-paper-figure-export
 
 permissions:
   contents: read
@@ -15,7 +16,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: python -m pip download --only-binary=:all: --no-deps pyarrow==22.0.0 -d wheels
+      - name: Download wheel
+        run: python -m pip download --only-binary=:all: --no-deps pyarrow==22.0.0 -d wheels
       - uses: actions/upload-artifact@v4
         with:
           name: pyarrow-cp313-wheel
