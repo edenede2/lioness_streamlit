@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 from sklearn.metrics import roc_auc_score, roc_curve
 
@@ -90,17 +89,10 @@ roc_fig.update_layout(legend={"orientation": "h", "y": 1.16, "x": 0.0, "xanchor"
 save(roc_fig, "Figure_prediction_ROC_CT_TS", width=980, height=650)
 
 
-# Panel B: same targeted module panel, decomposed into individual regions and region pairs.
+# Panel B: same targeted module identities, decomposed into individual regions and region pairs.
 perf = pd.read_parquet(ROOT / "data/prediction_targeted/targeted_oof_performance.parquet")
-blocks = [
-    "TS_AC",
-    "TS_DLPFC",
-    "TS_PCGBA23",
-    "CT_AC__DLPFC",
-    "CT_AC__PCGBA23",
-    "CT_DLPFC__PCGBA23",
-]
-base = perf.loc[
+blocks = ["AC", "DLPFC", "PCG", "AC_DLPFC", "AC_PCG", "DLPFC_PCG"]
+resolved = perf.loc[
     perf["module_definition"].eq("control_derived")
     & perf["network_method"].eq("control_anchored")
     & perf["panel_strategy"].eq("tissue_neutral_ad")
@@ -110,35 +102,31 @@ base = perf.loc[
     & perf["score_transform"].eq("raw")
     & perf["model_variant"].eq("covariates_plus_network")
     & perf["metric"].eq("roc_auc")
+    & perf["predictor_block"].isin(blocks)
 ].copy()
-print("Available predictor blocks under resolved base filter:")
-print(sorted(base["predictor_block"].astype(str).unique().tolist()))
-resolved = base.loc[base["predictor_block"].isin(blocks)].copy()
-# Network-only configurations can be duplicated across transcriptomic-source bookkeeping;
-# their OOF predictions and performance are identical, so retain one row per block.
 resolved = resolved.sort_values(["predictor_block", "evidence_tier"], kind="stable").drop_duplicates("predictor_block")
 if set(resolved["predictor_block"].astype(str)) != set(blocks):
     missing = sorted(set(blocks) - set(resolved["predictor_block"].astype(str)))
     raise RuntimeError(f"Missing resolved predictor blocks: {missing}")
 expected = {
-    "TS_AC": 0.662224,
-    "TS_DLPFC": 0.684132,
-    "TS_PCGBA23": 0.718818,
-    "CT_AC__DLPFC": 0.786804,
-    "CT_AC__PCGBA23": 0.774244,
-    "CT_DLPFC__PCGBA23": 0.790784,
+    "AC": 0.662224,
+    "DLPFC": 0.684132,
+    "PCG": 0.718818,
+    "AC_DLPFC": 0.786804,
+    "AC_PCG": 0.774244,
+    "DLPFC_PCG": 0.790784,
 }
 for row in resolved.itertuples(index=False):
     if abs(float(row.value) - expected[str(row.predictor_block)]) > 0.004:
         raise RuntimeError(f"Unexpected resolved AUC for {row.predictor_block}: {row.value}")
 block_labels = dict(PREDICTION_BLOCK_LABELS)
 block_labels.update({
-    "TS_AC": "AC (TS)",
-    "TS_DLPFC": "DLPFC (TS)",
-    "TS_PCGBA23": "PCG (TS)",
-    "CT_AC__DLPFC": "AC–DLPFC (CT)",
-    "CT_AC__PCGBA23": "AC–PCG (CT)",
-    "CT_DLPFC__PCGBA23": "DLPFC–PCG (CT)",
+    "AC": "AC (TS)",
+    "DLPFC": "DLPFC (TS)",
+    "PCG": "PCG (TS)",
+    "AC_DLPFC": "AC–DLPFC (CT)",
+    "AC_PCG": "AC–PCG (CT)",
+    "DLPFC_PCG": "DLPFC–PCG (CT)",
 })
 resolved_fig = prediction_performance_figure(
     resolved,
