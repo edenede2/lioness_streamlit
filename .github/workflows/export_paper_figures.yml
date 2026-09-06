@@ -19,9 +19,15 @@ jobs:
         run: |
           pip install --quiet -r requirements.txt
           pip install --quiet kaleido==0.2.1
-      - name: Export figures using app plotting functions
+      - name: Export existing paper figures using app plotting functions
         run: PYTHONPATH=. python scripts/export_paper_figures_from_app.py
+      - name: Export updated prediction panels
+        run: PYTHONPATH=. python scripts/export_prediction_main_panels.py
       - uses: actions/upload-artifact@v4
         with:
           name: manuscript-figures-from-streamlit
           path: paper_figures/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: updated-prediction-main-panels
+          path: paper_prediction_figures/
