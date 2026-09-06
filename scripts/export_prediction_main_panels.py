@@ -37,15 +37,12 @@ def save(fig, stem: str, *, width: int, height: int):
     fig.write_image(OUT / f"{stem}.png", format="png", width=width, height=height, scale=2)
 
 
-# -----------------------------------------------------------------------------
-# Panel A: ROC curves from the donor-averaged OOF predictions used by the app.
-# -----------------------------------------------------------------------------
+# Panel A: donor-averaged OOF ROC curves for the primary AD-vs-Control comparison.
 oof_path = (
     ROOT / "data/prediction_targeted/targeted_oof_predictions.parquet/"
     "raw__primary__control_derived__control_anchored__not_applicable.parquet"
 )
 oof = pd.read_parquet(oof_path)
-
 common = (
     oof["panel_strategy"].eq("tissue_neutral_ad")
     & oof["model_outcome"].eq("diagnosis_binary")
@@ -54,18 +51,15 @@ common = (
     & oof["score_transform"].eq("raw")
 )
 oof = oof.loc[common].copy()
-
 configs = [
     ("Covariates", "CT_pooled", "covariates", 0.6838761501387469),
     ("TS + covariates", "TS_pooled", "covariates_plus_network", 0.679604),
     ("CT + covariates", "CT_pooled", "covariates_plus_network", 0.8455527968453337),
 ]
-
 curve_rows = []
 for label, block, variant, expected_auc in configs:
     selected = oof.loc[
-        oof["predictor_block"].eq(block)
-        & oof["model_variant"].eq(variant)
+        oof["predictor_block"].eq(block) & oof["model_variant"].eq(variant)
     ].copy()
     if selected.empty:
         raise RuntimeError(f"No OOF rows for {label}: {block} / {variant}")
@@ -86,7 +80,6 @@ for label, block, variant, expected_auc in configs:
         {"curve": "ROC", "class_label": f"{label} (AUC={auc:.3f})", "x": x, "y": yy}
         for x, yy in zip(fpr, tpr, strict=True)
     )
-
 roc_frame = pd.DataFrame(curve_rows)
 roc_fig = prediction_curve_figure(
     roc_frame,
@@ -97,10 +90,7 @@ roc_fig.update_layout(legend={"orientation": "h", "y": 1.16, "x": 0.0, "xanchor"
 save(roc_fig, "Figure_prediction_ROC_CT_TS", width=980, height=650)
 
 
-# -----------------------------------------------------------------------------
-# Panel B: same selected modules, decomposed into regions and region pairs.
-# Uses the app's prediction_performance_figure.
-# -----------------------------------------------------------------------------
+# Panel B: same targeted module panel, decomposed into individual regions and region pairs.
 perf = pd.read_parquet(ROOT / "data/prediction_targeted/targeted_oof_performance.parquet")
 blocks = [
     "TS_AC",
@@ -110,7 +100,7 @@ blocks = [
     "CT_AC__PCGBA23",
     "CT_DLPFC__PCGBA23",
 ]
-resolved = perf.loc[
+base = perf.loc[
     perf["module_definition"].eq("control_derived")
     & perf["network_method"].eq("control_anchored")
     & perf["panel_strategy"].eq("tissue_neutral_ad")
@@ -120,17 +110,16 @@ resolved = perf.loc[
     & perf["score_transform"].eq("raw")
     & perf["model_variant"].eq("covariates_plus_network")
     & perf["metric"].eq("roc_auc")
-    & perf["predictor_block"].isin(blocks)
 ].copy()
-if "eigengene_source" in resolved:
-    resolved = resolved.loc[
-        resolved["eigengene_source"].astype(str).isin(["not_applicable", "nan", "None"])
-    ]
-resolved = resolved.sort_values("predictor_block").drop_duplicates("predictor_block")
+print("Available predictor blocks under resolved base filter:")
+print(sorted(base["predictor_block"].astype(str).unique().tolist()))
+resolved = base.loc[base["predictor_block"].isin(blocks)].copy()
+# Network-only configurations can be duplicated across transcriptomic-source bookkeeping;
+# their OOF predictions and performance are identical, so retain one row per block.
+resolved = resolved.sort_values(["predictor_block", "evidence_tier"], kind="stable").drop_duplicates("predictor_block")
 if set(resolved["predictor_block"].astype(str)) != set(blocks):
     missing = sorted(set(blocks) - set(resolved["predictor_block"].astype(str)))
     raise RuntimeError(f"Missing resolved predictor blocks: {missing}")
-
 expected = {
     "TS_AC": 0.662224,
     "TS_DLPFC": 0.684132,
@@ -141,10 +130,7 @@ expected = {
 }
 for row in resolved.itertuples(index=False):
     if abs(float(row.value) - expected[str(row.predictor_block)]) > 0.004:
-        raise RuntimeError(
-            f"Unexpected resolved AUC for {row.predictor_block}: {row.value}"
-        )
-
+        raise RuntimeError(f"Unexpected resolved AUC for {row.predictor_block}: {row.value}")
 block_labels = dict(PREDICTION_BLOCK_LABELS)
 block_labels.update({
     "TS_AC": "AC (TS)",
