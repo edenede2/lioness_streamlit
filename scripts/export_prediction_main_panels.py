@@ -12,25 +12,25 @@ OUT = ROOT / "paper_prediction_figures"
 OUT.mkdir(exist_ok=True)
 
 
-def paper_style(fig, *, width: int, height: int):
+def paper_style(fig, *, width: int, height: int, top_margin: int = 55):
     fig.update_layout(
         width=width,
         height=height,
-        font={"family": "Arial, Helvetica, sans-serif", "size": 17, "color": "#111111"},
-        title_font={"family": "Arial, Helvetica, sans-serif", "size": 20, "color": "#111111"},
+        font={"family": "Arial, Helvetica, sans-serif", "size": 18, "color": "#111111"},
+        title={"text": ""},
         paper_bgcolor="white",
         plot_bgcolor="white",
-        margin={"l": 75, "r": 30, "t": 90, "b": 90},
+        margin={"l": 80, "r": 30, "t": top_margin, "b": 90},
     )
-    fig.update_xaxes(title_font={"size": 18}, tickfont={"size": 15})
-    fig.update_yaxes(title_font={"size": 18}, tickfont={"size": 15})
+    fig.update_xaxes(title_font={"size": 19}, tickfont={"size": 16})
+    fig.update_yaxes(title_font={"size": 19}, tickfont={"size": 16})
     if fig.layout.legend:
-        fig.update_layout(legend_font={"size": 14})
+        fig.update_layout(legend_font={"size": 15})
     return fig
 
 
-def save(fig, stem: str, *, width: int, height: int):
-    fig = paper_style(fig, width=width, height=height)
+def save(fig, stem: str, *, width: int, height: int, top_margin: int = 55):
+    fig = paper_style(fig, width=width, height=height, top_margin=top_margin)
     fig.write_image(OUT / f"{stem}.pdf", format="pdf", width=width, height=height)
     fig.write_image(OUT / f"{stem}.svg", format="svg", width=width, height=height)
     fig.write_image(OUT / f"{stem}.png", format="png", width=width, height=height, scale=2)
@@ -60,33 +60,28 @@ for label, block, variant, expected_auc in configs:
     selected = oof.loc[
         oof["predictor_block"].eq(block) & oof["model_variant"].eq(variant)
     ].copy()
-    if selected.empty:
-        raise RuntimeError(f"No OOF rows for {label}: {block} / {variant}")
     selected = selected.drop_duplicates("sample_id")
     target_text = selected["target"].astype(str)
-    if target_text.isin(["AD", "Control"]).all():
-        y = target_text.eq("AD").astype(int).to_numpy()
-    else:
-        y = pd.to_numeric(selected["target"], errors="raise").astype(int).to_numpy()
+    y = (
+        target_text.eq("AD").astype(int).to_numpy()
+        if target_text.isin(["AD", "Control"]).all()
+        else pd.to_numeric(selected["target"], errors="raise").astype(int).to_numpy()
+    )
     probability = pd.to_numeric(selected["probability_AD"], errors="raise").to_numpy()
     auc = roc_auc_score(y, probability)
     if abs(auc - expected_auc) > 0.003:
-        raise RuntimeError(
-            f"Unexpected AUC for {label}: observed {auc:.6f}, expected ~{expected_auc:.6f}"
-        )
+        raise RuntimeError(f"Unexpected AUC for {label}: {auc:.6f}")
     fpr, tpr, _ = roc_curve(y, probability)
     curve_rows.extend(
         {"curve": "ROC", "class_label": f"{label} (AUC={auc:.3f})", "x": x, "y": yy}
         for x, yy in zip(fpr, tpr, strict=True)
     )
 roc_frame = pd.DataFrame(curve_rows)
-roc_fig = prediction_curve_figure(
-    roc_frame,
-    curve="ROC",
-    title="AD vs Control: donor-averaged out-of-fold ROC curves",
+roc_fig = prediction_curve_figure(roc_frame, curve="ROC", title="")
+roc_fig.update_layout(
+    legend={"orientation": "h", "y": 1.035, "x": 0.5, "xanchor": "center", "yanchor": "bottom"}
 )
-roc_fig.update_layout(legend={"orientation": "h", "y": 1.16, "x": 0.0, "xanchor": "left"})
-save(roc_fig, "Figure_prediction_ROC_CT_TS", width=980, height=650)
+save(roc_fig, "Figure_prediction_ROC_CT_TS", width=980, height=610, top_margin=72)
 
 
 # Panel B: same targeted module identities, decomposed into individual regions and region pairs.
@@ -105,9 +100,6 @@ resolved = perf.loc[
     & perf["predictor_block"].isin(blocks)
 ].copy()
 resolved = resolved.sort_values(["predictor_block", "evidence_tier"], kind="stable").drop_duplicates("predictor_block")
-if set(resolved["predictor_block"].astype(str)) != set(blocks):
-    missing = sorted(set(blocks) - set(resolved["predictor_block"].astype(str)))
-    raise RuntimeError(f"Missing resolved predictor blocks: {missing}")
 expected = {
     "AC": 0.662224,
     "DLPFC": 0.684132,
@@ -116,6 +108,8 @@ expected = {
     "AC_PCG": 0.774244,
     "DLPFC_PCG": 0.790784,
 }
+if set(resolved["predictor_block"].astype(str)) != set(blocks):
+    raise RuntimeError("Resolved predictor blocks are incomplete")
 for row in resolved.itertuples(index=False):
     if abs(float(row.value) - expected[str(row.predictor_block)]) > 0.004:
         raise RuntimeError(f"Unexpected resolved AUC for {row.predictor_block}: {row.value}")
@@ -134,12 +128,12 @@ resolved_fig = prediction_performance_figure(
     block_labels=block_labels,
     block_order=blocks,
     model_labels=PREDICTION_MODEL_LABELS,
-    title="AD vs Control: prediction by region and region pair",
+    title="",
 )
-resolved_fig.update_yaxes(title_text="ROC-AUC", range=[0.60, 0.82])
-resolved_fig.update_layout(showlegend=False, margin={"l": 80, "r": 30, "t": 90, "b": 125})
-save(resolved_fig, "Figure_prediction_resolved_components", width=1100, height=620)
+resolved_fig.update_yaxes(title_text="ROC-AUC", range=[0.60, 0.81])
+resolved_fig.update_layout(showlegend=False, margin={"l": 80, "r": 30, "t": 35, "b": 120})
+save(resolved_fig, "Figure_prediction_resolved_components", width=1100, height=560, top_margin=35)
 
-summary = resolved[["predictor_block", "value", "n_oof"]].copy()
-summary.to_csv(OUT / "resolved_prediction_values.tsv", sep="\t", index=False)
-print(summary.to_string(index=False))
+resolved[["predictor_block", "value", "n_oof"]].to_csv(
+    OUT / "resolved_prediction_values.tsv", sep="\t", index=False
+)
