@@ -521,6 +521,17 @@ def test_streamlit_mdc_uses_selected_ad_control_edge_mask() -> None:
     )
 
 
+def test_donor_edge_explorer_renders_with_existing_all_edge_data() -> None:
+    app = AppTest.from_file(APP, default_timeout=180).run()
+    assert_app_clean(app)
+    app = select_view(app, "Donor edge explorer")
+    assert_app_clean(app)
+    assert any(
+        "similar module scores" in subheader.value.lower()
+        for subheader in app.subheader
+    )
+
+
 def test_streamlit_pathway_resolved_mdc_controls_both_module_sets() -> None:
     app = AppTest.from_file(APP, default_timeout=180).run()
     assert_app_clean(app)

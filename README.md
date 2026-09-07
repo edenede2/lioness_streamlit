@@ -294,6 +294,45 @@ The build is intentionally one-way: donor/projid columns and the pseudonym salt 
 not written. `data/data_manifest.json` records separate module-set row counts,
 source hashes, correction-family sizes, unavailable CT modules, and deploy-file hashes.
 
+Build the exploratory effect-size edge catalog from the existing discovery AD-Control
+edge tests without rerunning Welch tests:
+
+```bash
+python ../../scripts/python/run_effect_size_filtered_edges_rosmap.py --workers 6
+python ../../scripts/python/consolidate_effect_size_edge_summaries.py
+
+# These five resumable jobs may run concurrently; each writes its own manifest.
+python ../../scripts/python/prepare_effect_size_edge_app_data.py \
+  --module-set full_cohort --estimator lioness --method standard \
+  --manifest-name app_data_manifest__full_lioness_standard.json
+python ../../scripts/python/prepare_effect_size_edge_app_data.py \
+  --module-set full_cohort --estimator lioness --method control_anchored \
+  --manifest-name app_data_manifest__full_lioness_control.json
+python ../../scripts/python/prepare_effect_size_edge_app_data.py \
+  --module-set full_cohort --estimator bonobo --method bonobo \
+  --manifest-name app_data_manifest__full_bonobo.json
+python ../../scripts/python/prepare_effect_size_edge_app_data.py \
+  --module-set control_derived --estimator lioness --method control_anchored \
+  --manifest-name app_data_manifest__control_lioness.json
+python ../../scripts/python/prepare_effect_size_edge_app_data.py \
+  --module-set control_derived --estimator bonobo --method bonobo \
+  --manifest-name app_data_manifest__control_bonobo.json
+
+python ../../scripts/python/prepare_effect_size_edge_app_data.py --merge-manifests
+python scripts/build_effect_size_public_bundle.py
+python ../../scripts/python/validate_effect_size_edge_outputs.py \
+  --estimator lioness --require-complete --public-data data
+```
+
+The public builder requires every LIONESS catalog for the selected module definitions.
+Optional estimator catalogs such as BONOBO are published only after all of their variants
+are complete; an interrupted BONOBO run remains checkpointed and is not exposed as a
+broken selector. `--allow-partial` is reserved for local smoke tests. Effect plot data and bounded donor-driver shards belong in the indexed
+Drive bundle, while compact code and metadata remain suitable for GitHub. To synchronize
+the complete public data tree after validation, use the existing incremental uploader with
+`--local-prediction data --remote-directory '' --manifest-name data_manifest.json`, then
+rebuild `drive_file_index.json`.
+
 Build the leakage-reduced and exploratory prediction inputs. The exploratory
 existing-reference branch is also deduplicated for prediction: its already-computed
 distinct-node edge statistics are retained, artificial repeated-node edges are removed,
@@ -358,6 +397,44 @@ python scripts/build_drive_index.py \
   --credentials /path/to/service-account.json \
   --root-folder-id YOUR_ROOT_FOLDER_ID
 ```
+
+For a folder in a user's **My Drive**, authorize uploads with an installed/Desktop OAuth
+client so newly created files consume the user's storage quota. Keep both the downloaded
+client JSON and generated token outside Git; the provided ignore rules cover the names
+below. Over SSH, forward the callback port from the workstation first, then run the
+one-time authorization and write probe on the server:
+
+```powershell
+ssh -L 8765:127.0.0.1:8765 YOUR_USERNAME@YOUR_SERVER
+```
+
+```bash
+python scripts/upload_prediction_data.py \
+  --oauth-client client_secret_YOUR_CLIENT.apps.googleusercontent.com.json \
+  --oauth-token google-drive-oauth-token.json \
+  --oauth-port 8765 \
+  --oauth-no-browser \
+  --root-folder-id YOUR_ROOT_FOLDER_ID \
+  --check-only --probe-write
+```
+
+Open the printed URL in the workstation browser. Subsequent resumable uploads reuse the
+local token and need no browser interaction:
+
+```bash
+python scripts/upload_prediction_data.py \
+  --oauth-client client_secret_YOUR_CLIENT.apps.googleusercontent.com.json \
+  --oauth-token google-drive-oauth-token.json \
+  --inventory-credentials google-drive-service-account.json \
+  --root-folder-id YOUR_ROOT_FOLDER_ID \
+  --local-prediction data \
+  --remote-directory '' \
+  --manifest-name data_manifest.json
+```
+
+The Streamlit deployment can continue using its service-account secret for read-only lazy
+downloads, provided the root folder is shared with that service-account email. Rebuild the
+static index with the service-account credential after uploading.
 
 ```bash
 python ../../scripts/python/run_ad_control_differential_edges_rosmap.py \
@@ -511,6 +588,31 @@ The differential mask is learned from 117 AD and 114 Control discovery donors.
 The 50 AD and 50 Control validation donors and all 119 MCI donors are excluded from
 edge selection. The 0.10 option is intended for exploratory screening and should be
 reported as such; it does not change the underlying Welch tests or effect sizes.
+
+Effect-size filtering is a separate exploratory edge subset that reuses those same
+discovery edge tests without rerunning Welch tests. Hedges' g can be filtered at
+absolute cutoffs 0.20, 0.30, 0.40, or 0.50, or by the top 1%, 5%, or 10% of absolute
+effects inside each module. Raw AD-minus-Control mean differences use the within-module
+top-percentage rules because their scale varies among estimators and modules. Percentile
+masks retain exactly `ceil(fraction * tested edges)` before applying the selected
+AD-higher or Control-higher direction, with edge index as the deterministic tie breaker.
+For BONOBO, this discovery effect mask is intersected with the selected donor-specific
+native-p or donor-module-FDR mask. The default remains **All edges**; discovery-donor
+separation after effect filtering is selection-biased, so the app defaults filtered
+evaluation to the held-out validation donors.
+
+The current effect-size release is LIONESS-only. Any partial BONOBO checkpoints are
+kept private and resumable, and the app does not expose a BONOBO effect-size selector
+unless a complete BONOBO catalog is validated and published in a future release.
+
+The Donor edge explorer finds or manually compares two pseudonymous donors with similar
+module scores. It displays CT/TS and resolved component contributions, edge counts and
+weight sums, retained proportions, edge-weight quantiles, and the cancellation index
+`1 - abs(signed sum) / absolute sum`. For effect-filtered networks, lazy Drive shards
+provide up to 20 gene-symbol-only edge drivers per donor and direction, ranked by the
+absolute deviation from the discovery-Control edge mean. Discovery Controls use a
+leave-one-out Control reference. These comparisons are descriptive and do not establish
+why a donor's phenotype differs causally.
 
 ## MDC scope
 

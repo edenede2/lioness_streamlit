@@ -123,6 +123,9 @@ if not all(
         "ASSOCIATION_GROUP_LABELS", "association_level_label",
         "PREDICTION_BLOCK_ORDER",
         "EIGENGENE_FEATURE_LABELS", "descriptive_eigengene_data_available",
+        "effect_size_data_available", "effect_rule_key",
+        "effect_rule_label", "effect_mask_column", "load_effect_drivers",
+        "load_effect_size_manifest", "EFFECT_STATISTIC_LABELS",
     )
 ):
     _data_helpers = importlib.reload(_data_helpers)
@@ -140,6 +143,8 @@ from app_helpers.data import (
     CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES,
     DATA_DIR,
     DIFFERENTIAL_EDGE_RULE_LABELS,
+    EFFECT_DIRECTION_LABELS,
+    EFFECT_STATISTIC_LABELS,
     EIGENGENE_FEATURE_LABELS,
     DIAGNOSIS_ORDER,
     EDGE_SCOPE_LABELS,
@@ -151,8 +156,10 @@ from app_helpers.data import (
     EIGENGENE_SOURCE_LABELS,
     FDR_SCOPE_LABELS,
     FDR_THRESHOLD_LABELS,
+    HEDGES_FIXED_THRESHOLDS,
     MODULE_SET_LABELS,
     MODULE_SET_METHODS,
+    MODULE_TOP_FRACTIONS,
     PREDICTION_MODULE_SETS,
     NUMERIC_OUTCOMES,
     OUTCOME_LABELS,
@@ -178,6 +185,10 @@ from app_helpers.data import (
     association_kegg_subtitles,
     dataframe_to_tsv_bytes,
     differential_data_available,
+    effect_rule_key,
+    effect_rule_label,
+    effect_mask_column,
+    effect_size_data_available,
     descriptive_eigengene_data_available,
     differential_mdc_data_available,
     filter_kegg_enrichments,
@@ -187,6 +198,8 @@ from app_helpers.data import (
     load_data_manifest,
     load_feature_definitions,
     load_edge_summaries,
+    load_effect_drivers,
+    load_effect_size_manifest,
     load_kegg,
     load_kegg_tsv_bytes,
     load_cluster_association_statistics,
@@ -414,6 +427,27 @@ def cached_edge_summaries(
     )
 
 
+@st.cache_data(show_spinner=False, max_entries=4)
+def cached_effect_drivers(
+    module_set: str,
+    estimator: str,
+    method: str,
+    module: int,
+    edge_rule: str,
+    differential_edge_rule: str,
+    sample_ids: tuple[str, ...],
+) -> pd.DataFrame:
+    return load_effect_drivers(
+        module_set, estimator, method, module, edge_rule,
+        differential_edge_rule, sample_ids,
+    )
+
+
+@st.cache_data(show_spinner=False, max_entries=3)
+def cached_effect_size_manifest(module_set: str) -> dict[str, object]:
+    return load_effect_size_manifest(module_set)
+
+
 @st.cache_data(show_spinner=False)
 def cached_data_manifest() -> dict[str, object]:
     return load_data_manifest()
@@ -516,9 +550,12 @@ def cached_resolved_stats(
 
 @st.cache_data(show_spinner=False, max_entries=8)
 def cached_volcano_candidates(
-    module_set: str, estimator: str, method: str, module: int
+    module_set: str, estimator: str, method: str, module: int,
+    differential_edge_rule: str = "all",
 ) -> pd.DataFrame:
-    return load_volcano_candidates(module_set, estimator, method, module)
+    return load_volcano_candidates(
+        module_set, estimator, method, module, differential_edge_rule
+    )
 
 
 @st.cache_data(show_spinner=False, max_entries=8)
@@ -3241,7 +3278,13 @@ def render_partition_comparison_view() -> None:
         selected_pair = selected_mapping.loc[
             selected_mapping["new_module"].astype(int).eq(int(selected_new_module))
         ]
-        st.dataframe(selected_pair, width="stretch", hide_index=True)
+        filterable_dataframe(
+            selected_pair,
+            table_key="partition_selected_pair",
+            table_name="Selected partition pair",
+            use_container_width=True,
+            hide_index=True,
+        )
     filterable_dataframe(
         selected_mapping.sort_values("jaccard", ascending=False),
         table_key=f"partition_mapping_{mapping_mode}",
@@ -3336,6 +3379,7 @@ view_options = [
     "CT–TS screen",
     "Edge summaries",
     "Edge volcano",
+    "Donor edge explorer",
     "MDC",
     "Statistics",
     "KEGG enrichment",
@@ -3400,7 +3444,7 @@ with st.sidebar:
         else ["bonobo"]
     )
     capabilities = module_manifest.get("capabilities", {})
-    if active_view in {"Edge summaries", "Edge volcano"} and not capabilities.get(
+    if active_view in {"Edge summaries", "Edge volcano", "Donor edge explorer"} and not capabilities.get(
         "differential_edges" if active_view == "Edge volcano" else "edge_summaries",
         True,
     ):
@@ -3491,24 +3535,39 @@ with st.sidebar:
     differential_available = (
         feature != "eigengene" and differential_data_available(module_set)
     )
-    differential_edge_rule = st.radio(
+    effect_available = (
+        feature != "eigengene"
+        and active_view != "MDC"
+        and effect_size_data_available(module_set, estimator, method)
+    )
+    subset_options = ["all"]
+    if differential_available:
+        subset_options.append("ad_control_discovery_fdr05")
+    if effect_available:
+        subset_options.append("effect_size")
+    edge_subset_basis = st.radio(
         "AD–Control edge subset",
-        options=list(DIFFERENTIAL_EDGE_RULE_LABELS) if differential_available else ["all"],
-        format_func=lambda value: DIFFERENTIAL_EDGE_RULE_LABELS[value],
+        options=subset_options,
+        format_func=lambda value: {
+            "all": "All edges",
+            "ad_control_discovery_fdr05": "AD–Control FDR-filtered edges",
+            "effect_size": "AD–Control effect-size-filtered edges",
+        }[value],
         help=(
-            "The differential mask is learned only in the diagnosis-and-sex-stratified "
-            "discovery donors. The FDR scope below determines whether BH is corrected "
-            "across the full analysis family or within the selected module."
+            "AD–Control masks are learned only in the diagnosis-and-sex-stratified "
+            "discovery donors. All-edge and existing FDR analyses remain unchanged."
         ),
     )
-    if not differential_available:
-        if feature == "eigengene":
-            st.caption("Edge-subset controls do not apply to expression eigengenes.")
-        else:
-            st.caption("AD–Control filtered scores are not present in this deployed bundle.")
-        differential_fdr_scope = "global"
-        differential_fdr_threshold = 0.05
-    else:
+    differential_fdr_scope = "global"
+    differential_fdr_threshold = 0.05
+    effect_statistic = "hedges_g"
+    effect_cutoff_mode = "fixed"
+    effect_cutoff_value = 0.40
+    effect_direction = "either"
+    if edge_subset_basis == "all":
+        differential_edge_rule = "all"
+    elif edge_subset_basis == "ad_control_discovery_fdr05":
+        differential_edge_rule = "ad_control_discovery_fdr05"
         differential_fdr_scope = st.radio(
             "Differential-edge FDR scope",
             options=list(FDR_SCOPE_LABELS),
@@ -3530,6 +3589,53 @@ with st.sidebar:
                 "cutoff is applied after the chosen global or per-module BH correction."
             ),
         )
+    else:
+        effect_statistic = st.radio(
+            "Effect statistic",
+            options=list(EFFECT_STATISTIC_LABELS),
+            format_func=lambda value: EFFECT_STATISTIC_LABELS[value],
+            horizontal=True,
+        )
+        cutoff_modes = ["fixed", "module_top_fraction"] if effect_statistic == "hedges_g" else ["module_top_fraction"]
+        effect_cutoff_mode = st.radio(
+            "Effect threshold type",
+            options=cutoff_modes,
+            format_func=lambda value: {
+                "fixed": "Fixed absolute effect",
+                "module_top_fraction": "Top fraction within module",
+            }[value],
+            horizontal=True,
+        )
+        if effect_cutoff_mode == "fixed":
+            effect_cutoff_value = st.select_slider(
+                "Absolute Hedges’ g cutoff",
+                options=list(HEDGES_FIXED_THRESHOLDS),
+                value=0.40,
+                format_func=lambda value: f"|g| ≥ {value:.2f}",
+            )
+        else:
+            effect_cutoff_value = st.radio(
+                "Retained module edges",
+                options=list(MODULE_TOP_FRACTIONS),
+                format_func=lambda value: f"Top {int(round(100 * value))}%",
+                index=1,
+                horizontal=True,
+            )
+        effect_direction = st.radio(
+            "Effect direction",
+            options=list(EFFECT_DIRECTION_LABELS),
+            format_func=lambda value: EFFECT_DIRECTION_LABELS[value],
+            horizontal=True,
+        )
+        differential_edge_rule = effect_rule_key(
+            effect_statistic, effect_cutoff_mode,
+            float(effect_cutoff_value), effect_direction,
+        )
+    if not differential_available and not effect_available:
+        if feature == "eigengene":
+            st.caption("Edge-subset controls do not apply to expression eigengenes.")
+        else:
+            st.caption("AD–Control filtered scores are not present in this deployed bundle.")
     if differential_edge_rule == "all":
         score_normalization = "standard_pruned"
         analysis_subset = "all_donors"
@@ -3860,18 +3966,19 @@ with st.sidebar:
         ),
     )
 
-differential_caption = (
-    "not applied to module scores"
-    if differential_edge_rule == "all"
-    else (
+if differential_edge_rule == "all":
+    differential_caption = "not applied to module scores"
+elif differential_edge_rule.startswith("ad_control_discovery_effect__"):
+    differential_caption = "effect-size selection; FDR not used"
+else:
+    differential_caption = (
         f"{FDR_SCOPE_LABELS[differential_fdr_scope]}, "
         f"{FDR_THRESHOLD_LABELS[differential_fdr_threshold]}"
     )
-)
 st.caption(
     f"Module definition: **{module_set_label}** · Estimator: "
     f"**{ESTIMATOR_LABELS[estimator]}** · Edge subset: "
-    f"**{DIFFERENTIAL_EDGE_RULE_LABELS[differential_edge_rule]}** · Differential FDR: "
+    f"**{effect_rule_label(differential_edge_rule)}** · Differential FDR: "
     f"**{differential_caption}**"
 )
 download_prefix = (
@@ -5657,6 +5764,10 @@ if active_view == "Edge summaries":
     if differential_edge_rule != "all" and analysis_subset != "all_donors":
         edge_data = edge_data.loc[edge_data["ad_control_split"].eq(selected_split)]
     edge_data = edge_data.loc[edge_data["diagnosis_group"].isin(diagnoses)].copy()
+    edge_data["retained_edge_fraction"] = (
+        pd.to_numeric(edge_data["n_retained_edges"], errors="coerce")
+        / pd.to_numeric(edge_data["n_possible_edges"], errors="coerce")
+    )
     edge_scope_options = edge_data["scope"].drop_duplicates().tolist()
     selected_edge_scopes = st.multiselect(
         "Edge scopes",
@@ -5679,7 +5790,16 @@ if active_view == "Edge summaries":
         "positive_weight_sum": "Positive weight sum",
         "negative_weight_magnitude": "Negative weight magnitude",
         "absolute_weight_sum": "Absolute weight sum",
+        "retained_edge_fraction": "Retained-edge proportion",
     }
+    for column, label in {
+        "weight_mean": "Mean retained edge weight",
+        "weight_sd": "Retained edge-weight SD",
+        "weight_median": "Median retained edge weight",
+        "cancellation_index": "Positive/negative cancellation index",
+    }.items():
+        if column in edge_data:
+            edge_metric_labels[column] = label
     edge_metric = st.selectbox(
         "Edge summary metric",
         options=list(edge_metric_labels),
@@ -5752,22 +5872,279 @@ if active_view == "Edge summaries":
                 mime="text/tab-separated-values",
             )
 
+if active_view == "Donor edge explorer":
+    st.subheader("Donors with similar module scores and different phenotypes")
+    st.caption(
+        "Module connectivity is a one-dimensional signed sum. Two donors can have "
+        "the same value even when different tissue components or positive and negative "
+        "edges cancel. This view is descriptive and does not establish that an edge "
+        "pattern caused the phenotype difference."
+    )
+    explorer_component = st.selectbox(
+        "Comparison component",
+        options=list(selected_components),
+        format_func=lambda value: component_labels.get(value, value),
+        key="donor_explorer_component",
+    )
+    candidates = plot_data.loc[
+        plot_data["component"].eq(explorer_component),
+        ["sample_id", "diagnosis_group", "metric_value", phenotype],
+    ].drop_duplicates("sample_id")
+    candidates["metric_value"] = pd.to_numeric(
+        candidates["metric_value"], errors="coerce"
+    )
+    numeric_outcome = phenotype not in CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES
+    if numeric_outcome:
+        candidates[phenotype] = pd.to_numeric(candidates[phenotype], errors="coerce")
+    candidates = candidates.dropna(subset=["metric_value", phenotype]).reset_index(drop=True)
+    selection_mode = st.radio(
+        "Donor selection",
+        ["Find discordant pair", "Select manually"],
+        horizontal=True,
+    )
+    selected_pair: tuple[str, str] | None = None
+    pair_table = pd.DataFrame()
+    if len(candidates) < 2:
+        st.info("At least two donors with non-missing score and phenotype are required.")
+    elif selection_mode == "Select manually":
+        donor_options = candidates["sample_id"].astype(str).tolist()
+        pair = st.multiselect(
+            "Pseudonymous donors", donor_options, default=donor_options[:2], max_selections=2
+        )
+        if len(pair) == 2:
+            selected_pair = (pair[0], pair[1])
+    else:
+        x = candidates["metric_value"].to_numpy(dtype=float)
+        x_sd = float(np.nanstd(x, ddof=1)) or 1.0
+        rows = []
+        if numeric_outcome:
+            y = candidates[phenotype].to_numpy(dtype=float)
+            y_sd = float(np.nanstd(y, ddof=1)) or 1.0
+            tolerance = st.slider(
+                "Maximum score difference (SD)", 0.01, 0.50, 0.10, 0.01
+            )
+            phenotype_gap = st.slider(
+                "Minimum phenotype difference (SD)", 0.0, 3.0, 1.0, 0.1
+            )
+        else:
+            tolerance = st.slider(
+                "Maximum score difference (SD)", 0.01, 0.50, 0.10, 0.01
+            )
+            phenotype_gap = 0.0
+        for left in range(len(candidates) - 1):
+            dx = np.abs(x[left + 1 :] - x[left]) / x_sd
+            if numeric_outcome:
+                dy = np.abs(y[left + 1 :] - y[left]) / y_sd
+                eligible = (dx <= tolerance) & (dy >= phenotype_gap)
+            else:
+                dy = (candidates.loc[left + 1 :, phenotype].to_numpy() != candidates.loc[left, phenotype]).astype(float)
+                eligible = (dx <= tolerance) & dy.astype(bool)
+            for offset in np.flatnonzero(eligible):
+                right = left + 1 + int(offset)
+                rows.append(
+                    {
+                        "sample_a": str(candidates.loc[left, "sample_id"]),
+                        "sample_b": str(candidates.loc[right, "sample_id"]),
+                        "score_gap_sd": float(dx[offset]),
+                        "phenotype_gap_sd": float(dy[offset]) if numeric_outcome else np.nan,
+                        "phenotype_a": candidates.loc[left, phenotype],
+                        "phenotype_b": candidates.loc[right, phenotype],
+                    }
+                )
+        pair_table = pd.DataFrame(rows)
+        if pair_table.empty:
+            st.info("No donor pair meets both thresholds; relax one of the filters.")
+        else:
+            pair_table = pair_table.sort_values(
+                ["phenotype_gap_sd", "score_gap_sd"] if numeric_outcome else ["score_gap_sd"],
+                ascending=[False, True] if numeric_outcome else [True],
+                kind="stable",
+            ).head(100)
+            labels = [
+                f"{row.sample_a} vs {row.sample_b} · score gap {row.score_gap_sd:.3f} SD"
+                + (f" · phenotype gap {row.phenotype_gap_sd:.2f} SD" if numeric_outcome else "")
+                for row in pair_table.itertuples(index=False)
+            ]
+            selected_label = st.selectbox("Candidate donor pair", labels)
+            selected_row = pair_table.iloc[labels.index(selected_label)]
+            selected_pair = (str(selected_row["sample_a"]), str(selected_row["sample_b"]))
+
+    explorer_scatter = px.scatter(
+        candidates,
+        x="metric_value",
+        y=phenotype,
+        color="diagnosis_group",
+        hover_name="sample_id",
+        labels={"metric_value": active_feature_labels.get(feature, feature)},
+        title=f"M{module} {component_labels.get(explorer_component, explorer_component)}",
+        color_discrete_map={"Control": "#2878B5", "MCI": "#D5A021", "AD": "#E87532"},
+    )
+    if selected_pair:
+        highlighted = candidates.loc[candidates["sample_id"].isin(selected_pair)]
+        explorer_scatter.add_scatter(
+            x=highlighted["metric_value"], y=highlighted[phenotype], mode="markers+text",
+            text=highlighted["sample_id"], textposition="top center",
+            marker={"size": 15, "symbol": "circle-open", "color": "black", "line": {"width": 3}},
+            name="Selected donors",
+        )
+    render_plotly_chart(explorer_scatter, key="donor_edge_explorer_scatter")
+
+    if selected_pair:
+        edge_data = attach_metadata(
+            cached_edge_summaries(
+                module_set, estimator, method, module, edge_rule,
+                differential_edge_rule, differential_fdr_scope,
+                differential_fdr_threshold,
+            )
+        )
+        edge_data = edge_data.loc[edge_data["sample_id"].isin(selected_pair)].copy()
+        edge_data["retained_edge_fraction"] = (
+            pd.to_numeric(edge_data["n_retained_edges"], errors="coerce")
+            / pd.to_numeric(edge_data["n_possible_edges"], errors="coerce")
+        )
+        comparison_columns = [
+            "sample_id", "diagnosis_group", "scope_label", "n_possible_edges",
+            "n_retained_edges", "retained_edge_fraction", "n_positive_edges",
+            "n_negative_edges", "signed_weight_sum", "positive_weight_sum",
+            "negative_weight_magnitude", "absolute_weight_sum", "weight_mean",
+            "weight_sd", "weight_q05", "weight_q25", "weight_median", "weight_q75",
+            "weight_q95", "cancellation_index",
+        ]
+        comparison_columns = [column for column in comparison_columns if column in edge_data]
+        component_rows = edge_data.loc[~edge_data["scope"].eq("total")].copy()
+        component_chart = component_rows.melt(
+            id_vars=["sample_id", "scope_label"],
+            value_vars=["positive_weight_sum", "negative_weight_magnitude"],
+            var_name="edge_sign", value_name="weight_sum",
+        )
+        component_chart.loc[
+            component_chart["edge_sign"].eq("negative_weight_magnitude"), "weight_sum"
+        ] *= -1
+        component_chart["edge_sign"] = component_chart["edge_sign"].map({
+            "positive_weight_sum": "Positive", "negative_weight_magnitude": "Negative"
+        })
+        composition_figure = px.bar(
+            component_chart, x="scope_label", y="weight_sum", color="edge_sign",
+            facet_row="sample_id", barmode="relative",
+            color_discrete_map={"Positive": "#2878B5", "Negative": "#D95F4A"},
+            title="Positive and negative component contributions",
+        )
+        composition_figure.update_layout(height=620)
+        render_plotly_chart(composition_figure, key="donor_edge_composition")
+        difference_metrics = [
+            "signed_weight_sum", "positive_weight_sum", "negative_weight_magnitude",
+            "absolute_weight_sum", "n_retained_edges", "cancellation_index",
+        ]
+        difference_metrics = [
+            column for column in difference_metrics if column in component_rows.columns
+        ]
+        if difference_metrics:
+            differences = component_rows.pivot_table(
+                index="scope_label", columns="sample_id", values=difference_metrics,
+                aggfunc="first",
+            )
+            if all(sample in differences.columns.get_level_values(1) for sample in selected_pair):
+                delta_rows = []
+                for metric_name in difference_metrics:
+                    delta = (
+                        pd.to_numeric(differences[(metric_name, selected_pair[1])], errors="coerce")
+                        - pd.to_numeric(differences[(metric_name, selected_pair[0])], errors="coerce")
+                    )
+                    delta_rows.append(pd.DataFrame({
+                        "scope_label": delta.index,
+                        "metric": metric_name,
+                        "difference": delta.to_numpy(),
+                    }))
+                delta_frame = pd.concat(delta_rows, ignore_index=True)
+                selected_difference_metric = st.selectbox(
+                    f"Difference metric ({selected_pair[1]} minus {selected_pair[0]})",
+                    difference_metrics,
+                    format_func=lambda value: {
+                        "signed_weight_sum": "Signed weight sum",
+                        "positive_weight_sum": "Positive weight sum",
+                        "negative_weight_magnitude": "Negative weight magnitude",
+                        "absolute_weight_sum": "Absolute weight sum",
+                        "n_retained_edges": "Retained edge count",
+                        "cancellation_index": "Cancellation index",
+                    }.get(value, value),
+                )
+                delta_plot = delta_frame.loc[
+                    delta_frame["metric"].eq(selected_difference_metric)
+                ]
+                difference_figure = px.bar(
+                    delta_plot,
+                    x="scope_label",
+                    y="difference",
+                    color="difference",
+                    color_continuous_scale="RdBu_r",
+                    color_continuous_midpoint=0,
+                    title=(
+                        f"Component differences: {selected_pair[1]} minus "
+                        f"{selected_pair[0]}"
+                    ),
+                )
+                render_plotly_chart(difference_figure, key="donor_edge_component_difference")
+        filterable_dataframe(
+            edge_data[comparison_columns], table_key="donor_edge_comparison",
+            table_name="Selected-donor edge decomposition", height=460,
+        )
+        if differential_edge_rule.startswith("ad_control_discovery_effect__"):
+            drivers = cached_effect_drivers(
+                module_set, estimator, method, module, edge_rule,
+                differential_edge_rule, tuple(selected_pair),
+            )
+            if drivers.empty:
+                st.info("No retained gene-pair driver is available for this donor pair and mask.")
+            else:
+                drivers["edge"] = (
+                    drivers["tissue_a"].astype(str) + ":" + drivers["gene_a"].astype(str)
+                    + " ↔ " + drivers["tissue_b"].astype(str) + ":" + drivers["gene_b"].astype(str)
+                )
+                driver_figure = px.bar(
+                    drivers.sort_values("driver_absolute_deviation"),
+                    x="driver_absolute_deviation", y="edge", color="sample_id",
+                    orientation="h", facet_col="sample_id",
+                    title="Top donor-specific deviations from the discovery-Control edge mean",
+                )
+                driver_figure.update_layout(height=max(520, 24 * len(drivers)))
+                render_plotly_chart(driver_figure, key="donor_edge_drivers")
+                filterable_dataframe(
+                    drivers, table_key="donor_edge_driver_table",
+                    table_name="Top gene-pair drivers", height=520,
+                )
+                st.download_button(
+                    "Download selected-donor gene-pair drivers (TSV)",
+                    data=dataframe_to_tsv_bytes(drivers),
+                    file_name=f"{download_prefix}M{module}_selected_donor_edge_drivers.tsv",
+                    mime="text/tab-separated-values",
+                )
+
 if active_view == "Edge volcano":
     st.subheader("AD–Control differential edges")
-    st.caption(
-        "Each point is one undirected module edge. The mask is discovered with a "
-        "two-sided Welch test in 117 AD and 114 Control donors; Hedges’ g and mean "
-        "difference are AD minus Control. Both global and per-module BH values are "
-        "stored for every edge; this view and the filtered-score mask use the "
-        f"sidebar selection (**{FDR_SCOPE_LABELS[differential_fdr_scope]}**). The "
-        "validation view uses the held-out 50 AD and 50 Control donors and never "
-        "changes the discovery mask."
-    )
+    effect_volcano = differential_edge_rule.startswith("ad_control_discovery_effect__")
+    if effect_volcano:
+        st.caption(
+            "Each exact point is one undirected module edge retained in the union of "
+            "the supported effect masks. The active feature mask uses discovery-set "
+            f"effect size rather than significance: **{effect_rule_label(differential_edge_rule)}**. "
+            "Hedges’ g and mean difference are AD minus Control. The held-out validation "
+            "statistics never change the discovery mask."
+        )
+    else:
+        st.caption(
+            "Each point is one undirected module edge. The mask is discovered with a "
+            "two-sided Welch test in 117 AD and 114 Control donors; Hedges’ g and mean "
+            "difference are AD minus Control. Both global and per-module BH values are "
+            "stored for every edge; this view and the filtered-score mask use the "
+            f"sidebar selection (**{FDR_SCOPE_LABELS[differential_fdr_scope]}**). The "
+            "validation view uses the held-out 50 AD and 50 Control donors and never "
+            "changes the discovery mask."
+        )
     if not differential_available:
         st.info("The differential-edge volcano bundle is not available in this deployment.")
     else:
         volcano_candidates = cached_volcano_candidates(
-            module_set, estimator, method, module
+            module_set, estimator, method, module, differential_edge_rule
         )
         volcano_bins = cached_volcano_bins(
             module_set, estimator, method, module, differential_fdr_scope
@@ -5824,10 +6201,22 @@ if active_view == "Edge volcano":
                 }.get(value, value),
             )
             volcano_direction = st.selectbox(
-                "Effect direction", ["Either", "Higher in AD", "Higher in Control"]
+                "Effect direction", ["Either", "Higher in AD", "Higher in Control"],
+                index=(
+                    0
+                    if effect_volcano
+                    else {"either": 0, "ad_higher": 1, "control_higher": 2}.get(
+                        effect_direction, 0
+                    )
+                ),
+                help=(
+                    "This is an additional display filter. For effect-size analyses, "
+                    "the sidebar mask direction remains defined by discovery donors."
+                ),
             )
         significant_only = st.checkbox(
-            "Hide nonsignificant edges",
+            "Hide edges outside the active effect-size mask"
+            if effect_volcano else "Hide nonsignificant edges",
             value=False,
             help=(
                 "When selected, nonsignificant edges are removed from the display. Their "
@@ -5888,8 +6277,25 @@ if active_view == "Edge volcano":
                     "volcano shard; effect and AD–Control significance filters remain active."
                 )
 
+        volcano_point_data = volcano_candidates
+        if effect_volcano and significant_only:
+            mask_column = effect_mask_column(differential_edge_rule)
+            if mask_column not in volcano_point_data:
+                st.error(f"Effect candidate shard lacks required membership field: {mask_column}")
+                st.stop()
+            volcano_point_data = volcano_point_data.loc[
+                volcano_point_data[mask_column].fillna(False)
+            ].copy()
+            if effect_direction == "ad_higher":
+                volcano_point_data = volcano_point_data.loc[
+                    volcano_point_data["discovery_mean_difference"].gt(0)
+                ]
+            elif effect_direction == "control_higher":
+                volcano_point_data = volcano_point_data.loc[
+                    volcano_point_data["discovery_mean_difference"].lt(0)
+                ]
         volcano = edge_volcano_figure(
-            volcano_candidates,
+            volcano_point_data,
             volcano_bins,
             module=module,
             scope=volcano_scope,
@@ -5897,7 +6303,7 @@ if active_view == "Edge volcano":
             fdr_scope=differential_fdr_scope,
             x_metric=volcano_x_metric,
             y_metric=volcano_y_metric,
-            significant_only=significant_only,
+            significant_only=significant_only and not effect_volcano,
             significance_threshold=volcano_threshold,
             direction=volcano_direction,
             prevalence_column=prevalence_column,
@@ -5919,9 +6325,14 @@ if active_view == "Edge volcano":
         st.caption(
             "Exact dots are colored by tissue component: circles are within-tissue "
             "edges and diamonds are cross-tissue pairs. The gray density background "
-            "includes every edge in the selected scope. Exact hoverable rows include "
-            "all discovery/validation FDR≤0.10 or p≤0.05 edges plus the top 500 "
-            "remaining edges per resolved component."
+            "includes every edge in the selected scope. "
+            + (
+                "Exact hoverable rows are the union of all supported effect-size masks; "
+                "the checkbox narrows them to the active criterion and its discovery direction."
+                if effect_volcano
+                else "Exact hoverable rows include all discovery/validation FDR≤0.10 or "
+                "p≤0.05 edges plus the top 500 remaining edges per resolved component."
+            )
         )
         prefix = volcano_analysis_set.lower()
         probability_column = (
@@ -5947,9 +6358,22 @@ if active_view == "Edge volcano":
                 displayed_edges[f"{prefix}_mean_difference"].lt(0)
             ]
         if significant_only:
-            displayed_edges = displayed_edges.loc[
-                displayed_edges[probability_column].le(volcano_threshold)
-            ]
+            if effect_volcano:
+                displayed_edges = displayed_edges.loc[
+                    displayed_edges[effect_mask_column(differential_edge_rule)].fillna(False)
+                ]
+                if effect_direction == "ad_higher":
+                    displayed_edges = displayed_edges.loc[
+                        displayed_edges["discovery_mean_difference"].gt(0)
+                    ]
+                elif effect_direction == "control_higher":
+                    displayed_edges = displayed_edges.loc[
+                        displayed_edges["discovery_mean_difference"].lt(0)
+                    ]
+            else:
+                displayed_edges = displayed_edges.loc[
+                    displayed_edges[probability_column].le(volcano_threshold)
+                ]
         if prevalence_column and prevalence_column in displayed_edges.columns:
             displayed_edges = displayed_edges.loc[
                 displayed_edges[prevalence_column].ge(minimum_prevalence)
@@ -7534,6 +7958,23 @@ if active_view == "Methods & data":
         "donors. MCI (n=119) is external to edge selection. Validation labels do not "
         "alter the discovery mask, although the underlying unsupervised donor-network "
         "estimation is not a completely external network validation."
+    )
+    st.markdown(
+        "**Effect-size filtering** reuses the same discovery edge table without rerunning "
+        "Welch tests. Hedges’ g supports fixed absolute thresholds 0.20–0.50 or exact "
+        "within-module top 1%, 5%, and 10% masks; raw AD-minus-Control mean differences "
+        "use the within-module percentage masks. Percentage selection uses absolute effect "
+        "and deterministic edge-index tie breaking before applying the AD-higher or "
+        "Control-higher direction. BONOBO additionally intersects this mask with the "
+        "selected donor-specific native significance rule. Discovery-donor separation is "
+        "selection-biased, so this option is exploratory and defaults to held-out donors."
+    )
+    st.markdown(
+        "The **Donor edge explorer** compares pseudonymous donors with similar standardized "
+        "module scores but different outcomes. It reports resolved component weights, edge "
+        "counts, quantiles, retained proportions, and cancellation. Effect-filtered views "
+        "load only the selected module’s bounded top-20 gene-symbol driver shards. These "
+        "edge patterns are descriptive rather than causal explanations of phenotype."
     )
 
     st.markdown("#### Module differential connectivity")

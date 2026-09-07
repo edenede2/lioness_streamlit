@@ -28,7 +28,10 @@ def test_volcano_endpoints_never_expose_ensembl_ids() -> None:
 
 
 def test_kegg_tables_and_complete_download_use_symbols_only() -> None:
-    for module_set in data.MODULE_SET_LABELS:
+    # Optional module definitions remain registered in the UI schema while their
+    # analytical bundles are being validated. Test only definitions declared
+    # complete by the deploy manifest, matching the app's selector behavior.
+    for module_set in data.available_module_sets():
         frame = data.load_kegg(module_set=module_set)
         assert not frame["overlap_genes"].dropna().astype(str).str.contains(ENSEMBL).any()
         assert b"ENSG" not in data.load_kegg_tsv_bytes(module_set)

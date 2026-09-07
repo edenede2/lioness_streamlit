@@ -16,6 +16,75 @@ sys.path.insert(0, str(APP_ROOT))
 from app_helpers import data  # noqa: E402
 
 
+def test_effect_rule_controls_round_trip_to_isolated_paths(tmp_path: Path, monkeypatch) -> None:
+    module_root = tmp_path / "control_derived"
+    monkeypatch.setitem(data.MODULE_SET_DIRS, "control_derived", module_root)
+    rule = data.effect_rule_key("hedges_g", "fixed", 0.40, "either")
+    assert data.is_effect_rule(rule)
+    assert "|g| ≥ 0.40" in data.effect_rule_label(rule)
+    path = data.differential_estimator_path(
+        "aggregate_plot_data.parquet", "control_derived", "lioness",
+        "control_anchored", "all", rule, "global", 0.05,
+        "standard_pruned",
+    )
+    assert path == (
+        module_root / "effect_size/lioness/control_anchored" / rule
+        / "all/standard_pruned/aggregate_plot_data.parquet"
+    )
+
+
+def test_effect_size_availability_requires_complete_manifest(
+    tmp_path: Path, monkeypatch
+) -> None:
+    module_root = tmp_path / "full"
+    monkeypatch.setitem(data.MODULE_SET_DIRS, "full_cohort", module_root)
+    directory = module_root / "effect_size"
+    directory.mkdir(parents=True)
+    manifest = directory / "manifest.json"
+    manifest.write_text('{"status": "incomplete"}\n', encoding="utf-8")
+    assert not data.effect_size_data_available("full_cohort")
+    manifest.write_text('{"status": "complete"}\n', encoding="utf-8")
+    assert data.effect_size_data_available("full_cohort")
+    manifest.write_text(
+        '{"status": "complete", "completed_networks": ["lioness/standard"]}\n',
+        encoding="utf-8",
+    )
+    assert data.effect_size_data_available("full_cohort", "lioness", "standard")
+    assert not data.effect_size_data_available("full_cohort", "bonobo", "bonobo")
+
+
+def test_effect_driver_loader_merges_directions_and_keeps_top_twenty(
+    tmp_path: Path, monkeypatch
+) -> None:
+    module_root = tmp_path / "full"
+    monkeypatch.setitem(data.MODULE_SET_DIRS, "full_cohort", module_root)
+    rule = data.effect_rule_key(
+        "mean_difference", "module_top_fraction", 0.10, "either"
+    )
+    target = (
+        module_root / "effect_size/drivers/lioness/standard"
+        / "mean_difference__module_top_10pct/all/M7.parquet"
+    )
+    target.parent.mkdir(parents=True)
+    rows = []
+    for direction in ("ad_higher", "control_higher"):
+        for rank in range(15):
+            rows.append(
+                {
+                    "sample_id": "S-A", "effect_direction": direction,
+                    "driver_absolute_deviation": float(30 - rank - (direction == "control_higher") / 2),
+                    "edge_index": rank + (100 if direction == "control_higher" else 0),
+                    "gene_a": "APOE", "gene_b": "MAPT",
+                }
+            )
+    pd.DataFrame(rows).to_parquet(target, index=False)
+    observed = data.load_effect_drivers(
+        "full_cohort", "lioness", "standard", 7, "all", rule, ["S-A"]
+    )
+    assert len(observed) == 20
+    assert observed["driver_rank"].tolist() == list(range(1, 21))
+
+
 def file_sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:

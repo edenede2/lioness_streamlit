@@ -287,6 +287,14 @@ def parse_args() -> argparse.Namespace:
             "donor plot data or pseudonymous sample labels."
         ),
     )
+    parser.add_argument(
+        "--file-catalog-only",
+        action="store_true",
+        help=(
+            "Refresh only the complete files/bytes/SHA256 catalog in the existing "
+            "manifest. This preserves all pseudonyms and analytical data."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -447,6 +455,9 @@ def normalize_batch(
             "differential_fdr_scope",
             "score_normalization",
             "ad_control_split",
+            "effect_statistic",
+            "effect_cutoff_mode",
+            "effect_direction",
         )
         if column in frame
     ]
@@ -466,6 +477,10 @@ def normalize_batch(
         frame["global_bh_family_tested_edges"] = pd.to_numeric(
             frame["global_bh_family_tested_edges"], errors="coerce"
         ).astype("Int64")
+    if "effect_cutoff_value" in frame:
+        frame["effect_cutoff_value"] = pd.to_numeric(
+            frame["effect_cutoff_value"], errors="raise"
+        ).astype("float64")
     return frame
 
 
@@ -507,6 +522,10 @@ def write_sanitized_plot_data(
         "score_normalization",
         "ad_control_split",
         "global_bh_family_tested_edges",
+        "effect_statistic",
+        "effect_cutoff_mode",
+        "effect_cutoff_value",
+        "effect_direction",
     )
     source_schemas = [set(pq.ParquetFile(source).schema_arrow.names) for source in sources]
     source_columns += [
@@ -2067,12 +2086,45 @@ def main() -> None:
         args.module_details_only,
         args.statistics_only,
         args.kegg_only,
+        args.file_catalog_only,
     ]
     if sum(refresh_flags) > 1:
         raise ValueError(
             "Use only one of --mdc-only, --module-details-only, --statistics-only, "
-            "or --kegg-only"
+            "--kegg-only, or --file-catalog-only"
         )
+
+    if args.file_catalog_only:
+        manifest_path = output / "data_manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        deploy_files = sorted(
+            path
+            for path in output.rglob("*")
+            if path.is_file() and path.name != "data_manifest.json"
+        )
+        manifest["files"] = {
+            str(path.relative_to(output)): deploy_file_manifest_entry(path)
+            for path in deploy_files
+        }
+        manifest["created_utc"] = datetime.now(timezone.utc).isoformat()
+        temporary = manifest_path.with_suffix(".json.tmp")
+        temporary.write_text(
+            json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        temporary.replace(manifest_path)
+        print(
+            json.dumps(
+                {
+                    "status": "file_catalog_refreshed",
+                    "files": len(deploy_files),
+                    "bytes": sum(path.stat().st_size for path in deploy_files),
+                    "manifest": str(manifest_path),
+                },
+                indent=2,
+            )
+        )
+        return
 
     if args.mdc_only:
         manifest = refresh_existing_mdc_bundle(args.mdc.resolve(), output)

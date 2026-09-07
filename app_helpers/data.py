@@ -50,6 +50,18 @@ DIFFERENTIAL_EDGE_RULE_LABELS = {
     "all": "All edges",
     "ad_control_discovery_fdr05": "AD–Control differential-filtered edges",
 }
+EFFECT_RULE_PREFIX = "ad_control_discovery_effect__"
+EFFECT_STATISTIC_LABELS = {
+    "hedges_g": "Hedges’ g",
+    "mean_difference": "AD–Control mean difference",
+}
+EFFECT_DIRECTION_LABELS = {
+    "either": "Either direction",
+    "ad_higher": "Higher in AD",
+    "control_higher": "Higher in Control",
+}
+HEDGES_FIXED_THRESHOLDS = (0.20, 0.30, 0.40, 0.50)
+MODULE_TOP_FRACTIONS = (0.01, 0.05, 0.10)
 FDR_SCOPE_LABELS = {
     "global": "Global BH",
     "per_module": "Per-module BH",
@@ -434,6 +446,94 @@ def descriptive_eigengene_data_available(module_set: str = "full_cohort") -> boo
     return data_path_available(module_set_path("module_eigengenes.parquet", module_set))
 
 
+def effect_rule_key(
+    statistic: str,
+    cutoff_mode: str,
+    cutoff_value: float,
+    direction: str,
+) -> str:
+    """Build the stable effect-size rule identifier used by app-data paths."""
+
+    if statistic not in EFFECT_STATISTIC_LABELS:
+        raise ValueError(f"Unknown effect statistic: {statistic}")
+    if direction not in EFFECT_DIRECTION_LABELS:
+        raise ValueError(f"Unknown effect direction: {direction}")
+    if cutoff_mode == "fixed":
+        if statistic != "hedges_g" or not any(
+            np.isclose(cutoff_value, value) for value in HEDGES_FIXED_THRESHOLDS
+        ):
+            raise ValueError("Fixed cutoffs require a supported Hedges g threshold")
+        cutoff = f"fixed_{float(cutoff_value):.2f}"
+    elif cutoff_mode == "module_top_fraction":
+        if not any(np.isclose(cutoff_value, value) for value in MODULE_TOP_FRACTIONS):
+            raise ValueError(f"Unknown module top fraction: {cutoff_value}")
+        cutoff = f"module_top_{int(round(100 * float(cutoff_value))):02d}pct"
+    else:
+        raise ValueError(f"Unknown effect cutoff mode: {cutoff_mode}")
+    return f"{EFFECT_RULE_PREFIX}{statistic}__{cutoff}__{direction}"
+
+
+def is_effect_rule(value: str) -> bool:
+    return str(value).startswith(EFFECT_RULE_PREFIX)
+
+
+def effect_rule_label(value: str) -> str:
+    """Return a readable label without requiring analysis-code imports."""
+
+    if not is_effect_rule(value):
+        return DIFFERENTIAL_EDGE_RULE_LABELS.get(value, str(value))
+    statistic, cutoff, direction = str(value)[len(EFFECT_RULE_PREFIX) :].split("__")
+    if cutoff.startswith("fixed_"):
+        cutoff_label = f"|g| ≥ {float(cutoff.removeprefix('fixed_')):.2f}"
+    else:
+        percent = int(cutoff.removeprefix("module_top_").removesuffix("pct"))
+        cutoff_label = f"top {percent}% within module"
+    return (
+        f"Effect-size filtered: {EFFECT_STATISTIC_LABELS[statistic]}, "
+        f"{cutoff_label}, {EFFECT_DIRECTION_LABELS[direction]}"
+    )
+
+
+def effect_mask_column(value: str) -> str:
+    """Return the exact-candidate membership column for an effect rule."""
+
+    if not is_effect_rule(value):
+        raise ValueError(f"Not an effect-size edge rule: {value}")
+    statistic, cutoff, _direction = str(value)[len(EFFECT_RULE_PREFIX) :].split("__")
+    return f"effect_mask__{statistic}__{cutoff.replace('.', 'p')}"
+
+
+def effect_size_data_available(
+    module_set: str = "full_cohort",
+    estimator: str | None = None,
+    method: str | None = None,
+) -> bool:
+    """Return availability for the selected network, not merely the module set.
+
+    Effect-size catalogs can be released estimator-by-estimator.  This keeps a
+    completed LIONESS release usable while an optional BONOBO catalog remains
+    paused or incomplete.
+    """
+
+    manifest = load_effect_size_manifest(module_set)
+    if manifest.get("status") != "complete":
+        return False
+    if estimator is None or method is None:
+        return True
+    completed = set(manifest.get("completed_networks", []))
+    # Backward compatibility for a fully complete manifest written before
+    # estimator-level availability was introduced.
+    return not completed or f"{estimator}/{method}" in completed
+
+
+def load_effect_size_manifest(module_set: str = "full_cohort") -> dict[str, object]:
+    path = module_set_data_dir(module_set) / "effect_size/manifest.json"
+    if not data_path_available(path):
+        return {}
+    materialized = ensure_data_path(path)
+    return json.loads(materialized.read_text(encoding="utf-8"))
+
+
 def estimator_path(
     filename: str,
     module_set: str = "full_cohort",
@@ -464,6 +564,19 @@ def differential_estimator_path(
 
     if differential_edge_rule == "all":
         return estimator_path(filename, module_set, estimator, edge_rule)
+    if is_effect_rule(differential_edge_rule):
+        if score_normalization not in SCORE_NORMALIZATION_LABELS:
+            raise ValueError(f"Unknown score normalization: {score_normalization}")
+        return (
+            module_set_data_dir(module_set)
+            / "effect_size"
+            / estimator
+            / method
+            / differential_edge_rule
+            / edge_rule
+            / score_normalization
+            / filename
+        )
     if differential_edge_rule not in DIFFERENTIAL_EDGE_RULE_LABELS:
         raise ValueError(f"Unknown differential edge rule: {differential_edge_rule}")
     if differential_fdr_scope not in FDR_SCOPE_LABELS:
@@ -1260,7 +1373,17 @@ def load_edge_summaries(
     differential_fdr_scope: str = "global",
     differential_fdr_threshold: float = 0.05,
 ) -> pd.DataFrame:
-    if differential_edge_rule != "all":
+    if is_effect_rule(differential_edge_rule):
+        path = (
+            module_set_data_dir(module_set)
+            / "effect_size"
+            / "edge_summaries"
+            / estimator
+            / method
+            / differential_edge_rule
+            / f"{edge_rule}.parquet"
+        )
+    elif differential_edge_rule != "all":
         path = (
             module_set_data_dir(module_set)
             / "differential"
@@ -1274,7 +1397,7 @@ def load_edge_summaries(
     else:
         raise ValueError(f"Unknown estimator: {estimator}")
     filters: list[tuple[str, str, object]] = [("module", "=", int(module))]
-    if differential_edge_rule != "all":
+    if differential_edge_rule != "all" and not is_effect_rule(differential_edge_rule):
         filters.append(("differential_fdr_scope", "=", differential_fdr_scope))
         filters.append(
             ("differential_fdr_threshold", "=", float(differential_fdr_threshold))
@@ -1288,18 +1411,77 @@ def load_edge_summaries(
     return frame
 
 
+def load_effect_drivers(
+    module_set: str,
+    estimator: str,
+    method: str,
+    module: int,
+    edge_rule: str,
+    differential_edge_rule: str,
+    sample_ids: Iterable[str] | None = None,
+) -> pd.DataFrame:
+    """Load the bounded pseudonymous driver cache for selected donors."""
+
+    if not is_effect_rule(differential_edge_rule):
+        return pd.DataFrame()
+    statistic, cutoff, direction = differential_edge_rule[
+        len(EFFECT_RULE_PREFIX) :
+    ].split("__")
+    criterion = f"{statistic}__{cutoff}"
+    path = (
+        module_set_data_dir(module_set)
+        / "effect_size"
+        / "drivers"
+        / estimator
+        / method
+        / criterion
+        / edge_rule
+        / f"M{int(module)}.parquet"
+    )
+    filters: list[tuple[str, str, object]] = []
+    selected_ids = tuple(str(value) for value in (sample_ids or ()))
+    if selected_ids:
+        filters.append(("sample_id", "in", selected_ids))
+    if direction != "either":
+        filters.append(("effect_direction", "=", direction))
+    frame = _read_filtered(path, filters)
+    if frame.empty:
+        return frame
+    if direction == "either":
+        frame = (
+            frame.sort_values(
+                ["sample_id", "driver_absolute_deviation", "edge_index"],
+                ascending=[True, False, True],
+                kind="stable",
+            )
+            .groupby("sample_id", observed=True, sort=False)
+            .head(20)
+            .copy()
+        )
+        frame["driver_rank"] = frame.groupby(
+            "sample_id", observed=True, sort=False
+        ).cumcount() + 1
+    return public_gene_labels(frame, gene_columns=("gene_a", "gene_b"))
+
+
 def load_volcano_candidates(
     module_set: str,
     estimator: str,
     method: str,
     module: int,
+    differential_edge_rule: str = "all",
 ) -> pd.DataFrame:
-    path = module_set_data_dir(module_set) / "differential" / "volcano_candidates.parquet"
+    path = (
+        module_set_data_dir(module_set)
+        / "effect_size" / "volcano_candidates"
+        / estimator / method / f"M{int(module)}.parquet"
+        if is_effect_rule(differential_edge_rule)
+        else module_set_data_dir(module_set) / "differential" / "volcano_candidates.parquet"
+    )
     frame = _read_filtered(
         path,
-        [
-            ("estimator", "=", estimator),
-            ("network_method", "=", method),
+        [] if is_effect_rule(differential_edge_rule) else [
+            ("estimator", "=", estimator), ("network_method", "=", method),
             ("module", "=", int(module)),
         ],
     )
