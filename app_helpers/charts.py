@@ -4635,12 +4635,12 @@ def prediction_coefficient_figure(
         subcategory_key = "<b>KEGG enrichment subcategories</b><br>" + "<br>".join(rows)
     figure.update_layout(
         title={"text": title, "x": 0.01, "xanchor": "left"}, template="plotly_white",
-        height=max(560, 150 + 25 * len(selected) + 18 * key_lines),
+        height=max(560, 150 + 25 * len(selected) + 22 * key_lines),
         margin={
             "l": 300,
             "r": 205,
             "t": 115,
-            "b": 95 + 18 * key_lines if subcategory_key else 60,
+            "b": 105 + 22 * key_lines if subcategory_key else 60,
         },
         legend={
             "title": {"text": "Predictor family"},
@@ -4656,6 +4656,6 @@ def prediction_coefficient_figure(
         figure.add_annotation(
             x=0, y=-0.16, xref="paper", yref="paper", text=subcategory_key,
             showarrow=False, xanchor="left", yanchor="top", align="left",
-            font={"size": 10, "color": "#374151"},
+            font={"size": 12, "color": "#374151"},
         )
     return figure
