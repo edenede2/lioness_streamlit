@@ -162,6 +162,7 @@ if not all(
         "edge_expression_data_available", "load_edge_expression",
         "load_edge_expression_nodes",
         "annotate_prediction_coefficients", "coefficient_kegg_scope_lookup",
+        "TARGETED_HEDGES_MASKS",
     )
 ):
     _data_helpers = importlib.reload(_data_helpers)
@@ -208,6 +209,7 @@ from app_helpers.data import (
     PREDICTION_OUTCOME_LABELS,
     PREDICTION_REFERENCE_LABELS,
     TARGETED_PANEL_LABELS,
+    TARGETED_HEDGES_MASKS,
     TARGETED_PREDICTION_MODE_LABELS,
     TARGETED_TIER_LABELS,
     SCALE_LABELS,
@@ -1845,11 +1847,19 @@ def render_targeted_prediction_view() -> None:
         "covariates_plus_network_plus_transcriptomics",
     }
     masked_available = bool(manifest.get("masked_sensitivity_available", False))
+    hedges_manifest = manifest.get("hedges_g04_sensitivity", {})
+    hedges_available = bool(manifest.get("hedges_g04_sensitivity_available", False))
     with st.sidebar:
         edge_options = ["all"]
         if masked_available:
             edge_options.extend(
                 ["global_fdr05", "global_fdr10", "per_module_fdr05", "per_module_fdr10"]
+            )
+        if hedges_available:
+            completed_hedges_masks = set(hedges_manifest.get("edge_masks", []))
+            edge_options.extend(
+                value for value in TARGETED_HEDGES_MASKS
+                if value in completed_hedges_masks
             )
         edge_mask = st.selectbox(
             "Targeted edge set",
@@ -1857,7 +1867,9 @@ def render_targeted_prediction_view() -> None:
             format_func=lambda value: PREDICTION_MASK_LABELS.get(value, value),
             key="targeted_edge_mask",
         )
-        if edge_mask == "all":
+        hedges_selection = edge_mask in TARGETED_HEDGES_MASKS
+        fdr_masked_selection = edge_mask not in {"all", *TARGETED_HEDGES_MASKS}
+        if edge_mask == "all" or hedges_selection:
             score_normalization = "standard_pruned"
         else:
             score_normalization = st.radio(
@@ -1867,10 +1879,26 @@ def render_targeted_prediction_view() -> None:
                 key="targeted_score_normalization",
             )
     masked_selection = edge_mask != "all"
-    performance_table = "masked_oof_performance" if masked_selection else "oof_performance"
-    fold_table = "masked_fold_performance" if masked_selection else "fold_performance"
-    coefficient_table = "masked_coefficients" if masked_selection else "coefficients"
-    diagnostic_table = "masked_oof_predictions" if masked_selection else "oof_predictions"
+    performance_table = (
+        "hedges_oof_performance" if hedges_selection
+        else "masked_oof_performance" if fdr_masked_selection
+        else "oof_performance"
+    )
+    fold_table = (
+        "hedges_fold_performance" if hedges_selection
+        else "masked_fold_performance" if fdr_masked_selection
+        else "fold_performance"
+    )
+    coefficient_table = (
+        "hedges_coefficients" if hedges_selection
+        else "masked_coefficients" if fdr_masked_selection
+        else "coefficients"
+    )
+    diagnostic_table = (
+        "hedges_oof_predictions" if hedges_selection
+        else "masked_oof_predictions" if fdr_masked_selection
+        else "oof_predictions"
+    )
     performance_catalog = cached_targeted_prediction_table(
         performance_table,
         _targeted_filters(
@@ -1881,8 +1909,10 @@ def render_targeted_prediction_view() -> None:
     if performance_catalog.empty:
         st.info("The targeted-prediction manifest is present, but no completed OOF results exist.")
         return
-    if masked_selection:
+    if fdr_masked_selection:
         score_transform = "asinh"
+    elif hedges_selection:
+        score_transform = "raw"
     else:
         available_transforms = [
             value for value in ("raw", "asinh", "rint")
@@ -1923,7 +1953,13 @@ def render_targeted_prediction_view() -> None:
         for source in observed_sources
         if source not in source_registry and source not in selectable_sources
     )
-    if masked_selection or score_transform != "raw":
+    if hedges_selection:
+        validated_hedges_sources = set(hedges_manifest.get("eigengene_sources", []))
+        selectable_sources = [
+            source for source in observed_sources
+            if source in validated_hedges_sources
+        ]
+    if fdr_masked_selection or score_transform != "raw":
         eigengene_source = (
             "matched_multitissue"
             if "matched_multitissue" in observed_sources
@@ -1953,8 +1989,10 @@ def render_targeted_prediction_view() -> None:
         | performance_catalog["eigengene_source"].eq(eigengene_source)
     ].copy()
     st.subheader(
-        "Targeted differential-edge sensitivity"
-        if masked_selection
+        "Targeted Hedges’ g edge-effect sensitivity"
+        if hedges_selection
+        else "Targeted differential-edge sensitivity"
+        if fdr_masked_selection
         else "Fully nested targeted-module LIONESS prediction"
     )
     st.warning(
@@ -1967,7 +2005,18 @@ def render_targeted_prediction_view() -> None:
             "This is an incremental transformation catalog. Only completed configurations are "
             "shown; the full Raw/asinh/RINT reconciliation is still interim."
         )
-    if masked_selection:
+    if hedges_selection:
+        st.warning(
+            "Exploratory effect-size sensitivity: each outer fold learns its Hedges’ g "
+            "mask only from outer-training AD and Control donor-edge weights. All-edge "
+            "panels, K, and regularization are frozen; MCI and outer-test labels never "
+            "construct the mask."
+        )
+        st.caption(
+            "Raw standard-pruned connectivity is fixed for this analysis. The three "
+            "directions are g ≥ 0.40, |g| ≥ 0.40, and g ≤ −0.40."
+        )
+    elif fdr_masked_selection:
         st.warning(
             "Exploratory differential-edge sensitivity: masks are learned from outer-training "
             "AD/Control donors in one five-fold outer cycle. The fold-specific all-edge panel "
@@ -2036,7 +2085,7 @@ def render_targeted_prediction_view() -> None:
             key="targeted_panel_strategy",
         )
 
-    if masked_selection and outcome == "cogn_global":
+    if fdr_masked_selection and outcome == "cogn_global":
         st.info(
             "Global cognition was not an outcome in the completed all-edge prediction "
             "catalog. Its diagnosis-derived module panel and K remain frozen; only "
@@ -2080,7 +2129,8 @@ def render_targeted_prediction_view() -> None:
         if preferred in set(selected["metric"]):
             primary_metric = preferred
     repeats = (
-        1 if masked_selection else int(manifest.get("selection", {}).get("outer_repeats", 5))
+        1 if fdr_masked_selection
+        else int(manifest.get("selection", {}).get("outer_repeats", 5))
     )
     folds = int(manifest.get("selection", {}).get("outer_folds", 5))
     metrics = st.columns(6)
@@ -2295,7 +2345,14 @@ def render_targeted_prediction_view() -> None:
                     )
 
     with transformation_tab:
-        if masked_selection:
+        if hedges_selection:
+            st.info(
+                "Score-transformation sensitivity applies to the all-edge targeted catalog. "
+                "This Hedges’ g sensitivity is intentionally fixed to Raw standard-pruned "
+                "connectivity so the edge-direction comparison is not mixed with another "
+                "robustness axis."
+            )
+        elif fdr_masked_selection:
             st.info(
                 "Transformation sensitivity applies to the all-edge targeted catalog. "
                 "The differential-edge masked catalog remains the existing asinh analysis."
@@ -2442,30 +2499,35 @@ def render_targeted_prediction_view() -> None:
                 use_container_width=True,
                 hide_index=True,
             )
-        if masked_selection or score_transform != "raw":
+        if fdr_masked_selection or score_transform != "raw":
             st.info(
                 "Independent eigengene-source comparisons are available only for the "
                 "all-edge Raw catalog. This selection retains the matched multi-tissue source."
             )
         else:
+            source_table = "hedges_oof_performance" if hedges_selection else "oof_performance"
             source_performance = cached_targeted_prediction_table(
-                "oof_performance",
+                source_table,
                 _targeted_filters(
                     evidence_tier=evidence_tier,
                     module_definition=module_definition,
                     network_method=network_method,
                     panel_strategy=panel_strategy,
                     model_outcome=outcome,
-                    edge_mask="all",
+                    edge_mask=edge_mask,
                     score_normalization="standard_pruned",
                     score_transform="raw",
                 ),
             )
-            completed_sources = {
-                source
-                for source, values in source_registry.items()
-                if bool(values.get("selectable", False))
-            }
+            completed_sources = (
+                set(hedges_manifest.get("eigengene_sources", []))
+                if hedges_selection
+                else {
+                    source
+                    for source, values in source_registry.items()
+                    if bool(values.get("selectable", False))
+                }
+            )
             source_performance = source_performance.loc[
                 source_performance["model_variant"].isin(transcriptomic_variants)
                 & source_performance["eigengene_source"].isin(completed_sources)
@@ -2537,14 +2599,14 @@ def render_targeted_prediction_view() -> None:
                     help="Loads the larger fold-level table only when requested.",
                 ):
                     source_folds = cached_targeted_prediction_table(
-                        "fold_performance",
+                        "hedges_fold_performance" if hedges_selection else "fold_performance",
                         _targeted_filters(
                             evidence_tier=evidence_tier,
                             module_definition=module_definition,
                             network_method=network_method,
                             panel_strategy=panel_strategy,
                             model_outcome=outcome,
-                            edge_mask="all",
+                            edge_mask=edge_mask,
                             score_normalization="standard_pruned",
                             score_transform="raw",
                             model_variant=source_variant,
@@ -2579,7 +2641,14 @@ def render_targeted_prediction_view() -> None:
                             use_container_width=True,
                             config={"displaylogo": False},
                         )
-            if "targeted_eigengene_source_comparisons.parquet" not in manifest.get(
+            if hedges_selection:
+                st.info(
+                    "The chart and fold view above compare the two independent regional "
+                    "eigengene sources under the selected fold-local Hedges’ g mask. Paired "
+                    "bootstrap source intervals will be added at final reconciliation."
+                )
+                source_comparisons = pd.DataFrame()
+            elif "targeted_eigengene_source_comparisons.parquet" not in manifest.get(
                 "files", {}
             ):
                 st.info(
@@ -2604,8 +2673,11 @@ def render_targeted_prediction_view() -> None:
                     | source_comparisons["source_b"].eq(eigengene_source)
                 ].copy()
             if source_comparisons.empty:
-                if "targeted_eigengene_source_comparisons.parquet" in manifest.get(
+                if (
+                    not hedges_selection
+                    and "targeted_eigengene_source_comparisons.parquet" in manifest.get(
                     "files", {}
+                    )
                 ):
                     st.info("No paired source comparison matches the selected analysis.")
             else:

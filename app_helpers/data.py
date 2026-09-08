@@ -150,6 +150,10 @@ TARGETED_PREDICTION_FILES = {
     "masked_oof_performance": TARGETED_PREDICTION_DIR / "targeted_masked_oof_performance.parquet",
     "masked_coefficients": TARGETED_PREDICTION_DIR / "targeted_masked_top_coefficients.parquet",
     "masked_oof_predictions": TARGETED_PREDICTION_DIR / "targeted_masked_oof_predictions.parquet",
+    "hedges_fold_performance": TARGETED_PREDICTION_DIR / "targeted_hedges_fold_performance.parquet",
+    "hedges_oof_performance": TARGETED_PREDICTION_DIR / "targeted_hedges_oof_performance.parquet",
+    "hedges_coefficients": TARGETED_PREDICTION_DIR / "targeted_hedges_top_coefficients.parquet",
+    "hedges_oof_predictions": TARGETED_PREDICTION_DIR / "targeted_hedges_oof_predictions.parquet",
 }
 CLUSTER_ASSOCIATION_STATS = DATA_DIR / "cluster_association_statistics.parquet"
 PARTITION_COMPARISON_DIR = (
@@ -179,7 +183,17 @@ PREDICTION_MASK_LABELS = {
     "global_fdr10": "Global BH FDR < 0.10",
     "per_module_fdr05": "Per-module BH FDR < 0.05",
     "per_module_fdr10": "Per-module BH FDR < 0.10 (exploratory)",
+    "outer_fold_hedges_g04_ad_higher": "Outer-fold Hedges’ g ≥ 0.40 — higher in AD",
+    "outer_fold_hedges_g04_either": "Outer-fold Hedges’ |g| ≥ 0.40 — either direction",
+    "outer_fold_hedges_g04_control_higher": (
+        "Outer-fold Hedges’ g ≤ −0.40 — higher in Control"
+    ),
 }
+TARGETED_HEDGES_MASKS = (
+    "outer_fold_hedges_g04_ad_higher",
+    "outer_fold_hedges_g04_either",
+    "outer_fold_hedges_g04_control_higher",
+)
 SCORE_TRANSFORM_LABELS = {
     "raw": "Raw (primary)",
     "asinh": "asinh (robustness)",
@@ -2325,7 +2339,9 @@ def load_targeted_prediction_table(
         result["score_transform"] = "asinh"
     if "transformation_role" not in result:
         result["transformation_role"] = (
-            "existing_masked_sensitivity"
+            "effect_size_edge_sensitivity"
+            if table.startswith("hedges_")
+            else "existing_masked_sensitivity"
             if table.startswith("masked_")
             else "legacy_asinh_provenance"
         )

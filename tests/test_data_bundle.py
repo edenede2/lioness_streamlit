@@ -13,7 +13,7 @@ import pytest
 APP_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(APP_ROOT))
 
-from app_helpers import data  # noqa: E402
+from app_helpers import data, drive_data  # noqa: E402
 
 
 def test_coefficient_kegg_scopes_use_independent_minima_and_neutral_regional_rows() -> None:
@@ -276,6 +276,44 @@ def test_targeted_prediction_loader_filters_eigengene_source(
         "oof_performance", eigengene_source="single_region_full_tissue_l3"
     )
     assert selected["value"].tolist() == [0.73]
+
+
+def test_targeted_hedges_loader_filters_sharded_milestone_and_mask(
+    tmp_path: Path, monkeypatch
+) -> None:
+    directory = tmp_path / "prediction_targeted"
+    directory.mkdir()
+    path = directory / "targeted_hedges_oof_performance.parquet"
+    path.mkdir()
+    pd.DataFrame(
+        {
+            "analysis_milestone": ["primary", "cognitive_resolved"],
+            "edge_mask": [
+                "outer_fold_hedges_g04_either",
+                "outer_fold_hedges_g04_ad_higher",
+            ],
+            "score_transform": ["raw", "raw"],
+            "score_normalization": ["standard_pruned", "standard_pruned"],
+            "model_variant": ["network_only", "network_only"],
+            "value": [0.72, 0.11],
+        }
+    ).to_parquet(path / "primary.parquet", index=False)
+    manifest = directory / "targeted_prediction_public_manifest.json"
+    manifest.write_text('{"schema_version": 6, "complete": false}\n', encoding="utf-8")
+    files = dict(data.TARGETED_PREDICTION_FILES)
+    files["hedges_oof_performance"] = path
+    monkeypatch.setattr(data, "TARGETED_PREDICTION_MANIFEST", manifest)
+    monkeypatch.setattr(data, "TARGETED_PREDICTION_FILES", files)
+    monkeypatch.setattr(drive_data, "DATA_DIR", directory)
+    selected = data.load_targeted_prediction_table(
+        "hedges_oof_performance",
+        analysis_milestone="primary",
+        edge_mask="outer_fold_hedges_g04_either",
+    )
+    assert selected["value"].tolist() == [0.72]
+    assert selected["transformation_role"].tolist() == [
+        "effect_size_edge_sensitivity"
+    ]
 
 
 def test_targeted_masked_sensitivity_packages_all_requested_outcomes() -> None:
