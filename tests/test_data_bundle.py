@@ -16,6 +16,29 @@ sys.path.insert(0, str(APP_ROOT))
 from app_helpers import data  # noqa: E402
 
 
+def test_endpoint_expression_bundle_is_pseudonymous_and_node_aligned() -> None:
+    for module_set, module, expected_nodes in (
+        ("full_cohort", 935, 58),
+        ("control_derived", 935, 527),
+    ):
+        assert data.edge_expression_data_available(module_set, module)
+        nodes = data.load_edge_expression_nodes(module_set, module)
+        assert len(nodes) == expected_nodes
+        assert nodes["node_index"].tolist() == list(range(expected_nodes))
+        assert not nodes["gene_symbol"].astype(str).str.contains(r"ENSG\d+").any()
+        selected = [0, expected_nodes - 1]
+        expression = data.load_edge_expression(module_set, module, selected)
+        assert expression.shape == (450, 3)
+        assert list(expression.columns) == [
+            "sample_id", "node_0", f"node_{expected_nodes - 1}"
+        ]
+        assert expression["sample_id"].nunique() == 450
+        assert {"donor", "projid"}.isdisjoint(expression.columns)
+        numeric = expression.drop(columns="sample_id")
+        assert numeric.mean().abs().max() < 1e-5
+        assert numeric.std(ddof=0).sub(1).abs().max() < 1e-5
+
+
 def test_effect_rule_controls_round_trip_to_isolated_paths(tmp_path: Path, monkeypatch) -> None:
     module_root = tmp_path / "control_derived"
     monkeypatch.setitem(data.MODULE_SET_DIRS, "control_derived", module_root)

@@ -155,6 +155,7 @@ CLUSTER_ASSOCIATION_STATS = DATA_DIR / "cluster_association_statistics.parquet"
 PARTITION_COMPARISON_DIR = (
     DATA_DIR / "all_donor_corrshrink_l4" / "partition_comparison"
 )
+EDGE_EXPRESSION_DIR = DATA_DIR / "edge_expression"
 
 PREDICTION_OUTCOME_LABELS = {
     "diagnosis_binary": "Diagnosis: AD versus Control",
@@ -444,6 +445,21 @@ def descriptive_eigengene_data_available(module_set: str = "full_cohort") -> boo
     """Return whether tissue-specific descriptive eigengenes are deployed."""
 
     return data_path_available(module_set_path("module_eigengenes.parquet", module_set))
+
+
+def edge_expression_data_available(
+    module_set: str = "full_cohort", module: int | None = None
+) -> bool:
+    """Return whether pseudonymous endpoint-expression data are deployable."""
+
+    if not data_path_available(EDGE_EXPRESSION_DIR / "manifest.json"):
+        return False
+    module_root = EDGE_EXPRESSION_DIR / module_set
+    if not data_path_available(module_root / "module_nodes.parquet"):
+        return False
+    return module is None or data_path_available(
+        module_root / "modules" / f"M{int(module)}.parquet"
+    )
 
 
 def effect_rule_key(
@@ -752,6 +768,13 @@ def require_data_files() -> None:
                     module_set_data_dir(module_set)
                     / "expanded"
                     / "sample_metadata.parquet",
+                ]
+            )
+        if module_manifest.get("capabilities", {}).get("edge_expression", False):
+            required.extend(
+                [
+                    EDGE_EXPRESSION_DIR / "manifest.json",
+                    EDGE_EXPRESSION_DIR / module_set / "module_nodes.parquet",
                 ]
             )
     missing = [
@@ -1485,7 +1508,13 @@ def load_volcano_candidates(
             ("module", "=", int(module)),
         ],
     )
-    return public_gene_labels(frame, gene_columns=("gene_a", "gene_b"))
+    frame = public_gene_labels(frame, gene_columns=("gene_a", "gene_b"))
+    for column in ("tissue_a", "tissue_b"):
+        if column in frame:
+            frame[column] = frame[column].replace(
+                {"MFBA9BA46": "DLPFC", "PCGBA23": "PCG"}
+            )
+    return frame
 
 
 def load_volcano_bins(
@@ -1505,6 +1534,37 @@ def load_volcano_bins(
             ("fdr_scope", "=", differential_fdr_scope),
         ],
     )
+
+
+def load_edge_expression_nodes(
+    module_set: str, module: int
+) -> pd.DataFrame:
+    """Load public gene-symbol metadata for one module's expression columns."""
+
+    path = EDGE_EXPRESSION_DIR / module_set / "module_nodes.parquet"
+    frame = _read_filtered(path, [("module", "=", int(module))])
+    return public_gene_labels(frame, gene_columns=("gene_symbol",))
+
+
+def load_edge_expression(
+    module_set: str,
+    module: int,
+    node_indices: Iterable[int] | None = None,
+) -> pd.DataFrame:
+    """Load pseudonymous within-gene expression Z-scores for one module."""
+
+    path = EDGE_EXPRESSION_DIR / module_set / "modules" / f"M{int(module)}.parquet"
+    columns = ["sample_id"]
+    if node_indices is not None:
+        columns.extend(f"node_{int(value)}" for value in sorted(set(node_indices)))
+    materialized = ensure_data_path(path)
+    frame = pd.read_parquet(materialized, columns=columns if node_indices is not None else None)
+    forbidden = {"donor", "projid"}.intersection(frame.columns)
+    if forbidden:
+        raise ValueError(
+            f"Private identifiers remain in endpoint-expression data: {sorted(forbidden)}"
+        )
+    return frame
 
 
 def load_data_manifest() -> dict[str, object]:

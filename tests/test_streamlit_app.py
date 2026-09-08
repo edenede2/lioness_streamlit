@@ -111,6 +111,51 @@ def test_every_lazy_analysis_view_renders_cleanly() -> None:
         assert_app_clean(app)
 
 
+def test_donor_edge_explorer_renders_2d_ols_and_3d_triangle() -> None:
+    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = select_view(app, "Donor edge explorer")
+    assert_app_clean(app)
+    assert any(
+        subheader.value == "Top-edge endpoint expression" for subheader in app.subheader
+    )
+    assert widget_with_label(app.selectbox, "Edge for 2D expression plot")
+    assert widget_with_label(app.selectbox, "Gene predicted by the 2D OLS line (Y axis)")
+    assert widget_with_label(app.radio, "OLS fit scope").value == "pooled"
+    gene_tables = [
+        dataframe.value
+        for dataframe in app.dataframe
+        if {"gene_symbol", "module_fdr", "tissue_fdr"}.issubset(
+            dataframe.value.columns
+        )
+    ]
+    assert gene_tables and len(gene_tables[0]) == 2
+
+    app = preserve_legacy_pills_state(
+        widget_with_label(app.selectbox, "Comparison component").set_value("TS").run()
+    )
+    app = preserve_legacy_pills_state(
+        widget_with_label(app.number_input, "Top K edges").set_value(100).run()
+    )
+    app = preserve_legacy_pills_state(
+        widget_with_label(
+            app.checkbox, "Render the 3D triangle and OLS plane"
+        ).set_value(True).run()
+    )
+    assert_app_clean(app)
+    assert widget_with_label(app.selectbox, "Triangle for 3D expression plot")
+    assert widget_with_label(app.selectbox, "Gene predicted by the OLS plane (Z axis)")
+    assert widget_with_label(app.radio, "OLS plane scope").value == "pooled"
+    triangle_gene_tables = [
+        dataframe.value
+        for dataframe in app.dataframe
+        if {"gene_symbol", "module_fdr", "tissue_fdr"}.issubset(
+            dataframe.value.columns
+        )
+        and len(dataframe.value) == 3
+    ]
+    assert triangle_gene_tables
+
+
 def test_feature_distributions_support_non_diagnosis_grouping() -> None:
     app = AppTest.from_file(APP, default_timeout=180).run()
     assert_app_clean(app)

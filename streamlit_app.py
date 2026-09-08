@@ -9,6 +9,7 @@ from collections.abc import Iterable
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 # Streamlit Community Cloud may hot-reload this entrypoint while retaining an older
@@ -113,6 +114,13 @@ from app_helpers.streaming_associations import (
     stream_pooled_correlations,
 )
 from app_helpers.drive_data import data_source_label, ensure_data_path
+from app_helpers.edge_expression import (
+    find_edge_triangles,
+    fit_ols,
+    gene_pathway_membership,
+    rank_edges,
+    scope_edges,
+)
 from app_helpers import data as _data_helpers
 
 if not all(
@@ -126,6 +134,8 @@ if not all(
         "effect_size_data_available", "effect_rule_key",
         "effect_rule_label", "effect_mask_column", "load_effect_drivers",
         "load_effect_size_manifest", "EFFECT_STATISTIC_LABELS",
+        "edge_expression_data_available", "load_edge_expression",
+        "load_edge_expression_nodes",
     )
 ):
     _data_helpers = importlib.reload(_data_helpers)
@@ -189,6 +199,7 @@ from app_helpers.data import (
     effect_rule_label,
     effect_mask_column,
     effect_size_data_available,
+    edge_expression_data_available,
     descriptive_eigengene_data_available,
     differential_mdc_data_available,
     filter_kegg_enrichments,
@@ -200,6 +211,8 @@ from app_helpers.data import (
     load_edge_summaries,
     load_effect_drivers,
     load_effect_size_manifest,
+    load_edge_expression,
+    load_edge_expression_nodes,
     load_kegg,
     load_kegg_tsv_bytes,
     load_cluster_association_statistics,
@@ -571,6 +584,41 @@ def cached_volcano_bins(
     )
 
 
+@st.cache_data(show_spinner=False, max_entries=3)
+def cached_edge_expression_candidates(
+    module_set: str, estimator: str, method: str, module: int
+) -> pd.DataFrame:
+    """Union the bounded significance- and effect-oriented exact edge catalogs."""
+
+    parts = [load_volcano_candidates(module_set, estimator, method, module, "all")]
+    if effect_size_data_available(module_set, estimator, method):
+        effect_rule = effect_rule_key("hedges_g", "fixed", 0.20, "either")
+        parts.insert(
+            0,
+            load_volcano_candidates(
+                module_set, estimator, method, module, effect_rule
+            ),
+        )
+    return (
+        pd.concat(parts, ignore_index=True, sort=False)
+        .sort_values("edge_index", kind="stable")
+        .drop_duplicates("edge_index", keep="first")
+        .reset_index(drop=True)
+    )
+
+
+@st.cache_data(show_spinner=False, max_entries=4)
+def cached_edge_expression_nodes(module_set: str, module: int) -> pd.DataFrame:
+    return load_edge_expression_nodes(module_set, module)
+
+
+@st.cache_data(show_spinner=False, max_entries=4)
+def cached_edge_expression(
+    module_set: str, module: int, node_indices: tuple[int, ...]
+) -> pd.DataFrame:
+    return load_edge_expression(module_set, module, node_indices)
+
+
 @st.cache_data(show_spinner=False, max_entries=8)
 def cached_kegg(module_set: str, module: int | None) -> pd.DataFrame:
     return load_kegg(module, module_set=module_set)
@@ -667,6 +715,149 @@ def attach_metadata(
         column for column in metadata.columns if column == "sample_id" or column not in frame.columns
     ]
     return frame.merge(metadata[additional], on="sample_id", how="left", validate="many_to_one")
+
+
+def _edge_expression_mask(
+    frame: pd.DataFrame,
+    differential_edge_rule: str,
+    fdr_scope: str,
+    fdr_threshold: float,
+) -> pd.DataFrame:
+    """Apply the sidebar edge rule to exact rows used by expression plots."""
+
+    selected = frame.copy()
+    if differential_edge_rule == "all":
+        return selected
+    if differential_edge_rule.startswith("ad_control_discovery_effect__"):
+        membership = effect_mask_column(differential_edge_rule)
+        if membership not in selected:
+            return selected.iloc[0:0].copy()
+        selected = selected.loc[selected[membership].fillna(False)].copy()
+        direction = differential_edge_rule.rsplit("__", 1)[-1]
+        if direction == "ad_higher":
+            selected = selected.loc[selected["discovery_mean_difference"].gt(0)]
+        elif direction == "control_higher":
+            selected = selected.loc[selected["discovery_mean_difference"].lt(0)]
+        return selected
+    probability = f"discovery_fdr_{fdr_scope}"
+    if probability not in selected:
+        return selected.iloc[0:0].copy()
+    return selected.loc[
+        pd.to_numeric(selected[probability], errors="coerce").lt(float(fdr_threshold))
+    ].copy()
+
+
+def _edge_expression_color_kwargs(
+    frame: pd.DataFrame,
+    color_by: str,
+    continuous_colorscale: str,
+    reverse_colorscale: bool,
+) -> dict[str, object]:
+    """Return consistent Plotly Express color arguments for endpoint plots."""
+
+    if color_by in CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES:
+        if color_by == "diagnosis_group":
+            return {
+                "color_discrete_map": {
+                    "Control": "#2C7FB8", "MCI": "#D8A500", "AD": "#E66101"
+                }
+            }
+        if color_by == "clusters":
+            return {
+                "color_discrete_map": {
+                    "Cluster 1": "#3B4CC0", "Cluster 2": "#20A486",
+                    "Cluster 3": "#F6C141", "Cluster 4": "#D1495B",
+                }
+            }
+        return {}
+    colorscale = CONTINUOUS_COLOR_SCALES.get(
+        continuous_colorscale, CONTINUOUS_COLOR_SCALES["Blue–white–orange"]
+    )
+    if reverse_colorscale:
+        if isinstance(colorscale, str):
+            colorscale = f"{colorscale}_r"
+        else:
+            colorscale = [[1.0 - float(position), color] for position, color in reversed(colorscale)]
+    return {"color_continuous_scale": colorscale}
+
+
+def _expression_ols_fits(
+    frame: pd.DataFrame,
+    response: str,
+    predictors: list[str],
+    fit_scope: str,
+) -> tuple[dict[str, object], pd.DataFrame, pd.DataFrame]:
+    """Fit pooled or diagnosis-stratified endpoint-expression OLS models."""
+
+    groups: list[tuple[str, pd.DataFrame]]
+    if fit_scope == "pooled":
+        groups = [("All displayed donors", frame)]
+    else:
+        groups = [
+            (diagnosis, frame.loc[frame["diagnosis_group"].eq(diagnosis)].copy())
+            for diagnosis in DIAGNOSIS_ORDER
+            if frame["diagnosis_group"].eq(diagnosis).any()
+        ]
+    fits: dict[str, object] = {}
+    summaries: list[dict[str, object]] = []
+    coefficients: list[pd.DataFrame] = []
+    for label, group in groups:
+        fit = fit_ols(group, response, predictors, minimum_n=len(predictors) + 4)
+        if fit is None:
+            continue
+        fits[label] = fit
+        summaries.append(
+            {
+                "fit_group": label,
+                "n": fit.n,
+                "r_squared": fit.r_squared,
+                "adjusted_r_squared": fit.adjusted_r_squared,
+                "rmse": fit.rmse,
+                "residual_sd": fit.residual_sd,
+            }
+        )
+        coefficient = fit.coefficients.copy()
+        coefficient.insert(0, "fit_group", label)
+        coefficients.append(coefficient)
+    return (
+        fits,
+        pd.DataFrame(summaries),
+        pd.concat(coefficients, ignore_index=True) if coefficients else pd.DataFrame(),
+    )
+
+
+def _render_expression_residuals(
+    fits: dict[str, object],
+    *,
+    key: str,
+) -> None:
+    """Render residual diagnostics and compact OLS tables."""
+
+    diagnostics = []
+    for label, fit in fits.items():
+        part = fit.diagnostics.copy()
+        part["fit_group"] = label
+        diagnostics.append(part)
+    if not diagnostics:
+        st.info("OLS is unavailable because too few complete points or a constant axis remain.")
+        return
+    residuals = pd.concat(diagnostics, ignore_index=True)
+    residual_figure = px.scatter(
+        residuals,
+        x="ols_fitted",
+        y="ols_residual",
+        color="fit_group",
+        hover_name="sample_id" if "sample_id" in residuals else None,
+        labels={
+            "ols_fitted": "OLS fitted expression (Z-score)",
+            "ols_residual": "Expression residual (observed − fitted)",
+            "fit_group": "OLS fit",
+        },
+        title="OLS residuals versus fitted values",
+    )
+    residual_figure.add_hline(y=0, line_dash="dash", line_color="#65727E")
+    residual_figure.update_traces(marker={"size": 7, "opacity": 0.72})
+    render_plotly_chart(residual_figure, key=f"{key}_residuals")
 
 
 def ordered_association_levels(frame: pd.DataFrame, variable: str) -> list[object]:
@@ -6119,6 +6310,497 @@ if active_view == "Donor edge explorer":
                     mime="text/tab-separated-values",
                 )
 
+    st.divider()
+    st.subheader("Top-edge endpoint expression")
+    st.caption(
+        "Choose the top K exact edges in this module, then inspect the two endpoint "
+        "genes or a genuine three-edge gene triangle. Axes are within-gene expression "
+        "Z-scores across the 450 complete-tissue donors. OLS describes co-expression "
+        "between axes; it does not model the selected phenotype or establish causality."
+    )
+    if not edge_expression_data_available(module_set, module):
+        st.info(
+            "Endpoint-expression data are not available for this module definition in "
+            "the deployed bundle yet. The existing donor-decomposition tools above remain available."
+        )
+    else:
+        exact_edges = cached_edge_expression_candidates(
+            module_set, estimator, method, module
+        )
+        exact_edges = scope_edges(exact_edges, explorer_component)
+        exact_edges = _edge_expression_mask(
+            exact_edges,
+            differential_edge_rule,
+            differential_fdr_scope,
+            differential_fdr_threshold,
+        )
+        if exact_edges.empty:
+            st.info(
+                "No exact edge row remains under the selected component and edge mask. "
+                "Try All edges, a less restrictive mask, or another component."
+            )
+        else:
+            rank_left, rank_middle, rank_right = st.columns(3)
+            with rank_left:
+                expression_rank_by = st.selectbox(
+                    "Rank top edges by",
+                    options=[
+                        "absolute_hedges_g", "absolute_mean_difference",
+                        "global_fdr", "per_module_fdr",
+                    ],
+                    format_func=lambda value: {
+                        "absolute_hedges_g": "Absolute discovery Hedges’ g",
+                        "absolute_mean_difference": "Absolute AD−Control mean difference",
+                        "global_fdr": "Smallest discovery global FDR",
+                        "per_module_fdr": "Smallest discovery per-module FDR",
+                    }[value],
+                )
+            with rank_middle:
+                expression_rank_direction = st.selectbox(
+                    "Ranked-edge direction",
+                    options=["either", "ad_higher", "control_higher"],
+                    format_func=lambda value: EFFECT_DIRECTION_LABELS[value],
+                )
+            with rank_right:
+                maximum_k = min(500, len(exact_edges))
+                top_k = int(
+                    st.number_input(
+                        "Top K edges",
+                        min_value=1,
+                        max_value=max(1, maximum_k),
+                        value=min(25, maximum_k),
+                        step=1,
+                    )
+                )
+            top_edges = rank_edges(
+                exact_edges, expression_rank_by, top_k,
+                direction=expression_rank_direction,
+            )
+            st.caption(
+                f"Showing {len(top_edges):,} ranked edges from {len(exact_edges):,} "
+                "available exact rows in the selected scope. The exact catalog contains "
+                "all supported effect-mask edges plus significance-oriented candidates; "
+                "it is not a dump of every structural edge."
+            )
+            ranked_columns = [
+                "edge_rank", "edge_label", "component", "discovery_hedges_g",
+                "discovery_mean_difference", "discovery_p_value",
+                "discovery_fdr_global", "discovery_fdr_per_module",
+                "validation_hedges_g", "validation_fdr_global",
+                "validation_fdr_per_module", "validation_direction_concordant",
+            ]
+            filterable_dataframe(
+                top_edges[[column for column in ranked_columns if column in top_edges]],
+                table_key="top_endpoint_expression_edges",
+                table_name="Top K exact edges",
+                height=390,
+            )
+
+            node_metadata = cached_edge_expression_nodes(module_set, module)
+            node_lookup = node_metadata.set_index("node_index")
+            endpoint_tabs = st.tabs(["2D edge", "3D gene triangle"])
+            with endpoint_tabs[0]:
+                edge_options = top_edges["edge_index"].astype(int).tolist()
+                selected_edge_index = st.selectbox(
+                    "Edge for 2D expression plot",
+                    options=edge_options,
+                    format_func=lambda value: (
+                        f"#{int(top_edges.loc[top_edges['edge_index'].eq(value), 'edge_rank'].iloc[0])} · "
+                        f"{top_edges.loc[top_edges['edge_index'].eq(value), 'edge_label'].iloc[0]}"
+                    ),
+                    key="endpoint_expression_2d_edge",
+                )
+                edge = top_edges.loc[
+                    top_edges["edge_index"].eq(selected_edge_index)
+                ].iloc[0]
+                endpoint_nodes = [int(edge["row_index"]), int(edge["column_index"])]
+                endpoint_labels = {
+                    int(edge["row_index"]): f"{edge['tissue_a']}:{edge['gene_a']}",
+                    int(edge["column_index"]): f"{edge['tissue_b']}:{edge['gene_b']}",
+                }
+                right_node = st.selectbox(
+                    "Gene predicted by the 2D OLS line (Y axis)",
+                    options=endpoint_nodes,
+                    index=1,
+                    format_func=lambda value: endpoint_labels[value],
+                    key="endpoint_expression_2d_response",
+                )
+                left_node = next(node for node in endpoint_nodes if node != right_node)
+                left_column, right_column = f"node_{left_node}", f"node_{right_node}"
+                left_label = endpoint_labels[left_node]
+                right_label = endpoint_labels[right_node]
+                expression_2d = cached_edge_expression(
+                    module_set, module, tuple(sorted((left_node, right_node)))
+                )
+                expression_2d = attach_metadata(expression_2d, module_set=module_set)
+                expression_2d = expression_2d.loc[
+                    expression_2d["diagnosis_group"].isin(diagnoses)
+                ].copy()
+                if differential_edge_rule != "all" and analysis_subset != "all_donors":
+                    selected_split = {
+                        "discovery_ad_control": "Discovery",
+                        "validation_ad_control": "Validation",
+                        "mci_external": "MCI_external",
+                    }[analysis_subset]
+                    expression_2d = expression_2d.loc[
+                        expression_2d["ad_control_split"].eq(selected_split)
+                    ].copy()
+                expression_2d = expression_2d.dropna(
+                    subset=[left_column, right_column]
+                )
+                expression_fit_scope_2d = st.radio(
+                    "OLS fit scope",
+                    options=["pooled", "diagnosis"],
+                    format_func=lambda value: {
+                        "pooled": "All displayed donors (pooled)",
+                        "diagnosis": "Separate diagnosis-group fits",
+                    }[value],
+                    horizontal=True,
+                    key="endpoint_expression_2d_fit_scope",
+                )
+                fits_2d, fit_summary_2d, coefficients_2d = _expression_ols_fits(
+                    expression_2d, right_column, [left_column], expression_fit_scope_2d
+                )
+                categorical_color = color_by in CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES
+                expression_2d["plot_color"] = (
+                    expression_2d[color_by].map(
+                        lambda value: association_level_label(color_by, value)
+                    )
+                    if categorical_color else pd.to_numeric(
+                        expression_2d[color_by], errors="coerce"
+                    )
+                )
+                hover_columns = [
+                    column for column in (
+                        "sample_id", "diagnosis_group", phenotype, "clusters", "cogdx",
+                        "braak_stage", "cerad_score", "adnc", "parkinsonism",
+                    ) if column in expression_2d
+                ]
+                point_figure_2d = px.scatter(
+                    expression_2d,
+                    x=left_column,
+                    y=right_column,
+                    color="plot_color",
+                    symbol="diagnosis_group",
+                    hover_name="sample_id",
+                    hover_data=hover_columns,
+                    labels={
+                        left_column: f"{left_label} expression (Z-score)",
+                        right_column: f"{right_label} expression (Z-score)",
+                        "plot_color": COLOR_LABELS[color_by],
+                        "diagnosis_group": "Diagnosis",
+                    },
+                    title=f"M{module} endpoint expression: {left_label} ↔ {right_label}",
+                    **_edge_expression_color_kwargs(
+                        expression_2d, color_by, continuous_colorscale,
+                        reverse_colorscale,
+                    ),
+                )
+                fit_colors = {
+                    "All displayed donors": "#20262E",
+                    "Control": "#2C7FB8", "MCI": "#D8A500", "AD": "#E66101",
+                }
+                for fit_label, ols_fit in fits_2d.items():
+                    coefficient = ols_fit.coefficients.set_index("term")["estimate"]
+                    x_min = float(ols_fit.diagnostics[left_column].min())
+                    x_max = float(ols_fit.diagnostics[left_column].max())
+                    x_line = np.linspace(x_min, x_max, 100)
+                    y_line = coefficient["Intercept"] + coefficient[left_column] * x_line
+                    point_figure_2d.add_trace(
+                        go.Scatter(
+                            x=x_line, y=y_line, mode="lines",
+                            name=f"OLS: {fit_label}",
+                            line={"color": fit_colors.get(fit_label, "#65727E"), "width": 3},
+                            hovertemplate=(
+                                f"OLS: {fit_label}<br>{right_label} fitted=%{{y:.3f}}<extra></extra>"
+                            ),
+                        )
+                    )
+                if selected_pair:
+                    highlighted = expression_2d.loc[
+                        expression_2d["sample_id"].isin(selected_pair)
+                    ]
+                    point_figure_2d.add_trace(
+                        go.Scatter(
+                            x=highlighted[left_column], y=highlighted[right_column],
+                            mode="markers+text", text=highlighted["sample_id"],
+                            textposition="top center", name="Selected donor pair",
+                            marker={
+                                "size": 14, "symbol": "circle-open", "color": "black",
+                                "line": {"width": 3, "color": "black"},
+                            },
+                        )
+                    )
+                point_figure_2d.update_layout(legend={"orientation": "h", "y": 1.12})
+                render_plotly_chart(point_figure_2d, key="endpoint_expression_2d_plot")
+                _render_expression_residuals(fits_2d, key="endpoint_expression_2d")
+                if not fit_summary_2d.empty:
+                    fit_tables_2d = st.columns(2)
+                    with fit_tables_2d[0]:
+                        filterable_dataframe(
+                            fit_summary_2d,
+                            table_key="endpoint_expression_2d_fit_summary",
+                            table_name="2D OLS fit summary",
+                        )
+                    with fit_tables_2d[1]:
+                        filterable_dataframe(
+                            coefficients_2d,
+                            table_key="endpoint_expression_2d_coefficients",
+                            table_name="2D OLS coefficients",
+                        )
+                significant_kegg_2d = st.checkbox(
+                    "Show only module KEGG enrichments with FDR < 0.05",
+                    value=True,
+                    key="endpoint_expression_2d_significant_kegg",
+                )
+                predictor_metadata = node_lookup.loc[left_node]
+                response_metadata_2d = node_lookup.loc[right_node]
+                genes_2d = pd.DataFrame(
+                    [
+                        {
+                            "role": "X axis / OLS predictor",
+                            "gene_symbol": predictor_metadata["gene_symbol"],
+                            "tissue": predictor_metadata["tissue"],
+                        },
+                        {
+                            "role": "Y axis / OLS response",
+                            "gene_symbol": response_metadata_2d["gene_symbol"],
+                            "tissue": response_metadata_2d["tissue"],
+                        },
+                    ]
+                )
+                memberships_2d = gene_pathway_membership(
+                    genes_2d,
+                    cached_kegg(module_set, module),
+                    significant_only=significant_kegg_2d,
+                )
+                filterable_dataframe(
+                    memberships_2d,
+                    table_key="endpoint_expression_2d_gene_kegg",
+                    table_name="Selected genes and module KEGG memberships",
+                    height=420,
+                )
+
+            with endpoint_tabs[1]:
+                if not st.checkbox(
+                    "Render the 3D triangle and OLS plane",
+                    value=False,
+                    key="endpoint_expression_render_3d",
+                    help=(
+                        "3D rendering is opt-in because Streamlit tabs otherwise execute "
+                        "hidden charts and consume memory even while the 2D tab is open."
+                    ),
+                ):
+                    st.caption(
+                        "Enable this option to search the current top-K graph for complete "
+                        "three-edge triangles and render the interactive OLS plane."
+                    )
+                    st.stop()
+                triangles = find_edge_triangles(top_edges)
+                if triangles.empty:
+                    st.info(
+                        "No three-edge triangle exists among the current top K edges. "
+                        "Increase K or select TS pooled/a tissue block. A single CT tissue "
+                        "pair is bipartite, so it cannot contain a three-edge triangle."
+                    )
+                else:
+                    triangle_index = st.selectbox(
+                        "Triangle for 3D expression plot",
+                        options=list(range(len(triangles))),
+                        format_func=lambda value: (
+                            f"{triangles.loc[value, 'triangle_label']} · worst edge rank "
+                            f"{int(triangles.loc[value, 'worst_edge_rank'])}"
+                        ),
+                        key="endpoint_expression_3d_triangle",
+                    )
+                    triangle = triangles.loc[triangle_index]
+                    triangle_nodes = [
+                        int(triangle["node_x"]), int(triangle["node_y"]),
+                        int(triangle["node_z"]),
+                    ]
+                    triangle_labels = {
+                        int(triangle["node_x"]): str(triangle["gene_x"]),
+                        int(triangle["node_y"]): str(triangle["gene_y"]),
+                        int(triangle["node_z"]): str(triangle["gene_z"]),
+                    }
+                    response_node = st.selectbox(
+                        "Gene predicted by the OLS plane (Z axis)",
+                        options=triangle_nodes,
+                        format_func=lambda value: triangle_labels[value],
+                        key="endpoint_expression_3d_response",
+                    )
+                    predictor_nodes = [node for node in triangle_nodes if node != response_node]
+                    response_column = f"node_{response_node}"
+                    predictor_columns = [f"node_{node}" for node in predictor_nodes]
+                    expression_3d = cached_edge_expression(
+                        module_set, module, tuple(sorted(triangle_nodes))
+                    )
+                    expression_3d = attach_metadata(expression_3d, module_set=module_set)
+                    expression_3d = expression_3d.loc[
+                        expression_3d["diagnosis_group"].isin(diagnoses)
+                    ].dropna(subset=[response_column, *predictor_columns]).copy()
+                    if differential_edge_rule != "all" and analysis_subset != "all_donors":
+                        selected_split = {
+                            "discovery_ad_control": "Discovery",
+                            "validation_ad_control": "Validation",
+                            "mci_external": "MCI_external",
+                        }[analysis_subset]
+                        expression_3d = expression_3d.loc[
+                            expression_3d["ad_control_split"].eq(selected_split)
+                        ].copy()
+                    expression_fit_scope_3d = st.radio(
+                        "OLS plane scope",
+                        options=["pooled", "diagnosis"],
+                        format_func=lambda value: {
+                            "pooled": "All displayed donors (pooled)",
+                            "diagnosis": "Separate diagnosis-group planes",
+                        }[value],
+                        horizontal=True,
+                        key="endpoint_expression_3d_fit_scope",
+                    )
+                    fits_3d, fit_summary_3d, coefficients_3d = _expression_ols_fits(
+                        expression_3d, response_column, predictor_columns,
+                        expression_fit_scope_3d,
+                    )
+                    categorical_color_3d = color_by in CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES
+                    expression_3d["plot_color"] = (
+                        expression_3d[color_by].map(
+                            lambda value: association_level_label(color_by, value)
+                        )
+                        if categorical_color_3d else pd.to_numeric(
+                            expression_3d[color_by], errors="coerce"
+                        )
+                    )
+                    point_figure_3d = px.scatter_3d(
+                        expression_3d,
+                        x=predictor_columns[0], y=predictor_columns[1], z=response_column,
+                        color="plot_color", symbol="diagnosis_group",
+                        hover_name="sample_id",
+                        hover_data=[
+                            column for column in (
+                                "diagnosis_group", phenotype, "clusters", "cogdx",
+                                "braak_stage", "cerad_score", "adnc", "parkinsonism",
+                            ) if column in expression_3d
+                        ],
+                        labels={
+                            predictor_columns[0]: f"{triangle_labels[predictor_nodes[0]]} expression",
+                            predictor_columns[1]: f"{triangle_labels[predictor_nodes[1]]} expression",
+                            response_column: f"{triangle_labels[response_node]} expression",
+                            "plot_color": COLOR_LABELS[color_by],
+                        },
+                        title=f"M{module} three-gene expression triangle with OLS plane",
+                        **_edge_expression_color_kwargs(
+                            expression_3d, color_by, continuous_colorscale,
+                            reverse_colorscale,
+                        ),
+                    )
+                    plane_colors = {
+                        "All displayed donors": "#65727E",
+                        "Control": "#2C7FB8", "MCI": "#D8A500", "AD": "#E66101",
+                    }
+                    for fit_label, ols_fit in fits_3d.items():
+                        coefficients = ols_fit.coefficients.set_index("term")["estimate"]
+                        x_grid = np.linspace(
+                            ols_fit.diagnostics[predictor_columns[0]].min(),
+                            ols_fit.diagnostics[predictor_columns[0]].max(), 12,
+                        )
+                        y_grid = np.linspace(
+                            ols_fit.diagnostics[predictor_columns[1]].min(),
+                            ols_fit.diagnostics[predictor_columns[1]].max(), 12,
+                        )
+                        grid_x, grid_y = np.meshgrid(x_grid, y_grid)
+                        grid_z = (
+                            coefficients["Intercept"]
+                            + coefficients[predictor_columns[0]] * grid_x
+                            + coefficients[predictor_columns[1]] * grid_y
+                        )
+                        plane_color = plane_colors.get(fit_label, "#65727E")
+                        point_figure_3d.add_trace(
+                            go.Surface(
+                                x=grid_x, y=grid_y, z=grid_z,
+                                name=f"OLS plane: {fit_label}",
+                                colorscale=[[0, plane_color], [1, plane_color]],
+                                opacity=0.27, showscale=False,
+                                hovertemplate=(
+                                    f"OLS plane: {fit_label}<br>fitted expression=%{{z:.3f}}"
+                                    "<extra></extra>"
+                                ),
+                            )
+                        )
+                    if selected_pair:
+                        highlighted_3d = expression_3d.loc[
+                            expression_3d["sample_id"].isin(selected_pair)
+                        ]
+                        point_figure_3d.add_trace(
+                            go.Scatter3d(
+                                x=highlighted_3d[predictor_columns[0]],
+                                y=highlighted_3d[predictor_columns[1]],
+                                z=highlighted_3d[response_column],
+                                mode="markers+text", text=highlighted_3d["sample_id"],
+                                name="Selected donor pair",
+                                marker={"size": 8, "symbol": "circle-open", "color": "black"},
+                            )
+                        )
+                    point_figure_3d.update_layout(
+                        height=760,
+                        legend={"orientation": "h", "y": 1.08},
+                        scene={
+                            "xaxis_title": f"{triangle_labels[predictor_nodes[0]]}<br>expression Z-score",
+                            "yaxis_title": f"{triangle_labels[predictor_nodes[1]]}<br>expression Z-score",
+                            "zaxis_title": f"{triangle_labels[response_node]}<br>expression Z-score",
+                        },
+                    )
+                    render_plotly_chart(point_figure_3d, key="endpoint_expression_3d_plot")
+                    _render_expression_residuals(fits_3d, key="endpoint_expression_3d")
+                    if not fit_summary_3d.empty:
+                        fit_tables_3d = st.columns(2)
+                        with fit_tables_3d[0]:
+                            filterable_dataframe(
+                                fit_summary_3d,
+                                table_key="endpoint_expression_3d_fit_summary",
+                                table_name="3D-plane OLS fit summary",
+                            )
+                        with fit_tables_3d[1]:
+                            filterable_dataframe(
+                                coefficients_3d,
+                                table_key="endpoint_expression_3d_coefficients",
+                                table_name="3D-plane OLS coefficients",
+                            )
+                    significant_kegg_3d = st.checkbox(
+                        "Show only triangle-gene KEGG enrichments with FDR < 0.05",
+                        value=True,
+                        key="endpoint_expression_3d_significant_kegg",
+                    )
+                    triangle_gene_rows = []
+                    for node in predictor_nodes:
+                        metadata_row = node_lookup.loc[node]
+                        triangle_gene_rows.append(
+                            {
+                                "role": "OLS predictor",
+                                "gene_symbol": metadata_row["gene_symbol"],
+                                "tissue": metadata_row["tissue"],
+                            }
+                        )
+                    response_metadata = node_lookup.loc[response_node]
+                    triangle_gene_rows.append(
+                        {
+                            "role": "Z axis / OLS response",
+                            "gene_symbol": response_metadata["gene_symbol"],
+                            "tissue": response_metadata["tissue"],
+                        }
+                    )
+                    memberships_3d = gene_pathway_membership(
+                        pd.DataFrame(triangle_gene_rows),
+                        cached_kegg(module_set, module),
+                        significant_only=significant_kegg_3d,
+                    )
+                    filterable_dataframe(
+                        memberships_3d,
+                        table_key="endpoint_expression_3d_gene_kegg",
+                        table_name="Triangle genes and module KEGG memberships",
+                        height=420,
+                    )
+
 if active_view == "Edge volcano":
     st.subheader("AD–Control differential edges")
     effect_volcano = differential_edge_rule.startswith("ad_control_discovery_effect__")
@@ -7975,6 +8657,16 @@ if active_view == "Methods & data":
         "counts, quantiles, retained proportions, and cancellation. Effect-filtered views "
         "load only the selected module’s bounded top-20 gene-symbol driver shards. These "
         "edge patterns are descriptive rather than causal explanations of phenotype."
+    )
+    st.markdown(
+        "Its **endpoint-expression** section ranks the selected module’s bounded exact "
+        "edge catalog and lazy-loads only that module’s pseudonymous within-gene expression "
+        "Z-scores. A 2D edge fits endpoint B on endpoint A; a 3D view is available only "
+        "when the top-K graph contains all three edges of a triangle and fits the chosen "
+        "Z-axis gene on the other two genes. OLS lines/planes and residuals describe "
+        "co-expression geometry, not phenotype prediction. Gene tables join each selected "
+        "endpoint to significant or all reported module KEGG overlap memberships. Source "
+        "expression values, donor IDs, projid, and Ensembl identifiers are not deployed."
     )
 
     st.markdown("#### Module differential connectivity")

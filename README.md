@@ -64,6 +64,11 @@ The app includes three explicitly separated module definitions:
   circles indicate within-tissue edges and diamonds indicate cross-tissue edges.
   Edge hovers, tables, and downloads use official gene symbols rather than Ensembl
   identifiers.
+- The Donor edge explorer includes a lazy top-K endpoint-expression section. It plots
+  pseudonymous within-gene expression Z-scores for a selected 2D edge or for a genuine
+  three-edge/three-gene triangle in 3D, with pooled or diagnosis-specific OLS lines or
+  planes, residual diagnostics, coefficients, and gene-level KEGG overlap memberships.
+  It never labels a three-gene path as a triangle when one of the three edges is absent.
 - Full raw, robust, RINT, leave-one-out, CT-vs-TS, and FDR statistics.
 - A descriptive CT-vs-TS screen across all modules.
 - A module finder that ranks the selected phenotype–feature association by CT-vs-TS
@@ -323,6 +328,20 @@ python scripts/build_effect_size_public_bundle.py
 python ../../scripts/python/validate_effect_size_edge_outputs.py \
   --estimator lioness --require-complete --public-data data
 ```
+
+Build the endpoint-expression bundle after the differential/effect candidate catalogs
+and current pseudonym mapping are present:
+
+```bash
+python scripts/build_edge_expression_bundle.py
+python scripts/build_public_data.py --output data --file-catalog-only
+```
+
+The builder uses the exact module assignment order used by the edge analysis, including
+historical repeated assignment rows. It writes one 450-row Parquet per module plus a
+small gene-symbol node table; every expression column is opaque and cohort-standardized.
+The `data/edge_expression` directory is intended for the indexed Drive bundle, not for a
+bulk GitHub commit.
 
 The public builder requires every LIONESS catalog for the selected module definitions.
 Optional estimator catalogs such as BONOBO are published only after all of their variants
@@ -613,6 +632,14 @@ provide up to 20 gene-symbol-only edge drivers per donor and direction, ranked b
 absolute deviation from the discovery-Control edge mean. Discovery Controls use a
 leave-one-out Control reference. These comparisons are descriptive and do not establish
 why a donor's phenotype differs causally.
+
+The same view can inspect endpoint expression for the selected module without loading a
+whole expression matrix. Public files are sharded by module and contain only opaque node
+columns, stable pseudonymous sample IDs, and within-gene Z-scores over the 450-donor
+complete-tissue cohort. A separate node table contains tissue and official gene symbol;
+source normalized-log values and Ensembl identifiers are not exported. The 2D OLS model
+fits one endpoint gene on the other, and the 3D OLS plane fits a selected triangle gene on
+the other two. These fits and their residuals describe co-expression, not phenotype effects.
 
 ## MDC scope
 
