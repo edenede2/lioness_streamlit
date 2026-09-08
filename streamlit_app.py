@@ -17,7 +17,7 @@ import streamlit as st
 # is absent so a repository update cannot leave the two modules out of sync.
 from app_helpers import charts as _chart_helpers
 
-if not all(
+if getattr(_chart_helpers, "DISTRIBUTION_GROUPING_API_VERSION", 0) < 2 or not all(
     hasattr(_chart_helpers, name)
     for name in (
         "CONTINUOUS_COLOR_SCALES",
@@ -39,6 +39,10 @@ if not all(
         "clustered_correlation_group_order",
         "grouped_association_figure",
         "DISTRIBUTION_GROUPING_API_VERSION",
+        "distribution_omnibus_component_figure",
+        "distribution_pairwise_forest_figure",
+        "distribution_pairwise_heatmap_figure",
+        "distribution_module_ranking_figure",
     )
 ):
     _chart_helpers = importlib.reload(_chart_helpers)
@@ -53,6 +57,10 @@ from app_helpers.charts import (
     correlation_heatmap_figure,
     clustered_correlation_group_order,
     distribution_figure,
+    distribution_module_ranking_figure,
+    distribution_omnibus_component_figure,
+    distribution_pairwise_forest_figure,
+    distribution_pairwise_heatmap_figure,
     distribution_summary,
     edge_volcano_figure,
     edge_summary_figure,
@@ -89,7 +97,7 @@ from app_helpers.charts import (
 
 from app_helpers import correlations as _correlation_helpers
 
-if getattr(_correlation_helpers, "GROUPED_ASSOCIATION_API_VERSION", 0) < 1:
+if getattr(_correlation_helpers, "GROUPED_ASSOCIATION_API_VERSION", 0) < 2:
     _correlation_helpers = importlib.reload(_correlation_helpers)
 
 from app_helpers.correlations import (
@@ -99,6 +107,11 @@ from app_helpers.correlations import (
     calculate_categorical_associations,
     calculate_correlations,
 )
+from app_helpers.distributions import (
+    calculate_pairwise_distribution_statistics,
+    default_reference_level,
+    distribution_contrasts,
+)
 from app_helpers.module_finder import (
     FINDER_CRITERIA,
     build_module_finder_table,
@@ -106,11 +119,20 @@ from app_helpers.module_finder import (
 )
 from app_helpers.table_controls import filterable_dataframe
 from app_helpers.streamlit_compat import plotly_chart as render_plotly_chart
+from app_helpers import streaming_associations as _streaming_helpers
+
+if (
+    getattr(_streaming_helpers, "STREAMING_ASSOCIATION_API_VERSION", 0) < 2
+    or not hasattr(_streaming_helpers, "stream_pairwise_distribution_associations")
+):
+    _streaming_helpers = importlib.reload(_streaming_helpers)
+
 from app_helpers.streaming_associations import (
     stream_categorical_associations,
     stream_diagnosis_categorical_associations,
     stream_grouped_correlation_matrix,
     stream_grouped_correlations,
+    stream_pairwise_distribution_associations,
     stream_pooled_correlations,
 )
 from app_helpers.drive_data import data_source_label, ensure_data_path
@@ -1302,6 +1324,83 @@ def cached_categorical_module_set_associations(
             f"selected definition ({module_count} expected): {family_sizes.to_dict()}"
         )
     return result
+
+
+@st.cache_data(
+    show_spinner="Calculating pairwise distribution effects across modules…",
+    max_entries=4,
+)
+def cached_distribution_pairwise_associations(
+    module_set: str,
+    estimator: str,
+    method: str,
+    resolved: bool,
+    feature: str,
+    category_variable: str,
+    scale: str,
+    components: tuple[str, ...],
+    diagnoses: tuple[str, ...],
+    category_levels: tuple[object, ...],
+    contrasts: tuple[tuple[object, object], ...],
+    min_group_n: int,
+    edge_rule: str,
+    differential_edge_rule: str = "all",
+    differential_fdr_scope: str = "global",
+    differential_fdr_threshold: float = 0.05,
+    score_normalization: str = "standard_pruned",
+    analysis_subset: str = "all_donors",
+    cohort_scope: str = "complete_450",
+) -> pd.DataFrame:
+    """Return pairwise effects with BH applied separately per module contrast."""
+
+    module_ids = tuple(
+        sorted(cached_annotations(module_set)["module"].astype(int).unique())
+    )
+    return stream_pairwise_distribution_associations(
+        module_ids,
+        cached_sample_metadata(module_set, cohort_scope),
+        module_set=module_set,
+        estimator=estimator,
+        method=method,
+        resolved=resolved,
+        feature=feature,
+        category_variable=category_variable,
+        scale=scale,
+        components=components,
+        diagnoses=diagnoses,
+        category_levels=category_levels,
+        contrasts=contrasts,
+        min_group_n=int(min_group_n),
+        edge_rule=edge_rule,
+        differential_edge_rule=differential_edge_rule,
+        differential_fdr_scope=differential_fdr_scope,
+        differential_fdr_threshold=differential_fdr_threshold,
+        score_normalization=score_normalization,
+        analysis_subset=analysis_subset,
+        cohort_scope=cohort_scope,
+    )
+
+
+@st.cache_data(show_spinner="Bootstrapping selected-module effect intervals…", max_entries=8)
+def cached_selected_distribution_pairwise(
+    frame: pd.DataFrame,
+    category_variable: str,
+    contrasts: tuple[tuple[object, object], ...],
+    min_group_n: int,
+    include_ks: bool,
+) -> pd.DataFrame:
+    """Return deterministic selected-module pairwise effects and bootstrap CIs."""
+
+    return calculate_pairwise_distribution_statistics(
+        frame,
+        ["module", "metric_family", "component", "component_label"],
+        category_column=category_variable,
+        contrasts=contrasts,
+        minimum_group_n=int(min_group_n),
+        bootstrap_resamples=1000,
+        seed=42,
+        include_ks=include_ks,
+    )
 
 
 def add_correlation_labels(frame: pd.DataFrame) -> pd.DataFrame:
@@ -3923,6 +4022,7 @@ with st.sidebar:
     selected_group_levels: list[object] = list(diagnoses)
     distribution_grouping_variable = "diagnosis_group"
     selected_distribution_levels: list[object] = list(diagnoses)
+    distribution_minimum_group_n = 10
     heatmap_grouping_variable = "diagnosis_group"
     selected_heatmap_group_levels: list[object] = list(diagnoses)
     heatmap_minimum_group_n = 10
@@ -4072,6 +4172,16 @@ with st.sidebar:
         )
         if distribution_grouping_variable == "__all__":
             selected_distribution_levels = ["__all__"]
+        distribution_minimum_group_n = st.selectbox(
+            "Distribution minimum group size",
+            options=[5, 10, 20],
+            index=1,
+            disabled=distribution_grouping_variable == "__all__",
+            help=(
+                "Smaller groups remain visible in distribution plots but are excluded "
+                "from omnibus and pairwise inference."
+            ),
+        )
     if active_view == "Correlation heatmaps":
         heatmap_metadata = cached_sample_metadata(module_set, cohort_scope)
         heatmap_metadata = heatmap_metadata.loc[
@@ -5315,62 +5425,473 @@ if active_view == "Feature distributions":
     st.caption(
         "These views use only the selected module feature; no phenotype is on an axis. "
         f"Distributions are grouped by {ASSOCIATION_GROUP_LABELS[distribution_grouping_variable]}. "
-        "Histogram heights are probability densities so groups with different sample sizes "
-        "remain comparable."
+        "Rank-based differentiation analyses are exploratory and use only the displayed "
+        "donors and selected category levels."
     )
-    chart_col, bin_col = st.columns([1, 2])
-    chart_type = chart_col.radio("Distribution view", ["Histogram", "Violin"], horizontal=True)
-    bins = bin_col.slider("Histogram bins", 10, 80, 30, disabled=chart_type != "Histogram")
-    distribution = distribution_figure(
-        distribution_plot_data,
-        feature_label=active_feature_labels[feature],
-        scale_label=SCALE_LABELS[scale],
-        diagnoses=distribution_groups,
-        module=module,
-        chart_type=chart_type,
-        bins=bins,
-        module_definition=module_set_label,
-        group_column="distribution_group",
-        group_label=ASSOCIATION_GROUP_LABELS[distribution_grouping_variable],
+    distribution_analysis = st.radio(
+        "Distribution analysis",
+        [
+            "Distribution shape",
+            "Overall differentiation",
+            "Pairwise differentiation",
+            "Find differentiated modules",
+        ],
+        horizontal=True,
+        help="Only the selected analysis is calculated and rendered.",
     )
-    render_plotly_chart(
-        distribution,
-        use_container_width=True,
-        config={
-            "displaylogo": False,
-            "toImageButtonOptions": {
-                "format": "png",
-                "filename": (
-                    f"{download_prefix}M{module}_{feature}_{method}_distribution"
+
+    def distribution_omnibus_catalog() -> pd.DataFrame:
+        return cached_categorical_module_set_associations(
+            module_set, module_count, estimator, method, resolved, feature,
+            distribution_grouping_variable, scale, tuple(selected_components),
+            tuple(diagnoses), tuple(selected_distribution_levels),
+            distribution_minimum_group_n, edge_rule, differential_edge_rule,
+            differential_fdr_scope, differential_fdr_threshold,
+            score_normalization, analysis_subset, cohort_scope,
+        )
+
+    def distribution_pairwise_setup(
+        key_prefix: str,
+        *,
+        show_ks_control: bool = True,
+    ) -> tuple[
+        tuple[tuple[object, object], ...], bool
+    ]:
+        unique_donors = plot_data[
+            ["sample_id", distribution_grouping_variable]
+        ].drop_duplicates()
+        counts = unique_donors[distribution_grouping_variable].value_counts()
+        default_reference = default_reference_level(
+            distribution_grouping_variable,
+            selected_distribution_levels,
+            counts,
+            minimum_group_n=distribution_minimum_group_n,
+        )
+        contrast_mode_label = st.radio(
+            "Pairwise contrasts",
+            ["Reference vs other groups", "All selected pairs"],
+            horizontal=True,
+            key=f"{key_prefix}_contrast_mode",
+        )
+        contrast_mode = (
+            "reference" if contrast_mode_label == "Reference vs other groups"
+            else "all_pairs"
+        )
+        reference_level = None
+        if contrast_mode == "reference":
+            eligible_references = [
+                value for value in selected_distribution_levels
+                if int(counts.get(value, 0)) >= distribution_minimum_group_n
+            ]
+            if eligible_references:
+                reference_level = st.selectbox(
+                    "Reference group",
+                    options=eligible_references,
+                    index=(
+                        eligible_references.index(default_reference)
+                        if default_reference in eligible_references else 0
+                    ),
+                    format_func=lambda value: association_level_label(
+                        distribution_grouping_variable, value
+                    ),
+                    key=f"{key_prefix}_reference_level",
+                )
+        include_ks = (
+            st.checkbox(
+                "Include advanced KS shape diagnostic",
+                value=False,
+                key=f"{key_prefix}_include_ks",
+                help=(
+                    "The two-sided Kolmogorov–Smirnov test detects any empirical-distribution "
+                    "difference, including spread and tail changes."
                 ),
-                "scale": 3,
-            },
-        },
-    )
-    summary = distribution_summary(
-        distribution_plot_data,
-        group_column="distribution_group",
-        group_label="distribution_group",
-    )
-    summary.insert(0, "module_definition", module_set_label)
-    summary.insert(1, "grouping_variable", distribution_grouping_variable)
-    with st.expander("Distribution summary table", expanded=False):
-        filterable_dataframe(
-            summary,
-            table_key="distribution_summary",
-            table_name="Distribution summary",
+            )
+            if show_ks_control else False
+        )
+        if contrast_mode == "reference" and reference_level is None:
+            return (), include_ks
+        return (
+            tuple(distribution_contrasts(
+                selected_distribution_levels,
+                mode=contrast_mode,
+                reference_level=reference_level,
+            )),
+            include_ks,
+        )
+
+    def label_pairwise(frame: pd.DataFrame) -> pd.DataFrame:
+        result = frame.copy()
+        result["reference_label"] = result["reference_level"].map(
+            lambda value: association_level_label(distribution_grouping_variable, value)
+        )
+        result["comparison_label"] = result["comparison_level"].map(
+            lambda value: association_level_label(distribution_grouping_variable, value)
+        )
+        result["contrast_label"] = (
+            result["comparison_label"] + " vs " + result["reference_label"]
+        )
+        return result
+
+    def module_set_pairwise_catalog(
+        contrasts: tuple[tuple[object, object], ...],
+    ) -> pd.DataFrame:
+        return cached_distribution_pairwise_associations(
+            module_set, estimator, method, resolved, feature,
+            distribution_grouping_variable, scale, tuple(selected_components),
+            tuple(diagnoses), tuple(selected_distribution_levels), contrasts,
+            distribution_minimum_group_n, edge_rule, differential_edge_rule,
+            differential_fdr_scope, differential_fdr_threshold,
+            score_normalization, analysis_subset, cohort_scope,
+        )
+
+    if distribution_analysis == "Distribution shape":
+        st.caption(
+            "Histogram heights are probability densities with bins shared across groups. "
+            "Rainclouds combine donor points, density, median, and IQR; ECDFs are bin-free."
+        )
+        chart_col, bin_col = st.columns([2, 1])
+        chart_type = chart_col.radio(
+            "Distribution view", ["Histogram", "Violin", "Raincloud", "ECDF"],
+            horizontal=True,
+        )
+        bins = bin_col.slider(
+            "Histogram bins", 10, 80, 30, disabled=chart_type != "Histogram"
+        )
+        distribution = distribution_figure(
+            distribution_plot_data,
+            feature_label=active_feature_labels[feature],
+            scale_label=SCALE_LABELS[scale],
+            diagnoses=distribution_groups,
+            module=module,
+            chart_type=chart_type,
+            bins=bins,
+            module_definition=module_set_label,
+            group_column="distribution_group",
+            group_label=ASSOCIATION_GROUP_LABELS[distribution_grouping_variable],
+        )
+        render_plotly_chart(
+            distribution,
             use_container_width=True,
-            hide_index=True,
+            config={
+                "displaylogo": False,
+                "toImageButtonOptions": {
+                    "format": "png",
+                    "filename": (
+                        f"{download_prefix}M{module}_{feature}_{method}_distribution"
+                    ),
+                    "scale": 3,
+                },
+            },
         )
-        st.download_button(
-            "Download distribution summary (TSV)",
-            data=dataframe_to_tsv_bytes(summary),
-            file_name=(
-                f"{download_prefix}M{module}_{feature}_{method}_"
-                f"{distribution_grouping_variable}_distribution_summary.tsv"
+        summary = distribution_summary(
+            distribution_plot_data,
+            group_column="distribution_group",
+            group_label="distribution_group",
+        )
+        summary.insert(0, "module_definition", module_set_label)
+        summary.insert(1, "grouping_variable", distribution_grouping_variable)
+        with st.expander("Distribution summary table", expanded=False):
+            filterable_dataframe(
+                summary,
+                table_key="distribution_summary",
+                table_name="Distribution summary",
+                use_container_width=True,
+                hide_index=True,
+            )
+            st.download_button(
+                "Download distribution summary (TSV)",
+                data=dataframe_to_tsv_bytes(summary),
+                file_name=(
+                    f"{download_prefix}M{module}_{feature}_{method}_"
+                    f"{distribution_grouping_variable}_distribution_summary.tsv"
+                ),
+                mime="text/tab-separated-values",
+            )
+
+    elif distribution_grouping_variable == "__all__":
+        st.info(
+            "Choose a categorical grouping variable to calculate distribution "
+            "differentiation statistics."
+        )
+
+    elif distribution_analysis == "Overall differentiation":
+        st.caption(
+            f"Kruskal–Wallis tests include selected levels with at least "
+            f"{distribution_minimum_group_n} donors. FDR is BH-adjusted across valid "
+            f"modules only within the selected {module_set_label} definition."
+        )
+        omnibus = distribution_omnibus_catalog()
+        selected_omnibus = omnibus.loc[
+            omnibus["module"].astype(int).eq(int(module))
+        ].copy()
+        if selected_omnibus.empty:
+            st.info("Overall differentiation is unavailable for the selected data.")
+        else:
+            render_plotly_chart(
+                distribution_omnibus_component_figure(
+                    selected_omnibus,
+                    module=module,
+                    module_definition=module_set_label,
+                ),
+                use_container_width=True,
+                config={"displaylogo": False},
+            )
+            selected_omnibus.insert(0, "module_definition", module_set_label)
+            filterable_dataframe(
+                selected_omnibus,
+                table_key="distribution_omnibus_table",
+                table_name="Overall distribution differentiation",
+                use_container_width=True,
+                hide_index=True,
+            )
+            st.download_button(
+                "Download overall differentiation (TSV)",
+                data=dataframe_to_tsv_bytes(selected_omnibus),
+                file_name=(
+                    f"{download_prefix}M{module}_{feature}_{method}_"
+                    f"{distribution_grouping_variable}_omnibus.tsv"
+                ),
+                mime="text/tab-separated-values",
+            )
+
+    elif distribution_analysis == "Pairwise differentiation":
+        contrasts, include_ks = distribution_pairwise_setup("distribution_pairwise")
+        if not contrasts:
+            st.info(
+                f"At least two groups with {distribution_minimum_group_n} donors are "
+                "required for pairwise analysis."
+            )
+        else:
+            module_set_pairwise = module_set_pairwise_catalog(contrasts)
+            selected_module_pairwise = module_set_pairwise.loc[
+                module_set_pairwise["module"].astype(int).eq(int(module))
+            ].copy()
+            selected_intervals = cached_selected_distribution_pairwise(
+                plot_data,
+                distribution_grouping_variable,
+                contrasts,
+                distribution_minimum_group_n,
+                include_ks,
+            )
+            interval_columns = [
+                "module", "component", "reference_level_key", "comparison_level_key",
+                "cliffs_delta_ci_low", "cliffs_delta_ci_high", "bootstrap_resamples",
+            ]
+            selected_module_pairwise = selected_module_pairwise.drop(
+                columns=[
+                    "cliffs_delta_ci_low", "cliffs_delta_ci_high", "bootstrap_resamples"
+                ],
+                errors="ignore",
+            ).merge(
+                selected_intervals[interval_columns],
+                on=["module", "component", "reference_level_key", "comparison_level_key"],
+                how="left",
+                validate="one_to_one",
+            )
+            selected_module_pairwise = label_pairwise(selected_module_pairwise)
+            if selected_module_pairwise.empty:
+                st.info("Pairwise differentiation is unavailable for the selected data.")
+            else:
+                st.caption(
+                    "Positive Cliff’s delta means the comparison group tends to have larger "
+                    "scores than the reference. Mann–Whitney and optional KS BH corrections "
+                    "are each calculated across modules separately for every fixed contrast "
+                    "and component."
+                )
+                render_plotly_chart(
+                    distribution_pairwise_forest_figure(
+                        selected_module_pairwise,
+                        module=module,
+                        module_definition=module_set_label,
+                    ),
+                    use_container_width=True,
+                    config={"displaylogo": False},
+                )
+                render_plotly_chart(
+                    distribution_pairwise_heatmap_figure(
+                        selected_module_pairwise,
+                        module=module,
+                        module_definition=module_set_label,
+                    ),
+                    use_container_width=True,
+                    config={"displaylogo": False},
+                )
+                pairwise_columns = [
+                    "module", "metric_family", "component", "component_label",
+                    "grouping_variable", "reference_label", "comparison_label",
+                    "n_reference", "n_comparison", "eligible", "unavailable_reason",
+                    "median_reference", "q1_reference", "q3_reference",
+                    "median_comparison", "q1_comparison", "q3_comparison",
+                    "median_difference", "mann_whitney_u", "mann_whitney_p",
+                    "mann_whitney_fdr_across_modules",
+                    "mann_whitney_fdr_module_family_n", "cliffs_delta",
+                    "cliffs_delta_ci_low", "cliffs_delta_ci_high",
+                    "probability_superiority",
+                ]
+                if include_ks:
+                    pairwise_columns.extend([
+                        "ks_d", "ks_p", "ks_fdr_across_modules",
+                        "ks_fdr_module_family_n",
+                    ])
+                pairwise_columns = [
+                    column for column in pairwise_columns
+                    if column in selected_module_pairwise
+                ]
+                pairwise_table = selected_module_pairwise[pairwise_columns].copy()
+                pairwise_table.insert(0, "module_definition", module_set_label)
+                filterable_dataframe(
+                    pairwise_table,
+                    table_key="distribution_pairwise_table",
+                    table_name="Pairwise distribution differentiation",
+                    use_container_width=True,
+                    hide_index=True,
+                )
+                st.download_button(
+                    "Download pairwise differentiation (TSV)",
+                    data=dataframe_to_tsv_bytes(pairwise_table),
+                    file_name=(
+                        f"{download_prefix}M{module}_{feature}_{method}_"
+                        f"{distribution_grouping_variable}_pairwise.tsv"
+                    ),
+                    mime="text/tab-separated-values",
+                )
+
+    else:
+        rank_options = {
+            "Omnibus epsilon-squared": "epsilon_squared",
+            "Maximum absolute Cliff’s delta": "cliffs_delta",
+        }
+        include_ranking_ks = st.checkbox(
+            "Enable KS shape-difference ranking",
+            value=False,
+            help="Adds maximum pairwise KS D as an advanced ranking option.",
+        )
+        if include_ranking_ks:
+            rank_options["Maximum KS D"] = "ks_d"
+        ranking_label = st.selectbox(
+            "Rank modules by", options=list(rank_options), index=0
+        )
+        ranking_statistic = rank_options[ranking_label]
+        top_n = st.selectbox("Top module components", [10, 20, 50], index=1)
+        fdr_filter = st.radio(
+            "Ranking significance filter",
+            ["No FDR filter", "FDR < 0.05", "FDR < 0.10 (exploratory)"],
+            horizontal=True,
+        )
+        ranking_contrasts: tuple[tuple[object, object], ...] = ()
+        if ranking_statistic != "epsilon_squared":
+            ranking_contrasts, _ = distribution_pairwise_setup(
+                "distribution_ranking", show_ks_control=False
+            )
+        run_ranking = st.toggle(
+            "Calculate across all modules",
+            value=False,
+            help=(
+                "This streams one module at a time and caches the result. Leave disabled "
+                "when only the selected-module distribution is needed."
             ),
-            mime="text/tab-separated-values",
         )
+        if run_ranking:
+            if ranking_statistic == "epsilon_squared":
+                ranking_catalog = distribution_omnibus_catalog().copy()
+                ranking_catalog["ranking_value"] = ranking_catalog["epsilon_squared"]
+                ranking_catalog["ranking_abs"] = ranking_catalog["epsilon_squared"]
+                ranking_catalog["ranking_p"] = ranking_catalog["categorical_p"]
+                ranking_catalog["ranking_fdr"] = ranking_catalog[
+                    "categorical_fdr_across_modules"
+                ]
+                ranking_catalog["ranking_family_n"] = ranking_catalog[
+                    "categorical_fdr_module_family_n"
+                ]
+                ranking_summary = ranking_catalog.copy()
+                signed_ranking = False
+                ranking_axis_label = "Epsilon-squared"
+            elif not ranking_contrasts:
+                ranking_catalog = pd.DataFrame()
+                ranking_summary = pd.DataFrame()
+                signed_ranking = ranking_statistic == "cliffs_delta"
+                ranking_axis_label = ranking_label
+            else:
+                ranking_catalog = label_pairwise(
+                    module_set_pairwise_catalog(ranking_contrasts)
+                )
+                ranking_catalog = ranking_catalog.loc[
+                    ranking_catalog[ranking_statistic].notna()
+                ].copy()
+                ranking_catalog["ranking_abs"] = ranking_catalog[
+                    ranking_statistic
+                ].abs()
+                p_prefix = "mann_whitney" if ranking_statistic == "cliffs_delta" else "ks"
+                ranking_catalog["ranking_value"] = ranking_catalog[ranking_statistic]
+                ranking_catalog["ranking_p"] = ranking_catalog[f"{p_prefix}_p"]
+                ranking_catalog["ranking_fdr"] = ranking_catalog[
+                    f"{p_prefix}_fdr_across_modules"
+                ]
+                ranking_catalog["ranking_family_n"] = ranking_catalog[
+                    f"{p_prefix}_fdr_module_family_n"
+                ]
+                strongest_index = ranking_catalog.groupby(
+                    ["module", "component"], observed=True, sort=False
+                )["ranking_abs"].idxmax()
+                ranking_summary = ranking_catalog.loc[strongest_index].copy()
+                signed_ranking = ranking_statistic == "cliffs_delta"
+                ranking_axis_label = (
+                    "Cliff’s delta (strongest contrast)"
+                    if signed_ranking else "KS D (strongest contrast)"
+                )
+            if ranking_summary.empty:
+                st.info("No module comparisons are available for the selected filters.")
+            else:
+                fdr_limit = {
+                    "No FDR filter": None,
+                    "FDR < 0.05": 0.05,
+                    "FDR < 0.10 (exploratory)": 0.10,
+                }[fdr_filter]
+                if fdr_limit is not None:
+                    ranking_summary = ranking_summary.loc[
+                        ranking_summary["ranking_fdr"].lt(fdr_limit)
+                    ].copy()
+                ranking_summary = ranking_summary.sort_values(
+                    "ranking_abs", ascending=False, na_position="last"
+                )
+                ranking_summary["ranking_label"] = (
+                    "M" + ranking_summary["module"].astype(int).astype(str)
+                    + " · " + ranking_summary["component_label"].astype(str)
+                )
+                ranking_summary["ranking_label"] += np.where(
+                    ranking_summary["ranking_fdr"].lt(0.05), " *", ""
+                )
+                ranking_plot = ranking_summary.head(int(top_n)).copy()
+                if ranking_plot.empty:
+                    st.info("No modules meet the selected FDR filter.")
+                else:
+                    render_plotly_chart(
+                        distribution_module_ranking_figure(
+                            ranking_plot,
+                            value_label=ranking_axis_label,
+                            signed=signed_ranking,
+                            module_definition=module_set_label,
+                        ),
+                        use_container_width=True,
+                        config={"displaylogo": False},
+                    )
+                ranking_catalog.insert(0, "module_definition", module_set_label)
+                filterable_dataframe(
+                    ranking_catalog,
+                    table_key="distribution_module_ranking_table",
+                    table_name="Complete module differentiation ranking",
+                    use_container_width=True,
+                    hide_index=True,
+                )
+                st.download_button(
+                    "Download complete differentiation ranking (TSV)",
+                    data=dataframe_to_tsv_bytes(ranking_catalog),
+                    file_name=(
+                        f"{download_prefix}{feature}_{method}_"
+                        f"{distribution_grouping_variable}_{ranking_statistic}_ranking.tsv"
+                    ),
+                    mime="text/tab-separated-values",
+                )
 
 if active_view == "CT–TS screen":
     st.subheader("Descriptive CT–TS pattern screen")
@@ -8609,7 +9130,12 @@ if active_view == "Methods & data":
         "the selected definition (138, 154, or 186), while holding every other analysis and "
         "grouping field fixed; missing and constant tests are excluded from the denominator. "
         "OLS trend lines are descriptive guides. Categorical comparisons use Kruskal–Wallis "
-        "and epsilon-squared and never correlate nominal codes."
+        "and epsilon-squared and never correlate nominal codes. Feature-distribution "
+        "differentiation adds two-sided Mann–Whitney contrasts, Cliff’s delta, probability "
+        "of superiority, deterministic 1,000-resample bootstrap intervals, and an optional "
+        "two-sided KS shape diagnostic. Pairwise BH is calculated across valid modules "
+        "separately for every fixed group contrast and component; category contrasts are "
+        "never pooled into one correction."
     )
     st.markdown(
         "**ROSMAP clusters** are an unordered four-class donor partition available for "

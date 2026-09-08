@@ -13,7 +13,7 @@ from scipy.stats import ConstantInputWarning, kruskal, pearsonr, spearmanr
 # Increment when the callable contract changes.  Streamlit Community Cloud can
 # retain this module across an entrypoint hot reload; the app uses this sentinel
 # to force a reload before importing helpers with a newer signature.
-GROUPED_ASSOCIATION_API_VERSION = 1
+GROUPED_ASSOCIATION_API_VERSION = 2
 
 
 def benjamini_hochberg(values: pd.Series) -> pd.Series:
@@ -172,17 +172,23 @@ def calculate_categorical_associations(
         h_statistic = p_value = epsilon_squared = np.nan
         n_tested = int(sum(len(values) for values in samples))
         k_tested = int(len(samples))
-        if k_tested >= 2 and n_tested > k_tested and any(
-            np.unique(values).size > 1 for values in samples
-        ):
+        unavailable_reason = ""
+        if k_tested < 2:
+            unavailable_reason = "fewer than two eligible groups"
+        elif n_tested <= k_tested:
+            unavailable_reason = "insufficient non-missing values"
+        elif np.unique(np.concatenate(samples)).size <= 1:
+            unavailable_reason = "constant scores"
+        else:
             try:
                 h_statistic, p_value = kruskal(*samples, nan_policy="omit")
                 epsilon_squared = max(
                     0.0,
                     float((h_statistic - k_tested + 1) / (n_tested - k_tested)),
                 )
-            except ValueError:
-                pass
+            except ValueError as error:
+                unavailable_reason = str(error)
+        eligible_test = bool(np.isfinite(p_value))
         row: dict[str, object] = {
             **base,
             "outcome": category_column,
@@ -204,6 +210,8 @@ def calculate_categorical_associations(
             "kruskal_h": h_statistic,
             "kruskal_df": float(k_tested - 1) if k_tested >= 2 else np.nan,
             "k_tested": k_tested,
+            "eligible": eligible_test,
+            "unavailable_reason": unavailable_reason,
             "epsilon_squared": epsilon_squared,
             "categorical_p": p_value,
             "min_group_n": int(min_group_n),

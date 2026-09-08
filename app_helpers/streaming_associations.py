@@ -18,10 +18,15 @@ from app_helpers.correlations import (
     calculate_correlations,
 )
 from app_helpers.data import load_aggregate_scope, load_resolved_scope
+from app_helpers.distributions import (
+    add_pairwise_across_module_fdr,
+    calculate_pairwise_distribution_statistics,
+)
 
 
 _STREAMING_ANALYSIS_LOCK = Lock()
 _FrameFunction = TypeVar("_FrameFunction", bound=Callable[..., pd.DataFrame])
+STREAMING_ASSOCIATION_API_VERSION = 2
 
 
 def _serialized_heavy_read(function: _FrameFunction) -> _FrameFunction:
@@ -356,6 +361,76 @@ def stream_categorical_associations(
             )
         )
     return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
+
+
+@_serialized_heavy_read
+def stream_pairwise_distribution_associations(
+    modules: Iterable[int],
+    metadata: pd.DataFrame,
+    *,
+    module_set: str,
+    estimator: str,
+    method: str,
+    resolved: bool,
+    feature: str,
+    category_variable: str,
+    scale: str,
+    components: tuple[str, ...],
+    diagnoses: tuple[str, ...],
+    category_levels: tuple[object, ...],
+    contrasts: tuple[tuple[object, object], ...],
+    min_group_n: int,
+    edge_rule: str,
+    differential_edge_rule: str,
+    differential_fdr_scope: str,
+    differential_fdr_threshold: float,
+    score_normalization: str,
+    analysis_subset: str,
+    cohort_scope: str = "complete_450",
+) -> pd.DataFrame:
+    """Calculate pairwise group effects while retaining one module in memory."""
+
+    rows: list[pd.DataFrame] = []
+    for scores in _module_score_frames(
+        modules, module_set=module_set, estimator=estimator, method=method,
+        resolved=resolved, feature=feature, scale=scale, components=components,
+        edge_rule=edge_rule, differential_edge_rule=differential_edge_rule,
+        differential_fdr_scope=differential_fdr_scope,
+        differential_fdr_threshold=differential_fdr_threshold,
+        score_normalization=score_normalization,
+        cohort_scope=cohort_scope,
+    ):
+        long = _attach_metadata(
+            scores, metadata,
+            ["diagnosis_group", "ad_control_split", category_variable],
+        )
+        long = _filter_analysis_rows(
+            long, diagnoses=diagnoses, analysis_subset=analysis_subset
+        )
+        long = long.loc[
+            long[category_variable].notna()
+            & long[category_variable].isin(category_levels)
+        ].copy()
+        if long.empty:
+            continue
+        rows.append(
+            calculate_pairwise_distribution_statistics(
+                long,
+                ["module", "metric_family", "component", "component_label"],
+                category_column=category_variable,
+                contrasts=contrasts,
+                minimum_group_n=int(min_group_n),
+                bootstrap_resamples=0,
+                include_ks=True,
+            )
+        )
+    if not rows:
+        return pd.DataFrame()
+    result = pd.concat(rows, ignore_index=True)
+    return add_pairwise_across_module_fdr(
+        result,
+        family_columns=["metric_family", "component", "grouping_variable"],
+    )
 
 
 @_serialized_heavy_read

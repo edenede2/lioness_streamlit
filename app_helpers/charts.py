@@ -19,7 +19,7 @@ from sklearn.metrics import precision_recall_curve, roc_curve
 
 
 PREDICTION_BLOCK_ORDERING_API_VERSION = 1
-DISTRIBUTION_GROUPING_API_VERSION = 1
+DISTRIBUTION_GROUPING_API_VERSION = 2
 
 
 DIAGNOSIS_COLORS = {
@@ -1836,10 +1836,21 @@ def distribution_figure(
                 "showlegend": index == 0,
             }
             if chart_type == "Histogram":
+                values = pd.to_numeric(panel["metric_value"], errors="coerce")
+                finite = values[np.isfinite(values)]
+                if finite.empty:
+                    continue
+                bin_start = float(finite.min())
+                bin_end = float(finite.max())
+                if math.isclose(bin_start, bin_end):
+                    padding = max(abs(bin_start) * 0.05, 0.5)
+                    bin_start -= padding
+                    bin_end += padding
+                bin_size = (bin_end - bin_start) / max(int(bins), 1)
                 trace = go.Histogram(
                     x=group["metric_value"],
                     histnorm="probability density",
-                    nbinsx=bins,
+                    xbins={"start": bin_start, "end": bin_end, "size": bin_size},
                     opacity=0.52,
                     marker_color=group_colors[group_value],
                     hovertemplate=(
@@ -1848,30 +1859,55 @@ def distribution_figure(
                     ),
                     **common,
                 )
-            else:
+            elif chart_type in {"Violin", "Raincloud"}:
+                raincloud = chart_type == "Raincloud"
                 trace = go.Violin(
                     x=group["metric_value"],
                     y=[str(group_value)] * len(group),
                     orientation="h",
                     side="positive",
                     width=1.6,
-                    points="outliers",
+                    points="all" if raincloud else "outliers",
+                    pointpos=-0.72 if raincloud else 0,
+                    jitter=0.28 if raincloud else 0,
                     box_visible=True,
-                    meanline_visible=True,
+                    meanline_visible=not raincloud,
                     line_color=group_colors[group_value],
                     fillcolor=group_colors[group_value],
-                    opacity=0.55,
+                    opacity=0.48 if raincloud else 0.55,
                     hovertemplate=(
                         f"{group_label}: {group_value}<br>"
                         "Value: %{x:.3f}<extra></extra>"
                     ),
                     **common,
                 )
+            elif chart_type == "ECDF":
+                ordered_values = np.sort(
+                    pd.to_numeric(group["metric_value"], errors="coerce")
+                    .dropna()
+                    .to_numpy(dtype=float)
+                )
+                trace = go.Scatter(
+                    x=ordered_values,
+                    y=np.arange(1, len(ordered_values) + 1) / len(ordered_values),
+                    mode="lines",
+                    line={"color": group_colors[group_value], "width": 2, "shape": "hv"},
+                    hovertemplate=(
+                        f"{group_label}: {group_value}<br>"
+                        "Value: %{x:.3f}<br>Cumulative fraction: %{y:.3f}"
+                        "<extra></extra>"
+                    ),
+                    **common,
+                )
+            else:
+                raise ValueError(f"Unknown distribution chart type: {chart_type}")
             fig.add_trace(trace, row=row, col=col)
 
     fig.update_xaxes(title_text=f"{feature_label} ({scale_label})")
     if chart_type == "Histogram":
         fig.update_yaxes(title_text="Probability density")
+    elif chart_type == "ECDF":
+        fig.update_yaxes(title_text="Cumulative fraction", range=[0, 1.02])
     title_text = f"Module M{int(module)}: {feature_label} distributions"
     if module_definition:
         title_text += f"<br><sup>{module_definition}</sup>"
@@ -1922,6 +1958,255 @@ def distribution_summary(
     numeric = summary.select_dtypes(include="number").columns.difference(["n"])
     summary[numeric] = summary[numeric].round(4)
     return summary
+
+
+def distribution_omnibus_component_figure(
+    frame: pd.DataFrame,
+    *,
+    module: int,
+    module_definition: str | None = None,
+) -> go.Figure:
+    """Compare omnibus categorical effect sizes across selected components."""
+
+    data = frame.copy().sort_values("epsilon_squared", ascending=True)
+    data["display_label"] = data["component_label"].astype(str) + np.where(
+        pd.to_numeric(data["categorical_fdr_across_modules"], errors="coerce").lt(0.05),
+        " *",
+        "",
+    )
+    custom = np.column_stack(
+        [
+            pd.to_numeric(data[column], errors="coerce")
+            for column in (
+                "n_tested", "k_tested", "kruskal_h", "categorical_p",
+                "categorical_fdr_across_modules", "categorical_fdr_module_family_n",
+            )
+        ]
+    )
+    figure = go.Figure(
+        go.Bar(
+            x=data["epsilon_squared"],
+            y=data["display_label"],
+            orientation="h",
+            marker_color="#2C7FB8",
+            customdata=custom,
+            hovertemplate=(
+                "%{y}<br>ε²=%{x:.3f}<br>n tested=%{customdata[0]:.0f}"
+                "<br>groups tested=%{customdata[1]:.0f}<br>H=%{customdata[2]:.3f}"
+                "<br>p=%{customdata[3]:.3g}<br>module-set FDR=%{customdata[4]:.3g}"
+                "<br>tested modules=%{customdata[5]:.0f}<extra></extra>"
+            ),
+        )
+    )
+    subtitle = f"Module M{int(module)} · * module-set FDR < 0.05"
+    if module_definition:
+        subtitle = f"{module_definition}<br>{subtitle}"
+    figure.update_layout(
+        title={"text": f"Overall group differentiation<br><sup>{subtitle}</sup>", "x": 0.01},
+        template="plotly_white",
+        xaxis_title="Epsilon-squared",
+        yaxis_title=None,
+        height=max(390, 115 + 52 * len(data)),
+        margin={"l": 180, "r": 30, "t": 105, "b": 55},
+        showlegend=False,
+    )
+    figure.update_xaxes(range=[0, max(0.05, float(data["epsilon_squared"].max()) * 1.08)])
+    return figure
+
+
+def distribution_pairwise_forest_figure(
+    frame: pd.DataFrame,
+    *,
+    module: int,
+    module_definition: str | None = None,
+) -> go.Figure:
+    """Show selected-module Cliff's deltas with bootstrap confidence intervals."""
+
+    data = frame.loc[frame["eligible"].fillna(False)].copy()
+    data = data.sort_values(["component", "comparison_label", "reference_label"])
+    data["forest_label"] = (
+        data["component_label"].astype(str)
+        + " · "
+        + data["comparison_label"].astype(str)
+        + " vs "
+        + data["reference_label"].astype(str)
+    )
+    data["forest_label"] += np.where(
+        pd.to_numeric(data["mann_whitney_fdr_across_modules"], errors="coerce").lt(0.05),
+        " *",
+        "",
+    )
+    delta = pd.to_numeric(data["cliffs_delta"], errors="coerce")
+    low = pd.to_numeric(data["cliffs_delta_ci_low"], errors="coerce")
+    high = pd.to_numeric(data["cliffs_delta_ci_high"], errors="coerce")
+    custom = np.column_stack(
+        [
+            pd.to_numeric(data[column], errors="coerce")
+            for column in (
+                "n_reference", "n_comparison", "probability_superiority",
+                "median_difference", "mann_whitney_p",
+                "mann_whitney_fdr_across_modules",
+            )
+        ]
+    )
+    colors = [
+        "#E66101" if value >= 0 else "#2C7FB8"
+        for value in delta.fillna(0)
+    ]
+    figure = go.Figure(
+        go.Scatter(
+            x=delta,
+            y=data["forest_label"],
+            mode="markers",
+            marker={"color": colors, "size": 9, "line": {"color": "#30343B", "width": 0.6}},
+            error_x={
+                "type": "data",
+                "array": (high - delta).clip(lower=0),
+                "arrayminus": (delta - low).clip(lower=0),
+                "visible": True,
+                "color": "#65727E",
+            },
+            customdata=custom,
+            hovertemplate=(
+                "%{y}<br>Cliff's δ=%{x:.3f}<br>reference n=%{customdata[0]:.0f}"
+                "<br>comparison n=%{customdata[1]:.0f}"
+                "<br>probability of superiority=%{customdata[2]:.3f}"
+                "<br>median difference=%{customdata[3]:.3f}"
+                "<br>Mann–Whitney p=%{customdata[4]:.3g}"
+                "<br>module-set FDR=%{customdata[5]:.3g}<extra></extra>"
+            ),
+        )
+    )
+    figure.add_vline(x=0, line_color="#65727E", line_dash="dash")
+    subtitle = "Positive values mean the comparison group tends higher · * FDR < 0.05"
+    if module_definition:
+        subtitle = f"{module_definition}<br>{subtitle}"
+    figure.update_layout(
+        title={"text": f"Pairwise distribution effects<br><sup>{subtitle}</sup>", "x": 0.01},
+        template="plotly_white",
+        xaxis={"title": "Cliff's delta (comparison − reference)", "range": [-1.05, 1.05]},
+        yaxis={"title": None, "autorange": "reversed"},
+        height=max(430, 130 + 36 * len(data)),
+        margin={"l": 285, "r": 35, "t": 105, "b": 60},
+        showlegend=False,
+    )
+    return figure
+
+
+def distribution_pairwise_heatmap_figure(
+    frame: pd.DataFrame,
+    *,
+    module: int,
+    module_definition: str | None = None,
+) -> go.Figure:
+    """Show component-by-contrast Cliff's delta values for one module."""
+
+    data = frame.copy()
+    data["contrast_label"] = (
+        data["comparison_label"].astype(str)
+        + " vs "
+        + data["reference_label"].astype(str)
+    )
+    row_order = data["contrast_label"].drop_duplicates().tolist()
+    column_order = data["component_label"].drop_duplicates().tolist()
+    value = data.pivot(index="contrast_label", columns="component_label", values="cliffs_delta")
+    fdr = data.pivot(
+        index="contrast_label", columns="component_label",
+        values="mann_whitney_fdr_across_modules",
+    )
+    p_value = data.pivot(
+        index="contrast_label", columns="component_label", values="mann_whitney_p"
+    )
+    value = value.reindex(index=row_order, columns=column_order)
+    fdr = fdr.reindex(index=row_order, columns=column_order)
+    p_value = p_value.reindex(index=row_order, columns=column_order)
+    labels = np.empty(value.shape, dtype=object)
+    for row in range(value.shape[0]):
+        for column in range(value.shape[1]):
+            observed = value.iat[row, column]
+            labels[row, column] = "" if pd.isna(observed) else (
+                f"{observed:.2f}" + ("*" if fdr.iat[row, column] < 0.05 else "")
+            )
+    custom = np.stack([p_value.to_numpy(), fdr.to_numpy()], axis=-1)
+    figure = go.Figure(
+        go.Heatmap(
+            z=value.to_numpy(),
+            x=value.columns,
+            y=value.index,
+            zmin=-1,
+            zmax=1,
+            zmid=0,
+            colorscale=[[0, "#2C7FB8"], [0.5, "#F4F4F2"], [1, "#E66101"]],
+            text=labels,
+            texttemplate="%{text}",
+            customdata=custom,
+            colorbar={"title": "Cliff's δ"},
+            hovertemplate=(
+                "Contrast: %{y}<br>Component: %{x}<br>Cliff's δ=%{z:.3f}"
+                "<br>Mann–Whitney p=%{customdata[0]:.3g}"
+                "<br>module-set FDR=%{customdata[1]:.3g}<extra></extra>"
+            ),
+        )
+    )
+    subtitle = "Positive values mean the first-named group tends higher · * FDR < 0.05"
+    if module_definition:
+        subtitle = f"{module_definition}<br>{subtitle}"
+    figure.update_layout(
+        title={"text": f"Pairwise effect matrix for M{int(module)}<br><sup>{subtitle}</sup>", "x": 0.01},
+        template="plotly_white",
+        height=max(410, 200 + 42 * len(value.index)),
+        margin={"l": 180, "r": 35, "t": 105, "b": 95},
+        xaxis={"tickangle": -30},
+        yaxis={"autorange": "reversed"},
+    )
+    return figure
+
+
+def distribution_module_ranking_figure(
+    frame: pd.DataFrame,
+    *,
+    value_label: str,
+    signed: bool,
+    module_definition: str | None = None,
+) -> go.Figure:
+    """Render a compact ranked module/component differentiation chart."""
+
+    data = frame.iloc[::-1].copy()
+    colors = (
+        ["#E66101" if value >= 0 else "#2C7FB8" for value in data["ranking_value"]]
+        if signed else ["#2C7FB8"] * len(data)
+    )
+    figure = go.Figure(
+        go.Bar(
+            x=data["ranking_value"],
+            y=data["ranking_label"],
+            orientation="h",
+            marker_color=colors,
+            customdata=np.column_stack(
+                [data["ranking_fdr"], data["ranking_p"], data["ranking_family_n"]]
+            ),
+            hovertemplate=(
+                "%{y}<br>value=%{x:.3f}<br>p=%{customdata[1]:.3g}"
+                "<br>module-set FDR=%{customdata[0]:.3g}"
+                "<br>tested modules=%{customdata[2]:.0f}<extra></extra>"
+            ),
+        )
+    )
+    if signed:
+        figure.add_vline(x=0, line_color="#65727E", line_dash="dash")
+    subtitle = "* module-set FDR < 0.05"
+    if module_definition:
+        subtitle = f"{module_definition}<br>{subtitle}"
+    figure.update_layout(
+        title={"text": f"Most differentiated module components<br><sup>{subtitle}</sup>", "x": 0.01},
+        template="plotly_white",
+        xaxis_title=value_label,
+        yaxis_title=None,
+        height=max(480, 160 + 28 * len(data)),
+        margin={"l": 230, "r": 35, "t": 105, "b": 60},
+        showlegend=False,
+    )
+    return figure
 
 
 def module_size_distribution_figure(

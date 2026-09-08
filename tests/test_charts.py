@@ -20,6 +20,10 @@ from app_helpers.charts import (  # noqa: E402
     clustered_correlation_group_order,
     correlation_heatmap_figure,
     distribution_figure,
+    distribution_module_ranking_figure,
+    distribution_omnibus_component_figure,
+    distribution_pairwise_forest_figure,
+    distribution_pairwise_heatmap_figure,
     distribution_summary,
     edge_volcano_figure,
     edge_summary_figure,
@@ -198,6 +202,92 @@ def test_scatter_and_distribution_chart_paths() -> None:
     )
     assert set(grouped_summary["distribution_group"]) == {"Cluster 1", "Cluster 4"}
     assert len(grouped_summary) == 4
+
+    raincloud = distribution_figure(
+        grouped,
+        feature_label="Connectivity",
+        scale_label="Z-score",
+        diagnoses=["Cluster 1", "Cluster 4"],
+        module=935,
+        chart_type="Raincloud",
+        group_column="distribution_group",
+        group_label="ROSMAP clusters",
+    )
+    assert all(trace.type == "violin" and trace.points == "all" for trace in raincloud.data)
+
+    ecdf = distribution_figure(
+        grouped,
+        feature_label="Connectivity",
+        scale_label="Z-score",
+        diagnoses=["Cluster 1", "Cluster 4"],
+        module=935,
+        chart_type="ECDF",
+        group_column="distribution_group",
+        group_label="ROSMAP clusters",
+    )
+    assert all(trace.type == "scatter" and trace.line.shape == "hv" for trace in ecdf.data)
+    assert all(np.isclose(trace.y[-1], 1.0) for trace in ecdf.data)
+
+
+def test_distribution_differentiation_figures() -> None:
+    omnibus = pd.DataFrame(
+        {
+            "component": ["CT", "TS"],
+            "component_label": ["CT aggregate", "TS aggregate"],
+            "epsilon_squared": [0.20, 0.08],
+            "n_tested": [100, 100],
+            "k_tested": [3, 3],
+            "kruskal_h": [12.0, 5.0],
+            "categorical_p": [0.001, 0.08],
+            "categorical_fdr_across_modules": [0.02, 0.30],
+            "categorical_fdr_module_family_n": [154, 154],
+        }
+    )
+    omnibus_figure = distribution_omnibus_component_figure(
+        omnibus, module=935, module_definition="Full-cohort modules"
+    )
+    assert len(omnibus_figure.data) == 1
+    assert any("*" in str(value) for value in omnibus_figure.data[0].y)
+
+    pairwise = pd.DataFrame(
+        {
+            "component": ["CT", "TS"],
+            "component_label": ["CT aggregate", "TS aggregate"],
+            "reference_label": ["Control", "Control"],
+            "comparison_label": ["AD", "AD"],
+            "eligible": [True, True],
+            "cliffs_delta": [0.45, -0.12],
+            "cliffs_delta_ci_low": [0.20, -0.30],
+            "cliffs_delta_ci_high": [0.65, 0.08],
+            "n_reference": [50, 50],
+            "n_comparison": [50, 50],
+            "probability_superiority": [0.725, 0.44],
+            "median_difference": [0.5, -0.1],
+            "mann_whitney_p": [0.001, 0.30],
+            "mann_whitney_fdr_across_modules": [0.03, 0.60],
+        }
+    )
+    forest = distribution_pairwise_forest_figure(pairwise, module=935)
+    assert len(forest.data) == 1
+    assert tuple(forest.layout.xaxis.range) == (-1.05, 1.05)
+    heatmap = distribution_pairwise_heatmap_figure(pairwise, module=935)
+    assert len(heatmap.data) == 1
+    assert "0.45*" in np.asarray(heatmap.data[0].text).ravel()
+
+    ranking = pd.DataFrame(
+        {
+            "ranking_value": [0.5, -0.4],
+            "ranking_label": ["M1 · CT *", "M2 · TS"],
+            "ranking_fdr": [0.01, 0.20],
+            "ranking_p": [0.001, 0.10],
+            "ranking_family_n": [154, 154],
+        }
+    )
+    ranked = distribution_module_ranking_figure(
+        ranking, value_label="Cliff’s delta", signed=True
+    )
+    assert len(ranked.data) == 1
+    assert set(ranked.data[0].marker.color) == {"#E66101", "#2C7FB8"}
 
 
 def test_configurable_grouped_scatter_controls_annotations_lines_and_legend() -> None:

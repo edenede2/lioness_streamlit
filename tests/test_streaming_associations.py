@@ -103,6 +103,35 @@ def test_grouped_correlation_matrix_keeps_level_fdr_families_separate(
     assert family_sizes.eq(2).all()
 
 
+def test_pairwise_distribution_scan_is_module_bounded_and_contrast_specific(
+    monkeypatch,
+) -> None:
+    calls: list[int] = []
+
+    def fake_load(*args, module=None, **kwargs):
+        calls.append(int(module))
+        return _resolved_module(int(module))
+
+    monkeypatch.setattr(streaming, "load_resolved_scope", fake_load)
+    result = streaming.stream_pairwise_distribution_associations(
+        (1, 2), _metadata(), module_set="full_cohort", estimator="lioness",
+        method="control_anchored", resolved=True, feature="connectivity",
+        category_variable="diagnosis_group", scale="rint",
+        components=("TS_AC", "CT_AC__DLPFC"), diagnoses=("Control", "AD"),
+        category_levels=("Control", "AD"), contrasts=(("Control", "AD"),),
+        min_group_n=5, edge_rule="all", differential_edge_rule="all",
+        differential_fdr_scope="global", differential_fdr_threshold=0.05,
+        score_normalization="standard_pruned", analysis_subset="all_donors",
+    )
+
+    assert calls == [1, 2]
+    assert len(result) == 4
+    assert result["mann_whitney_fdr_module_family_n"].eq(2).all()
+    assert result["ks_fdr_module_family_n"].eq(2).all()
+    assert set(result["reference_level"]) == {"Control"}
+    assert set(result["comparison_level"]) == {"AD"}
+
+
 def test_pooled_correlations_apply_diagnosis_filter_per_module(monkeypatch) -> None:
     monkeypatch.setattr(
         streaming,

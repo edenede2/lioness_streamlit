@@ -151,4 +151,23 @@ def test_generic_categorical_association_supports_string_levels() -> None:
     assert set(result["levels_tested"].split(",")) == {"ε2/ε3", "ε3/ε3"}
     assert result["levels_excluded_small_n"] == "ε4/ε4"
     assert result["k_tested"] == 2
+    assert bool(result["eligible"])
+    assert result["unavailable_reason"] == ""
     assert 0 <= result["epsilon_squared"] <= 1
+
+
+def test_categorical_association_reports_constant_scores_as_unavailable() -> None:
+    frame = pd.DataFrame(
+        {
+            "module": [1] * 10,
+            "component": ["CT"] * 10,
+            "group": ["A"] * 5 + ["B"] * 5,
+            "metric_value": [2.0] * 10,
+        }
+    )
+    result = calculate_categorical_associations(
+        frame, ["module", "component"], category_column="group", min_group_n=5
+    ).iloc[0]
+    assert not bool(result["eligible"])
+    assert result["unavailable_reason"] == "constant scores"
+    assert pd.isna(result["categorical_p"])

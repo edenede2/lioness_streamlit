@@ -42,7 +42,11 @@ The app includes three explicitly separated module definitions:
   continuous color scales and palette reversal.
 - Expanded hover details for cognition, motor function, age, education, APOE,
   CogDx, Braak, CERAD, ADNC, and Parkinsonism.
-- Feature-only histograms and violin distributions.
+- Feature-only histograms, violins, raincloud plots, and ECDFs. Robust distribution
+  differentiation includes Kruskal–Wallis/epsilon-squared omnibus tests, reference-based
+  Mann–Whitney/Cliff's-delta contrasts with bootstrap intervals, optional KS shape tests,
+  and a lazy all-module ranking. Every FDR family is corrected across modules separately
+  for its fixed component and group contrast.
 - Selected-module and all-module correlation heatmaps, including an all-feature
   view across every module and diagnosis group, with sortable/downloadable Pearson,
   Spearman, p-value, and FDR tables.

@@ -13,6 +13,7 @@ from app_helpers.correlations import (
 
 import app_helpers.charts as chart_helpers
 import app_helpers.correlations as correlation_helpers
+import app_helpers.streaming_associations as streaming_helpers
 
 
 APP = Path(__file__).resolve().parents[1] / "streamlit_app.py"
@@ -64,10 +65,18 @@ def test_streamlit_hot_reload_recovers_stale_correlation_helper(monkeypatch) -> 
     monkeypatch.delattr(correlation_helpers, "GROUPED_ASSOCIATION_API_VERSION")
     app = AppTest.from_file(APP, default_timeout=180).run()
     assert_app_clean(app)
-    assert correlation_helpers.GROUPED_ASSOCIATION_API_VERSION == 1
+    assert correlation_helpers.GROUPED_ASSOCIATION_API_VERSION == 2
     assert "min_group_n" in inspect.signature(
         correlation_helpers.calculate_correlations
     ).parameters
+
+
+def test_streamlit_hot_reload_recovers_stale_streaming_helper(monkeypatch) -> None:
+    monkeypatch.delattr(streaming_helpers, "stream_pairwise_distribution_associations")
+    app = AppTest.from_file(APP, default_timeout=180).run()
+    assert_app_clean(app)
+    assert streaming_helpers.STREAMING_ASSOCIATION_API_VERSION == 2
+    assert hasattr(streaming_helpers, "stream_pairwise_distribution_associations")
 
 
 def test_streamlit_table_value_filter_filters_rows_and_resets() -> None:
@@ -176,6 +185,35 @@ def test_feature_distributions_support_non_diagnosis_grouping() -> None:
     )
     assert set(summary["grouping_variable"]) == {"clusters"}
     assert set(summary["distribution_group"]) == {"Cluster 1", "Cluster 4"}
+
+
+def test_feature_distributions_offer_shape_and_lazy_differentiation_views() -> None:
+    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = select_view(app, "Feature distributions")
+    assert_app_clean(app)
+    analysis = widget_with_label(app.radio, "Distribution analysis")
+    assert analysis.value == "Distribution shape"
+    distribution_view = widget_with_label(app.radio, "Distribution view")
+    assert distribution_view.options == ["Histogram", "Violin", "Raincloud", "ECDF"]
+    app = distribution_view.set_value("ECDF").run()
+    assert_app_clean(app)
+
+    app = widget_with_label(app.selectbox, "Group distributions by").set_value(
+        "clusters"
+    ).run()
+    assert_app_clean(app)
+    app = widget_with_label(app.radio, "Distribution analysis").set_value(
+        "Pairwise differentiation"
+    ).run()
+    assert_app_clean(app)
+    assert widget_with_label(app.radio, "Pairwise contrasts").value == (
+        "Reference vs other groups"
+    )
+    assert widget_with_label(app.selectbox, "Reference group").value == 1.0
+    assert any(
+        "cliffs_delta" in dataframe.value.columns
+        for dataframe in app.dataframe
+    )
 
 
 def test_feature_distributions_can_use_tissue_module_eigengenes() -> None:
