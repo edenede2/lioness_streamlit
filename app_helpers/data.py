@@ -1587,6 +1587,90 @@ def load_kegg_tsv_bytes(module_set: str = "full_cohort") -> bytes:
     return dataframe_to_tsv_bytes(load_kegg(module_set=module_set))
 
 
+COEFFICIENT_KEGG_SCOPES = {
+    "expanded": ("Tissue-expanded", "fdr"),
+    "dlpfc": ("DLPFC", "fdr_DLPFC"),
+    "ac": ("AC", "fdr_AC"),
+    "pcg": ("PCG", "fdr_PCGBA23"),
+}
+
+
+def coefficient_kegg_scope_lookup(kegg: pd.DataFrame) -> pd.DataFrame:
+    """Select the lowest-FDR KEGG row independently for four coefficient scopes."""
+
+    base_columns = ["category_level1", "category_level2", "pathway_name"]
+    pieces: list[pd.DataFrame] = []
+    for scope, (_label, fdr_column) in COEFFICIENT_KEGG_SCOPES.items():
+        if fdr_column not in kegg or "cluster_id" not in kegg:
+            continue
+        columns = ["cluster_id", *[column for column in base_columns if column in kegg], fdr_column]
+        selected = kegg[columns].copy()
+        selected["module"] = pd.to_numeric(selected.pop("cluster_id"), errors="coerce")
+        selected[fdr_column] = pd.to_numeric(selected[fdr_column], errors="coerce")
+        selected = selected.loc[
+            selected["module"].notna() & np.isfinite(selected[fdr_column])
+        ].copy()
+        selected["module"] = selected["module"].astype(int)
+        selected = selected.sort_values(
+            ["module", fdr_column, "pathway_name"],
+            kind="stable",
+            na_position="last",
+        ).drop_duplicates("module")
+        selected = selected.rename(
+            columns={
+                "category_level1": f"kegg_{scope}_category",
+                "category_level2": f"kegg_{scope}_subcategory",
+                "pathway_name": f"kegg_{scope}_pathway",
+                fdr_column: f"kegg_{scope}_fdr",
+            }
+        )
+        pieces.append(selected.set_index("module"))
+    if not pieces:
+        return pd.DataFrame(columns=["module"])
+    return pd.concat(pieces, axis=1).reset_index()
+
+
+def annotate_prediction_coefficients(
+    coefficients: pd.DataFrame,
+    kegg_scope_lookup: pd.DataFrame,
+) -> pd.DataFrame:
+    """Attach scope-specific KEGG fields only to multi-tissue module predictors."""
+
+    result = coefficients.copy()
+    enrichment_columns = [
+        f"kegg_{scope}_{field}"
+        for scope in COEFFICIENT_KEGG_SCOPES
+        for field in ("category", "subcategory", "pathway", "fdr")
+    ]
+    if "module" not in result or kegg_scope_lookup.empty:
+        for column in enrichment_columns:
+            if column not in result:
+                result[column] = np.nan
+        return result
+
+    existing = [column for column in enrichment_columns if column in result]
+    if existing:
+        result = result.drop(columns=existing)
+    result["__row_order"] = np.arange(len(result))
+    result = result.merge(kegg_scope_lookup, on="module", how="left", validate="many_to_one")
+
+    feature_names = result.get("feature_name", pd.Series("", index=result.index)).astype(str)
+    source_modules = result.get(
+        "eigengene_source_module", pd.Series(np.nan, index=result.index)
+    )
+    eigengene_sources = result.get(
+        "eigengene_source", pd.Series("not_applicable", index=result.index)
+    ).astype(str)
+    independent_eigengene = (
+        source_modules.notna()
+        | feature_names.str.startswith(("SRFULL_", "SRCC_"))
+        | (feature_names.str.contains("__EIG", regex=False)
+           & ~eigengene_sources.isin({"matched_multitissue", "not_applicable"}))
+    )
+    result.loc[independent_eigengene, enrichment_columns] = np.nan
+    return result.sort_values("__row_order", kind="stable").drop(columns="__row_order")
+
+
 def filter_kegg_enrichments(
     frame: pd.DataFrame,
     modules: Iterable[int] | None = None,

@@ -16,6 +16,40 @@ sys.path.insert(0, str(APP_ROOT))
 from app_helpers import data  # noqa: E402
 
 
+def test_coefficient_kegg_scopes_use_independent_minima_and_neutral_regional_rows() -> None:
+    kegg = pd.DataFrame(
+        {
+            "cluster_id": [1, 1, 2],
+            "pathway_name": ["Expanded best", "DLPFC best", "Only pathway"],
+            "category_level1": ["Metabolism", "Disease", "Signaling"],
+            "category_level2": ["Lipid", "Neurodegeneration", "Signal transduction"],
+            "fdr": [0.01, 0.20, 0.03],
+            "fdr_DLPFC": [0.30, 0.001, 0.04],
+            "fdr_AC": [0.04, 0.08, 0.05],
+            "fdr_PCGBA23": [0.10, 0.09, 0.06],
+        }
+    )
+    lookup = data.coefficient_kegg_scope_lookup(kegg)
+    module_one = lookup.loc[lookup["module"].eq(1)].iloc[0]
+    assert module_one["kegg_expanded_pathway"] == "Expanded best"
+    assert module_one["kegg_dlpfc_pathway"] == "DLPFC best"
+
+    coefficients = pd.DataFrame(
+        {
+            "module": [1, 1, np.nan],
+            "feature_name": ["M1__CT", "SRFULL_L3__AC__M7__EIG_AC", "age_death.x"],
+            "eigengene_source": ["not_applicable", "single_region_full_tissue_l3", "not_applicable"],
+            "eigengene_source_module": [np.nan, 7, np.nan],
+        }
+    )
+    annotated = data.annotate_prediction_coefficients(coefficients, lookup)
+    assert annotated.loc[0, "kegg_expanded_pathway"] == "Expanded best"
+    assert annotated.loc[1, "kegg_expanded_pathway"] is np.nan or pd.isna(
+        annotated.loc[1, "kegg_expanded_pathway"]
+    )
+    assert pd.isna(annotated.loc[2, "kegg_expanded_pathway"])
+
+
 def test_endpoint_expression_bundle_is_pseudonymous_and_node_aligned() -> None:
     for module_set, module, expected_nodes in (
         ("full_cohort", 935, 58),

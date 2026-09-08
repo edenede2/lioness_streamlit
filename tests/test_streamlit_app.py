@@ -323,6 +323,13 @@ def test_association_view_defaults_to_pooled_all_donor_association() -> None:
         app.checkbox, "Show pooled association across displayed donors"
     )
     assert pooled.value is True
+    group_trends = widget_with_label(app.checkbox, "Show group-specific trend lines")
+    assert group_trends.value is True
+    app = group_trends.set_value(False).run()
+    assert_app_clean(app)
+    assert widget_with_label(
+        app.checkbox, "Show pooled association across displayed donors"
+    ).value is True
     assert any(
         "BH-adjusted only across the 154 modules" in str(caption.value)
         for caption in app.caption

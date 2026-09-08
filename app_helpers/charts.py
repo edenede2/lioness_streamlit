@@ -20,6 +20,7 @@ from sklearn.metrics import precision_recall_curve, roc_curve
 
 PREDICTION_BLOCK_ORDERING_API_VERSION = 1
 DISTRIBUTION_GROUPING_API_VERSION = 3
+COEFFICIENT_ANNOTATION_API_VERSION = 1
 
 
 DIAGNOSIS_COLORS = {
@@ -1180,6 +1181,7 @@ def grouped_association_figure(
     trend_line_rule: str = "all",
     significance_cutoff: float = 0.05,
     minimum_group_n: int = 10,
+    show_group_trends: bool = True,
     show_pooled: bool = True,
     pooled_label: str = "All displayed donors (pooled)",
     module_definition: str | None = None,
@@ -1332,7 +1334,7 @@ def grouped_association_figure(
                             ),
                         ), row=row, col=col,
                     )
-            if _trend_is_visible(
+            if show_group_trends and _trend_is_visible(
                 stat, correlation_method, trend_line_rule,
                 significance_cutoff, minimum_group_n,
             ) and selected["metric_value"].nunique() > 1:
@@ -4435,20 +4437,195 @@ def prediction_threshold_figure(frame: pd.DataFrame, *, title: str) -> go.Figure
     return figure
 
 
-def prediction_coefficient_figure(frame: pd.DataFrame, *, title: str, limit: int = 30) -> go.Figure:
-    selected = frame.nlargest(limit, "abs_standardized_coefficient").sort_values("standardized_coefficient")
-    labels = selected.get("display_feature", selected["feature_name"])
-    figure = go.Figure(
+PREDICTION_FEATURE_FAMILY_COLORS = {
+    "CT connectivity": "#7B3294",
+    "TS connectivity": "#008837",
+    "Eigengene": "#D95F02",
+    "Demographics": "#4C78A8",
+    "APOE": "#E6AB02",
+    "Other": "#7F7F7F",
+}
+
+COEFFICIENT_KEGG_SCOPE_LABELS = {
+    "expanded": "Tissue-expanded",
+    "dlpfc": "DLPFC",
+    "ac": "AC",
+    "pcg": "PCG",
+}
+
+KEGG_SUBCATEGORY_COLORS = [
+    "#4E79A7", "#F28E2B", "#E15759", "#76B7B2", "#59A14F", "#EDC948",
+    "#B07AA1", "#FF9DA7", "#9C755F", "#BAB0AC", "#6A3D9A", "#1B9E77",
+]
+
+
+def prediction_feature_family(feature_name: object) -> str:
+    """Map a displayed model predictor to its visual family."""
+
+    value = str(feature_name)
+    lower = value.lower()
+    if "eig" in lower or "eigengene" in lower or lower.startswith(("srfull_", "srcc_")):
+        return "Eigengene"
+    if "apoe" in lower:
+        return "APOE"
+    if any(token in lower for token in ("age_death", "age at death", "educ", "msex", "sex")):
+        return "Demographics"
+    component = value.split("__", 1)[1].upper() if "__" in value else value.upper()
+    if component.startswith("CT") or "CT_" in component:
+        return "CT connectivity"
+    if component.startswith("TS") or "TS_" in component:
+        return "TS connectivity"
+    return "Other"
+
+
+def _formatted_fdr(value: object) -> str:
+    numeric = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
+    if pd.isna(numeric):
+        return "NA"
+    text = f"{float(numeric):.2e}" if float(numeric) < 0.001 else f"{float(numeric):.3f}"
+    return text + ("*" if float(numeric) < 0.05 else "")
+
+
+def prediction_coefficient_figure(
+    frame: pd.DataFrame, *, title: str, limit: int = 30
+) -> go.Figure:
+    """Plot coefficients beside aligned scope-specific KEGG annotation strips."""
+
+    selected = frame.nlargest(limit, "abs_standardized_coefficient").sort_values(
+        "standardized_coefficient", kind="stable"
+    ).copy()
+    selected["__label"] = selected.get("display_feature", selected["feature_name"]).astype(str)
+    selected["__family"] = selected["feature_name"].map(prediction_feature_family)
+
+    observed_subcategories = sorted({
+        str(value)
+        for scope in COEFFICIENT_KEGG_SCOPE_LABELS
+        for value in selected.get(
+            f"kegg_{scope}_subcategory", pd.Series(dtype=object)
+        ).dropna()
+        if str(value).strip()
+    })
+    subcategory_colors = {
+        value: KEGG_SUBCATEGORY_COLORS[index % len(KEGG_SUBCATEGORY_COLORS)]
+        for index, value in enumerate(observed_subcategories)
+    }
+    subcategory_codes = {value: index + 1 for index, value in enumerate(observed_subcategories)}
+    color_values = ["#E5E7EB", *[subcategory_colors[value] for value in observed_subcategories]]
+    if len(color_values) == 1:
+        colorscale = [[0.0, color_values[0]], [1.0, color_values[0]]]
+    else:
+        maximum = len(color_values) - 1
+        colorscale = []
+        for index, color in enumerate(color_values):
+            lower = max(0.0, (index - 0.5) / maximum)
+            upper = min(1.0, (index + 0.5) / maximum)
+            colorscale.extend([[lower, color], [upper, color]])
+
+    figure = make_subplots(
+        rows=1,
+        cols=5,
+        shared_yaxes=True,
+        column_widths=[0.075, 0.075, 0.075, 0.075, 0.70],
+        horizontal_spacing=0.012,
+        subplot_titles=[*COEFFICIENT_KEGG_SCOPE_LABELS.values(), "Coefficient"],
+    )
+    labels = selected["__label"].tolist()
+    for column_index, (scope, scope_label) in enumerate(
+        COEFFICIENT_KEGG_SCOPE_LABELS.items(), start=1
+    ):
+        subcategories = selected.get(
+            f"kegg_{scope}_subcategory", pd.Series(np.nan, index=selected.index)
+        )
+        fdr_values = selected.get(f"kegg_{scope}_fdr", pd.Series(np.nan, index=selected.index))
+        categories = selected.get(
+            f"kegg_{scope}_category", pd.Series(np.nan, index=selected.index)
+        )
+        pathways = selected.get(
+            f"kegg_{scope}_pathway", pd.Series(np.nan, index=selected.index)
+        )
+        codes = [subcategory_codes.get(str(value), 0) if pd.notna(value) else 0 for value in subcategories]
+        text = [_formatted_fdr(value) for value in fdr_values]
+        hover = np.column_stack([
+            np.repeat(scope_label, len(selected)),
+            categories.fillna("NA").astype(str),
+            subcategories.fillna("NA").astype(str),
+            pathways.fillna("NA").astype(str),
+            text,
+        ])
+        figure.add_trace(
+            go.Heatmap(
+                z=np.asarray(codes, dtype=float).reshape(-1, 1),
+                x=[scope_label], y=labels, text=np.asarray(text).reshape(-1, 1),
+                texttemplate="%{text}", textfont={"size": 9},
+                customdata=hover.reshape(len(selected), 1, 5),
+                zmin=0, zmax=max(1, len(observed_subcategories)), colorscale=colorscale,
+                showscale=False, xgap=1, ygap=1,
+                hovertemplate=(
+                    "Scope: %{customdata[0]}<br>Category: %{customdata[1]}<br>"
+                    "Subcategory: %{customdata[2]}<br>Pathway: %{customdata[3]}<br>"
+                    "FDR: %{customdata[4]}<extra></extra>"
+                ),
+            ),
+            row=1, col=column_index,
+        )
+
+    family_colors = selected["__family"].map(PREDICTION_FEATURE_FAMILY_COLORS)
+    legacy_annotation = selected.get("kegg_annotation", pd.Series("", index=selected.index))
+    figure.add_trace(
         go.Bar(
             x=selected["standardized_coefficient"], y=labels, orientation="h",
-            marker_color=np.where(selected["standardized_coefficient"] >= 0, "#E66101", "#2C7FB8"),
-            customdata=np.column_stack([selected.get("kegg_annotation", pd.Series([""] * len(selected)))]),
-            hovertemplate="%{y}<br>Coefficient=%{x:.3g}<br>%{customdata[0]}<extra></extra>",
-        )
+            marker_color=family_colors,
+            customdata=np.column_stack([selected["__family"], legacy_annotation.fillna("")]),
+            hovertemplate=(
+                "%{y}<br>Coefficient=%{x:.3g}<br>Family=%{customdata[0]}"
+                "<br>%{customdata[1]}<extra></extra>"
+            ),
+            showlegend=False,
+        ),
+        row=1, col=5,
     )
+    visible_families = [
+        family for family in PREDICTION_FEATURE_FAMILY_COLORS
+        if family in set(selected["__family"])
+    ]
+    for family in visible_families:
+        figure.add_trace(
+            go.Bar(
+                x=[None], y=[None], name=family,
+                marker_color=PREDICTION_FEATURE_FAMILY_COLORS[family],
+                hoverinfo="skip", showlegend=True,
+            ),
+            row=1, col=5,
+        )
+
+    figure.update_yaxes(showticklabels=True, tickfont={"size": 10}, row=1, col=1)
+    for column_index in range(2, 6):
+        figure.update_yaxes(showticklabels=False, row=1, col=column_index)
+    for column_index in range(1, 5):
+        figure.update_xaxes(showticklabels=False, title_text="", row=1, col=column_index)
+    figure.update_xaxes(
+        title_text="Standardized elastic-net coefficient", zeroline=True,
+        zerolinecolor="#374151", zerolinewidth=1.2, row=1, col=5,
+    )
+
+    subcategory_key = ""
+    if observed_subcategories:
+        items = [
+            f"<span style='color:{subcategory_colors[value]}'>■</span> {html.escape(value)}"
+            for value in observed_subcategories
+        ]
+        subcategory_key = "KEGG subcategories: " + " &nbsp; ".join(items)
     figure.update_layout(
         title={"text": title, "x": 0.01, "xanchor": "left"}, template="plotly_white",
-        height=max(520, 100 + 24 * len(selected)), margin={"l": 260, "r": 30, "t": 80, "b": 60},
-        xaxis_title="Standardized elastic-net coefficient",
+        height=max(560, 150 + 25 * len(selected)),
+        margin={"l": 300, "r": 30, "t": 115, "b": 90 if subcategory_key else 60},
+        legend={"orientation": "h", "yanchor": "bottom", "y": 1.08, "x": 1.0, "xanchor": "right"},
+        barmode="overlay",
     )
+    if subcategory_key:
+        figure.add_annotation(
+            x=0, y=-0.12, xref="paper", yref="paper", text=subcategory_key,
+            showarrow=False, xanchor="left", yanchor="top", align="left",
+            font={"size": 10, "color": "#374151"},
+        )
     return figure

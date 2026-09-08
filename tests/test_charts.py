@@ -40,6 +40,7 @@ from app_helpers.charts import (  # noqa: E402
     pathway_mdc_detail_figure,
     pathway_mdc_heatmap_figure,
     prediction_confusion_figure,
+    prediction_coefficient_figure,
     prediction_ct_ts_figure,
     prediction_error_figure,
     prediction_heatmap_figure,
@@ -382,6 +383,58 @@ def test_configurable_grouped_scatter_controls_annotations_lines_and_legend() ->
     assert figure.layout.legend.orientation == "h"
     assert figure.layout.legend.yanchor == "bottom"
     assert figure.layout.legend.y > 1.0
+
+    pooled_statistics = calculate_correlations(
+        frame.assign(grouping_variable="clusters", grouping_level="__pooled__"),
+        ["module", "component", "component_label", "grouping_variable", "grouping_level"],
+        ["cogn_global"], min_group_n=10,
+    )
+    pooled_statistics["spearman_fdr_across_modules"] = 0.01
+    pooled_statistics["pearson_fdr_across_modules"] = 0.01
+    no_group_lines = grouped_association_figure(
+        frame, pd.concat([statistics, pooled_statistics], ignore_index=True),
+        phenotype="cogn_global", phenotype_label="Global cognition",
+        feature_label="Connectivity", scale_label="Raw", grouping_variable="clusters",
+        grouping_levels=[1, 2], grouping_labels={"1": "Cluster 1", "2": "Cluster 2"},
+        module=1, color_by="clusters", color_label="Cluster", hover_fields={},
+        trend_line_rule="all", minimum_group_n=10, show_group_trends=False,
+        categorical_color_fields={"clusters"}, show_pooled=True,
+    )
+    line_groups = {
+        trace.legendgroup for trace in no_group_lines.data if trace.mode == "lines"
+    }
+    assert line_groups == {"__pooled__"}
+
+
+def test_prediction_coefficients_use_feature_families_and_four_kegg_strips() -> None:
+    frame = pd.DataFrame(
+        {
+            "feature_name": ["M1__CT_AC__DLPFC", "M2__TS_PCGBA23", "age_death.x"],
+            "display_feature": ["M1 · CT AC–DLPFC", "M2 · TS PCG", "Age at death"],
+            "standardized_coefficient": [0.7, -0.4, 0.2],
+            "abs_standardized_coefficient": [0.7, 0.4, 0.2],
+            "kegg_annotation": ["path one", "path two", np.nan],
+            "kegg_expanded_subcategory": ["Lipid metabolism", "Infection", np.nan],
+            "kegg_expanded_category": ["Metabolism", "Disease", np.nan],
+            "kegg_expanded_pathway": ["Fatty acid metabolism", "Viral infection", np.nan],
+            "kegg_expanded_fdr": [0.01, 0.2, np.nan],
+            "kegg_dlpfc_subcategory": ["Neurodegenerative disease", np.nan, np.nan],
+            "kegg_dlpfc_category": ["Disease", np.nan, np.nan],
+            "kegg_dlpfc_pathway": ["Alzheimer disease", np.nan, np.nan],
+            "kegg_dlpfc_fdr": [0.001, np.nan, np.nan],
+        }
+    )
+    figure = prediction_coefficient_figure(frame, title="Coefficients")
+    heatmaps = [trace for trace in figure.data if trace.type == "heatmap"]
+    bars = [trace for trace in figure.data if trace.type == "bar"]
+    assert len(heatmaps) == 4
+    assert len(bars) >= 3
+    assert list(heatmaps[0].text[:, 0]) == ["0.200", "NA", "0.010*"]
+    assert "Category:" in heatmaps[0].hovertemplate
+    assert set(trace.name for trace in bars if trace.showlegend) == {
+        "CT connectivity", "TS connectivity", "Demographics"
+    }
+    assert any("KEGG subcategories:" in str(annotation.text) for annotation in figure.layout.annotations)
 
 
 def test_generic_categorical_figure_uses_diagnosis_marker_shapes() -> None:

@@ -44,6 +44,7 @@ if getattr(_chart_helpers, "DISTRIBUTION_GROUPING_API_VERSION", 0) < 3 or not al
         "distribution_pairwise_heatmap_figure",
         "distribution_module_ranking_figure",
         "distribution_feature_heatmap_figure",
+        "COEFFICIENT_ANNOTATION_API_VERSION",
     )
 ):
     _chart_helpers = importlib.reload(_chart_helpers)
@@ -160,6 +161,7 @@ if not all(
         "load_effect_size_manifest", "EFFECT_STATISTIC_LABELS",
         "edge_expression_data_available", "load_edge_expression",
         "load_edge_expression_nodes",
+        "annotate_prediction_coefficients", "coefficient_kegg_scope_lookup",
     )
 ):
     _data_helpers = importlib.reload(_data_helpers)
@@ -217,6 +219,8 @@ from app_helpers.data import (
     build_pathway_mdc_rows,
     collapse_pathway_mdc_rows,
     association_kegg_subtitles,
+    annotate_prediction_coefficients,
+    coefficient_kegg_scope_lookup,
     dataframe_to_tsv_bytes,
     differential_data_available,
     effect_rule_key,
@@ -646,6 +650,11 @@ def cached_edge_expression(
 @st.cache_data(show_spinner=False, max_entries=8)
 def cached_kegg(module_set: str, module: int | None) -> pd.DataFrame:
     return load_kegg(module, module_set=module_set)
+
+
+@st.cache_data(show_spinner=False, max_entries=3)
+def cached_coefficient_kegg_scopes(module_set: str) -> pd.DataFrame:
+    return coefficient_kegg_scope_lookup(load_kegg(module_set=module_set))
 
 
 @st.cache_data(show_spinner=False)
@@ -2835,6 +2844,9 @@ def render_targeted_prediction_view() -> None:
                 coefficients["predictor_block"].eq(coefficient_block)
                 & coefficients["model_variant"].eq(coefficient_variant)
             ].copy()
+            shown = annotate_prediction_coefficients(
+                shown, cached_coefficient_kegg_scopes(module_definition)
+            )
             render_plotly_chart(
                 prediction_coefficient_figure(
                     shown,
@@ -3323,7 +3335,10 @@ def render_prediction_view() -> None:
             shown = coefficients.loc[
                 coefficients["predictor_block"].eq(coefficient_block)
                 & coefficients["model_variant"].eq(coefficient_variant)
-            ]
+            ].copy()
+            shown = annotate_prediction_coefficients(
+                shown, cached_coefficient_kegg_scopes(module_definition)
+            )
             render_plotly_chart(
                 prediction_coefficient_figure(
                     shown,
@@ -4037,6 +4052,7 @@ with st.sidebar:
     minimum_group_n = 10
     annotation_fields: list[str] = ["n", "coefficient", "p", "fdr"]
     trend_line_rule = "all"
+    show_group_trend_lines = True
     association_significance_cutoff = 0.05
     show_pooled_association = False
     if active_view == "Associations":
@@ -4111,6 +4127,16 @@ with st.sidebar:
                     "all": "All eligible groups", "p": "Nominal p below cutoff",
                     "fdr": "Module-set FDR below cutoff", "none": "No trend lines",
                 }[value],
+            )
+            show_group_trend_lines = st.checkbox(
+                "Show group-specific trend lines",
+                value=True,
+                help=(
+                    "Turn this off to retain group points, legends, and statistics while "
+                    "hiding only their OLS guides. The pooled dashed trend is controlled "
+                    "separately above."
+                ),
+                disabled=trend_line_rule == "none",
             )
             association_significance_cutoff = st.radio(
                 "Association significance cutoff",
@@ -4644,6 +4670,7 @@ if active_view == "Associations":
             trend_line_rule=trend_line_rule,
             significance_cutoff=association_significance_cutoff,
             minimum_group_n=minimum_group_n,
+            show_group_trends=show_group_trend_lines,
             show_pooled=show_pooled_association,
             pooled_label=pooled_label,
             module_definition=module_set_label,
