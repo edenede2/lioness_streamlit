@@ -19,7 +19,7 @@ from sklearn.metrics import precision_recall_curve, roc_curve
 
 
 PREDICTION_BLOCK_ORDERING_API_VERSION = 1
-DISTRIBUTION_GROUPING_API_VERSION = 2
+DISTRIBUTION_GROUPING_API_VERSION = 3
 
 
 DIAGNOSIS_COLORS = {
@@ -2011,6 +2011,131 @@ def distribution_omnibus_component_figure(
         showlegend=False,
     )
     figure.update_xaxes(range=[0, max(0.05, float(data["epsilon_squared"].max()) * 1.08)])
+    return figure
+
+
+def distribution_feature_heatmap_figure(
+    frame: pd.DataFrame,
+    *,
+    title: str,
+    row_order: Iterable[str] | None = None,
+    column_order: Iterable[str] | None = None,
+    significance_threshold: float = 0.05,
+) -> go.Figure:
+    """Compare categorical differentiation across features and modules.
+
+    ``heatmap_row`` and ``heatmap_column`` are prepared by the app so the same
+    renderer supports a selected-module feature-by-component matrix and the
+    compact or detailed all-module matrices. Missing structural combinations
+    remain gaps rather than being rendered as zero effects.
+    """
+
+    if frame.empty:
+        return go.Figure()
+    required = {
+        "heatmap_row",
+        "heatmap_column",
+        "epsilon_squared",
+        "categorical_p",
+        "categorical_fdr_across_modules",
+        "categorical_fdr_module_family_n",
+        "n_tested",
+        "k_tested",
+        "feature_label",
+        "component_label",
+    }
+    missing = required.difference(frame.columns)
+    if missing:
+        raise ValueError(
+            "Missing distribution-feature heatmap columns: "
+            f"{sorted(missing)}"
+        )
+
+    rows = list(row_order or frame["heatmap_row"].drop_duplicates())
+    columns = list(column_order or frame["heatmap_column"].drop_duplicates())
+
+    def pivot(column: str) -> pd.DataFrame:
+        return frame.pivot_table(
+            index="heatmap_row",
+            columns="heatmap_column",
+            values=column,
+            aggfunc="first",
+            dropna=False,
+        ).reindex(index=rows, columns=columns)
+
+    values = pivot("epsilon_squared")
+    p_values = pivot("categorical_p")
+    fdr_values = pivot("categorical_fdr_across_modules")
+    family_sizes = pivot("categorical_fdr_module_family_n")
+    n_values = pivot("n_tested")
+    k_values = pivot("k_tested")
+    feature_values = pivot("feature_label")
+    component_values = pivot("component_label")
+
+    labels = np.empty(values.shape, dtype=object)
+    numeric_values = values.to_numpy(dtype=float)
+    numeric_fdr = fdr_values.to_numpy(dtype=float)
+    for row_index in range(values.shape[0]):
+        for column_index in range(values.shape[1]):
+            observed = numeric_values[row_index, column_index]
+            if not np.isfinite(observed):
+                labels[row_index, column_index] = ""
+                continue
+            marker = (
+                "*"
+                if np.isfinite(numeric_fdr[row_index, column_index])
+                and numeric_fdr[row_index, column_index]
+                < float(significance_threshold)
+                else ""
+            )
+            labels[row_index, column_index] = f"{observed:.2f}{marker}"
+
+    customdata = np.stack(
+        [
+            feature_values.to_numpy(dtype=object),
+            component_values.to_numpy(dtype=object),
+            n_values.to_numpy(dtype=object),
+            k_values.to_numpy(dtype=object),
+            p_values.to_numpy(dtype=object),
+            fdr_values.to_numpy(dtype=object),
+            family_sizes.to_numpy(dtype=object),
+        ],
+        axis=-1,
+    )
+    finite_values = numeric_values[np.isfinite(numeric_values)]
+    upper = max(0.10, float(finite_values.max())) if finite_values.size else 0.10
+    figure = go.Figure(
+        go.Heatmap(
+            z=numeric_values,
+            x=columns,
+            y=rows,
+            zmin=0,
+            zmax=upper,
+            colorscale="Viridis",
+            colorbar={"title": "Kruskal ε²", "thickness": 16},
+            text=labels,
+            texttemplate="%{text}",
+            customdata=customdata,
+            hovertemplate=(
+                "Row: %{y}<br>Feature: %{customdata[0]}"
+                "<br>Component: %{customdata[1]}<br>ε²=%{z:.3f}"
+                "<br>n tested=%{customdata[2]:.0f}"
+                "<br>groups tested=%{customdata[3]:.0f}"
+                "<br>p=%{customdata[4]:.3g}"
+                "<br>module-set FDR=%{customdata[5]:.3g}"
+                "<br>tested modules=%{customdata[6]:.0f}<extra></extra>"
+            ),
+            hoverongaps=False,
+        )
+    )
+    figure.update_layout(
+        title={"text": title, "x": 0.01, "xanchor": "left"},
+        template="plotly_white",
+        height=max(480, min(2600, 210 + 28 * len(rows))),
+        margin={"l": 190, "r": 35, "t": 105, "b": 150},
+        xaxis={"tickangle": -35},
+        yaxis={"autorange": "reversed", "tickfont": {"size": 10}},
+    )
     return figure
 
 

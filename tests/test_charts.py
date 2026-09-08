@@ -20,6 +20,7 @@ from app_helpers.charts import (  # noqa: E402
     clustered_correlation_group_order,
     correlation_heatmap_figure,
     distribution_figure,
+    distribution_feature_heatmap_figure,
     distribution_module_ranking_figure,
     distribution_omnibus_component_figure,
     distribution_pairwise_forest_figure,
@@ -288,6 +289,36 @@ def test_distribution_differentiation_figures() -> None:
     )
     assert len(ranked.data) == 1
     assert set(ranked.data[0].marker.color) == {"#E66101", "#2C7FB8"}
+
+
+def test_distribution_feature_heatmap_preserves_fdr_and_structural_gaps() -> None:
+    frame = pd.DataFrame(
+        {
+            "heatmap_row": ["Connectivity", "Connectivity", "Eigengene"],
+            "heatmap_column": ["AC", "AC–DLPFC", "AC"],
+            "feature_label": ["Connectivity", "Connectivity", "Eigengene"],
+            "component_label": ["AC", "AC–DLPFC", "AC"],
+            "epsilon_squared": [0.18, 0.04, 0.25],
+            "categorical_p": [0.001, 0.20, 0.0002],
+            "categorical_fdr_across_modules": [0.02, 0.40, 0.01],
+            "categorical_fdr_module_family_n": [154, 148, 154],
+            "n_tested": [300, 300, 298],
+            "k_tested": [3, 3, 3],
+        }
+    )
+    figure = distribution_feature_heatmap_figure(
+        frame,
+        title="Feature comparison",
+        row_order=["Connectivity", "Eigengene"],
+        column_order=["AC", "AC–DLPFC"],
+    )
+    values = np.asarray(figure.data[0].z, dtype=float)
+    labels = np.asarray(figure.data[0].text, dtype=object)
+    assert np.isclose(values[0, 0], 0.18)
+    assert "*" in labels[0, 0]
+    assert np.isnan(values[1, 1])
+    assert labels[1, 1] == ""
+    assert "module-set FDR" in figure.data[0].hovertemplate
 
 
 def test_configurable_grouped_scatter_controls_annotations_lines_and_legend() -> None:

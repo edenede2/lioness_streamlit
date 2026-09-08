@@ -47,6 +47,11 @@ The app includes three explicitly separated module definitions:
   Mann–Whitney/Cliff's-delta contrasts with bootstrap intervals, optional KS shape tests,
   and a lazy all-module ranking. Every FDR family is corrected across modules separately
   for its fixed component and group contrast.
+- Lazy feature-differentiation heatmaps compare Connectivity, edge-weight summaries,
+  and tissue eigengenes within a selected module or across the complete module set.
+  The all-module view supports a compact strongest-component matrix and a detailed
+  feature-by-component matrix; blank cells indicate structural absence and asterisks
+  retain each cell's component-specific across-module FDR.
 - Selected-module and all-module correlation heatmaps, including an all-feature
   view across every module and diagnosis group, with sortable/downloadable Pearson,
   Spearman, p-value, and FDR tables.

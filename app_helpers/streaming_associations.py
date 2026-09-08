@@ -312,7 +312,7 @@ def stream_categorical_associations(
     estimator: str,
     method: str,
     resolved: bool,
-    feature: str,
+    feature: str | None,
     category_variable: str,
     scale: str,
     components: tuple[str, ...],

@@ -17,7 +17,7 @@ import streamlit as st
 # is absent so a repository update cannot leave the two modules out of sync.
 from app_helpers import charts as _chart_helpers
 
-if getattr(_chart_helpers, "DISTRIBUTION_GROUPING_API_VERSION", 0) < 2 or not all(
+if getattr(_chart_helpers, "DISTRIBUTION_GROUPING_API_VERSION", 0) < 3 or not all(
     hasattr(_chart_helpers, name)
     for name in (
         "CONTINUOUS_COLOR_SCALES",
@@ -43,6 +43,7 @@ if getattr(_chart_helpers, "DISTRIBUTION_GROUPING_API_VERSION", 0) < 2 or not al
         "distribution_pairwise_forest_figure",
         "distribution_pairwise_heatmap_figure",
         "distribution_module_ranking_figure",
+        "distribution_feature_heatmap_figure",
     )
 ):
     _chart_helpers = importlib.reload(_chart_helpers)
@@ -57,6 +58,7 @@ from app_helpers.charts import (
     correlation_heatmap_figure,
     clustered_correlation_group_order,
     distribution_figure,
+    distribution_feature_heatmap_figure,
     distribution_module_ranking_figure,
     distribution_omnibus_component_figure,
     distribution_pairwise_forest_figure,
@@ -1292,9 +1294,10 @@ def cached_categorical_module_set_associations(
     module_ids = tuple(
         sorted(cached_annotations(module_set)["module"].astype(int).unique())
     )
+    feature_filter = None if feature == "__all__" else feature
     result = stream_categorical_associations(
         module_ids, cached_sample_metadata(module_set, cohort_scope), module_set=module_set,
-        estimator=estimator, method=method, resolved=resolved, feature=feature,
+        estimator=estimator, method=method, resolved=resolved, feature=feature_filter,
         category_variable=category_variable, scale=scale, components=components,
         diagnoses=diagnoses, category_levels=category_levels,
         min_group_n=int(min_group_n), edge_rule=edge_rule,
@@ -1312,16 +1315,21 @@ def cached_categorical_module_set_associations(
         family_columns=["metric_family", "component", "outcome", "category_variable"],
     )
     family_sizes = result.groupby(
-        ["component", "outcome", "category_variable"], observed=True, sort=False,
+        ["metric_family", "component", "outcome", "category_variable"],
+        observed=True, sort=False,
     )["module"].nunique()
+    network_family_sizes = family_sizes.loc[
+        family_sizes.index.get_level_values("metric_family") != "eigengene"
+    ]
     if (
         feature != "eigengene"
-        and not family_sizes.empty
-        and not family_sizes.eq(int(module_count)).all()
+        and not network_family_sizes.empty
+        and not network_family_sizes.eq(int(module_count)).all()
     ):
         raise ValueError(
             "Categorical association families do not contain every module in the "
-            f"selected definition ({module_count} expected): {family_sizes.to_dict()}"
+            f"selected definition ({module_count} expected): "
+            f"{network_family_sizes.to_dict()}"
         )
     return result
 
@@ -5434,6 +5442,7 @@ if active_view == "Feature distributions":
             "Distribution shape",
             "Overall differentiation",
             "Pairwise differentiation",
+            "Feature comparison heatmaps",
             "Find differentiated modules",
         ],
         horizontal=True,
@@ -5613,6 +5622,297 @@ if active_view == "Feature distributions":
             "Choose a categorical grouping variable to calculate distribution "
             "differentiation statistics."
         )
+
+    elif distribution_analysis == "Feature comparison heatmaps":
+        st.caption(
+            "Compare group-differentiation effect sizes across module scores. Each "
+            "asterisk marks a component-specific module-set FDR below the selected "
+            "cutoff; missing structural combinations remain blank, not zero."
+        )
+        heatmap_feature_options = [
+            value for value in active_feature_labels
+            if resolved or value != "eigengene"
+        ]
+        default_heatmap_features = [feature] if feature in heatmap_feature_options else []
+        if "connectivity" in heatmap_feature_options:
+            default_heatmap_features = ["connectivity"]
+        if resolved and "eigengene" in heatmap_feature_options:
+            default_heatmap_features.append("eigengene")
+        default_heatmap_features = list(dict.fromkeys(default_heatmap_features))
+        selected_heatmap_features = st.multiselect(
+            "Features to compare",
+            options=heatmap_feature_options,
+            default=default_heatmap_features,
+            format_func=lambda value: active_feature_labels[value],
+            help=(
+                "Select Connectivity and Module eigengene to compare network topology "
+                "with tissue-level transcriptomic variation directly."
+            ),
+        )
+        if not resolved and descriptive_eigengenes_available:
+            st.info(
+                "Module eigengenes are tissue-specific. Switch Resolution to Tissue "
+                "resolved to include eigengenes in this heatmap."
+            )
+        heatmap_component_options = (
+            list(COMPONENT_ORDER) if resolved else ["CT", "TS"]
+        )
+        selected_heatmap_components = st.multiselect(
+            "Components to compare",
+            options=heatmap_component_options,
+            default=heatmap_component_options,
+            format_func=lambda value: EDGE_SCOPE_LABELS.get(value, value),
+        )
+        heatmap_scope = st.radio(
+            "Differentiation heatmap scope",
+            ["Selected module", f"All {module_count} modules"],
+            horizontal=True,
+        )
+        heatmap_significance_threshold = st.radio(
+            "Heatmap significance cutoff",
+            [0.05, 0.10],
+            horizontal=True,
+            format_func=lambda value: (
+                f"FDR < {value:.2f}"
+                + (" (exploratory)" if value == 0.10 else "")
+            ),
+        )
+        all_module_layout = "Compact feature summary"
+        all_module_row_filter = "No FDR filter"
+        all_module_top_n = min(20, module_count)
+        if heatmap_scope.startswith("All"):
+            all_module_layout = st.radio(
+                "All-module heatmap layout",
+                ["Compact feature summary", "Detailed feature × component"],
+                horizontal=True,
+                help=(
+                    "Compact mode shows the strongest selected component for each "
+                    "module-feature pair. Detailed mode preserves every feature-component "
+                    "cell. Hover always identifies the underlying component."
+                ),
+            )
+            all_module_row_filter = st.radio(
+                "Modules to include",
+                [
+                    "No FDR filter",
+                    "At least one FDR < 0.05",
+                    "At least one FDR < 0.10 (exploratory)",
+                ],
+                horizontal=True,
+            )
+            top_options = list(dict.fromkeys([20, 50, 100, module_count]))
+            all_module_top_n = st.selectbox(
+                "Rows in all-module heatmap",
+                top_options,
+                index=0,
+                format_func=lambda value: (
+                    f"All {module_count} modules" if value == module_count
+                    else f"Top {value} modules"
+                ),
+            )
+        run_feature_heatmap = st.toggle(
+            "Calculate feature differentiation heatmap",
+            value=False,
+            help=(
+                "Runs one memory-bounded scan across the module definition and caches "
+                "all available features for subsequent heatmap selections."
+            ),
+        )
+        if not selected_heatmap_features or not selected_heatmap_components:
+            st.info("Select at least one feature and one component.")
+        elif run_feature_heatmap:
+            feature_heatmap_catalog = cached_categorical_module_set_associations(
+                module_set, module_count, estimator, method, resolved, "__all__",
+                distribution_grouping_variable, scale,
+                tuple(selected_heatmap_components), tuple(diagnoses),
+                tuple(selected_distribution_levels), distribution_minimum_group_n,
+                edge_rule, differential_edge_rule, differential_fdr_scope,
+                differential_fdr_threshold, score_normalization,
+                analysis_subset, cohort_scope,
+            ).copy()
+            feature_heatmap_catalog = feature_heatmap_catalog.loc[
+                feature_heatmap_catalog["metric_family"].isin(
+                    selected_heatmap_features
+                )
+                & feature_heatmap_catalog["component"].isin(
+                    selected_heatmap_components
+                )
+            ].copy()
+            feature_heatmap_catalog["feature_label"] = feature_heatmap_catalog[
+                "metric_family"
+            ].map(active_feature_labels)
+            feature_heatmap_catalog["component_label"] = feature_heatmap_catalog[
+                "component"
+            ].map(EDGE_SCOPE_LABELS).fillna(
+                feature_heatmap_catalog["component_label"]
+            )
+            feature_heatmap_catalog["epsilon_squared"] = pd.to_numeric(
+                feature_heatmap_catalog["epsilon_squared"], errors="coerce"
+            )
+            feature_order = [
+                active_feature_labels[value] for value in selected_heatmap_features
+            ]
+            component_order = [
+                EDGE_SCOPE_LABELS.get(value, value)
+                for value in selected_heatmap_components
+            ]
+            if feature_heatmap_catalog.empty:
+                st.info("No differentiation statistics are available for these scores.")
+            else:
+                if heatmap_scope == "Selected module":
+                    displayed_heatmap = feature_heatmap_catalog.loc[
+                        feature_heatmap_catalog["module"].astype(int).eq(int(module))
+                    ].copy()
+                    displayed_heatmap["heatmap_row"] = displayed_heatmap[
+                        "feature_label"
+                    ]
+                    displayed_heatmap["heatmap_column"] = displayed_heatmap[
+                        "component_label"
+                    ]
+                    row_order = feature_order
+                    column_order = component_order
+                    heatmap_title = (
+                        f"Feature differentiation for module M{module}<br><sup>"
+                        f"{module_set_label} · Kruskal–Wallis epsilon-squared · "
+                        f"* module-set FDR < {heatmap_significance_threshold:.2f}</sup>"
+                    )
+                    heatmap_table = displayed_heatmap.copy()
+                else:
+                    module_peaks = (
+                        feature_heatmap_catalog.groupby("module", observed=True)[
+                            "epsilon_squared"
+                        ]
+                        .max()
+                        .sort_values(ascending=False, na_position="last")
+                    )
+                    fdr_limit = {
+                        "No FDR filter": None,
+                        "At least one FDR < 0.05": 0.05,
+                        "At least one FDR < 0.10 (exploratory)": 0.10,
+                    }[all_module_row_filter]
+                    if fdr_limit is not None:
+                        eligible_modules = feature_heatmap_catalog.loc[
+                            pd.to_numeric(
+                                feature_heatmap_catalog[
+                                    "categorical_fdr_across_modules"
+                                ],
+                                errors="coerce",
+                            ).lt(fdr_limit),
+                            "module",
+                        ].unique()
+                        module_peaks = module_peaks.loc[
+                            module_peaks.index.isin(eligible_modules)
+                        ]
+                    shown_modules = module_peaks.head(int(all_module_top_n)).index.tolist()
+                    source_heatmap = feature_heatmap_catalog.loc[
+                        feature_heatmap_catalog["module"].isin(shown_modules)
+                    ].copy()
+                    source_heatmap["module_peak_epsilon_squared"] = source_heatmap[
+                        "module"
+                    ].map(module_peaks)
+                    if all_module_layout == "Compact feature summary":
+                        valid = source_heatmap.loc[
+                            source_heatmap["epsilon_squared"].notna()
+                        ].copy()
+                        strongest_index = valid.groupby(
+                            ["module", "metric_family"], observed=True, sort=False
+                        )["epsilon_squared"].idxmax()
+                        displayed_heatmap = valid.loc[strongest_index].copy()
+                        displayed_heatmap["heatmap_column"] = displayed_heatmap[
+                            "feature_label"
+                        ]
+                        column_order = feature_order
+                        layout_note = (
+                            "Each cell is the strongest selected component; this "
+                            "post-hoc maximum is descriptive. The star and hover FDR "
+                            "belong to that winning component, not to a max-adjusted test."
+                        )
+                    else:
+                        displayed_heatmap = source_heatmap.copy()
+                        displayed_heatmap["heatmap_column"] = (
+                            displayed_heatmap["feature_label"].astype(str)
+                            + " · "
+                            + displayed_heatmap["component_label"].astype(str)
+                        )
+                        column_order = [
+                            f"{feature_label} · {component_label}"
+                            for feature_label in feature_order
+                            for component_label in component_order
+                        ]
+                        layout_note = (
+                            "Each cell is one prespecified feature-component test; "
+                            "blank cells are structurally unavailable."
+                        )
+                    displayed_heatmap["heatmap_row"] = (
+                        "M" + displayed_heatmap["module"].astype(int).astype(str)
+                    )
+                    row_order = [f"M{int(value)}" for value in shown_modules]
+                    heatmap_title = (
+                        f"All-module feature differentiation<br><sup>{module_set_label} · "
+                        f"modules ordered by maximum epsilon-squared · "
+                        f"* module-set FDR < {heatmap_significance_threshold:.2f}</sup>"
+                    )
+                    heatmap_table = feature_heatmap_catalog.copy()
+                    heatmap_table["module_peak_epsilon_squared"] = heatmap_table[
+                        "module"
+                    ].map(module_peaks)
+                    heatmap_table["shown_in_heatmap"] = heatmap_table["module"].isin(
+                        shown_modules
+                    )
+                    st.caption(layout_note)
+                if displayed_heatmap.empty:
+                    st.info("No modules meet the selected heatmap filters.")
+                else:
+                    render_plotly_chart(
+                        distribution_feature_heatmap_figure(
+                            displayed_heatmap,
+                            title=heatmap_title,
+                            row_order=row_order,
+                            column_order=column_order,
+                            significance_threshold=heatmap_significance_threshold,
+                        ),
+                        use_container_width=True,
+                        config={"displaylogo": False},
+                    )
+                st.caption(
+                    "BH is calculated across valid modules only, separately for each "
+                    "fixed feature and component. Features, components, or group contrasts "
+                    "are never multiplied into the same FDR family."
+                )
+                table_columns = [
+                    "module", "metric_family", "feature_label", "component",
+                    "component_label", "n", "n_tested", "k_tested",
+                    "levels_tested", "levels_excluded_small_n", "level_counts",
+                    "level_medians", "kruskal_h", "epsilon_squared",
+                    "categorical_p", "categorical_fdr_across_modules",
+                    "categorical_fdr_module_family_n", "eligible",
+                    "unavailable_reason",
+                ]
+                table_columns.extend(
+                    column for column in (
+                        "module_peak_epsilon_squared", "shown_in_heatmap"
+                    ) if column in heatmap_table
+                )
+                heatmap_table = heatmap_table[
+                    [column for column in table_columns if column in heatmap_table]
+                ].copy()
+                heatmap_table.insert(0, "module_definition", module_set_label)
+                filterable_dataframe(
+                    heatmap_table,
+                    table_key="distribution_feature_heatmap_table",
+                    table_name="Feature differentiation heatmap source",
+                    use_container_width=True,
+                    hide_index=True,
+                )
+                st.download_button(
+                    "Download feature differentiation matrix source (TSV)",
+                    data=dataframe_to_tsv_bytes(heatmap_table),
+                    file_name=(
+                        f"{download_prefix}{method}_{distribution_grouping_variable}_"
+                        "feature_differentiation_heatmap.tsv"
+                    ),
+                    mime="text/tab-separated-values",
+                )
 
     elif distribution_analysis == "Overall differentiation":
         st.caption(

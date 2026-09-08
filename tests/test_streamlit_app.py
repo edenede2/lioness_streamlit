@@ -237,6 +237,64 @@ def test_feature_distributions_can_use_tissue_module_eigengenes() -> None:
     )
 
 
+def test_distribution_feature_heatmaps_compare_connectivity_and_eigengenes() -> None:
+    app = AppTest.from_file(APP, default_timeout=420).run()
+    assert_app_clean(app)
+    app = preserve_legacy_pills_state(
+        widget_with_label(app.radio, "Resolution").set_value(
+            "Tissue resolved"
+        ).run()
+    )
+    app = select_view(app, "Feature distributions")
+    app = preserve_legacy_pills_state(
+        widget_with_label(app.selectbox, "Group distributions by").set_value(
+            "clusters"
+        ).run()
+    )
+    app = preserve_legacy_pills_state(
+        widget_with_label(app.radio, "Distribution analysis").set_value(
+            "Feature comparison heatmaps"
+        ).run()
+    )
+    features = widget_with_label(app.multiselect, "Features to compare")
+    assert set(features.value) == {"connectivity", "eigengene"}
+    assert "Module eigengene (PCA1 expression)" in features.options
+    app = preserve_legacy_pills_state(
+        widget_with_label(
+            app.toggle, "Calculate feature differentiation heatmap"
+        ).set_value(True).run(timeout=420)
+    )
+    assert_app_clean(app)
+    source = next(
+        dataframe.value for dataframe in app.dataframe
+        if {
+            "feature_label", "epsilon_squared", "categorical_fdr_across_modules",
+        }.issubset(dataframe.value.columns)
+    )
+    assert set(source["metric_family"]) == {"connectivity", "eigengene"}
+    assert source["categorical_fdr_module_family_n"].between(1, 154).all()
+
+    app = preserve_legacy_pills_state(
+        widget_with_label(app.radio, "Differentiation heatmap scope").set_value(
+            "All 154 modules"
+        ).run()
+    )
+    assert_app_clean(app)
+    source = next(
+        dataframe.value for dataframe in app.dataframe
+        if {"feature_label", "epsilon_squared", "shown_in_heatmap"}
+        .issubset(dataframe.value.columns)
+    )
+    assert source["module"].nunique() == 154
+    assert source["shown_in_heatmap"].groupby(source["module"]).first().sum() == 20
+    app = preserve_legacy_pills_state(
+        widget_with_label(app.radio, "All-module heatmap layout").set_value(
+            "Detailed feature × component"
+        ).run()
+    )
+    assert_app_clean(app)
+
+
 def test_associations_can_use_tissue_module_eigengenes() -> None:
     app = AppTest.from_file(APP, default_timeout=180).run()
     assert_app_clean(app)
