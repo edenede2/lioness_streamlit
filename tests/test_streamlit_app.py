@@ -323,7 +323,7 @@ def test_association_view_defaults_to_pooled_all_donor_association() -> None:
         app.checkbox, "Show pooled association across displayed donors"
     )
     assert pooled.value is True
-    group_trends = widget_with_label(app.checkbox, "Show group-specific trend lines")
+    group_trends = widget_with_label(app.checkbox, "Show group-specific OLS trend lines")
     assert group_trends.value is True
     app = group_trends.set_value(False).run()
     assert_app_clean(app)

@@ -440,6 +440,7 @@ def test_prediction_coefficients_use_feature_families_and_four_kegg_strips() -> 
     ]
     assert len(enrichment_keys) == 1
     assert enrichment_keys[0].y < 0
+    assert "NA / not applicable in this scope" in str(enrichment_keys[0].text)
     assert figure.layout.legend.x > 1
     assert all(
         any("hsl(" in str(stop[1]) for stop in trace.colorscale)

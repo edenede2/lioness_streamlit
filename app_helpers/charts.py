@@ -4627,6 +4627,9 @@ def prediction_coefficient_figure(
             f"<span style='color:{subcategory_colors[value]}'>■</span> {html.escape(value)}"
             for value in observed_subcategories
         ]
+        items.append(
+            "<span style='color:#E5E7EB'>■</span> NA / not applicable in this scope"
+        )
         rows = [" &nbsp;&nbsp; ".join(items[index:index + 3]) for index in range(0, len(items), 3)]
         key_lines = len(rows)
         subcategory_key = "<b>KEGG enrichment subcategories</b><br>" + "<br>".join(rows)

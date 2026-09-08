@@ -4201,7 +4201,7 @@ with st.sidebar:
                 }[value],
             )
             show_group_trend_lines = st.checkbox(
-                "Show group-specific trend lines",
+                "Show group-specific OLS trend lines",
                 value=True,
                 help=(
                     "Turn this off to retain group points, legends, and statistics while "
@@ -4210,6 +4210,11 @@ with st.sidebar:
                 ),
                 disabled=trend_line_rule == "none",
             )
+            if not show_group_trend_lines and show_pooled_association:
+                st.caption(
+                    "Group-specific lines are hidden; only the dashed black pooled "
+                    "all-donor trend remains."
+                )
             association_significance_cutoff = st.radio(
                 "Association significance cutoff",
                 options=[0.05, 0.10], index=0, horizontal=True,
