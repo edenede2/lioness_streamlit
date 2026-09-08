@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import html
 import math
 import textwrap
@@ -20,7 +21,7 @@ from sklearn.metrics import precision_recall_curve, roc_curve
 
 PREDICTION_BLOCK_ORDERING_API_VERSION = 1
 DISTRIBUTION_GROUPING_API_VERSION = 3
-COEFFICIENT_ANNOTATION_API_VERSION = 1
+COEFFICIENT_ANNOTATION_API_VERSION = 2
 
 
 DIAGNOSIS_COLORS = {
@@ -2595,8 +2596,15 @@ def module_entropy_figure(
         height=520,
         xaxis={"title": "Module size (genes)", "type": "log"},
         yaxis={"title": "Normalized Shannon entropy", "range": [-0.03, 1.03]},
-        legend={"orientation": "h", "y": 1.04, "x": 1, "xanchor": "right"},
-        margin={"l": 65, "r": 25, "t": 90, "b": 60},
+        legend={
+            "title": {"text": "Module type"},
+            "orientation": "v",
+            "yanchor": "top",
+            "y": 1.0,
+            "xanchor": "left",
+            "x": 1.02,
+        },
+        margin={"l": 65, "r": 155, "t": 90, "b": 60},
     )
     return figure
 
@@ -4453,10 +4461,14 @@ COEFFICIENT_KEGG_SCOPE_LABELS = {
     "pcg": "PCG",
 }
 
-KEGG_SUBCATEGORY_COLORS = [
-    "#4E79A7", "#F28E2B", "#E15759", "#76B7B2", "#59A14F", "#EDC948",
-    "#B07AA1", "#FF9DA7", "#9C755F", "#BAB0AC", "#6A3D9A", "#1B9E77",
-]
+def _stable_kegg_subcategory_color(value: object) -> str:
+    """Return a reproducible category color independent of the visible subset."""
+
+    digest = hashlib.sha256(str(value).encode("utf-8")).digest()
+    hue = int.from_bytes(digest[:2], "big") % 360
+    saturation = 55 + digest[2] % 16
+    lightness = 38 + digest[3] % 13
+    return f"hsl({hue}, {saturation}%, {lightness}%)"
 
 
 def prediction_feature_family(feature_name: object) -> str:
@@ -4506,8 +4518,8 @@ def prediction_coefficient_figure(
         if str(value).strip()
     })
     subcategory_colors = {
-        value: KEGG_SUBCATEGORY_COLORS[index % len(KEGG_SUBCATEGORY_COLORS)]
-        for index, value in enumerate(observed_subcategories)
+        value: _stable_kegg_subcategory_color(value)
+        for value in observed_subcategories
     }
     subcategory_codes = {value: index + 1 for index, value in enumerate(observed_subcategories)}
     color_values = ["#E5E7EB", *[subcategory_colors[value] for value in observed_subcategories]]
@@ -4609,22 +4621,37 @@ def prediction_coefficient_figure(
     )
 
     subcategory_key = ""
+    key_lines = 0
     if observed_subcategories:
         items = [
             f"<span style='color:{subcategory_colors[value]}'>■</span> {html.escape(value)}"
             for value in observed_subcategories
         ]
-        subcategory_key = "KEGG subcategories: " + " &nbsp; ".join(items)
+        rows = [" &nbsp;&nbsp; ".join(items[index:index + 3]) for index in range(0, len(items), 3)]
+        key_lines = len(rows)
+        subcategory_key = "<b>KEGG enrichment subcategories</b><br>" + "<br>".join(rows)
     figure.update_layout(
         title={"text": title, "x": 0.01, "xanchor": "left"}, template="plotly_white",
-        height=max(560, 150 + 25 * len(selected)),
-        margin={"l": 300, "r": 30, "t": 115, "b": 90 if subcategory_key else 60},
-        legend={"orientation": "h", "yanchor": "bottom", "y": 1.08, "x": 1.0, "xanchor": "right"},
+        height=max(560, 150 + 25 * len(selected) + 18 * key_lines),
+        margin={
+            "l": 300,
+            "r": 205,
+            "t": 115,
+            "b": 95 + 18 * key_lines if subcategory_key else 60,
+        },
+        legend={
+            "title": {"text": "Predictor family"},
+            "orientation": "v",
+            "yanchor": "top",
+            "y": 1.0,
+            "x": 1.01,
+            "xanchor": "left",
+        },
         barmode="overlay",
     )
     if subcategory_key:
         figure.add_annotation(
-            x=0, y=-0.12, xref="paper", yref="paper", text=subcategory_key,
+            x=0, y=-0.16, xref="paper", yref="paper", text=subcategory_key,
             showarrow=False, xanchor="left", yanchor="top", align="left",
             font={"size": 10, "color": "#374151"},
         )

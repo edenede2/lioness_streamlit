@@ -434,7 +434,17 @@ def test_prediction_coefficients_use_feature_families_and_four_kegg_strips() -> 
     assert set(trace.name for trace in bars if trace.showlegend) == {
         "CT connectivity", "TS connectivity", "Demographics"
     }
-    assert any("KEGG subcategories:" in str(annotation.text) for annotation in figure.layout.annotations)
+    enrichment_keys = [
+        annotation for annotation in figure.layout.annotations
+        if "KEGG enrichment subcategories" in str(annotation.text)
+    ]
+    assert len(enrichment_keys) == 1
+    assert enrichment_keys[0].y < 0
+    assert figure.layout.legend.x > 1
+    assert all(
+        any("hsl(" in str(stop[1]) for stop in trace.colorscale)
+        for trace in heatmaps
+    )
 
 
 def test_generic_categorical_figure_uses_diagnosis_marker_shapes() -> None:
@@ -1040,6 +1050,8 @@ def test_module_size_and_region_composition_charts_filter_and_sort() -> None:
     assert len(entropy.data) >= 3
     assert any(trace.name == "Selected module" for trace in entropy.data)
     assert entropy.layout.yaxis.range == (-0.03, 1.03)
+    assert entropy.layout.legend.x > 1
+    assert entropy.layout.margin.r >= 150
 
 
 def test_resolved_mdc_and_edge_summary_charts() -> None:
