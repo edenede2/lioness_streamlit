@@ -391,6 +391,7 @@ def test_primary_raw_eigengene_milestone_is_complete_and_selectable() -> None:
     per_source = configurations.groupby("eigengene_source", observed=True).size()
     assert per_source.to_dict() == {
         "matched_multitissue": 600,
+        "single_region_complete_case_l3": 600,
         "single_region_full_tissue_l3": 600,
     }
 
@@ -433,6 +434,36 @@ def test_primary_raw_eigengene_milestone_is_complete_and_selectable() -> None:
         *expected_variants,
     }
     assert full_variant_counts.eq(8_375).all()
+
+
+def test_validated_primary_hedges_catalog_is_public_and_private_ids_are_absent() -> None:
+    manifest = data.load_targeted_prediction_manifest()
+    assert manifest["schema_version"] >= 6
+    assert manifest["hedges_g04_sensitivity_available"] is True
+    hedges = manifest["hedges_g04_sensitivity"]
+    assert hedges["completed_milestones"] == ["primary"]
+    assert hedges["validation"]["primary"]["valid"] is True
+
+    performance = data.load_targeted_prediction_table("hedges_fold_performance")
+    identity = [
+        "outer_repeat", "outer_fold", "analysis_milestone", "panel_strategy",
+        "selection_outcome", "model_outcome", "predictor_block", "model_variant",
+        "eigengene_source", "edge_mask",
+    ]
+    assert len(performance[identity].drop_duplicates()) == 5_400
+    assert set(performance["edge_mask"]) == set(data.TARGETED_HEDGES_MASKS)
+    assert set(performance["score_transform"]) == {"raw"}
+    assert set(performance["score_normalization"]) == {"standard_pruned"}
+    assert {"n_network_predictors", "n_transcriptomic_predictors"}.issubset(
+        data.load_targeted_prediction_table("hedges_oof_performance").columns
+    )
+
+    predictions = data.load_targeted_prediction_table(
+        "hedges_oof_predictions",
+        edge_mask="outer_fold_hedges_g04_either",
+    )
+    assert predictions["sample_id"].astype(str).str.startswith("T-").all()
+    assert {"donor", "projid"}.isdisjoint(predictions.columns)
 
 
 def test_all_modules_and_m1918_are_packaged() -> None:

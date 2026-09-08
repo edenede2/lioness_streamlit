@@ -488,6 +488,29 @@ def test_targeted_prediction_view_defaults_to_primary_control_derived_analysis()
     )
 
 
+def test_targeted_primary_hedges_result_and_both_regional_sources_render() -> None:
+    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = select_view(app, "Prediction")
+    assert_app_clean(app)
+    app = widget_with_label(app.selectbox, "Targeted edge set").set_value(
+        "outer_fold_hedges_g04_either"
+    ).run()
+    assert_app_clean(app)
+
+    source = widget_with_label(app.selectbox, "Eigengene source")
+    assert set(source.options) == {
+        "Single-region modules: full tissue cohorts",
+        "Single-region modules: matched complete-expression donors",
+    }
+    app = source.set_value("single_region_full_tissue_l3").run()
+    assert_app_clean(app)
+    assert widget_with_label(app.selectbox, "Evidence tier").value == "exploratory"
+    assert widget_with_label(
+        app.selectbox, "Targeted prediction outcome"
+    ).value == "diagnosis_binary"
+    assert any("Hedges’ g" in warning.value for warning in app.warning)
+
+
 def test_targeted_cluster_prediction_renders_all_resolved_blocks() -> None:
     app = AppTest.from_file(APP, default_timeout=300).run()
     app = select_view(app, "Prediction")
