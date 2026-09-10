@@ -510,6 +510,16 @@ def test_targeted_primary_hedges_result_and_both_regional_sources_render() -> No
     ).value == "diagnosis_binary"
     assert any("Hedges’ g" in warning.value for warning in app.warning)
 
+    outcome = widget_with_label(app.selectbox, "Targeted prediction outcome")
+    assert {
+        "Diagnosis: AD versus Control",
+        "Global cognition",
+        "Demographic-adjusted cognitive slope",
+        "Pathology-adjusted cognitive slope",
+    }.issubset(set(outcome.options))
+    app = outcome.set_value("cogng_path_slope").run()
+    assert_app_clean(app)
+
 
 def test_targeted_cluster_prediction_renders_all_resolved_blocks() -> None:
     app = AppTest.from_file(APP, default_timeout=300).run()

@@ -436,13 +436,16 @@ def test_primary_raw_eigengene_milestone_is_complete_and_selectable() -> None:
     assert full_variant_counts.eq(8_375).all()
 
 
-def test_validated_primary_hedges_catalog_is_public_and_private_ids_are_absent() -> None:
+def test_validated_hedges_catalog_is_public_and_private_ids_are_absent() -> None:
     manifest = data.load_targeted_prediction_manifest()
     assert manifest["schema_version"] >= 6
     assert manifest["hedges_g04_sensitivity_available"] is True
     hedges = manifest["hedges_g04_sensitivity"]
-    assert hedges["completed_milestones"] == ["primary"]
+    assert {"primary", "cognitive_resolved"}.issubset(
+        set(hedges["completed_milestones"])
+    )
     assert hedges["validation"]["primary"]["valid"] is True
+    assert hedges["validation"]["cognitive_resolved"]["valid"] is True
 
     performance = data.load_targeted_prediction_table("hedges_fold_performance")
     identity = [
@@ -450,7 +453,14 @@ def test_validated_primary_hedges_catalog_is_public_and_private_ids_are_absent()
         "selection_outcome", "model_outcome", "predictor_block", "model_variant",
         "eigengene_source", "edge_mask",
     ]
-    assert len(performance[identity].drop_duplicates()) == 5_400
+    configuration_counts = (
+        performance[identity]
+        .drop_duplicates()
+        .groupby("analysis_milestone", observed=True)
+        .size()
+    )
+    assert configuration_counts["primary"] == 5_400
+    assert configuration_counts["cognitive_resolved"] == 72_900
     assert set(performance["edge_mask"]) == set(data.TARGETED_HEDGES_MASKS)
     assert set(performance["score_transform"]) == {"raw"}
     assert set(performance["score_normalization"]) == {"standard_pruned"}
