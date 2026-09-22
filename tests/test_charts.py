@@ -14,6 +14,7 @@ from app_helpers.charts import (  # noqa: E402
     CONTINUOUS_COLOR_SCALES,
     EDGE_COMPONENT_COLORS,
     EDGE_COMPONENT_LABELS,
+    KEGG_SUBCATEGORY_COLORS,
     aggregate_to_long,
     association_figure,
     categorical_association_figure,
@@ -414,7 +415,9 @@ def test_prediction_coefficients_use_feature_families_and_four_kegg_strips() -> 
             "standardized_coefficient": [0.7, -0.4, 0.2],
             "abs_standardized_coefficient": [0.7, 0.4, 0.2],
             "kegg_annotation": ["path one", "path two", np.nan],
-            "kegg_expanded_subcategory": ["Lipid metabolism", "Infection", np.nan],
+            "kegg_expanded_subcategory": [
+                "Lipid metabolism", "Infectious disease: viral", np.nan
+            ],
             "kegg_expanded_category": ["Metabolism", "Disease", np.nan],
             "kegg_expanded_pathway": ["Fatty acid metabolism", "Viral infection", np.nan],
             "kegg_expanded_fdr": [0.01, 0.2, np.nan],
@@ -442,10 +445,30 @@ def test_prediction_coefficients_use_feature_families_and_four_kegg_strips() -> 
     assert enrichment_keys[0].y < 0
     assert "NA / not applicable in this scope" in str(enrichment_keys[0].text)
     assert figure.layout.legend.x > 1
+    assert len(set(KEGG_SUBCATEGORY_COLORS.values())) == len(KEGG_SUBCATEGORY_COLORS)
+    rgb = np.asarray([
+        [int(color[index:index + 2], 16) for index in (1, 3, 5)]
+        for color in KEGG_SUBCATEGORY_COLORS.values()
+    ])
+    pairwise_distances = [
+        np.linalg.norm(rgb[left] - rgb[right])
+        for left in range(len(rgb))
+        for right in range(left + 1, len(rgb))
+    ]
+    assert min(pairwise_distances) > 35
     assert all(
-        any("hsl(" in str(stop[1]) for stop in trace.colorscale)
+        any(str(stop[1]).startswith("#") for stop in trace.colorscale)
         for trace in heatmaps
     )
+    text_overlays = [
+        trace for trace in figure.data
+        if trace.type == "scatter" and trace.mode == "text"
+    ]
+    assert len(text_overlays) == 4
+    overlay_colors = {
+        color for trace in text_overlays for color in trace.textfont.color
+    }
+    assert {"#111827", "#FFFFFF"}.issubset(overlay_colors)
 
 
 def test_generic_categorical_figure_uses_diagnosis_marker_shapes() -> None:

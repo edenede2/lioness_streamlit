@@ -21,7 +21,7 @@ from sklearn.metrics import precision_recall_curve, roc_curve
 
 PREDICTION_BLOCK_ORDERING_API_VERSION = 1
 DISTRIBUTION_GROUPING_API_VERSION = 3
-COEFFICIENT_ANNOTATION_API_VERSION = 2
+COEFFICIENT_ANNOTATION_API_VERSION = 3
 
 
 DIAGNOSIS_COLORS = {
@@ -4461,14 +4461,91 @@ COEFFICIENT_KEGG_SCOPE_LABELS = {
     "pcg": "PCG",
 }
 
-def _stable_kegg_subcategory_color(value: object) -> str:
-    """Return a reproducible category color independent of the visible subset."""
+# The deployed KEGG level-2 vocabulary has 42 subcategories.  A fixed maximin
+# palette keeps each label stable across filters while avoiding the near-matches
+# produced by independently hashing labels onto unrestricted HSL hues.  The
+# colors span hue and lightness; cell text is contrast-adjusted below.
+KEGG_SUBCATEGORY_ORDER = (
+    "Amino acid metabolism",
+    "Cancer: overview",
+    "Cancer: specific types",
+    "Carbohydrate metabolism",
+    "Cardiovascular disease",
+    "Cell growth and death",
+    "Cell motility",
+    "Cellular community - eukaryotes",
+    "Chromosome",
+    "Circulatory system",
+    "Development and regeneration",
+    "Digestive system",
+    "Drug resistance: antineoplastic",
+    "Endocrine and metabolic disease",
+    "Endocrine system",
+    "Energy metabolism",
+    "Environmental adaptation",
+    "Excretory system",
+    "Folding, sorting and degradation",
+    "Global and overview maps",
+    "Glycan biosynthesis and metabolism",
+    "Immune disease",
+    "Immune system",
+    "Infectious disease: bacterial",
+    "Infectious disease: parasitic",
+    "Infectious disease: viral",
+    "Lipid metabolism",
+    "Membrane transport",
+    "Metabolism of cofactors and vitamins",
+    "Metabolism of other amino acids",
+    "Metabolism of terpenoids and polyketides",
+    "Nervous system",
+    "Neurodegenerative disease",
+    "Nucleotide metabolism",
+    "Replication and repair",
+    "Sensory system",
+    "Signal transduction",
+    "Signaling molecules and interaction",
+    "Substance dependence",
+    "Transcription",
+    "Translation",
+    "Transport and catabolism",
+)
 
-    digest = hashlib.sha256(str(value).encode("utf-8")).digest()
-    hue = int.from_bytes(digest[:2], "big") % 360
-    saturation = 55 + digest[2] % 16
-    lightness = 38 + digest[3] % 13
-    return f"hsl({hue}, {saturation}%, {lightness}%)"
+KEGG_SUBCATEGORY_PALETTE = (
+    "#3072C2", "#00E600", "#FF0000", "#4000FF", "#7A6D1F", "#FF19AF",
+    "#00E6C3", "#9E2839", "#FFBF00", "#B266FF", "#0C757A", "#289E33",
+    "#FF9C66", "#00D9FF", "#A5C200", "#9E3F8B", "#FF00FF", "#FF0066",
+    "#0073FF", "#C24400", "#317A47", "#0039E6", "#8E009E", "#E6BC5C",
+    "#7A4B31", "#573F9E", "#00E68A", "#FF66A3", "#FF8C00", "#FF6666",
+    "#A100E6", "#66BAFF", "#31567A", "#FF66F7", "#7D9E3F", "#9E5F00",
+    "#59C213", "#9E9600", "#4EC2BC", "#C20027", "#C2654E", "#C20074",
+)
+
+KEGG_SUBCATEGORY_COLORS = dict(
+    zip(KEGG_SUBCATEGORY_ORDER, KEGG_SUBCATEGORY_PALETTE, strict=True)
+)
+
+def _stable_kegg_subcategory_color(value: object) -> str:
+    """Return a high-separation color independent of the visible subset."""
+
+    label = str(value)
+    if label in KEGG_SUBCATEGORY_COLORS:
+        return KEGG_SUBCATEGORY_COLORS[label]
+    digest = hashlib.sha256(label.encode("utf-8")).digest()
+    return KEGG_SUBCATEGORY_PALETTE[
+        int.from_bytes(digest[:4], "big") % len(KEGG_SUBCATEGORY_PALETTE)
+    ]
+
+
+def _contrasting_text_color(background: str) -> str:
+    """Choose dark or white text using WCAG relative luminance."""
+
+    channels = [int(background[index:index + 2], 16) / 255 for index in (1, 3, 5)]
+    linear = [
+        value / 12.92 if value <= 0.04045 else ((value + 0.055) / 1.055) ** 2.4
+        for value in channels
+    ]
+    luminance = 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+    return "#111827" if luminance > 0.36 else "#FFFFFF"
 
 
 def prediction_feature_family(feature_name: object) -> str:
@@ -4556,6 +4633,11 @@ def prediction_coefficient_figure(
             f"kegg_{scope}_pathway", pd.Series(np.nan, index=selected.index)
         )
         codes = [subcategory_codes.get(str(value), 0) if pd.notna(value) else 0 for value in subcategories]
+        cell_colors = [
+            subcategory_colors.get(str(value), "#E5E7EB")
+            if pd.notna(value) else "#E5E7EB"
+            for value in subcategories
+        ]
         text = [_formatted_fdr(value) for value in fdr_values]
         hover = np.column_stack([
             np.repeat(scope_label, len(selected)),
@@ -4568,7 +4650,6 @@ def prediction_coefficient_figure(
             go.Heatmap(
                 z=np.asarray(codes, dtype=float).reshape(-1, 1),
                 x=[scope_label], y=labels, text=np.asarray(text).reshape(-1, 1),
-                texttemplate="%{text}", textfont={"size": 9},
                 customdata=hover.reshape(len(selected), 1, 5),
                 zmin=0, zmax=max(1, len(observed_subcategories)), colorscale=colorscale,
                 showscale=False, xgap=1, ygap=1,
@@ -4577,6 +4658,18 @@ def prediction_coefficient_figure(
                     "Subcategory: %{customdata[2]}<br>Pathway: %{customdata[3]}<br>"
                     "FDR: %{customdata[4]}<extra></extra>"
                 ),
+            ),
+            row=1, col=column_index,
+        )
+        figure.add_trace(
+            go.Scatter(
+                x=[scope_label] * len(selected), y=labels, text=text,
+                mode="text", texttemplate="%{text}",
+                textfont={
+                    "size": 9,
+                    "color": [_contrasting_text_color(color) for color in cell_colors],
+                },
+                hoverinfo="skip", showlegend=False,
             ),
             row=1, col=column_index,
         )
