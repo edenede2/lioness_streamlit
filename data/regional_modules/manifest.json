@@ -19,6 +19,72 @@
       "cohort_scope": "common_450",
       "donors": 450,
       "modules": 142,
+      "network_method": "control_anchored",
+      "partition_source": "single_region_complete_case_l3",
+      "rows": 63900,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "AC"
+    },
+    {
+      "cohort_scope": "common_450",
+      "donors": 450,
+      "modules": 122,
+      "network_method": "control_anchored",
+      "partition_source": "single_region_complete_case_l3",
+      "rows": 54900,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "DLPFC"
+    },
+    {
+      "cohort_scope": "common_450",
+      "donors": 450,
+      "modules": 116,
+      "network_method": "control_anchored",
+      "partition_source": "single_region_complete_case_l3",
+      "rows": 52200,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "PCG"
+    },
+    {
+      "cohort_scope": "common_450",
+      "donors": 450,
+      "modules": 142,
+      "network_method": "standard",
+      "partition_source": "single_region_complete_case_l3",
+      "rows": 63900,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "AC"
+    },
+    {
+      "cohort_scope": "common_450",
+      "donors": 450,
+      "modules": 122,
+      "network_method": "standard",
+      "partition_source": "single_region_complete_case_l3",
+      "rows": 54900,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "DLPFC"
+    },
+    {
+      "cohort_scope": "common_450",
+      "donors": 450,
+      "modules": 116,
+      "network_method": "standard",
+      "partition_source": "single_region_complete_case_l3",
+      "rows": 52200,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "PCG"
+    },
+    {
+      "cohort_scope": "common_450",
+      "donors": 450,
+      "modules": 142,
       "network_method": "not_applicable",
       "partition_source": "single_region_complete_case_l3",
       "rows": 63900,
@@ -45,6 +111,72 @@
       "partition_source": "single_region_complete_case_l3",
       "rows": 52200,
       "score_variant": "eigengene",
+      "status": "complete",
+      "tissue": "PCG"
+    },
+    {
+      "cohort_scope": "maximum_tissue",
+      "donors": 730,
+      "modules": 142,
+      "network_method": "control_anchored",
+      "partition_source": "single_region_complete_case_l3",
+      "rows": 103660,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "AC"
+    },
+    {
+      "cohort_scope": "maximum_tissue",
+      "donors": 1216,
+      "modules": 122,
+      "network_method": "control_anchored",
+      "partition_source": "single_region_complete_case_l3",
+      "rows": 148352,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "DLPFC"
+    },
+    {
+      "cohort_scope": "maximum_tissue",
+      "donors": 659,
+      "modules": 116,
+      "network_method": "control_anchored",
+      "partition_source": "single_region_complete_case_l3",
+      "rows": 76444,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "PCG"
+    },
+    {
+      "cohort_scope": "maximum_tissue",
+      "donors": 730,
+      "modules": 142,
+      "network_method": "standard",
+      "partition_source": "single_region_complete_case_l3",
+      "rows": 103660,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "AC"
+    },
+    {
+      "cohort_scope": "maximum_tissue",
+      "donors": 1216,
+      "modules": 122,
+      "network_method": "standard",
+      "partition_source": "single_region_complete_case_l3",
+      "rows": 148352,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "DLPFC"
+    },
+    {
+      "cohort_scope": "maximum_tissue",
+      "donors": 659,
+      "modules": 116,
+      "network_method": "standard",
+      "partition_source": "single_region_complete_case_l3",
+      "rows": 76444,
+      "score_variant": "connectivity",
       "status": "complete",
       "tissue": "PCG"
     },
@@ -85,6 +217,72 @@
       "cohort_scope": "common_450",
       "donors": 450,
       "modules": 118,
+      "network_method": "control_anchored",
+      "partition_source": "single_region_full_tissue_l3",
+      "rows": 53100,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "AC"
+    },
+    {
+      "cohort_scope": "common_450",
+      "donors": 450,
+      "modules": 144,
+      "network_method": "control_anchored",
+      "partition_source": "single_region_full_tissue_l3",
+      "rows": 64800,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "DLPFC"
+    },
+    {
+      "cohort_scope": "common_450",
+      "donors": 450,
+      "modules": 106,
+      "network_method": "control_anchored",
+      "partition_source": "single_region_full_tissue_l3",
+      "rows": 47700,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "PCG"
+    },
+    {
+      "cohort_scope": "common_450",
+      "donors": 450,
+      "modules": 118,
+      "network_method": "standard",
+      "partition_source": "single_region_full_tissue_l3",
+      "rows": 53100,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "AC"
+    },
+    {
+      "cohort_scope": "common_450",
+      "donors": 450,
+      "modules": 144,
+      "network_method": "standard",
+      "partition_source": "single_region_full_tissue_l3",
+      "rows": 64800,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "DLPFC"
+    },
+    {
+      "cohort_scope": "common_450",
+      "donors": 450,
+      "modules": 106,
+      "network_method": "standard",
+      "partition_source": "single_region_full_tissue_l3",
+      "rows": 47700,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "PCG"
+    },
+    {
+      "cohort_scope": "common_450",
+      "donors": 450,
+      "modules": 118,
       "network_method": "not_applicable",
       "partition_source": "single_region_full_tissue_l3",
       "rows": 53100,
@@ -111,6 +309,72 @@
       "partition_source": "single_region_full_tissue_l3",
       "rows": 47700,
       "score_variant": "eigengene",
+      "status": "complete",
+      "tissue": "PCG"
+    },
+    {
+      "cohort_scope": "maximum_tissue",
+      "donors": 730,
+      "modules": 118,
+      "network_method": "control_anchored",
+      "partition_source": "single_region_full_tissue_l3",
+      "rows": 86140,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "AC"
+    },
+    {
+      "cohort_scope": "maximum_tissue",
+      "donors": 1216,
+      "modules": 144,
+      "network_method": "control_anchored",
+      "partition_source": "single_region_full_tissue_l3",
+      "rows": 175104,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "DLPFC"
+    },
+    {
+      "cohort_scope": "maximum_tissue",
+      "donors": 659,
+      "modules": 106,
+      "network_method": "control_anchored",
+      "partition_source": "single_region_full_tissue_l3",
+      "rows": 69854,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "PCG"
+    },
+    {
+      "cohort_scope": "maximum_tissue",
+      "donors": 730,
+      "modules": 118,
+      "network_method": "standard",
+      "partition_source": "single_region_full_tissue_l3",
+      "rows": 86140,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "AC"
+    },
+    {
+      "cohort_scope": "maximum_tissue",
+      "donors": 1216,
+      "modules": 144,
+      "network_method": "standard",
+      "partition_source": "single_region_full_tissue_l3",
+      "rows": 175104,
+      "score_variant": "connectivity",
+      "status": "complete",
+      "tissue": "DLPFC"
+    },
+    {
+      "cohort_scope": "maximum_tissue",
+      "donors": 659,
+      "modules": 106,
+      "network_method": "standard",
+      "partition_source": "single_region_full_tissue_l3",
+      "rows": 69854,
+      "score_variant": "connectivity",
       "status": "complete",
       "tissue": "PCG"
     },
@@ -148,7 +412,493 @@
       "tissue": "PCG"
     }
   ],
-  "created_utc": "2026-10-02T10:35:19.301316+00:00",
+  "connectivity_files": {
+    "single_region_complete_case_l3": {
+      "common_450": {
+        "control_anchored": {
+          "AC": {
+            "bytes": 2414398,
+            "relative_path": "single_region_complete_case_l3/common_450/connectivity/control_anchored/AC.parquet",
+            "rows": 63900,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "d36a80db04971cab7897beba520264e939121d3d691ed6fd61b6213f7cb9c152"
+          },
+          "DLPFC": {
+            "bytes": 2078241,
+            "relative_path": "single_region_complete_case_l3/common_450/connectivity/control_anchored/DLPFC.parquet",
+            "rows": 54900,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "5a8966f76074557c0ce52deeb23a5900ef9e9ea142beecc4cfcdccc8a502ba10"
+          },
+          "PCG": {
+            "bytes": 1973928,
+            "relative_path": "single_region_complete_case_l3/common_450/connectivity/control_anchored/PCG.parquet",
+            "rows": 52200,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "e5bcc2f9bb790adda381033d616a6d6888ac1b7fdb7fa84bd7db544a1e3c182b"
+          }
+        },
+        "standard": {
+          "AC": {
+            "bytes": 2408227,
+            "relative_path": "single_region_complete_case_l3/common_450/connectivity/standard/AC.parquet",
+            "rows": 63900,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "5c7e98ed772191ddfde9c127163be58ad5dd6c1d3200c5fc1f1c9b436c493819"
+          },
+          "DLPFC": {
+            "bytes": 2073051,
+            "relative_path": "single_region_complete_case_l3/common_450/connectivity/standard/DLPFC.parquet",
+            "rows": 54900,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "85c443112868ecfac5df2d0bcaeaebde2a469ef3a0265d9808808d599031ef88"
+          },
+          "PCG": {
+            "bytes": 1968892,
+            "relative_path": "single_region_complete_case_l3/common_450/connectivity/standard/PCG.parquet",
+            "rows": 52200,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "d8c795d68de494cf474ec377e9aadb5c634dbe40379ae48c9e06ddd9b0f22a20"
+          }
+        }
+      },
+      "maximum_tissue": {
+        "control_anchored": {
+          "AC": {
+            "bytes": 3789667,
+            "relative_path": "single_region_complete_case_l3/maximum_tissue/connectivity/control_anchored/AC.parquet",
+            "rows": 103660,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "156111186c45422f091ef37e6bf685a5c7cc504457f98c9e9672812e1f8043f4"
+          },
+          "DLPFC": {
+            "bytes": 5271328,
+            "relative_path": "single_region_complete_case_l3/maximum_tissue/connectivity/control_anchored/DLPFC.parquet",
+            "rows": 148352,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "996b580ce83676dc16e5001bf0486e7ecdf2d223e7b42e5507f5e01584129f5a"
+          },
+          "PCG": {
+            "bytes": 2814372,
+            "relative_path": "single_region_complete_case_l3/maximum_tissue/connectivity/control_anchored/PCG.parquet",
+            "rows": 76444,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "36d47d064ef14a14535f69a2b12fc5efed01852e0d1ae5ee92f489b12df0c71b"
+          }
+        },
+        "standard": {
+          "AC": {
+            "bytes": 3784747,
+            "relative_path": "single_region_complete_case_l3/maximum_tissue/connectivity/standard/AC.parquet",
+            "rows": 103660,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "457312c620894b7b1223fc3aa14023bdda1993dcd9456ffcde9310bb3711bc79"
+          },
+          "DLPFC": {
+            "bytes": 5265064,
+            "relative_path": "single_region_complete_case_l3/maximum_tissue/connectivity/standard/DLPFC.parquet",
+            "rows": 148352,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "6d77095dff5baf606c63e7841d6396666737724878acb352d4df67d5caaeaf4c"
+          },
+          "PCG": {
+            "bytes": 2809672,
+            "relative_path": "single_region_complete_case_l3/maximum_tissue/connectivity/standard/PCG.parquet",
+            "rows": 76444,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "2c4cb7243afcc5c4f83711dcf158e9f8ca5dc45f41d0f2b52ca45911fcb9dfad"
+          }
+        }
+      }
+    },
+    "single_region_full_tissue_l3": {
+      "common_450": {
+        "control_anchored": {
+          "AC": {
+            "bytes": 2004287,
+            "relative_path": "single_region_full_tissue_l3/common_450/connectivity/control_anchored/AC.parquet",
+            "rows": 53100,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "bab3e064968a558cebfef0fb722a0d33c5309895122077a8cffb7a7686119394"
+          },
+          "DLPFC": {
+            "bytes": 2449990,
+            "relative_path": "single_region_full_tissue_l3/common_450/connectivity/control_anchored/DLPFC.parquet",
+            "rows": 64800,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "f38ba74203f966d5be8036c05a6e8c91e5635a42116f4475959e08cf51f2ad82"
+          },
+          "PCG": {
+            "bytes": 1801858,
+            "relative_path": "single_region_full_tissue_l3/common_450/connectivity/control_anchored/PCG.parquet",
+            "rows": 47700,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "66dd28db26f02119eb52654dc60ba94f7d6026e9d24a46c7a6e6202bd14bb1da"
+          }
+        },
+        "standard": {
+          "AC": {
+            "bytes": 1999314,
+            "relative_path": "single_region_full_tissue_l3/common_450/connectivity/standard/AC.parquet",
+            "rows": 53100,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "0d46cbdfaebffd1e9199b32a6fe67d0761aa085c293aaa09ac0d6631468c0dad"
+          },
+          "DLPFC": {
+            "bytes": 2444036,
+            "relative_path": "single_region_full_tissue_l3/common_450/connectivity/standard/DLPFC.parquet",
+            "rows": 64800,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "d5ab4a91f02180a300361d4d9df99d7973d00d0422542f549ada3286fc31cf31"
+          },
+          "PCG": {
+            "bytes": 1797420,
+            "relative_path": "single_region_full_tissue_l3/common_450/connectivity/standard/PCG.parquet",
+            "rows": 47700,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "d65248b1cc91e52adb6022846480407c3aecafc1badde93dd413e5efcd1eebda"
+          }
+        }
+      },
+      "maximum_tissue": {
+        "control_anchored": {
+          "AC": {
+            "bytes": 3148159,
+            "relative_path": "single_region_full_tissue_l3/maximum_tissue/connectivity/control_anchored/AC.parquet",
+            "rows": 86140,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "97fd9356b2a0805278fd80053def12c992b5be1ad0adac4227bc7780c0949656"
+          },
+          "DLPFC": {
+            "bytes": 6220376,
+            "relative_path": "single_region_full_tissue_l3/maximum_tissue/connectivity/control_anchored/DLPFC.parquet",
+            "rows": 175104,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "ed8bc94c2fb675e96798588f2bb89a0d00da5bc07dd9d53c5e330eaaf517f676"
+          },
+          "PCG": {
+            "bytes": 2569582,
+            "relative_path": "single_region_full_tissue_l3/maximum_tissue/connectivity/control_anchored/PCG.parquet",
+            "rows": 69854,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "066fe7b9dbae34d62e84b6e97a123bb6541173042f73a2b682029862f100091a"
+          }
+        },
+        "standard": {
+          "AC": {
+            "bytes": 3143388,
+            "relative_path": "single_region_full_tissue_l3/maximum_tissue/connectivity/standard/AC.parquet",
+            "rows": 86140,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "6a0d175b251f38547aefe825265532da402dbd814f74e06783448bac7811b83d"
+          },
+          "DLPFC": {
+            "bytes": 6210787,
+            "relative_path": "single_region_full_tissue_l3/maximum_tissue/connectivity/standard/DLPFC.parquet",
+            "rows": 175104,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "9e28f34fb1fdc7e30fd8c4f7e0c2ad666316851e3cd0cf6d89af63b433d5d487"
+          },
+          "PCG": {
+            "bytes": 2565327,
+            "relative_path": "single_region_full_tissue_l3/maximum_tissue/connectivity/standard/PCG.parquet",
+            "rows": 69854,
+            "schema": {
+              "cohort_scope": "string",
+              "metric_asinh": "double",
+              "metric_raw": "double",
+              "metric_rint": "double",
+              "module": "int64",
+              "module_key": "string",
+              "network_method": "string",
+              "partition_source": "string",
+              "sample_id": "string",
+              "score_variant": "string",
+              "tissue": "string"
+            },
+            "sha256": "f8e5af4ded986a514c35a510f0b9f7e84c102ae434ecf9fbe33c2c51664ce9f4"
+          }
+        }
+      }
+    }
+  },
+  "created_utc": "2026-10-02T11:01:34.428117+00:00",
   "eigengene": {
     "definition": "Per-module PCA1 after cohort-median imputation and gene standardization; sign aligned to mean standardized member-gene expression",
     "fit_cohort": "450 complete-tissue donors",
@@ -195,6 +945,22 @@
       "universe_size": "int64"
     },
     "sha256": "af3c95010094091dfaaaa0ea528c817faf71f8bf3149d20c65fd987c796e0787"
+  },
+  "lioness_validation": {
+    "configurations": 24,
+    "forbidden_identifiers": [
+      "donor",
+      "projid"
+    ],
+    "formulas_checked": [
+      "standard leave-one-out",
+      "Control leave-one-out",
+      "non-Control add-one against frozen Control reference"
+    ],
+    "maximum_direct_absolute_error": 1.751025990870403e-10,
+    "relative_path": "lioness_validation.json",
+    "status": "pass",
+    "total_rows": 1992308
   },
   "metadata_files": {
     "AC": {
@@ -572,6 +1338,17 @@
     }
   },
   "score_variants": {
+    "connectivity": {
+      "adjacency": "signedAlt",
+      "beta_ts": 3,
+      "definition": "2 * signed donor-edge-weight sum / module gene count",
+      "edge_counting": "each undirected edge once; diagonal excluded",
+      "label": "LIONESS connectivity",
+      "methods": [
+        "control_anchored",
+        "standard"
+      ]
+    },
     "eigengene": {
       "label": "Module eigengene (PCA1 expression)",
       "network_method": "not_applicable"
@@ -585,8 +1362,8 @@
     "single_region_complete_case_l3",
     "single_region_full_tissue_l3"
   ],
-  "stage": "maximum_tissue_eigengenes",
-  "status": "interim",
+  "stage": "regional_lioness_complete",
+  "status": "complete",
   "transforms": [
     "raw",
     "asinh",

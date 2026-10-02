@@ -60,8 +60,11 @@ def _regional_view(label: str) -> AppTest:
 def test_regional_manifest_and_score_grain() -> None:
     manifest = load_regional_manifest()
     completed = completed_combinations(manifest)
-    assert len(completed) == 12
+    assert len(completed) == 36
     assert set(completed["status"]) == {"complete"}
+    connectivity = completed.loc[completed["score_variant"].eq("connectivity")]
+    assert len(connectivity) == 24
+    assert set(connectivity["network_method"]) == {"standard", "control_anchored"}
     details = load_regional_details()
     observed = (
         details.groupby(["partition_source", "tissue"], observed=True)["module"]
@@ -168,6 +171,16 @@ def test_regional_maximum_tissue_view_renders() -> None:
     app = _widget(app.selectbox, "Regional donor cohort").set_value(
         "maximum_tissue"
     ).run(timeout=300)
+    assert not app.exception
+    assert len(app.get("plotly_chart")) == 1
+
+
+def test_regional_control_referenced_lioness_view_renders() -> None:
+    app = _regional_view("Associations")
+    _preserve_pills(app)
+    score = _widget(app.selectbox, "Regional module score")
+    assert len(score.options) == 3
+    app = score.set_value(("connectivity", "control_anchored")).run(timeout=300)
     assert not app.exception
     assert len(app.get("plotly_chart")) == 1
 
