@@ -49,6 +49,15 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Validate names and sizes but do not hash every local file.",
     )
+    parser.add_argument(
+        "--validation-prefix",
+        action="append",
+        default=[],
+        help=(
+            "Validate local/remote parity only below this relative directory while "
+            "still indexing the complete Drive root. May be supplied more than once."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -176,13 +185,32 @@ def main() -> None:
         for path in args.local_data.rglob("*")
         if path.is_file()
     }
-    missing_remote = sorted(set(local_files).difference(indexed))
-    extra_remote = sorted(set(indexed).difference(local_files))
+    prefixes = tuple(
+        value.strip("/") + "/"
+        for value in args.validation_prefix
+        if value.strip("/")
+    )
+    if prefixes:
+        selected_local = {
+            relative: path
+            for relative, path in local_files.items()
+            if relative.startswith(prefixes)
+        }
+        selected_indexed = {
+            relative: metadata
+            for relative, metadata in indexed.items()
+            if relative.startswith(prefixes)
+        }
+    else:
+        selected_local = local_files
+        selected_indexed = indexed
+    missing_remote = sorted(set(selected_local).difference(selected_indexed))
+    extra_remote = sorted(set(selected_indexed).difference(selected_local))
     size_mismatches: list[str] = []
     checksum_mismatches: list[str] = []
-    for relative in sorted(set(local_files).intersection(indexed)):
-        local = local_files[relative]
-        remote = indexed[relative]
+    for relative in sorted(set(selected_local).intersection(selected_indexed)):
+        local = selected_local[relative]
+        remote = selected_indexed[relative]
         if remote.get("size") is not None and local.stat().st_size != int(remote["size"]):
             size_mismatches.append(relative)
             continue
@@ -206,6 +234,7 @@ def main() -> None:
         "file_count": len(indexed),
         "total_bytes": sum(int(item.get("size") or 0) for item in indexed.values()),
         "drive_list_requests": request_count,
+        "validated_prefixes": [value.rstrip("/") for value in prefixes],
         "files": dict(sorted(indexed.items())),
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
