@@ -1,5 +1,5 @@
 {
-  "bundle_manifest_sha256": "d64195c0b84cd56ad9867048166567113dbd81285d7d0aee217da503053cafeb",
+  "bundle_manifest_sha256": "7ca90d8d40f661fce5b4574495d8a4e4cdcba35839be23964654b23326c7c2bd",
   "deep_reproducibility": [
     {
       "maximum_absolute_error": 0.0,
@@ -52,6 +52,36 @@
   "module_rows": 748,
   "score_files": [
     {
+      "relative_path": "single_region_complete_case_l3/common_450/eigengene/AC.parquet",
+      "rows": 63900,
+      "sha256": "2fc1054aa02ddc424f175b5f849925974b465f4b13ab5135d7212eeddb52d58d"
+    },
+    {
+      "relative_path": "single_region_complete_case_l3/common_450/eigengene/DLPFC.parquet",
+      "rows": 54900,
+      "sha256": "4e2ada4d281142d2f22e121ac7b000b4b18f713de8b4990fedb4e59f51c004a7"
+    },
+    {
+      "relative_path": "single_region_complete_case_l3/common_450/eigengene/PCG.parquet",
+      "rows": 52200,
+      "sha256": "b17e360cf157c4ada957c0ce4d98e7149bf63cef081556dff1330083d28ecb7e"
+    },
+    {
+      "relative_path": "single_region_complete_case_l3/maximum_tissue/eigengene/AC.parquet",
+      "rows": 103660,
+      "sha256": "1456289b15ba8c1329806f3b062c4dec18112b608fe069ceafa1cfb0fcdc75d3"
+    },
+    {
+      "relative_path": "single_region_complete_case_l3/maximum_tissue/eigengene/DLPFC.parquet",
+      "rows": 148352,
+      "sha256": "8106114aae22218d57a901e48186f67f17e53a72ec0af02c593fd2061c4bc96c"
+    },
+    {
+      "relative_path": "single_region_complete_case_l3/maximum_tissue/eigengene/PCG.parquet",
+      "rows": 76444,
+      "sha256": "f7e456411da24c3ffd0299b8e10c567471a776d5b8315589ee95871827c7ddaa"
+    },
+    {
       "relative_path": "single_region_full_tissue_l3/common_450/eigengene/AC.parquet",
       "rows": 53100,
       "sha256": "a29e9e76d148d833b1d3e73a50c31ea8f12356763e3972583cc1bdd581b1940e"
@@ -67,19 +97,19 @@
       "sha256": "86b12a7c7c56295bb0284216ffa6287cddb2fb5003bfbad2ceb36ce9121ddc8b"
     },
     {
-      "relative_path": "single_region_complete_case_l3/common_450/eigengene/AC.parquet",
-      "rows": 63900,
-      "sha256": "2fc1054aa02ddc424f175b5f849925974b465f4b13ab5135d7212eeddb52d58d"
+      "relative_path": "single_region_full_tissue_l3/maximum_tissue/eigengene/AC.parquet",
+      "rows": 86140,
+      "sha256": "3a5d52ed966dcfbf40d233f64d530ab3999aef66c2cf2adc4ea7b65cdec9b2dd"
     },
     {
-      "relative_path": "single_region_complete_case_l3/common_450/eigengene/DLPFC.parquet",
-      "rows": 54900,
-      "sha256": "4e2ada4d281142d2f22e121ac7b000b4b18f713de8b4990fedb4e59f51c004a7"
+      "relative_path": "single_region_full_tissue_l3/maximum_tissue/eigengene/DLPFC.parquet",
+      "rows": 175104,
+      "sha256": "6b9a95ea30026d988ec0575e393c56843d06a4ef12e5977377e7d4e887ca9071"
     },
     {
-      "relative_path": "single_region_complete_case_l3/common_450/eigengene/PCG.parquet",
-      "rows": 52200,
-      "sha256": "b17e360cf157c4ada957c0ce4d98e7149bf63cef081556dff1330083d28ecb7e"
+      "relative_path": "single_region_full_tissue_l3/maximum_tissue/eigengene/PCG.parquet",
+      "rows": 69854,
+      "sha256": "2b5a746365a22c877b3f1ffa80f15cf8f8e8cc23e33eede7d6fe95501e5bf83d"
     }
   ],
   "status": "pass"
