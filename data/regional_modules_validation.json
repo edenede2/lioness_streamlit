@@ -1,0 +1,86 @@
+{
+  "bundle_manifest_sha256": "d64195c0b84cd56ad9867048166567113dbd81285d7d0aee217da503053cafeb",
+  "deep_reproducibility": [
+    {
+      "maximum_absolute_error": 0.0,
+      "module": 248,
+      "partition_source": "single_region_complete_case_l3",
+      "tissue": "AC"
+    },
+    {
+      "maximum_absolute_error": 0.0,
+      "module": 322,
+      "partition_source": "single_region_complete_case_l3",
+      "tissue": "DLPFC"
+    },
+    {
+      "maximum_absolute_error": 0.0,
+      "module": 444,
+      "partition_source": "single_region_complete_case_l3",
+      "tissue": "PCG"
+    },
+    {
+      "maximum_absolute_error": 0.0,
+      "module": 73,
+      "partition_source": "single_region_full_tissue_l3",
+      "tissue": "AC"
+    },
+    {
+      "maximum_absolute_error": 0.0,
+      "module": 372,
+      "partition_source": "single_region_full_tissue_l3",
+      "tissue": "DLPFC"
+    },
+    {
+      "maximum_absolute_error": 0.0,
+      "module": 1345,
+      "partition_source": "single_region_full_tissue_l3",
+      "tissue": "PCG"
+    }
+  ],
+  "forbidden_identifiers": [
+    "donor",
+    "projid"
+  ],
+  "kegg": {
+    "modules_with_reported_terms": 703,
+    "modules_without_reported_terms": 45,
+    "rows": 17965,
+    "sha256": "af3c95010094091dfaaaa0ea528c817faf71f8bf3149d20c65fd987c796e0787"
+  },
+  "module_details_sha256": "5d10ab48d3b854ca7323e3126dfe14ba067d6e19726ac73bd55ae31525f2002f",
+  "module_rows": 748,
+  "score_files": [
+    {
+      "relative_path": "single_region_full_tissue_l3/common_450/eigengene/AC.parquet",
+      "rows": 53100,
+      "sha256": "a29e9e76d148d833b1d3e73a50c31ea8f12356763e3972583cc1bdd581b1940e"
+    },
+    {
+      "relative_path": "single_region_full_tissue_l3/common_450/eigengene/DLPFC.parquet",
+      "rows": 64800,
+      "sha256": "2a4a7098e29b3708168432620aa56d1b1e8d5cf57a7734ce910c74c2fd647739"
+    },
+    {
+      "relative_path": "single_region_full_tissue_l3/common_450/eigengene/PCG.parquet",
+      "rows": 47700,
+      "sha256": "86b12a7c7c56295bb0284216ffa6287cddb2fb5003bfbad2ceb36ce9121ddc8b"
+    },
+    {
+      "relative_path": "single_region_complete_case_l3/common_450/eigengene/AC.parquet",
+      "rows": 63900,
+      "sha256": "2fc1054aa02ddc424f175b5f849925974b465f4b13ab5135d7212eeddb52d58d"
+    },
+    {
+      "relative_path": "single_region_complete_case_l3/common_450/eigengene/DLPFC.parquet",
+      "rows": 54900,
+      "sha256": "4e2ada4d281142d2f22e121ac7b000b4b18f713de8b4990fedb4e59f51c004a7"
+    },
+    {
+      "relative_path": "single_region_complete_case_l3/common_450/eigengene/PCG.parquet",
+      "rows": 52200,
+      "sha256": "b17e360cf157c4ada957c0ce4d98e7149bf63cef081556dff1330083d28ecb7e"
+    }
+  ],
+  "status": "pass"
+}

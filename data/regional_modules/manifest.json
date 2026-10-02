@@ -1,0 +1,308 @@
+{
+  "cohort_scopes": {
+    "common_450": {
+      "donors": 450,
+      "label": "Common 450 donors"
+    }
+  },
+  "completed_combinations": [
+    {
+      "cohort_scope": "common_450",
+      "donors": 450,
+      "modules": 142,
+      "network_method": "not_applicable",
+      "partition_source": "single_region_complete_case_l3",
+      "rows": 63900,
+      "score_variant": "eigengene",
+      "status": "complete",
+      "tissue": "AC"
+    },
+    {
+      "cohort_scope": "common_450",
+      "donors": 450,
+      "modules": 122,
+      "network_method": "not_applicable",
+      "partition_source": "single_region_complete_case_l3",
+      "rows": 54900,
+      "score_variant": "eigengene",
+      "status": "complete",
+      "tissue": "DLPFC"
+    },
+    {
+      "cohort_scope": "common_450",
+      "donors": 450,
+      "modules": 116,
+      "network_method": "not_applicable",
+      "partition_source": "single_region_complete_case_l3",
+      "rows": 52200,
+      "score_variant": "eigengene",
+      "status": "complete",
+      "tissue": "PCG"
+    },
+    {
+      "cohort_scope": "common_450",
+      "donors": 450,
+      "modules": 118,
+      "network_method": "not_applicable",
+      "partition_source": "single_region_full_tissue_l3",
+      "rows": 53100,
+      "score_variant": "eigengene",
+      "status": "complete",
+      "tissue": "AC"
+    },
+    {
+      "cohort_scope": "common_450",
+      "donors": 450,
+      "modules": 144,
+      "network_method": "not_applicable",
+      "partition_source": "single_region_full_tissue_l3",
+      "rows": 64800,
+      "score_variant": "eigengene",
+      "status": "complete",
+      "tissue": "DLPFC"
+    },
+    {
+      "cohort_scope": "common_450",
+      "donors": 450,
+      "modules": 106,
+      "network_method": "not_applicable",
+      "partition_source": "single_region_full_tissue_l3",
+      "rows": 47700,
+      "score_variant": "eigengene",
+      "status": "complete",
+      "tissue": "PCG"
+    }
+  ],
+  "created_utc": "2026-10-02T10:16:37.577139+00:00",
+  "eigengene": {
+    "definition": "Per-module PCA1 after cohort-median imputation and gene standardization; sign aligned to mean standardized member-gene expression",
+    "fit_cohort": "450 complete-tissue donors",
+    "prediction_fold_scores_reused": false
+  },
+  "input_sha256": {
+    "out/kegg_enrichment_brain_all_donor_corrshrink_l4_20260901/kegg_gmt/kegg_hsa_ensembl.gmt": "7280d995f0c08bdd884352e36170ce9f011ba4f50462740c5aceafbcbdf0c672",
+    "out/kegg_enrichment_brain_all_donor_corrshrink_l4_20260901/method4_tissue_expanded_kegg_annotated.tsv": "81dd9d67067a387975c2c73f869af3b6d710f90f04c72b101d06e9f38fca089b",
+    "results/se2_rosmap_single_regions_signed_alt/20260830_181404/AC/se2_ac_signed_alt_table_3.csv": "5665615e7a76d394c478a7e45538180d2afe3e64206268ddb8d440bc6e7281b0",
+    "results/se2_rosmap_single_regions_signed_alt/20260830_181404/DLPFC/se2_dlpfc_signed_alt_table_3.csv": "9ab36b954a664e734af3c0a70b3b09b0a81749a0aeb2e51871119982a8d19b6d",
+    "results/se2_rosmap_single_regions_signed_alt/20260830_181404/PCGBA23/se2_pcgba23_signed_alt_table_3.csv": "902f1776761ddb3fb122a1f710226daf1eeaee768fb7d344a12a6bf026b438f1",
+    "results/se2_rosmap_single_regions_signed_alt_complete_case/20260830_192948/AC/se2_ac_signed_alt_table_3.csv": "2e84474872530f806ce0f5b6f25a2b08d8ca1ed8ff4140980f7724ab99cfbe03",
+    "results/se2_rosmap_single_regions_signed_alt_complete_case/20260830_192948/DLPFC/se2_dlpfc_signed_alt_table_3.csv": "a385d68f892f98e776864aab12dfbe1e7d70dc655a7664b348d605cdca866ab9",
+    "results/se2_rosmap_single_regions_signed_alt_complete_case/20260830_192948/PCGBA23/se2_pcgba23_signed_alt_table_3.csv": "637c4e5b5cbdb2aa3107279aeb7cdb9fe86e76f62c10387e7b5dfdda6c0958e7"
+  },
+  "kegg": {
+    "fdr_family": "BH separately within each source/tissue/module across reported pathways",
+    "method": "one-sided Fisher exact over each tissue-specific expression universe",
+    "min_overlap": 3,
+    "min_term_size": 10
+  },
+  "kegg_enrichment": {
+    "bytes": 633362,
+    "relative_path": "kegg_enrichment.parquet",
+    "rows": 17965,
+    "schema": {
+      "category_level1": "string",
+      "category_level2": "string",
+      "fdr": "double",
+      "module": "int64",
+      "module_key": "string",
+      "module_size": "int64",
+      "overlap_genes": "string",
+      "overlap_k": "int64",
+      "p": "double",
+      "partition_source": "string",
+      "pathway_id": "string",
+      "pathway_name": "string",
+      "pathway_num": "int64",
+      "significant": "bool",
+      "term": "string",
+      "term_size": "int64",
+      "tissue": "string",
+      "universe_size": "int64"
+    },
+    "sha256": "af3c95010094091dfaaaa0ea528c817faf71f8bf3149d20c65fd987c796e0787"
+  },
+  "module_counts": {
+    "single_region_complete_case_l3": {
+      "AC": 142,
+      "DLPFC": 122,
+      "PCG": 116
+    },
+    "single_region_full_tissue_l3": {
+      "AC": 118,
+      "DLPFC": 144,
+      "PCG": 106
+    }
+  },
+  "module_details": {
+    "bytes": 26577,
+    "relative_path": "module_details.parquet",
+    "rows": 748,
+    "schema": {
+      "assignment_file_sha256": "string",
+      "mapped_genes": "int64",
+      "module": "int64",
+      "module_key": "string",
+      "module_label": "string",
+      "n_genes": "int64",
+      "partition_level_description": "string",
+      "partition_level_zero_indexed": "int64",
+      "partition_source": "string",
+      "partition_source_label": "string",
+      "pc1_variance_explained": "double",
+      "retained_genes": "int64",
+      "status": "string",
+      "tissue": "string"
+    },
+    "sha256": "5d10ab48d3b854ca7323e3126dfe14ba067d6e19726ac73bd55ae31525f2002f"
+  },
+  "privacy": {
+    "forbidden_fields": [
+      "donor",
+      "projid"
+    ],
+    "mapping_persisted": false,
+    "public_identifier": "sample_id"
+  },
+  "public_schema_version": 1,
+  "score_files": {
+    "single_region_complete_case_l3": {
+      "AC": {
+        "bytes": 2413077,
+        "relative_path": "single_region_complete_case_l3/common_450/eigengene/AC.parquet",
+        "rows": 63900,
+        "schema": {
+          "cohort_scope": "string",
+          "metric_asinh": "double",
+          "metric_raw": "double",
+          "metric_rint": "double",
+          "module": "int64",
+          "module_key": "string",
+          "network_method": "string",
+          "partition_source": "string",
+          "sample_id": "string",
+          "score_variant": "string",
+          "tissue": "string"
+        },
+        "sha256": "2fc1054aa02ddc424f175b5f849925974b465f4b13ab5135d7212eeddb52d58d"
+      },
+      "DLPFC": {
+        "bytes": 2077027,
+        "relative_path": "single_region_complete_case_l3/common_450/eigengene/DLPFC.parquet",
+        "rows": 54900,
+        "schema": {
+          "cohort_scope": "string",
+          "metric_asinh": "double",
+          "metric_raw": "double",
+          "metric_rint": "double",
+          "module": "int64",
+          "module_key": "string",
+          "network_method": "string",
+          "partition_source": "string",
+          "sample_id": "string",
+          "score_variant": "string",
+          "tissue": "string"
+        },
+        "sha256": "4e2ada4d281142d2f22e121ac7b000b4b18f713de8b4990fedb4e59f51c004a7"
+      },
+      "PCG": {
+        "bytes": 1972968,
+        "relative_path": "single_region_complete_case_l3/common_450/eigengene/PCG.parquet",
+        "rows": 52200,
+        "schema": {
+          "cohort_scope": "string",
+          "metric_asinh": "double",
+          "metric_raw": "double",
+          "metric_rint": "double",
+          "module": "int64",
+          "module_key": "string",
+          "network_method": "string",
+          "partition_source": "string",
+          "sample_id": "string",
+          "score_variant": "string",
+          "tissue": "string"
+        },
+        "sha256": "b17e360cf157c4ada957c0ce4d98e7149bf63cef081556dff1330083d28ecb7e"
+      }
+    },
+    "single_region_full_tissue_l3": {
+      "AC": {
+        "bytes": 2003471,
+        "relative_path": "single_region_full_tissue_l3/common_450/eigengene/AC.parquet",
+        "rows": 53100,
+        "schema": {
+          "cohort_scope": "string",
+          "metric_asinh": "double",
+          "metric_raw": "double",
+          "metric_rint": "double",
+          "module": "int64",
+          "module_key": "string",
+          "network_method": "string",
+          "partition_source": "string",
+          "sample_id": "string",
+          "score_variant": "string",
+          "tissue": "string"
+        },
+        "sha256": "a29e9e76d148d833b1d3e73a50c31ea8f12356763e3972583cc1bdd581b1940e"
+      },
+      "DLPFC": {
+        "bytes": 2448944,
+        "relative_path": "single_region_full_tissue_l3/common_450/eigengene/DLPFC.parquet",
+        "rows": 64800,
+        "schema": {
+          "cohort_scope": "string",
+          "metric_asinh": "double",
+          "metric_raw": "double",
+          "metric_rint": "double",
+          "module": "int64",
+          "module_key": "string",
+          "network_method": "string",
+          "partition_source": "string",
+          "sample_id": "string",
+          "score_variant": "string",
+          "tissue": "string"
+        },
+        "sha256": "2a4a7098e29b3708168432620aa56d1b1e8d5cf57a7734ce910c74c2fd647739"
+      },
+      "PCG": {
+        "bytes": 1801181,
+        "relative_path": "single_region_full_tissue_l3/common_450/eigengene/PCG.parquet",
+        "rows": 47700,
+        "schema": {
+          "cohort_scope": "string",
+          "metric_asinh": "double",
+          "metric_raw": "double",
+          "metric_rint": "double",
+          "module": "int64",
+          "module_key": "string",
+          "network_method": "string",
+          "partition_source": "string",
+          "sample_id": "string",
+          "score_variant": "string",
+          "tissue": "string"
+        },
+        "sha256": "86b12a7c7c56295bb0284216ffa6287cddb2fb5003bfbad2ceb36ce9121ddc8b"
+      }
+    }
+  },
+  "score_variants": {
+    "eigengene": {
+      "label": "Module eigengene (PCA1 expression)",
+      "network_method": "not_applicable"
+    }
+  },
+  "source_labels": {
+    "single_region_complete_case_l3": "Single-region modules: matched complete-expression donors",
+    "single_region_full_tissue_l3": "Single-region modules: full tissue cohorts"
+  },
+  "sources": [
+    "single_region_complete_case_l3",
+    "single_region_full_tissue_l3"
+  ],
+  "stage": "common_450_eigengenes",
+  "status": "interim",
+  "transforms": [
+    "raw",
+    "asinh",
+    "rint"
+  ]
+}

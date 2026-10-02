@@ -1190,6 +1190,7 @@ def grouped_association_figure(
     reverse_colorscale: bool = False,
     categorical_color_fields: Iterable[str] = (),
     kegg_subtitles: dict[str, str] | None = None,
+    title_override: str | None = None,
 ) -> go.Figure:
     """Grouped numeric associations with configurable annotations and trends."""
 
@@ -1388,7 +1389,9 @@ def grouped_association_figure(
 
     figure.update_xaxes(title_text=f"{feature_label} ({scale_label})", zeroline=True)
     figure.update_yaxes(title_text=phenotype_label, zeroline=True)
-    title = f"Module M{int(module)}: {phenotype_label} vs {feature_label}"
+    title = title_override or (
+        f"Module M{int(module)}: {phenotype_label} vs {feature_label}"
+    )
     if module_definition:
         title += f"<br><sup>{module_definition}</sup>"
     figure_height, top_margin, legend_y = _association_layout_metrics(
@@ -1444,6 +1447,7 @@ def categorical_association_figure(
     module_definition: str | None = None,
     kegg_subtitles: dict[str, str] | None = None,
     hover_fields: dict[str, str] | None = None,
+    title_override: str | None = None,
 ) -> go.Figure:
     """Generic nominal/ordinal category comparison without numeric correlations."""
 
@@ -1555,7 +1559,9 @@ def categorical_association_figure(
             )
     figure.update_xaxes(title_text=category_label)
     figure.update_yaxes(title_text=f"{feature_label} ({scale_label})", zeroline=True)
-    title = f"Module M{int(module)}: network-score distributions by {category_label}"
+    title = title_override or (
+        f"Module M{int(module)}: network-score distributions by {category_label}"
+    )
     if module_definition:
         title += f"<br><sup>{module_definition}</sup>"
     figure_height, top_margin, legend_y = _association_layout_metrics(
@@ -1791,6 +1797,7 @@ def distribution_figure(
     module_definition: str | None = None,
     group_column: str = "diagnosis_group",
     group_label: str = "Diagnosis group",
+    title_override: str | None = None,
 ) -> go.Figure:
     """Build category-colored feature distributions without a phenotype axis.
 
@@ -1911,7 +1918,9 @@ def distribution_figure(
         fig.update_yaxes(title_text="Probability density")
     elif chart_type == "ECDF":
         fig.update_yaxes(title_text="Cumulative fraction", range=[0, 1.02])
-    title_text = f"Module M{int(module)}: {feature_label} distributions"
+    title_text = title_override or (
+        f"Module M{int(module)}: {feature_label} distributions"
+    )
     if module_definition:
         title_text += f"<br><sup>{module_definition}</sup>"
     fig.update_layout(

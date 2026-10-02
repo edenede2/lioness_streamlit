@@ -122,6 +122,10 @@ from app_helpers.module_finder import (
 )
 from app_helpers.table_controls import filterable_dataframe
 from app_helpers.streamlit_compat import plotly_chart as render_plotly_chart
+from app_helpers.regional_modules import (
+    REGIONAL_ANALYSIS_VIEWS,
+    render_regional_analysis_view,
+)
 from app_helpers import streaming_associations as _streaming_helpers
 
 if (
@@ -3790,6 +3794,25 @@ if active_view == "Prediction":
 if active_view == "Partition comparison":
     render_partition_comparison_view()
     st.stop()
+
+if active_view in REGIONAL_ANALYSIS_VIEWS:
+    with st.sidebar:
+        module_organization = st.radio(
+            "Module organization",
+            options=("matched_multitissue", "independent_regional"),
+            format_func=lambda value: {
+                "matched_multitissue": "Matched multi-tissue modules",
+                "independent_regional": "Independent single-region modules",
+            }[value],
+            index=0,
+            help=(
+                "Independent single-region modules were partitioned separately in AC, "
+                "DLPFC, and PCG. Their numeric module IDs are tissue- and source-specific."
+            ),
+        )
+    if module_organization == "independent_regional":
+        render_regional_analysis_view(active_view)
+        st.stop()
 
 with st.sidebar:
     st.header("Plot controls")
