@@ -150,10 +150,7 @@ def test_regional_association_view_renders_three_tissues() -> None:
     assert {box.label for box in app.selectbox}.issuperset(
         {"AC module", "DLPFC module", "PCG module"}
     )
-    assert any(
-        "Incremental regional release" in str(message.value)
-        for message in app.info
-    )
+    assert load_regional_manifest()["status"] == "complete"
 
 
 def test_regional_distribution_and_heatmap_views_render() -> None:
