@@ -24,6 +24,7 @@ EXPECTED_MODULES = {
     "single_region_complete_case_l3": {"AC": 142, "DLPFC": 122, "PCG": 116},
     "single_region_full_tissue_l3": {"AC": 118, "DLPFC": 144, "PCG": 106},
 }
+EXPECTED_MAXIMUM_DONORS = {"AC": 730, "DLPFC": 1216, "PCG": 659}
 
 
 def _widget(elements, label: str):
@@ -59,7 +60,7 @@ def _regional_view(label: str) -> AppTest:
 def test_regional_manifest_and_score_grain() -> None:
     manifest = load_regional_manifest()
     completed = completed_combinations(manifest)
-    assert len(completed) == 6
+    assert len(completed) == 12
     assert set(completed["status"]) == {"complete"}
     details = load_regional_details()
     observed = (
@@ -86,6 +87,21 @@ def test_regional_manifest_and_score_grain() -> None:
             assert np.allclose(
                 scores["metric_asinh"], np.arcsinh(scores["metric_raw"])
             )
+            maximum = pd.read_parquet(
+                REGIONAL_ROOT / source / "maximum_tissue/eigengene" / f"{tissue}.parquet"
+            )
+            assert len(maximum) == EXPECTED_MAXIMUM_DONORS[tissue] * count
+            assert maximum["sample_id"].nunique() == EXPECTED_MAXIMUM_DONORS[tissue]
+            assert not maximum.duplicated(["sample_id", "module"]).any()
+
+    common_ids = set(pd.read_parquet(APP_ROOT / "data/sample_metadata.parquet")["sample_id"])
+    for tissue, donor_count in EXPECTED_MAXIMUM_DONORS.items():
+        metadata = pd.read_parquet(
+            REGIONAL_ROOT / "metadata/maximum_tissue" / f"{tissue}.parquet"
+        )
+        assert len(metadata) == donor_count
+        assert common_ids.issubset(set(metadata["sample_id"]))
+        assert not {"donor", "projid"}.intersection(metadata.columns)
 
 
 def test_regional_association_fdr_is_within_tissue_partition() -> None:
@@ -144,6 +160,16 @@ def test_regional_distribution_and_heatmap_views_render() -> None:
     heatmap = _regional_view("Correlation heatmaps")
     assert not heatmap.exception
     assert len(heatmap.get("plotly_chart")) == 1
+
+
+def test_regional_maximum_tissue_view_renders() -> None:
+    app = _regional_view("Associations")
+    _preserve_pills(app)
+    app = _widget(app.selectbox, "Regional donor cohort").set_value(
+        "maximum_tissue"
+    ).run(timeout=300)
+    assert not app.exception
+    assert len(app.get("plotly_chart")) == 1
 
 
 def test_regional_manifest_contains_no_private_identifiers() -> None:

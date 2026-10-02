@@ -1,10 +1,13 @@
 {
   "schema_version": 1,
   "root_folder_id": "1dTj5SkLxuDIvII5LayLViqOzjKQt-dos",
-  "generated_at_utc": "2026-09-08T05:30:32.468423+00:00",
-  "file_count": 9790,
-  "total_bytes": 46496651418,
+  "generated_at_utc": "2026-10-02T10:41:55.260075+00:00",
+  "file_count": 9808,
+  "total_bytes": 46534057823,
   "drive_list_requests": 25,
+  "validated_prefixes": [
+    "regional_modules"
+  ],
   "files": {
     ".repo_bootstrap": {
       "id": "1b5aydt5ivoRpD3h3g7rcEZzgPzAyW9Kq",
@@ -140436,6 +140439,114 @@
       "size": 8859,
       "md5": "7829369b2b92d52b329c7beb27fbd760",
       "modified_time": "2026-09-07T12:00:58.030Z"
+    },
+    "regional_modules/kegg_enrichment.parquet": {
+      "id": "1RssHMVZwb7HGWeRGeco6SFrv2MJXv8IL",
+      "size": 633362,
+      "md5": "1fa341332268628c95a12823affa1b22",
+      "modified_time": "2026-10-02T10:32:05.452Z"
+    },
+    "regional_modules/manifest.json": {
+      "id": "1oFAzDZQYofsUwTJ-mX7m3mLlcF-t9Fxf",
+      "size": 19866,
+      "md5": "04ac64e2dd510537138b61c85410fd3c",
+      "modified_time": "2026-10-02T10:35:23.311Z"
+    },
+    "regional_modules/metadata/maximum_tissue/AC.parquet": {
+      "id": "15ZYsX4HIIqLUL3FmGJ0S6ud1TavywTeA",
+      "size": 54607,
+      "md5": "fe86079449e0854235ac1df9e3575bac",
+      "modified_time": "2026-10-02T10:35:26.624Z"
+    },
+    "regional_modules/metadata/maximum_tissue/DLPFC.parquet": {
+      "id": "1uUpQXDaKJCPdQ_AydC4BuKFOgurXZS_v",
+      "size": 81607,
+      "md5": "7d80a93ee95aafcab5309d517453bf2a",
+      "modified_time": "2026-10-02T10:35:28.350Z"
+    },
+    "regional_modules/metadata/maximum_tissue/PCG.parquet": {
+      "id": "16QqjeH_FS4XS7bZ4zJ9pLdB0vgrWU-3t",
+      "size": 50321,
+      "md5": "ff8575666d39e7f1dd2e2daf28b2abbc",
+      "modified_time": "2026-10-02T10:35:30.062Z"
+    },
+    "regional_modules/module_details.parquet": {
+      "id": "1jPp0Vh7Z7yAO4j3FdqU1yyyhDvVmldsC",
+      "size": 26577,
+      "md5": "2931f8cc13a69728d01968f3e01f91ac",
+      "modified_time": "2026-10-02T10:32:08.897Z"
+    },
+    "regional_modules/single_region_complete_case_l3/common_450/eigengene/AC.parquet": {
+      "id": "1jpLSOWAoe8Rfhv3XN8TaJNoLJF2tiHk5",
+      "size": 2413077,
+      "md5": "91e0a194cdc04080bd74c1b81a537381",
+      "modified_time": "2026-10-02T10:32:13.369Z"
+    },
+    "regional_modules/single_region_complete_case_l3/common_450/eigengene/DLPFC.parquet": {
+      "id": "1uUfA6NVpvzis68qDXFckpqlYWYy1r-IF",
+      "size": 2077027,
+      "md5": "4aaeea98d7f0f8272781779c8fdb6e9e",
+      "modified_time": "2026-10-02T10:32:15.025Z"
+    },
+    "regional_modules/single_region_complete_case_l3/common_450/eigengene/PCG.parquet": {
+      "id": "1t99nzv7Os0G-zgNm-qi5jljggpy6usIe",
+      "size": 1972968,
+      "md5": "d57675f9bfb414882c79a1f5d2336ebf",
+      "modified_time": "2026-10-02T10:32:19.424Z"
+    },
+    "regional_modules/single_region_complete_case_l3/maximum_tissue/eigengene/AC.parquet": {
+      "id": "1EMYLduajWuSs31S-qSV0yTWmz_gifDV1",
+      "size": 3791468,
+      "md5": "2a375da48759a81a8327762f9ecffc90",
+      "modified_time": "2026-10-02T10:35:33.355Z"
+    },
+    "regional_modules/single_region_complete_case_l3/maximum_tissue/eigengene/DLPFC.parquet": {
+      "id": "1ZT8DQ5rM_-0zEtCVV1GXcqg7vmTlVKOb",
+      "size": 5274078,
+      "md5": "ceca81a1b00cd910415b9149277943d0",
+      "modified_time": "2026-10-02T10:35:35.074Z"
+    },
+    "regional_modules/single_region_complete_case_l3/maximum_tissue/eigengene/PCG.parquet": {
+      "id": "18uO7oUIYTN68MvG71Xsx8QqiceuAnD4t",
+      "size": 2815966,
+      "md5": "96a188cbc59246fcfdd74f7985545266",
+      "modified_time": "2026-10-02T10:35:36.770Z"
+    },
+    "regional_modules/single_region_full_tissue_l3/common_450/eigengene/AC.parquet": {
+      "id": "1Cgkus2kooojmARdAwDaLTKgs6HjlcUJN",
+      "size": 2003471,
+      "md5": "d64829ba2e9343be56f12e655b7e3ca4",
+      "modified_time": "2026-10-02T10:32:23.699Z"
+    },
+    "regional_modules/single_region_full_tissue_l3/common_450/eigengene/DLPFC.parquet": {
+      "id": "1p8DAjuP0aQkPcXxpjyFV2ZOjNVL8rUDG",
+      "size": 2448944,
+      "md5": "1d5200cca1b41b4cdcc0b2e7e6a252d1",
+      "modified_time": "2026-10-02T10:32:25.649Z"
+    },
+    "regional_modules/single_region_full_tissue_l3/common_450/eigengene/PCG.parquet": {
+      "id": "1kopDB20ZX6s40uGx2HiQxrJK3i9-w6ae",
+      "size": 1801181,
+      "md5": "5c16d48ec541f152823cf543ad152830",
+      "modified_time": "2026-10-02T10:32:30.429Z"
+    },
+    "regional_modules/single_region_full_tissue_l3/maximum_tissue/eigengene/AC.parquet": {
+      "id": "1BErAFyjJ_H60uJfvsErG8Hu5R4DvkTo-",
+      "size": 3148723,
+      "md5": "449597eb1c67ff5863d0390566a340e3",
+      "modified_time": "2026-10-02T10:35:43.151Z"
+    },
+    "regional_modules/single_region_full_tissue_l3/maximum_tissue/eigengene/DLPFC.parquet": {
+      "id": "1JJc5JgvCMywx0GRQJiBuv_prRLyhiwiS",
+      "size": 6221943,
+      "md5": "8faf938177b5acf5a87b31f14ca5dce7",
+      "modified_time": "2026-10-02T10:35:50.578Z"
+    },
+    "regional_modules/single_region_full_tissue_l3/maximum_tissue/eigengene/PCG.parquet": {
+      "id": "1L5K2MVGDdFx6qkKJpixqQbL2lMGqBOhP",
+      "size": 2571219,
+      "md5": "9e6b7b28814d227e5f6548a0b765863d",
+      "modified_time": "2026-10-02T10:35:52.537Z"
     },
     "resolved_plot_data.parquet": {
       "id": "1XyO9-IsPMkZlvtxlYTlFQvLhaxdmFyR7",
