@@ -126,6 +126,10 @@ from app_helpers.regional_modules import (
     REGIONAL_ANALYSIS_VIEWS,
     render_regional_analysis_view,
 )
+from app_helpers.protocol_v11 import (
+    protocol_v11_available,
+    render_protocol_v11_view,
+)
 from app_helpers import streaming_associations as _streaming_helpers
 
 if (
@@ -3032,14 +3036,28 @@ def render_prediction_view() -> None:
     """Render the leakage-reduced LIONESS held-out prediction catalog lazily."""
 
     targeted_available = targeted_prediction_data_available()
-    if targeted_available:
+    protocol_available = protocol_v11_available()
+    if targeted_available or protocol_available:
+        mode_options = []
+        if targeted_available:
+            mode_options.append("targeted")
+        mode_options.append("benchmark")
+        if protocol_available:
+            mode_options.append("protocol_v11")
         prediction_mode = st.radio(
             "Prediction mode",
-            options=["targeted", "benchmark"],
-            format_func=lambda value: TARGETED_PREDICTION_MODE_LABELS[value],
+            options=mode_options,
+            format_func=lambda value: (
+                "Experiment 0210 — Protocol v1.1"
+                if value == "protocol_v11"
+                else TARGETED_PREDICTION_MODE_LABELS[value]
+            ),
             horizontal=True,
             key="prediction_mode",
         )
+        if prediction_mode == "protocol_v11":
+            render_protocol_v11_view()
+            return
         if prediction_mode == "targeted":
             render_targeted_prediction_view()
             return
