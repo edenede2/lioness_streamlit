@@ -541,6 +541,8 @@ def _render_associations(
         trend_line_rule = "all"
         significance_cutoff = 0.05
         show_group_trends = True
+        pooled_line_dash = "dash"
+        single_point_color = "#2C7FB8"
         if interpretation == "numeric":
             grouping_options = [
                 value for value in ASSOCIATION_GROUP_LABELS if value != phenotype
@@ -569,6 +571,18 @@ def _render_associations(
                     key="regional_association_pooled",
                 )
                 if grouping_variable != "__all__" else False
+            )
+            pooled_line_dash = st.radio(
+                "Pooled correlation line style",
+                ["dash", "solid"],
+                index=0,
+                horizontal=True,
+                format_func=lambda value: {
+                    "dash": "Dashed black",
+                    "solid": "Solid black",
+                }[value],
+                disabled=not show_pooled,
+                key="regional_association_pooled_line_style",
             )
             correlation_method = st.radio(
                 "Association correlation", ["Spearman", "Pearson"],
@@ -599,19 +613,30 @@ def _render_associations(
                 "Significance cutoff", [0.05, 0.10], horizontal=True,
                 key="regional_association_cutoff",
             )
+        point_color_labels = {"__single_color__": "Single color", **COLOR_LABELS}
+        point_color_options = list(point_color_labels)
         color_by = st.selectbox(
             "Color points by",
-            options=list(COLOR_LABELS),
-            format_func=lambda value: COLOR_LABELS[value],
-            index=list(COLOR_LABELS).index(
+            options=point_color_options,
+            format_func=lambda value: point_color_labels[value],
+            index=point_color_options.index(
                 grouping_variable
                 if grouping_variable in COLOR_LABELS else "diagnosis_group"
             ),
             key="regional_association_color",
         )
+        if color_by == "__single_color__":
+            single_point_color = st.color_picker(
+                "Point color",
+                value="#2C7FB8",
+                key="regional_association_single_point_color",
+            )
         palette = "Blue–white–orange"
         reverse_palette = False
-        if color_by not in CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES:
+        if (
+            color_by != "__single_color__"
+            and color_by not in CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES
+        ):
             palette = st.selectbox(
                 "Continuous color scale",
                 list(CONTINUOUS_COLOR_SCALES),
@@ -672,7 +697,7 @@ def _render_associations(
             grouping_labels=level_labels,
             module=0,
             color_by=color_by,
-            color_label=COLOR_LABELS[color_by],
+            color_label=point_color_labels[color_by],
             hover_fields=HOVER_LABELS,
             correlation_method=correlation_method.lower(),
             annotation_fields=annotation_fields,
@@ -684,6 +709,10 @@ def _render_associations(
             module_definition=definition_label,
             continuous_colorscale=palette,
             reverse_colorscale=reverse_palette,
+            single_point_color=(
+                single_point_color if color_by == "__single_color__" else None
+            ),
+            pooled_line_dash=pooled_line_dash,
             categorical_color_fields=CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES,
             kegg_subtitles=subtitles,
             title_override=title,
@@ -724,6 +753,9 @@ def _render_associations(
             kegg_subtitles=subtitles,
             hover_fields=HOVER_LABELS,
             title_override=title,
+            single_point_color=(
+                single_point_color if color_by == "__single_color__" else None
+            ),
         )
     render_plotly_chart(figure, key="regional_association_figure")
     table = statistics.copy()

@@ -22,6 +22,7 @@ from sklearn.metrics import precision_recall_curve, roc_curve
 PREDICTION_BLOCK_ORDERING_API_VERSION = 1
 DISTRIBUTION_GROUPING_API_VERSION = 3
 COEFFICIENT_ANNOTATION_API_VERSION = 3
+ASSOCIATION_STYLE_API_VERSION = 1
 
 
 DIAGNOSIS_COLORS = {
@@ -1188,6 +1189,8 @@ def grouped_association_figure(
     module_definition: str | None = None,
     continuous_colorscale: str = "Blue–white–orange",
     reverse_colorscale: bool = False,
+    single_point_color: str | None = None,
+    pooled_line_dash: str = "dash",
     categorical_color_fields: Iterable[str] = (),
     kegg_subtitles: dict[str, str] | None = None,
     title_override: str | None = None,
@@ -1224,8 +1227,13 @@ def grouped_association_figure(
         for index, level in enumerate(levels)
     }
     categorical_color_fields = set(categorical_color_fields)
-    discrete_color = color_by in categorical_color_fields or color_by == grouping_variable
-    continuous_color = not discrete_color
+    use_single_point_color = bool(single_point_color)
+    discrete_color = (
+        not use_single_point_color
+        and (color_by in categorical_color_fields or color_by == grouping_variable)
+    )
+    continuous_color = not use_single_point_color and not discrete_color
+    pooled_line_dash = "solid" if pooled_line_dash == "solid" else "dash"
     color_min = color_max = None
     if continuous_color and color_by in frame:
         color_values = pd.to_numeric(frame[color_by], errors="coerce")
@@ -1276,7 +1284,11 @@ def grouped_association_figure(
                     legendgroup=f"association_group::{group_key}",
                     showlegend=panel_index == 0,
                     line={"color": group_color, "width": 2.5},
-                    marker={"color": group_color, "size": 8}, hoverinfo="skip",
+                    marker={
+                        "color": single_point_color or group_color,
+                        "size": 8,
+                    },
+                    hoverinfo="skip",
                 ), row=row, col=col,
             )
             for diagnosis in [*DIAGNOSIS_COLORS, None]:
@@ -1310,7 +1322,9 @@ def grouped_association_figure(
                         "size": 8, "opacity": 0.74,
                         "line": {"width": 0.5, "color": "white"},
                     }
-                    if point_color == "__continuous__":
+                    if use_single_point_color:
+                        marker["color"] = single_point_color
+                    elif point_color == "__continuous__":
                         marker.update({
                             "color": pd.to_numeric(point_rows[color_by], errors="coerce"),
                             "coloraxis": "coloraxis",
@@ -1370,7 +1384,11 @@ def grouped_association_figure(
                         x=x_line, y=intercept + slope * x_line, mode="lines",
                         name=pooled_label, legendgroup="__pooled__",
                         showlegend=panel_index == 0, hoverinfo="skip",
-                        line={"color": "#1F2937", "width": 3, "dash": "dash"},
+                        line={
+                            "color": "#000000",
+                            "width": 3,
+                            "dash": pooled_line_dash,
+                        },
                     ), row=row, col=col,
                 )
             pooled_text = _configurable_correlation_text(
@@ -1448,6 +1466,7 @@ def categorical_association_figure(
     kegg_subtitles: dict[str, str] | None = None,
     hover_fields: dict[str, str] | None = None,
     title_override: str | None = None,
+    single_point_color: str | None = None,
 ) -> go.Figure:
     """Generic nominal/ordinal category comparison without numeric correlations."""
 
@@ -1513,7 +1532,7 @@ def categorical_association_figure(
                         mode="markers", name=label,
                         legendgroup=f"category::{level}", showlegend=False,
                         marker={
-                            "color": colors[str(level)],
+                            "color": single_point_color or colors[str(level)],
                             "symbol": DIAGNOSIS_SYMBOLS[diagnosis],
                             "size": 7, "opacity": 0.72,
                             "line": {"color": "white", "width": 0.4},

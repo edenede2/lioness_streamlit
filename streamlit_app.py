@@ -17,34 +17,38 @@ import streamlit as st
 # is absent so a repository update cannot leave the two modules out of sync.
 from app_helpers import charts as _chart_helpers
 
-if getattr(_chart_helpers, "DISTRIBUTION_GROUPING_API_VERSION", 0) < 3 or not all(
-    hasattr(_chart_helpers, name)
-    for name in (
-        "CONTINUOUS_COLOR_SCALES",
-        "categorical_association_figure",
-        "EDGE_COMPONENT_LABELS",
-        "edge_volcano_figure",
-        "module_finder_figure",
-        "mdc_entropy_figure",
-        "pathway_mdc_heatmap_figure",
-        "prediction_performance_figure",
-        "PREDICTION_BLOCK_ORDERING_API_VERSION",
-        "targeted_primary_comparison_figure",
-        "targeted_selection_frequency_figure",
-        "targeted_fold_robustness_figure",
-        "targeted_transform_comparison_figure",
-        "targeted_transform_heatmap_figure",
-        "targeted_eigengene_source_comparison_figure",
-        "targeted_panel_overlap_figure",
-        "clustered_correlation_group_order",
-        "grouped_association_figure",
-        "DISTRIBUTION_GROUPING_API_VERSION",
-        "distribution_omnibus_component_figure",
-        "distribution_pairwise_forest_figure",
-        "distribution_pairwise_heatmap_figure",
-        "distribution_module_ranking_figure",
-        "distribution_feature_heatmap_figure",
-        "COEFFICIENT_ANNOTATION_API_VERSION",
+if (
+    getattr(_chart_helpers, "DISTRIBUTION_GROUPING_API_VERSION", 0) < 3
+    or getattr(_chart_helpers, "ASSOCIATION_STYLE_API_VERSION", 0) < 1
+    or not all(
+        hasattr(_chart_helpers, name)
+        for name in (
+            "CONTINUOUS_COLOR_SCALES",
+            "categorical_association_figure",
+            "EDGE_COMPONENT_LABELS",
+            "edge_volcano_figure",
+            "module_finder_figure",
+            "mdc_entropy_figure",
+            "pathway_mdc_heatmap_figure",
+            "prediction_performance_figure",
+            "PREDICTION_BLOCK_ORDERING_API_VERSION",
+            "targeted_primary_comparison_figure",
+            "targeted_selection_frequency_figure",
+            "targeted_fold_robustness_figure",
+            "targeted_transform_comparison_figure",
+            "targeted_transform_heatmap_figure",
+            "targeted_eigengene_source_comparison_figure",
+            "targeted_panel_overlap_figure",
+            "clustered_correlation_group_order",
+            "grouped_association_figure",
+            "DISTRIBUTION_GROUPING_API_VERSION",
+            "distribution_omnibus_component_figure",
+            "distribution_pairwise_forest_figure",
+            "distribution_pairwise_heatmap_figure",
+            "distribution_module_ranking_figure",
+            "distribution_feature_heatmap_figure",
+            "COEFFICIENT_ANNOTATION_API_VERSION",
+        )
     )
 ):
     _chart_helpers = importlib.reload(_chart_helpers)
@@ -4168,6 +4172,8 @@ with st.sidebar:
     show_group_trend_lines = True
     association_significance_cutoff = 0.05
     show_pooled_association = False
+    pooled_line_dash = "dash"
+    single_point_color = "#2C7FB8"
     if active_view == "Associations":
         association_metadata = cached_sample_metadata(module_set, cohort_scope)
         association_metadata = association_metadata.loc[
@@ -4224,6 +4230,18 @@ with st.sidebar:
                 )
                 if grouping_variable != "__all__" else False
             )
+            pooled_line_dash = st.radio(
+                "Pooled correlation line style",
+                options=["dash", "solid"],
+                index=0,
+                horizontal=True,
+                format_func=lambda value: {
+                    "dash": "Dashed black",
+                    "solid": "Solid black",
+                }[value],
+                disabled=not show_pooled_association,
+                help="Changes only the pooled all-donor correlation line.",
+            )
             annotation_fields = st.multiselect(
                 "Plot annotation fields",
                 options=["n", "coefficient", "p", "fdr"],
@@ -4253,8 +4271,9 @@ with st.sidebar:
             )
             if not show_group_trend_lines and show_pooled_association:
                 st.caption(
-                    "Group-specific lines are hidden; only the dashed black pooled "
-                    "all-donor trend remains."
+                    "Group-specific lines are hidden; only the "
+                    f"{'solid' if pooled_line_dash == 'solid' else 'dashed'} black "
+                    "pooled all-donor trend remains."
                 )
             association_significance_cutoff = st.radio(
                 "Association significance cutoff",
@@ -4388,17 +4407,29 @@ with st.sidebar:
                     "do not enter Benjamini–Hochberg correction."
                 ),
             )
+    point_color_labels = {"__single_color__": "Single color", **COLOR_LABELS}
+    point_color_options = (
+        list(point_color_labels) if active_view == "Associations" else list(COLOR_LABELS)
+    )
     color_by = st.selectbox(
         "Color points by",
-        options=list(COLOR_LABELS),
-        format_func=lambda value: COLOR_LABELS[value],
+        options=point_color_options,
+        index=point_color_options.index("diagnosis_group"),
+        format_func=lambda value: point_color_labels[value],
     )
+    if active_view == "Associations" and color_by == "__single_color__":
+        single_point_color = st.color_picker(
+            "Point color",
+            value="#2C7FB8",
+            help="Applies the selected color to every donor point.",
+        )
     continuous_colorscale = st.selectbox(
         "Continuous color scale",
         options=list(CONTINUOUS_COLOR_SCALES),
         index=0,
         disabled=(
-            color_by in CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES
+            color_by == "__single_color__"
+            or color_by in CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES
             or (
                 active_view == "Associations"
                 and association_interpretation == "numeric"
@@ -4410,7 +4441,8 @@ with st.sidebar:
         "Reverse continuous color scale",
         value=False,
         disabled=(
-            color_by in CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES
+            color_by == "__single_color__"
+            or color_by in CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES
             or (
                 active_view == "Associations"
                 and association_interpretation == "numeric"
@@ -4767,6 +4799,9 @@ if active_view == "Associations":
             module_definition=module_set_label,
             kegg_subtitles=association_subtitles,
             hover_fields=HOVER_LABELS,
+            single_point_color=(
+                single_point_color if color_by == "__single_color__" else None
+            ),
         )
         if association_interpretation == "categorical"
         else grouped_association_figure(
@@ -4781,7 +4816,7 @@ if active_view == "Associations":
             grouping_labels=grouping_labels,
             module=module,
             color_by=color_by,
-            color_label=COLOR_LABELS[color_by],
+            color_label=point_color_labels[color_by],
             hover_fields=HOVER_LABELS,
             correlation_method=correlation_method.lower(),
             annotation_fields=annotation_fields,
@@ -4794,6 +4829,10 @@ if active_view == "Associations":
             module_definition=module_set_label,
             continuous_colorscale=continuous_colorscale,
             reverse_colorscale=reverse_colorscale,
+            single_point_color=(
+                single_point_color if color_by == "__single_color__" else None
+            ),
+            pooled_line_dash=pooled_line_dash,
             categorical_color_fields=CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES,
             kegg_subtitles=association_subtitles,
         )

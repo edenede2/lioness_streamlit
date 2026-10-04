@@ -400,11 +400,25 @@ def test_configurable_grouped_scatter_controls_annotations_lines_and_legend() ->
         module=1, color_by="clusters", color_label="Cluster", hover_fields={},
         trend_line_rule="all", minimum_group_n=10, show_group_trends=False,
         categorical_color_fields={"clusters"}, show_pooled=True,
+        single_point_color="#123456", pooled_line_dash="solid",
     )
     line_groups = {
         trace.legendgroup for trace in no_group_lines.data if trace.mode == "lines"
     }
     assert line_groups == {"__pooled__"}
+    donor_markers = [
+        trace.marker.color
+        for trace in no_group_lines.data
+        if trace.mode == "markers" and trace.legendgroup != "__pooled__"
+    ]
+    assert donor_markers and set(donor_markers) == {"#123456"}
+    pooled_lines = [
+        trace for trace in no_group_lines.data
+        if trace.mode == "lines" and trace.legendgroup == "__pooled__"
+    ]
+    assert pooled_lines
+    assert all(trace.line.color == "#000000" for trace in pooled_lines)
+    assert all(trace.line.dash == "solid" for trace in pooled_lines)
 
 
 def test_prediction_coefficients_use_feature_families_and_four_kegg_strips() -> None:

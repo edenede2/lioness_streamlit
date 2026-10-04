@@ -326,6 +326,16 @@ def test_association_view_defaults_to_pooled_all_donor_association() -> None:
     assert pooled.value is True
     group_trends = widget_with_label(app.checkbox, "Show group-specific OLS trend lines")
     assert group_trends.value is True
+    pooled_style = widget_with_label(app.radio, "Pooled correlation line style")
+    assert pooled_style.value == "dash"
+    app = pooled_style.set_value("solid").run()
+    assert_app_clean(app)
+    color_points = widget_with_label(app.selectbox, "Color points by")
+    assert "Single color" in color_points.options
+    app = color_points.set_value("__single_color__").run()
+    assert_app_clean(app)
+    assert widget_with_label(app.color_picker, "Point color").value == "#2C7FB8"
+    group_trends = widget_with_label(app.checkbox, "Show group-specific OLS trend lines")
     app = group_trends.set_value(False).run()
     assert_app_clean(app)
     assert widget_with_label(
