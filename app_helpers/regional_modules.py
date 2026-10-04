@@ -1160,6 +1160,21 @@ def _render_correlation_heatmaps(
                 "Heatmap correlation", ["Spearman", "Pearson"],
                 horizontal=True, key="regional_heatmap_correlation",
             )
+            outcome_options = [
+                outcome for outcome in NUMERIC_OUTCOMES if outcome in OUTCOME_LABELS
+            ]
+            selected_outcomes = st.multiselect(
+                "Outcome columns in heatmap and table",
+                outcome_options,
+                default=outcome_options,
+                format_func=lambda value: OUTCOME_LABELS[value],
+                key="regional_heatmap_outcomes",
+                help=(
+                    "Restricts the displayed columns, complete table, and download. "
+                    "Tissue-specific across-module FDR values are not recalculated after "
+                    "display filtering."
+                ),
+            )
             significant_only = st.checkbox(
                 "Show only rows with FDR < 0.05",
                 key="regional_heatmap_significant_only",
@@ -1167,11 +1182,14 @@ def _render_correlation_heatmaps(
         if not selected_levels:
             st.warning("Select at least one heatmap group level.")
             return
+        if not selected_outcomes:
+            st.warning("Select at least one outcome column for the correlation heatmap.")
+            return
         catalogs = [
             regional_correlation_catalog(
                 source, cohort_scope, score_variant, network_method, tissue,
                 scale, diagnoses, grouping_variable, tuple(selected_levels),
-                int(minimum_group_n), tuple(NUMERIC_OUTCOMES), False,
+                int(minimum_group_n), tuple(selected_outcomes), False,
             )
             for tissue in tissues
         ]
@@ -1480,4 +1498,3 @@ def render_regional_analysis_view(active_view: str) -> None:
         _render_distributions(**common)
     else:
         _render_correlation_heatmaps(**common)
-

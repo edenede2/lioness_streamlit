@@ -395,6 +395,30 @@ def test_correlation_heatmap_supports_all_features_and_module_blocks() -> None:
     assert significant["fdr"].lt(0.05).all()
 
 
+def test_correlation_heatmap_filters_outcome_columns_and_complete_table() -> None:
+    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = select_view(app, "Correlation heatmaps")
+    assert_app_clean(app)
+    outcomes = widget_with_label(
+        app.multiselect, "Outcome columns in heatmap and table"
+    )
+    assert {
+        "Global cognition",
+        "Pathology-adjusted cognitive slope",
+        "Braak stage",
+    }.issubset(
+        set(outcomes.options)
+    )
+    app = outcomes.set_value(["cogn_global", "braak_stage"]).run()
+    assert_app_clean(app)
+    table = next(
+        dataframe.value
+        for dataframe in app.dataframe
+        if "absolute_correlation" in dataframe.value.columns
+    )
+    assert set(table["outcome"]) == {"cogn_global", "braak_stage"}
+
+
 def test_correlation_heatmap_supports_all_tissue_resolved_components() -> None:
     app = AppTest.from_file(APP, default_timeout=240).run()
     assert_app_clean(app)

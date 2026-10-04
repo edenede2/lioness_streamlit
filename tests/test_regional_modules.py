@@ -162,6 +162,22 @@ def test_regional_distribution_and_heatmap_views_render() -> None:
     assert len(heatmap.get("plotly_chart")) == 1
 
 
+def test_regional_heatmap_filters_outcome_columns_and_table() -> None:
+    app = _regional_view("Correlation heatmaps")
+    assert not app.exception
+    _preserve_pills(app)
+    outcomes = _widget(app.multiselect, "Outcome columns in heatmap and table")
+    app = outcomes.set_value(["cogn_global", "braak_stage"]).run(timeout=300)
+    assert not app.exception
+    table = next(
+        dataframe.value
+        for dataframe in app.dataframe
+        if "outcome" in dataframe.value.columns
+        and "spearman_fdr_across_modules" in dataframe.value.columns
+    )
+    assert set(table["outcome"]) == {"cogn_global", "braak_stage"}
+
+
 def test_regional_maximum_tissue_view_renders() -> None:
     app = _regional_view("Associations")
     _preserve_pills(app)

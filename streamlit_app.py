@@ -5099,6 +5099,33 @@ if active_view == "Correlation heatmaps":
         value_column = "spearman_rho"
         p_column = "spearman_p"
 
+    heatmap_outcome_options = [
+        outcome for outcome in NUMERIC_OUTCOMES if outcome in OUTCOME_LABELS
+    ]
+    selected_heatmap_outcomes = st.multiselect(
+        "Outcome columns in heatmap and table",
+        options=heatmap_outcome_options,
+        default=heatmap_outcome_options,
+        format_func=lambda value: OUTCOME_LABELS[value],
+        key=(
+            "correlation_heatmap_outcomes_selected_module"
+            if heatmap_mode.startswith("Selected module")
+            else "correlation_heatmap_outcomes_all_modules"
+        ),
+        help=(
+            "Restricts the displayed heatmap columns, complete table, and download. "
+            "The underlying module-family FDR corrections are preserved and are not "
+            "recalculated after display filtering."
+        ),
+    )
+    if not selected_heatmap_outcomes:
+        st.warning("Select at least one outcome column for the correlation heatmap.")
+        st.stop()
+    st.caption(
+        f"Displaying {len(selected_heatmap_outcomes)} of "
+        f"{len(heatmap_outcome_options)} numeric outcomes."
+    )
+
     row_group_labels: dict[str, str] | None = None
 
     if heatmap_mode.startswith("Selected module"):
@@ -5136,8 +5163,17 @@ if active_view == "Correlation heatmaps":
                     + " · "
                     + heatmap_data["grouping_label"].astype(str)
                 )
+        correlation_table = correlation_table.loc[
+            correlation_table["outcome"].isin(selected_heatmap_outcomes)
+        ].copy()
+        heatmap_data = heatmap_data.loc[
+            heatmap_data["outcome"].isin(selected_heatmap_outcomes)
+        ].copy()
         if correlation_table.empty:
-            st.info("No correlations are available for the selected category levels.")
+            st.info(
+                "No correlations are available for the selected outcome columns and "
+                "category levels."
+            )
             st.stop()
         fdr_column = (
             "pearson_fdr_displayed_family"
@@ -5263,8 +5299,14 @@ if active_view == "Correlation heatmaps":
                 analysis_subset,
                 cohort_scope,
             )
+        correlation_table = correlation_table.loc[
+            correlation_table["outcome"].isin(selected_heatmap_outcomes)
+        ].copy()
         if correlation_table.empty:
-            st.info("No correlations are available for the selected category levels.")
+            st.info(
+                "No correlations are available for the selected outcome columns and "
+                "category levels."
+            )
             st.stop()
         correlation_table["feature_label"] = correlation_table["metric_family"].map(
             heatmap_feature_labels
