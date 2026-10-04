@@ -121,6 +121,58 @@ def test_every_lazy_analysis_view_renders_cleanly() -> None:
         assert_app_clean(app)
 
 
+def test_effect_endpoint_kegg_and_cross_region_views_render() -> None:
+    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = select_view(app, "KEGG enrichment")
+    assert_app_clean(app)
+    gene_set = widget_with_label(app.selectbox, "KEGG gene set")
+    assert {
+        "Full module genes",
+        "Hedges’ g endpoints: Higher in AD",
+        "Hedges’ g endpoints: Higher in Control",
+        "Hedges’ g endpoints: Either direction",
+    }.issubset(
+        set(gene_set.options)
+    )
+    app = gene_set.set_value("either").run()
+    assert_app_clean(app)
+    app = widget_with_label(app.radio, "Enrichment table scope").set_value(
+        "All modules"
+    ).run()
+    assert_app_clean(app)
+    app = widget_with_label(app.selectbox, "Regional sharing").set_value(
+        "at_least_two"
+    ).run()
+    assert_app_clean(app)
+    assert any(
+        metric.label == "Rows significant in ≥2 regions" for metric in app.metric
+    )
+    app = widget_with_label(app.radio, "Cross-region visualization").set_value(
+        "regional_heatmap"
+    ).run()
+    assert_app_clean(app)
+    assert app.get("plotly_chart")
+    assert any(
+        button.label == "Download complete selected endpoint KEGG catalog"
+        for button in app.get("download_button")
+    )
+
+
+def test_exact_effect_association_can_match_endpoint_kegg_subtitle() -> None:
+    app = AppTest.from_file(APP, default_timeout=240).run()
+    assert_app_clean(app)
+    app = widget_with_label(app.radio, "AD–Control edge subset").set_value(
+        "effect_size"
+    ).run()
+    assert_app_clean(app)
+    selector = widget_with_label(
+        app.checkbox, "Match KEGG subtitle to current edge filter"
+    )
+    assert selector.value is True
+    app = selector.set_value(False).run()
+    assert_app_clean(app)
+
+
 def test_donor_edge_explorer_renders_2d_ols_and_3d_triangle() -> None:
     app = AppTest.from_file(APP, default_timeout=240).run()
     app = select_view(app, "Donor edge explorer")

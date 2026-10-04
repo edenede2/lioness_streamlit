@@ -30,6 +30,8 @@ from app_helpers.charts import (  # noqa: E402
     edge_volcano_figure,
     edge_summary_figure,
     grouped_association_figure,
+    kegg_region_combination_figure,
+    kegg_region_heatmap_figure,
     mdc_entropy_figure,
     mdc_module_figure,
     mdc_overview_figure,
@@ -56,6 +58,7 @@ from app_helpers.charts import (  # noqa: E402
 )
 from app_helpers.correlations import calculate_correlations  # noqa: E402
 from app_helpers.data import (  # noqa: E402
+    add_kegg_region_sharing,
     association_kegg_subtitles,
     build_pathway_mdc_rows,
     collapse_pathway_mdc_rows,
@@ -76,6 +79,33 @@ from app_helpers.data import (  # noqa: E402
     selected_annotation,
     summarize_pathway_mdc_rows,
 )
+
+
+def test_kegg_cross_region_figures_show_combinations_and_exact_fdrs() -> None:
+    frame = pd.DataFrame(
+        {
+            "cluster_id": [10, 10, 20],
+            "pathway_name": ["Path A", "Path B", "Path C"],
+            "p_AC": [0.001, 0.4, 0.002],
+            "fdr_AC": [0.01, 0.4, 0.02],
+            "overlap_AC": [5, 0, 4],
+            "p_DLPFC": [0.002, 0.003, 0.4],
+            "fdr_DLPFC": [0.02, 0.03, 0.4],
+            "overlap_DLPFC": [4, 6, 0],
+            "p_PCGBA23": [0.4, 0.004, 0.003],
+            "fdr_PCGBA23": [0.4, 0.04, 0.03],
+            "overlap_PCGBA23": [0, 4, 5],
+        }
+    )
+    frame = add_kegg_region_sharing(frame, 0.05)
+    bars = kegg_region_combination_figure(frame, top_n=20)
+    assert {trace.name for trace in bars.data} == {
+        "AC + DLPFC", "DLPFC + PCG", "AC + PCG"
+    }
+    heatmap = kegg_region_heatmap_figure(frame, fdr_threshold=0.05, top_n=3)
+    assert heatmap.data[0].x == ("AC", "DLPFC", "PCG")
+    assert np.asarray(heatmap.data[0].customdata).shape == (3, 3, 3)
+    assert int((np.asarray(heatmap.data[0].text) == "*").sum()) == 6
 
 
 def test_edge_volcano_switches_between_global_and_per_module_bh() -> None:

@@ -48,6 +48,7 @@ if (
             "distribution_module_ranking_figure",
             "distribution_feature_heatmap_figure",
             "COEFFICIENT_ANNOTATION_API_VERSION",
+            "KEGG_REGIONAL_SHARING_API_VERSION",
         )
     )
 ):
@@ -77,6 +78,8 @@ from app_helpers.charts import (
     mdc_resolved_heatmap_figure,
     mdc_resolved_module_figure,
     grouped_association_figure,
+    kegg_region_combination_figure,
+    kegg_region_heatmap_figure,
     module_finder_figure,
     module_entropy_figure,
     module_region_composition_figure,
@@ -233,6 +236,7 @@ from app_helpers.data import (
     build_pathway_mdc_rows,
     collapse_pathway_mdc_rows,
     association_kegg_subtitles,
+    add_kegg_region_sharing,
     annotate_prediction_coefficients,
     coefficient_kegg_scope_lookup,
     dataframe_to_tsv_bytes,
@@ -241,10 +245,12 @@ from app_helpers.data import (
     effect_rule_label,
     effect_mask_column,
     effect_size_data_available,
+    effect_endpoint_kegg_available,
     edge_expression_data_available,
     descriptive_eigengene_data_available,
     differential_mdc_data_available,
     filter_kegg_enrichments,
+    filter_kegg_region_sharing,
     load_aggregate,
     load_aggregate_scope,
     load_aggregate_statistics,
@@ -256,6 +262,7 @@ from app_helpers.data import (
     load_edge_expression,
     load_edge_expression_nodes,
     load_kegg,
+    load_effect_endpoint_kegg,
     load_kegg_tsv_bytes,
     load_cluster_association_statistics,
     load_mdc_summary,
@@ -288,6 +295,7 @@ from app_helpers.data import (
     targeted_prediction_data_available,
     require_data_files,
     selected_annotation,
+    selected_kegg_table_annotation,
     summarize_pathway_mdc_rows,
 )
 
@@ -666,6 +674,21 @@ def cached_kegg(module_set: str, module: int | None) -> pd.DataFrame:
     return load_kegg(module, module_set=module_set)
 
 
+@st.cache_data(show_spinner=False, max_entries=12)
+def cached_effect_endpoint_kegg(
+    module_set: str,
+    method: str,
+    direction: str,
+    module: int | None,
+) -> pd.DataFrame:
+    return load_effect_endpoint_kegg(
+        module_set=module_set,
+        method=method,
+        direction=direction,
+        module=module,
+    )
+
+
 @st.cache_data(show_spinner=False, max_entries=3)
 def cached_coefficient_kegg_scopes(module_set: str) -> pd.DataFrame:
     return coefficient_kegg_scope_lookup(load_kegg(module_set=module_set))
@@ -674,6 +697,20 @@ def cached_coefficient_kegg_scopes(module_set: str) -> pd.DataFrame:
 @st.cache_data(show_spinner=False)
 def cached_kegg_tsv(module_set: str) -> bytes:
     return load_kegg_tsv_bytes(module_set)
+
+
+@st.cache_data(show_spinner=False, max_entries=8)
+def cached_effect_endpoint_kegg_tsv(
+    module_set: str,
+    method: str,
+    direction: str,
+) -> bytes:
+    return load_kegg_tsv_bytes(
+        module_set,
+        source="effect_endpoint",
+        method=method,
+        direction=direction,
+    )
 
 
 @st.cache_data(show_spinner=False)
@@ -4174,6 +4211,25 @@ with st.sidebar:
     show_pooled_association = False
     pooled_line_dash = "dash"
     single_point_color = "#2C7FB8"
+    match_effect_kegg_subtitle = False
+    exact_endpoint_kegg_context = (
+        estimator == "lioness"
+        and edge_subset_basis == "effect_size"
+        and effect_statistic == "hedges_g"
+        and effect_cutoff_mode == "fixed"
+        and np.isclose(float(effect_cutoff_value), 0.40)
+        and effect_endpoint_kegg_available(module_set, method)
+    )
+    if active_view == "Associations" and exact_endpoint_kegg_context:
+        match_effect_kegg_subtitle = st.checkbox(
+            "Match KEGG subtitle to current edge filter",
+            value=True,
+            help=(
+                "Use enrichment calculated only from tissue-gene endpoints of the "
+                "currently selected Hedges’ g ≥ 0.40 edge set. Turn this off to retain "
+                "the original full-module enrichment subtitle."
+            ),
+        )
     if active_view == "Associations":
         association_metadata = cached_sample_metadata(module_set, cohort_scope)
         association_metadata = association_metadata.loc[
@@ -4642,14 +4698,42 @@ selected_details = selected_details.iloc[0]
 
 annotation = selected_annotation(annotations, module)
 module_kegg = cached_kegg(module_set, int(module))
+association_kegg_context = ""
+if match_effect_kegg_subtitle:
+    module_kegg = cached_effect_endpoint_kegg(
+        module_set, method, effect_direction, int(module)
+    )
+    annotation = selected_kegg_table_annotation(module_kegg)
+    association_kegg_context = (
+        "Hedges’ g endpoint genes, "
+        + EFFECT_DIRECTION_LABELS[effect_direction].lower()
+    )
 association_subtitles = association_kegg_subtitles(
     module_kegg,
     selected_components,
     resolved=resolved,
     aggregate_annotation=annotation,
 )
+if association_kegg_context:
+    association_subtitles = {
+        component: subtitle.replace(
+            "KEGG enrichment",
+            f"KEGG enrichment [{association_kegg_context}]",
+            1,
+        )
+        for component, subtitle in association_subtitles.items()
+    }
 if annotation:
-    st.markdown(f'<div class="kegg-note">{annotation}</div>', unsafe_allow_html=True)
+    annotation_text = annotation
+    if association_kegg_context:
+        annotation_text = annotation_text.replace(
+            "KEGG enrichment:",
+            f"KEGG enrichment [{association_kegg_context}]:",
+            1,
+        )
+    st.markdown(
+        f'<div class="kegg-note">{annotation_text}</div>', unsafe_allow_html=True
+    )
 else:
     st.markdown(
         '<div class="kegg-note">KEGG enrichment: unavailable</div>',
@@ -9157,6 +9241,35 @@ if active_view == "Statistics":
 
 if active_view == "KEGG enrichment":
     st.subheader("Tissue-expanded KEGG enrichments")
+    endpoint_kegg_ready = (
+        estimator == "lioness"
+        and effect_endpoint_kegg_available(module_set, method)
+    )
+    kegg_source_options = ["full_module"]
+    if endpoint_kegg_ready:
+        kegg_source_options.extend(["ad_higher", "control_higher", "either"])
+    kegg_source = st.selectbox(
+        "KEGG gene set",
+        options=kegg_source_options,
+        format_func=lambda value: {
+            "full_module": "Full module genes",
+            "ad_higher": "Hedges’ g endpoints: Higher in AD",
+            "control_higher": "Hedges’ g endpoints: Higher in Control",
+            "either": "Hedges’ g endpoints: Either direction",
+        }[value],
+        help=(
+            "Endpoint catalogs contain unique tissue-gene nodes incident to at least "
+            "one discovery AD–Control edge passing the fixed |Hedges’ g| ≥ 0.40 rule."
+        ),
+        key=f"kegg_gene_set_{module_set}_{method}",
+    )
+    if estimator != "lioness":
+        st.caption("Effect-endpoint KEGG enrichment is available for LIONESS only.")
+    elif not endpoint_kegg_ready:
+        st.caption(
+            "No completed effect-endpoint KEGG catalog is available for this module "
+            "definition and network method. Full-module enrichment remains available."
+        )
     kegg_scope = st.radio(
         "Enrichment table scope",
         options=["Selected module", "All modules"],
@@ -9168,15 +9281,31 @@ if active_view == "KEGG enrichment":
         ),
     )
     kegg_module = module if kegg_scope == "Selected module" else None
-    source_kegg = cached_kegg(module_set, kegg_module).copy()
+    if kegg_source == "full_module":
+        source_kegg = cached_kegg(module_set, kegg_module).copy()
+        kegg_source_label = "Full module genes"
+        kegg_effect_direction = None
+    else:
+        kegg_effect_direction = kegg_source
+        source_kegg = cached_effect_endpoint_kegg(
+            module_set, method, kegg_effect_direction, kegg_module
+        ).copy()
+        kegg_source_label = (
+            "Hedges’ g endpoint genes · "
+            + EFFECT_DIRECTION_LABELS[kegg_effect_direction]
+        )
     if not source_kegg.empty:
-        source_kegg.insert(0, "module_definition", module_set_label)
+        if "module_definition" in source_kegg:
+            source_kegg["module_definition"] = module_set_label
+        else:
+            source_kegg.insert(0, "module_definition", module_set_label)
 
     if source_kegg.empty:
         st.info(
-            f"{module_label(module)} has no row in the supplied tissue-expanded KEGG "
-            "table. The module itself is still available in every plot and "
-            "statistics view. Choose All modules to browse the reported enrichments."
+            f"{module_label(module)} has no reported pathway for {kegg_source_label}. "
+            "This can mean that no edge passed the selected endpoint rule or that no "
+            "pathway reached the minimum overlap. Choose All modules to browse the "
+            "available enrichments."
         )
     else:
         st.markdown("#### Filters")
@@ -9261,6 +9390,34 @@ if active_view == "KEGG enrichment":
             key=f"kegg_search_{module_set}_{kegg_scope}",
         )
 
+        filter_row_three = st.columns([1.45, 1.0, 1.0])
+        regional_sharing = filter_row_three[0].selectbox(
+            "Regional sharing",
+            options=["any", "exactly_one", "at_least_two", "all_three"],
+            format_func=lambda value: {
+                "any": "Any regional pattern",
+                "exactly_one": "Exactly one significant region",
+                "at_least_two": "At least two significant regions",
+                "all_three": "All three regions",
+            }[value],
+            key=f"kegg_regional_sharing_{module_set}_{kegg_scope}_{kegg_source}",
+        )
+        regional_sharing_threshold = filter_row_three[1].radio(
+            "Regional FDR threshold",
+            options=[0.05, 0.10],
+            horizontal=True,
+            format_func=lambda value: (
+                "FDR ≤ 0.05" if value == 0.05 else "FDR ≤ 0.10"
+            ),
+            key=f"kegg_regional_threshold_{module_set}_{kegg_scope}_{kegg_source}",
+        )
+        regional_top_n = filter_row_three[2].selectbox(
+            "Visualization rows",
+            options=[20, 50, 100],
+            index=1,
+            key=f"kegg_regional_topn_{module_set}_{kegg_scope}_{kegg_source}",
+        )
+
         significance_value = {
             "All rows": "all",
             "FDR-significant only": "significant",
@@ -9288,6 +9445,11 @@ if active_view == "KEGG enrichment":
             significance_columns=significance_columns,
             fdr_columns=fdr_columns,
         )
+        shown_kegg = filter_kegg_region_sharing(
+            shown_kegg,
+            mode=regional_sharing,
+            fdr_threshold=float(regional_sharing_threshold),
+        )
 
         significant_count = int(
             shown_kegg[significance_columns]
@@ -9306,7 +9468,13 @@ if active_view == "KEGG enrichment":
             if not shown_kegg.empty
             else np.nan
         )
-        kegg_metrics = st.columns(4)
+        shared_region_count = int(
+            pd.to_numeric(
+                shown_kegg.get("significant_region_count", pd.Series(dtype=float)),
+                errors="coerce",
+            ).ge(2).sum()
+        )
+        kegg_metrics = st.columns(5)
         kegg_metrics[0].metric(
             "Rows shown", f"{len(shown_kegg):,} / {len(source_kegg):,}"
         )
@@ -9319,9 +9487,13 @@ if active_view == "KEGG enrichment":
             f"Significant: {statistical_scope}", f"{significant_count:,}"
         )
         kegg_metrics[3].metric(
+            "Rows significant in ≥2 regions", f"{shared_region_count:,}"
+        )
+        kegg_metrics[4].metric(
             f"Best FDR: {statistical_scope}",
             "NA" if pd.isna(best_fdr) else f"{best_fdr:.3e}",
         )
+        st.caption(f"Enrichment gene set: {kegg_source_label}.")
 
         if kegg_scope == "All modules":
             st.caption(
@@ -9332,9 +9504,46 @@ if active_view == "KEGG enrichment":
             )
         if shown_kegg.empty:
             st.info("No KEGG enrichment rows match the current filters.")
+        else:
+            st.markdown("#### Cross-region enrichment")
+            regional_visualization = st.radio(
+                "Cross-region visualization",
+                options=["module_counts", "regional_heatmap"],
+                format_func=lambda value: {
+                    "module_counts": "Shared-pathway counts by module",
+                    "regional_heatmap": "Module–pathway regional FDR heatmap",
+                }[value],
+                horizontal=True,
+                key=f"kegg_regional_visualization_{module_set}_{kegg_scope}_{kegg_source}",
+            )
+            if regional_visualization == "module_counts":
+                regional_figure = kegg_region_combination_figure(
+                    shown_kegg,
+                    top_n=int(regional_top_n),
+                    module_definition=f"{module_set_label} · {kegg_source_label}",
+                )
+            else:
+                regional_figure = kegg_region_heatmap_figure(
+                    shown_kegg,
+                    fdr_threshold=float(regional_sharing_threshold),
+                    top_n=int(regional_top_n),
+                    module_definition=f"{module_set_label} · {kegg_source_label}",
+                )
+            render_plotly_chart(
+                regional_figure,
+                use_container_width=True,
+                config={"displaylogo": False},
+                key=(
+                    f"kegg_regional_{regional_visualization}_{module_set}_{method}_"
+                    f"{kegg_source}_{kegg_scope}"
+                ),
+            )
         kegg_priority_columns = [
             "module_definition",
             "cluster_id",
+            "significant_region_count",
+            "significant_regions",
+            "regional_sharing_fdr_threshold",
             "pathway_name",
             "category_level1",
             "category_level2",
@@ -9350,6 +9559,10 @@ if active_view == "KEGG enrichment":
             "p_PCGBA23",
             "fdr_PCGBA23",
             "significant_PCGBA23",
+            "retained_edge_count",
+            "endpoint_count",
+            "endpoint_coverage",
+            "effect_direction",
         ]
         kegg_priority_columns = [
             column for column in kegg_priority_columns if column in shown_kegg
@@ -9395,6 +9608,22 @@ if active_view == "KEGG enrichment":
                     "PCG FDR", format="%.3e"
                 ),
                 "significant_PCGBA23": "PCG significant",
+                "significant_region_count": st.column_config.NumberColumn(
+                    "Significant regions", format="%d"
+                ),
+                "significant_regions": "Significant region combination",
+                "regional_sharing_fdr_threshold": st.column_config.NumberColumn(
+                    "Sharing FDR threshold", format="%.2f"
+                ),
+                "retained_edge_count": st.column_config.NumberColumn(
+                    "Retained edges", format="%d"
+                ),
+                "endpoint_count": st.column_config.NumberColumn(
+                    "Endpoint tissue-genes", format="%d"
+                ),
+                "endpoint_coverage": st.column_config.NumberColumn(
+                    "Endpoint coverage", format="%.3f"
+                ),
                 "overlap_genes": "Overlap gene symbols",
             },
         )
@@ -9404,15 +9633,27 @@ if active_view == "KEGG enrichment":
             file_name=(
                 f"{download_prefix}"
                 + (
-                    f"M{module}_filtered_tissue_expanded_KEGG.tsv"
+                    f"M{module}_{kegg_source}_filtered_tissue_expanded_KEGG.tsv"
                     if kegg_scope == "Selected module"
-                    else "allmodules_filtered_tissue_expanded_KEGG.tsv"
+                    else f"allmodules_{kegg_source}_filtered_tissue_expanded_KEGG.tsv"
                 )
             ),
             mime="text/tab-separated-values",
         )
+    if kegg_source != "full_module" and kegg_effect_direction is not None:
+        st.download_button(
+            "Download complete selected endpoint KEGG catalog",
+            data=cached_effect_endpoint_kegg_tsv(
+                module_set, method, kegg_effect_direction
+            ),
+            file_name=(
+                f"{download_prefix}{method}_hedges_g_040_{kegg_effect_direction}_"
+                "endpoint_KEGG.tsv"
+            ),
+            mime="text/tab-separated-values",
+        )
     st.download_button(
-        "Download the complete tissue-expanded KEGG table (all modules)",
+        "Download complete original full-module KEGG catalog",
         data=cached_kegg_tsv(module_set),
         file_name=f"{download_prefix}method4_tissue_expanded_kegg_annotated.tsv",
         mime="text/tab-separated-values",
@@ -9423,7 +9664,8 @@ if active_view == "KEGG enrichment":
         "expression backgrounds. Each regional FDR is Benjamini-Hochberg adjusted within "
         "that module and region across 350 KEGG pathways; pathways below the minimum "
         "overlap receive p=1. Values are supplied by the enrichment analyses and are not "
-        "recalculated by this app."
+        "recalculated by this app. Endpoint enrichments are exploratory because genes "
+        "incident to many retained edges are more likely to enter the tested gene set."
     )
 
 if active_view == "Module details":

@@ -16,6 +16,64 @@ sys.path.insert(0, str(APP_ROOT))
 from app_helpers import data, drive_data  # noqa: E402
 
 
+def test_effect_endpoint_kegg_catalogs_are_method_and_direction_isolated() -> None:
+    expectations = {
+        ("full_cohort", "standard"): 154 * 3,
+        ("full_cohort", "control_anchored"): 154 * 3,
+        ("control_derived", "control_anchored"): 186 * 3,
+    }
+    manifest = data.load_data_manifest()
+    for (module_set, method), expected_sets in expectations.items():
+        assert data.effect_endpoint_kegg_available(module_set, method)
+        metadata = manifest["module_sets"][module_set]["kegg_effect_endpoint"]
+        assert metadata["effect_cutoff_value"] == 0.40
+        assert method in metadata["methods"]
+        summary_path = data.module_set_path(
+            data.KEGG_EFFECT_ENDPOINT_SUMMARY_FILENAME, module_set
+        )
+        summary = pd.read_parquet(summary_path)
+        selected_summary = summary.loc[summary["network_method"].eq(method)]
+        assert len(selected_summary) == expected_sets
+        assert set(selected_summary["effect_direction"]) == {
+            "ad_higher", "control_higher", "either"
+        }
+
+        selected = data.load_effect_endpoint_kegg(
+            module_set=module_set,
+            method=method,
+            direction="either",
+        )
+        assert not selected.empty
+        assert selected["network_method"].eq(method).all()
+        assert selected["effect_direction"].eq("either").all()
+        assert not selected["overlap_genes"].astype(str).str.contains("ENSG").any()
+        stored = pd.read_parquet(
+            data.module_set_path(data.KEGG_EFFECT_ENDPOINT_FILENAME, module_set),
+            columns=["overlap_genes"],
+        )
+        assert not stored["overlap_genes"].astype(str).str.contains("ENSG").any()
+
+
+def test_kegg_regional_sharing_filters_use_regions_not_rows_times_modules() -> None:
+    frame = pd.DataFrame(
+        {
+            "cluster_id": [1, 2, 3, 4],
+            "fdr_AC": [0.01, 0.01, 0.20, 0.01],
+            "fdr_DLPFC": [0.02, 0.20, 0.03, 0.02],
+            "fdr_PCGBA23": [0.20, 0.30, 0.04, 0.03],
+        }
+    )
+    annotated = data.add_kegg_region_sharing(frame, 0.05)
+    assert annotated["significant_region_count"].tolist() == [2, 1, 2, 3]
+    assert annotated["significant_regions"].tolist() == [
+        "AC + DLPFC", "AC", "DLPFC + PCG", "AC + DLPFC + PCG"
+    ]
+    shared = data.filter_kegg_region_sharing(frame, "at_least_two", 0.05)
+    assert shared["cluster_id"].tolist() == [1, 3, 4]
+    all_three = data.filter_kegg_region_sharing(frame, "all_three", 0.05)
+    assert all_three["cluster_id"].tolist() == [4]
+
+
 def test_coefficient_kegg_scopes_use_independent_minima_and_neutral_regional_rows() -> None:
     kegg = pd.DataFrame(
         {

@@ -13,6 +13,7 @@ import hashlib
 import hmac
 import json
 import secrets
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -23,6 +24,11 @@ import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
+APP_ROOT = Path(__file__).resolve().parents[1]
+if str(APP_ROOT) not in sys.path:
+    sys.path.insert(0, str(APP_ROOT))
+
+from app_helpers.gene_symbols import replace_ensembl_in_text
 from build_cluster_association_statistics import build_statistics
 
 
@@ -265,6 +271,13 @@ def parse_args() -> argparse.Namespace:
         help="Transformed differential-edge app data.",
     )
     parser.add_argument(
+        "--effect-kegg-root",
+        type=Path,
+        default=repo_root
+        / "out/kegg_effect_filtered_rosmap/20261004_hedges_g_040_endpoint_kegg",
+        help="Completed Hedges-g endpoint KEGG analysis.",
+    )
+    parser.add_argument(
         "--mdc-only",
         action="store_true",
         help="Refresh only the module-level MDC summary and existing data manifest.",
@@ -285,6 +298,14 @@ def parse_args() -> argparse.Namespace:
         help=(
             "Refresh both public KEGG tables and manifest entries without changing "
             "donor plot data or pseudonymous sample labels."
+        ),
+    )
+    parser.add_argument(
+        "--effect-kegg-only",
+        action="store_true",
+        help=(
+            "Refresh only the Hedges-g endpoint KEGG tables and manifest entries "
+            "without changing donor-level data or existing full-module KEGG tables."
         ),
     )
     parser.add_argument(
@@ -2076,6 +2097,133 @@ def refresh_existing_kegg_bundles(
     return manifest
 
 
+def refresh_effect_endpoint_kegg_bundle(
+    analysis_root: Path,
+    output: Path,
+) -> dict[str, object]:
+    """Package method- and direction-specific endpoint KEGG results."""
+
+    source = analysis_root / "effect_endpoint_kegg.parquet"
+    summary_source = analysis_root / "endpoint_summary.parquet"
+    source_manifest = analysis_root / "run_manifest.json"
+    for path in (source, summary_source, source_manifest):
+        if not path.exists():
+            raise FileNotFoundError(path)
+    enrichment = pd.read_parquet(source)
+    summaries = pd.read_parquet(summary_source)
+    required = {
+        "module_definition", "estimator", "network_method", "effect_direction",
+        "cluster_id", "term", "p", "fdr", "significant", "p_AC", "fdr_AC",
+        "p_MFBA9BA46", "fdr_MFBA9BA46", "p_PCGBA23", "fdr_PCGBA23",
+        "retained_edge_count", "endpoint_count", "endpoint_coverage",
+    }
+    missing = required.difference(enrichment.columns)
+    if missing:
+        raise ValueError(
+            "Effect-endpoint KEGG source lacks required columns: " + str(sorted(missing))
+        )
+    expected = {
+        "full_cohort": {"methods": {"standard", "control_anchored"}, "modules": 154},
+        "control_derived": {"methods": {"control_anchored"}, "modules": 186},
+    }
+    manifest_path = output / "data_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    run_manifest = json.loads(source_manifest.read_text(encoding="utf-8"))
+    for module_set, specification in expected.items():
+        module_output = output if module_set == "full_cohort" else output / module_set
+        selected = enrichment.loc[
+            enrichment["module_definition"].astype(str).eq(module_set)
+        ].copy()
+        selected_summary = summaries.loc[
+            summaries["module_definition"].astype(str).eq(module_set)
+        ].copy()
+        if selected.empty or selected_summary.empty:
+            raise ValueError(f"No effect-endpoint KEGG rows for {module_set}")
+        methods = set(selected["network_method"].astype(str))
+        if methods != specification["methods"]:
+            raise ValueError(
+                f"{module_set}: methods {sorted(methods)} != "
+                f"{sorted(specification['methods'])}"
+            )
+        directions = set(selected_summary["effect_direction"].astype(str))
+        if directions != {"ad_higher", "control_higher", "either"}:
+            raise ValueError(f"{module_set}: incomplete effect directions {directions}")
+        expected_sets = (
+            int(specification["modules"]) * len(methods) * len(directions)
+        )
+        if len(selected_summary) != expected_sets:
+            raise ValueError(
+                f"{module_set}: expected {expected_sets} endpoint summaries, "
+                f"found {len(selected_summary)}"
+            )
+        rename = {
+            "overlap_MFBA9BA46": "overlap_DLPFC",
+            "p_MFBA9BA46": "p_DLPFC",
+            "fdr_MFBA9BA46": "fdr_DLPFC",
+            "significant_MFBA9BA46": "significant_DLPFC",
+            "endpoint_count_MFBA9BA46": "endpoint_count_DLPFC",
+        }
+        selected = selected.rename(columns=rename)
+        selected_summary = selected_summary.rename(columns=rename)
+        if "overlap_genes" in selected:
+            selected["overlap_genes"] = (
+                selected["overlap_genes"].astype("string")
+                .str.replace("(MFBA9BA46)", "(DLPFC)", regex=False)
+                .map(replace_ensembl_in_text)
+            )
+            if selected["overlap_genes"].str.contains("ENSG", na=False).any():
+                raise ValueError(
+                    f"{module_set}: internal Ensembl identifiers remain in the "
+                    "public effect-endpoint KEGG bundle"
+                )
+        module_output.mkdir(parents=True, exist_ok=True)
+        kegg_path = module_output / "kegg_effect_endpoint_g040.parquet"
+        summary_path = module_output / "kegg_effect_endpoint_g040_summary.parquet"
+        selected.to_parquet(kegg_path, index=False, compression="zstd")
+        selected_summary.to_parquet(summary_path, index=False, compression="zstd")
+        for path in (kegg_path, summary_path):
+            if path.stat().st_size >= 95 * 1024 * 1024:
+                raise ValueError(f"Effect-endpoint KEGG file exceeds 95-MiB cap: {path}")
+        module_manifest = manifest["module_sets"][module_set]
+        module_manifest["kegg_effect_endpoint"] = {
+            "status": "complete",
+            "effect_statistic": "hedges_g",
+            "effect_cutoff_mode": "fixed",
+            "effect_cutoff_value": 0.40,
+            "directions": ["ad_higher", "control_higher", "either"],
+            "methods": sorted(methods),
+            "endpoint_sets": len(selected_summary),
+            "enrichment_rows": len(selected),
+            "source_run": run_manifest.get("run_name"),
+            "source_manifest_sha256": sha256(source_manifest),
+            "source_enrichment_sha256": sha256(source),
+            "source_summary_sha256": sha256(summary_source),
+            "expanded_fdr_definition": (
+                "BH within module, method, and effect direction across tissue-expanded "
+                "pathways meeting minimum overlap."
+            ),
+            "regional_fdr_definition": (
+                "BH separately within module, region, method, and direction across the "
+                "stable 350-pathway space; pathways below minimum overlap receive p=1."
+            ),
+            "files": {
+                kegg_path.name: deploy_file_manifest_entry(kegg_path),
+                summary_path.name: deploy_file_manifest_entry(summary_path),
+            },
+        }
+        for path in (kegg_path, summary_path):
+            entry = deploy_file_manifest_entry(path)
+            module_manifest.setdefault("files", {})[path.name] = entry
+            manifest["files"][str(path.relative_to(output))] = entry
+    manifest["created_utc"] = datetime.now(timezone.utc).isoformat()
+    temporary = manifest_path.with_suffix(".json.tmp")
+    temporary.write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    temporary.replace(manifest_path)
+    return manifest
+
+
 def main() -> None:
     args = parse_args()
     output = args.output.resolve()
@@ -2086,12 +2234,13 @@ def main() -> None:
         args.module_details_only,
         args.statistics_only,
         args.kegg_only,
+        args.effect_kegg_only,
         args.file_catalog_only,
     ]
     if sum(refresh_flags) > 1:
         raise ValueError(
             "Use only one of --mdc-only, --module-details-only, --statistics-only, "
-            "--kegg-only, or --file-catalog-only"
+            "--kegg-only, --effect-kegg-only, or --file-catalog-only"
         )
 
     if args.file_catalog_only:
@@ -2172,6 +2321,20 @@ def main() -> None:
             json.dumps(
                 {
                     key: manifest["module_sets"][key]["kegg"]
+                    for key in ("full_cohort", "control_derived")
+                },
+                indent=2,
+            )
+        )
+        return
+    if args.effect_kegg_only:
+        manifest = refresh_effect_endpoint_kegg_bundle(
+            args.effect_kegg_root.resolve(), output
+        )
+        print(
+            json.dumps(
+                {
+                    key: manifest["module_sets"][key]["kegg_effect_endpoint"]
                     for key in ("full_cohort", "control_derived")
                 },
                 indent=2,
@@ -2658,6 +2821,11 @@ def main() -> None:
     (output / "data_manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
+    effect_manifest = args.effect_kegg_root.resolve() / "run_manifest.json"
+    if effect_manifest.exists():
+        manifest = refresh_effect_endpoint_kegg_bundle(
+            args.effect_kegg_root.resolve(), output
+        )
     print(json.dumps(manifest, indent=2))
 
 

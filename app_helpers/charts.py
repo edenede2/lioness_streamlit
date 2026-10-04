@@ -23,6 +23,7 @@ PREDICTION_BLOCK_ORDERING_API_VERSION = 1
 DISTRIBUTION_GROUPING_API_VERSION = 3
 COEFFICIENT_ANNOTATION_API_VERSION = 3
 ASSOCIATION_STYLE_API_VERSION = 1
+KEGG_REGIONAL_SHARING_API_VERSION = 1
 
 
 DIAGNOSIS_COLORS = {
@@ -50,6 +51,12 @@ REGION_COLORS = {
     "AC": "#2C7FB8",
     "DLPFC": "#D8A500",
     "PCG": "#E66101",
+}
+KEGG_REGION_COMBINATION_COLORS = {
+    "AC + DLPFC": "#4C78A8",
+    "AC + PCG": "#F58518",
+    "DLPFC + PCG": "#54A24B",
+    "AC + DLPFC + PCG": "#B279A2",
 }
 EDGE_COMPONENT_ORDER = [
     "TS_AC",
@@ -2544,6 +2551,214 @@ def module_region_composition_figure(
             "x": 1,
         },
         hovermode="closest",
+    )
+    return figure
+
+
+def kegg_region_combination_figure(
+    frame: pd.DataFrame,
+    *,
+    top_n: int = 20,
+    module_definition: str | None = None,
+) -> go.Figure:
+    """Count pathways significant in at least two regions for each module."""
+
+    required = {"cluster_id", "significant_region_count", "significant_regions"}
+    missing = required.difference(frame.columns)
+    if missing:
+        raise ValueError(f"KEGG regional-sharing columns are missing: {sorted(missing)}")
+    data = frame.loc[
+        pd.to_numeric(frame["significant_region_count"], errors="coerce").ge(2)
+    ].copy()
+    figure = go.Figure()
+    if data.empty:
+        figure.add_annotation(
+            text="No module–pathway rows are significant in more than one region.",
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+        )
+        figure.update_layout(
+            title={"text": "Cross-region KEGG enrichment by module", "x": 0.01},
+            template="plotly_white",
+            height=360,
+            xaxis={"visible": False},
+            yaxis={"visible": False},
+        )
+        return figure
+
+    counts = (
+        data.groupby(["cluster_id", "significant_regions"], observed=True)
+        .size()
+        .rename("pathway_count")
+        .reset_index()
+    )
+    totals = counts.groupby("cluster_id", observed=True)["pathway_count"].sum()
+    selected_modules = totals.sort_values(ascending=False, kind="stable").head(
+        int(top_n)
+    ).index.tolist()
+    selected = counts.loc[counts["cluster_id"].isin(selected_modules)].copy()
+    module_order = [
+        int(value)
+        for value in totals.loc[selected_modules].sort_values(
+            ascending=True, kind="stable"
+        ).index
+    ]
+    module_labels = [f"M{value}" for value in module_order]
+    for combination in KEGG_REGION_COMBINATION_COLORS:
+        group = selected.loc[selected["significant_regions"].eq(combination)]
+        values = (
+            group.set_index("cluster_id")["pathway_count"]
+            .reindex(module_order, fill_value=0)
+            .astype(int)
+        )
+        if not values.any():
+            continue
+        figure.add_trace(
+            go.Bar(
+                x=values.to_numpy(),
+                y=module_labels,
+                orientation="h",
+                name=combination,
+                marker={"color": KEGG_REGION_COMBINATION_COLORS[combination]},
+                hovertemplate=(
+                    "Module: %{y}<br>Significant regions: "
+                    + combination
+                    + "<br>Shared pathways: %{x:,}<extra></extra>"
+                ),
+            )
+        )
+    title = "Pathways enriched in multiple regions"
+    if module_definition:
+        title += f"<br><sup>{module_definition} · top {len(module_order)} modules</sup>"
+    figure.update_layout(
+        title={"text": title, "x": 0.01},
+        template="plotly_white",
+        barmode="stack",
+        height=max(430, 210 + 24 * len(module_order)),
+        margin={"l": 75, "r": 25, "t": 100, "b": 60},
+        xaxis={"title": "Significant shared pathways", "rangemode": "tozero"},
+        yaxis={"title": "Module", "categoryorder": "array", "categoryarray": module_labels},
+        legend={
+            "title": {"text": "Significant regions"},
+            "orientation": "h",
+            "yanchor": "bottom",
+            "y": 1.02,
+            "xanchor": "left",
+            "x": 0,
+        },
+    )
+    return figure
+
+
+def kegg_region_heatmap_figure(
+    frame: pd.DataFrame,
+    *,
+    fdr_threshold: float = 0.05,
+    top_n: int = 50,
+    module_definition: str | None = None,
+) -> go.Figure:
+    """Show regional FDRs for the strongest module–pathway rows."""
+
+    region_columns = {
+        "AC": ("p_AC", "fdr_AC", "overlap_AC"),
+        "DLPFC": ("p_DLPFC", "fdr_DLPFC", "overlap_DLPFC"),
+        "PCG": ("p_PCGBA23", "fdr_PCGBA23", "overlap_PCGBA23"),
+    }
+    required = {"cluster_id", "pathway_name", "significant_region_count"}
+    required.update(column for values in region_columns.values() for column in values)
+    missing = required.difference(frame.columns)
+    if missing:
+        raise ValueError(f"KEGG regional heatmap columns are missing: {sorted(missing)}")
+    data = frame.copy()
+    for _region, columns in region_columns.items():
+        for column in columns:
+            data[column] = pd.to_numeric(data[column], errors="coerce")
+    data["_best_regional_fdr"] = data[
+        [values[1] for values in region_columns.values()]
+    ].min(axis=1)
+    data = data.sort_values(
+        ["significant_region_count", "_best_regional_fdr", "cluster_id", "pathway_name"],
+        ascending=[False, True, True, True],
+        kind="stable",
+    ).head(int(top_n))
+    figure = go.Figure()
+    if data.empty:
+        figure.add_annotation(
+            text="No KEGG rows match the current regional-sharing filters.",
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+        )
+        figure.update_layout(
+            title={"text": "Regional KEGG FDR heatmap", "x": 0.01},
+            template="plotly_white",
+            height=360,
+            xaxis={"visible": False},
+            yaxis={"visible": False},
+        )
+        return figure
+
+    pathway = (
+        data["pathway_name"].astype(str)
+        .str.replace(" - Homo sapiens (human)", "", regex=False)
+    )
+    labels = [
+        f"M{int(module)} · {name}"
+        for module, name in zip(data["cluster_id"], pathway, strict=False)
+    ]
+    fdr_matrix = np.column_stack(
+        [data[columns[1]].to_numpy(dtype=float) for columns in region_columns.values()]
+    )
+    p_matrix = np.column_stack(
+        [data[columns[0]].to_numpy(dtype=float) for columns in region_columns.values()]
+    )
+    overlap_matrix = np.column_stack(
+        [data[columns[2]].to_numpy(dtype=float) for columns in region_columns.values()]
+    )
+    safe_fdr = np.clip(fdr_matrix, np.nextafter(0.0, 1.0), 1.0)
+    z = -np.log10(safe_fdr)
+    finite = z[np.isfinite(z)]
+    color_cap = max(2.0, min(12.0, float(np.nanpercentile(finite, 95)))) if finite.size else 2.0
+    text_values = np.where(fdr_matrix <= float(fdr_threshold), "*", "")
+    customdata = np.stack((p_matrix, fdr_matrix, overlap_matrix), axis=-1)
+    figure.add_trace(
+        go.Heatmap(
+            z=np.clip(z, 0.0, color_cap),
+            x=list(region_columns),
+            y=labels,
+            text=text_values,
+            texttemplate="%{text}",
+            textfont={"size": 15, "color": "black"},
+            customdata=customdata,
+            colorscale="Viridis",
+            zmin=0.0,
+            zmax=color_cap,
+            colorbar={"title": "−log10(FDR)"},
+            hovertemplate=(
+                "%{y}<br>Region: %{x}<br>p=%{customdata[0]:.3e}<br>"
+                "FDR=%{customdata[1]:.3e}<br>Overlap genes=%{customdata[2]:.0f}"
+                "<extra></extra>"
+            ),
+        )
+    )
+    title = "Regional support for module–pathway enrichments"
+    if module_definition:
+        title += (
+            f"<br><sup>{module_definition} · top {len(data)} rows · "
+            f"* FDR ≤ {float(fdr_threshold):.2f}</sup>"
+        )
+    figure.update_layout(
+        title={"text": title, "x": 0.01},
+        template="plotly_white",
+        height=max(500, min(1800, 230 + 25 * len(data))),
+        margin={"l": 330, "r": 70, "t": 100, "b": 55},
+        xaxis={"title": "Brain region", "side": "top"},
+        yaxis={"title": "Module · pathway", "autorange": "reversed", "tickfont": {"size": 10}},
     )
     return figure
 

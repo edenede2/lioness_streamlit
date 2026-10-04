@@ -110,6 +110,8 @@ AGGREGATE_STATS = DATA_DIR / "aggregate_statistics.parquet"
 RESOLVED_STATS = DATA_DIR / "resolved_statistics.parquet"
 KEGG_PARQUET = DATA_DIR / "kegg_tissue_expanded_full.parquet"
 KEGG_TSV = DATA_DIR / "kegg_tissue_expanded_full.tsv"
+KEGG_EFFECT_ENDPOINT_FILENAME = "kegg_effect_endpoint_g040.parquet"
+KEGG_EFFECT_ENDPOINT_SUMMARY_FILENAME = "kegg_effect_endpoint_g040_summary.parquet"
 MODULE_ANNOTATIONS = DATA_DIR / "module_kegg_annotations.tsv"
 MODULE_DETAILS = DATA_DIR / "module_details.tsv"
 FEATURE_DEFINITIONS = DATA_DIR / "feature_definitions.tsv"
@@ -1596,9 +1598,120 @@ def load_kegg(
     return public_gene_labels(frame, text_columns=("overlap_genes",))
 
 
-def load_kegg_tsv_bytes(module_set: str = "full_cohort") -> bytes:
+def effect_endpoint_kegg_available(
+    module_set: str,
+    method: str,
+) -> bool:
+    """Return whether the selected module/method has a complete endpoint catalog."""
+
+    try:
+        manifest = load_data_manifest()
+    except (FileNotFoundError, KeyError, json.JSONDecodeError):
+        return False
+    metadata = (
+        manifest.get("module_sets", {})
+        .get(module_set, {})
+        .get("kegg_effect_endpoint", {})
+    )
+    return (
+        metadata.get("status") == "complete"
+        and method in metadata.get("methods", [])
+        and data_path_available(
+            module_set_path(KEGG_EFFECT_ENDPOINT_FILENAME, module_set)
+        )
+    )
+
+
+def load_effect_endpoint_kegg(
+    *,
+    module_set: str,
+    method: str,
+    direction: str,
+    module: int | None = None,
+) -> pd.DataFrame:
+    """Load one Hedges-g endpoint-enrichment catalog slice."""
+
+    if direction not in EFFECT_DIRECTION_LABELS:
+        raise ValueError(f"Unknown effect direction: {direction}")
+    filters: list[tuple[str, str, object]] = [
+        ("estimator", "=", "lioness"),
+        ("network_method", "=", method),
+        ("effect_direction", "=", direction),
+    ]
+    if module is not None:
+        filters.append(("cluster_id", "=", int(module)))
+    frame = _read_filtered(
+        module_set_path(KEGG_EFFECT_ENDPOINT_FILENAME, module_set), filters
+    )
+    return public_gene_labels(frame, text_columns=("overlap_genes",))
+
+
+def add_kegg_region_sharing(
+    frame: pd.DataFrame,
+    fdr_threshold: float = 0.05,
+) -> pd.DataFrame:
+    """Annotate each module-pathway row with its significant-region pattern."""
+
+    if fdr_threshold not in {0.05, 0.10}:
+        raise ValueError("Regional sharing FDR threshold must be 0.05 or 0.10")
+    result = frame.copy()
+    flags: dict[str, pd.Series] = {}
+    for region, column in KEGG_REGION_FDR_COLUMNS.items():
+        if column not in result:
+            raise ValueError(f"KEGG regional FDR column is missing: {column}")
+        flags[region] = pd.to_numeric(result[column], errors="coerce").le(
+            float(fdr_threshold)
+        )
+    flag_frame = pd.DataFrame(flags, index=result.index)
+    result["significant_region_count"] = flag_frame.sum(axis=1).astype("int8")
+    result["significant_regions"] = flag_frame.apply(
+        lambda row: " + ".join(region for region in flags if bool(row[region]))
+        or "None",
+        axis=1,
+    )
+    result["regional_sharing_fdr_threshold"] = float(fdr_threshold)
+    return result
+
+
+def filter_kegg_region_sharing(
+    frame: pd.DataFrame,
+    mode: str = "any",
+    fdr_threshold: float = 0.05,
+) -> pd.DataFrame:
+    """Apply a regional-replication filter and retain its derived columns."""
+
+    if mode not in {"any", "exactly_one", "at_least_two", "all_three"}:
+        raise ValueError(f"Unknown KEGG regional sharing mode: {mode}")
+    result = add_kegg_region_sharing(frame, fdr_threshold)
+    count = result["significant_region_count"]
+    if mode == "exactly_one":
+        result = result.loc[count.eq(1)]
+    elif mode == "at_least_two":
+        result = result.loc[count.ge(2)]
+    elif mode == "all_three":
+        result = result.loc[count.eq(3)]
+    return result.copy()
+
+
+def load_kegg_tsv_bytes(
+    module_set: str = "full_cohort",
+    *,
+    source: str = "full_module",
+    method: str | None = None,
+    direction: str | None = None,
+) -> bytes:
     """Return the complete KEGG table with official symbols in every gene list."""
-    return dataframe_to_tsv_bytes(load_kegg(module_set=module_set))
+    if source == "full_module":
+        frame = load_kegg(module_set=module_set)
+    elif source == "effect_endpoint":
+        if method is None or direction is None:
+            raise ValueError("Filtered KEGG download requires method and direction")
+        frame = load_effect_endpoint_kegg(
+            module_set=module_set, method=method, direction=direction
+        )
+    else:
+        raise ValueError(f"Unknown KEGG enrichment source: {source}")
+    return dataframe_to_tsv_bytes(frame)
 
 
 COEFFICIENT_KEGG_SCOPES = {
@@ -2182,6 +2295,30 @@ def selected_annotation(annotations: pd.DataFrame, module: int) -> str | None:
         return None
     text = match.iloc[0].get("subtitle_text")
     return str(text) if pd.notna(text) and str(text).strip() else None
+
+
+def selected_kegg_table_annotation(enrichments: pd.DataFrame) -> str | None:
+    """Format the lowest expanded-FDR row from a selected KEGG catalog."""
+
+    if enrichments.empty or "fdr" not in enrichments:
+        return None
+    candidates = enrichments.copy()
+    candidates["fdr"] = pd.to_numeric(candidates["fdr"], errors="coerce")
+    candidates = candidates.loc[np.isfinite(candidates["fdr"])].copy()
+    if candidates.empty:
+        return None
+    row = candidates.sort_values(
+        ["fdr", "pathway_name"], kind="stable", na_position="last"
+    ).iloc[0]
+    pathway = str(row.get("pathway_name", "Unavailable")).replace(
+        " - Homo sapiens (human)", ""
+    )
+    return (
+        "KEGG enrichment: "
+        f"{row.get('category_level1', 'Unavailable')} / "
+        f"{row.get('category_level2', 'Unavailable')} / {pathway} | "
+        f"FDR={_format_kegg_fdr(row.get('fdr'))}"
+    )
 
 
 def _format_kegg_fdr(value: object) -> str:
