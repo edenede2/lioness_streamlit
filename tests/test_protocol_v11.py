@@ -4,8 +4,23 @@ import json
 from pathlib import Path
 
 import pandas as pd
+from streamlit.testing.v1 import AppTest
 
 from app_helpers import protocol_v11
+
+
+APP = Path(__file__).resolve().parents[1] / "streamlit_app.py"
+
+
+def _widget(elements, label: str):
+    return next(element for element in elements if element.label == label)
+
+
+def _analysis_selector(app: AppTest):
+    return _widget(
+        app.pills if hasattr(app, "pills") else app.get("button_group"),
+        "Analysis view",
+    )
 
 
 def test_protocol_public_bundle_is_aggregate_only() -> None:
@@ -33,7 +48,31 @@ def test_protocol_outcomes_preserve_verified_and_blocked_definitions() -> None:
     assert outcomes.set_index("key").loc["amyloid", "actual_n"] == 456
 
 
-def test_protocol_results_loader_handles_not_yet_published_tables() -> None:
-    assert protocol_v11.load_protocol_table("performance").empty
+def test_protocol_results_loader_exposes_only_complete_aggregate_performance() -> None:
+    performance = protocol_v11.load_protocol_table("performance")
+    assert not performance.empty
+    assert set(performance["outcome"]) == {"diagnosis_binary"}
+    assert set(performance["representation"]) == {"G"}
+    assert set(performance["model_family"]) == {"logistic_l2"}
+    assert set(performance["completed_folds"]) == {25}
+    assert set(performance["n_donors"]) == {331}
+    assert {"donor", "projid", "donor_id"}.isdisjoint(performance.columns)
     assert protocol_v11.load_protocol_table("coefficients").empty
 
+
+def test_protocol_view_renders_validated_performance() -> None:
+    app = AppTest.from_file(APP, default_timeout=300).run()
+    view_value = "Prediction" if hasattr(app, "pills") else ["Prediction"]
+    app = _analysis_selector(app).set_value(view_value).run(timeout=300)
+    if not hasattr(app, "pills"):
+        _analysis_selector(app)._value = ["Prediction"]
+    app = _widget(app.radio, "Prediction mode").set_value("protocol_v11").run(
+        timeout=300
+    )
+    assert not app.exception
+    assert len(app.get("plotly_chart")) >= 2
+    assert any(
+        "metric" in dataframe.value.columns
+        and "representation" in dataframe.value.columns
+        for dataframe in app.dataframe
+    )

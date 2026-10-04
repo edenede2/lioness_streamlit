@@ -10,7 +10,7 @@ import plotly.express as px
 import streamlit as st
 
 from app_helpers.drive_data import DATA_DIR, data_path_available, ensure_data_path
-from app_helpers.streamlit_compat import plotly_chart
+from app_helpers.streamlit_compat import normalize_width_kwargs, plotly_chart
 from app_helpers.table_controls import filterable_dataframe
 
 
@@ -24,6 +24,7 @@ RESULT_FILES = {
     "shap": "shap_summary.parquet",
     "permutation": "permutation_importance.parquet",
     "prediction_completion": "prediction_completion.tsv",
+    "linear_model_completion": "linear_model_completion.tsv",
     "explanation_completion": "explanation_completion.tsv",
     "qa": "qa_gates.tsv",
     "resources": "resource_measurements.tsv",
@@ -97,7 +98,11 @@ def _render_status(manifest: dict[str, object]) -> None:
         ]
     )
     if not authorization_frame.empty:
-        st.dataframe(authorization_frame, hide_index=True, width="stretch")
+        st.dataframe(
+            authorization_frame,
+            hide_index=True,
+            **normalize_width_kwargs({"width": "stretch"}),
+        )
     gates = _gate_frame(manifest)
     if not gates.empty:
         filterable_dataframe(
