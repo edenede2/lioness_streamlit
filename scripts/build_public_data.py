@@ -23,6 +23,7 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
+from statsmodels.stats.multitest import multipletests
 
 APP_ROOT = Path(__file__).resolve().parents[1]
 if str(APP_ROOT) not in sys.path:
@@ -1347,6 +1348,38 @@ def prepare_public_kegg(
         if frame.duplicated(keys).any():
             raise ValueError(f"{label} KEGG source has duplicate cluster/pathway keys")
 
+    regional_fdr_recalculation: dict[str, object] = {}
+    for tissue in ("AC", "MFBA9BA46", "PCGBA23"):
+        p_column = f"p_{tissue}"
+        fdr_column = f"fdr_{tissue}"
+        significant_column = f"significant_{tissue}"
+        source_fdr = pd.to_numeric(per_tissue[fdr_column], errors="raise")
+        corrected_fdr = pd.Series(np.nan, index=per_tissue.index, dtype=float)
+        family_sizes: list[int] = []
+        for _module, group in per_tissue.groupby("cluster_id", observed=True):
+            p_values = pd.to_numeric(group[p_column], errors="coerce").to_numpy()
+            valid = np.isfinite(p_values)
+            if not valid.any():
+                continue
+            cleaned = np.where(valid, p_values, 1.0)
+            q_values = multipletests(cleaned, method="fdr_bh")[1]
+            q_values = np.where(valid, q_values, np.nan)
+            corrected_fdr.loc[group.index] = q_values
+            family_sizes.append(len(group))
+        mismatch = (
+            np.isfinite(source_fdr)
+            & np.isfinite(corrected_fdr)
+            & ~np.isclose(source_fdr, corrected_fdr, atol=1e-12, rtol=1e-12)
+        )
+        per_tissue[fdr_column] = corrected_fdr
+        per_tissue[significant_column] = corrected_fdr.le(0.05)
+        regional_fdr_recalculation[tissue.replace("MFBA9BA46", "DLPFC")] = {
+            "source_values_changed": int(mismatch.sum()),
+            "families": len(family_sizes),
+            "family_size_min": min(family_sizes) if family_sizes else 0,
+            "family_size_max": max(family_sizes) if family_sizes else 0,
+        }
+
     region_source_columns = keys.copy()
     for tissue in ("AC", "MFBA9BA46", "PCGBA23"):
         region_source_columns.extend(
@@ -1460,6 +1493,14 @@ def prepare_public_kegg(
             "across the stable KEGG pathway term space; pathways below the minimum "
             "overlap receive p=1 before correction."
         ),
+        "per_region_fdr_recalculation": {
+            "status": "recomputed_from_source_p_values",
+            "reason": (
+                "Correct label-aligned BH values after a legacy positional-index "
+                "assignment defect; source ORA p-values and source files are unchanged."
+            ),
+            "regions": regional_fdr_recalculation,
+        },
         "region_statistics": {
             "AC": ["p_AC", "fdr_AC", "significant_AC"],
             "DLPFC": ["p_DLPFC", "fdr_DLPFC", "significant_DLPFC"],
