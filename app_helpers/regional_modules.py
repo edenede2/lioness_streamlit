@@ -1175,10 +1175,6 @@ def _render_correlation_heatmaps(
                     "display filtering."
                 ),
             )
-            significant_only = st.checkbox(
-                "Show only rows with FDR < 0.05",
-                key="regional_heatmap_significant_only",
-            )
         if not selected_levels:
             st.warning("Select at least one heatmap group level.")
             return
@@ -1216,24 +1212,68 @@ def _render_correlation_heatmaps(
             "spearman_fdr_across_modules"
             if correlation_method == "Spearman" else "pearson_fdr_across_modules"
         )
-        if significant_only:
+        available_heatmap_rows = int(table["heatmap_row"].nunique())
+        row_view = st.radio(
+            "Rows displayed in heatmap",
+            options=[
+                "All rows",
+                "At least one FDR < 0.05",
+                "Top K by absolute correlation",
+            ],
+            horizontal=True,
+            key="regional_heatmap_row_view",
+            help=(
+                "Significant rows require at least one displayed outcome with FDR < 0.05. "
+                "Top K ranks regional module rows by their strongest absolute "
+                "selected-method correlation across the displayed outcomes."
+            ),
+        )
+        if row_view == "At least one FDR < 0.05":
             significant_rows = table.loc[
                 pd.to_numeric(table[fdr_column], errors="coerce").lt(0.05),
                 "heatmap_row",
             ].unique()
             table = table.loc[table["heatmap_row"].isin(significant_rows)].copy()
-        if heatmap_scope.startswith("All") and not table.empty:
-            top_n = st.selectbox(
-                "Rows displayed in heatmap",
-                [50, 100, 250, table["heatmap_row"].nunique()],
-                key="regional_heatmap_top_n",
+            display = table
+        elif row_view == "Top K by absolute correlation":
+            top_k = int(
+                st.number_input(
+                    "Number of top heatmap rows (K)",
+                    min_value=1,
+                    max_value=max(1, available_heatmap_rows),
+                    value=min(50, max(1, available_heatmap_rows)),
+                    step=1,
+                    key=(
+                        "regional_heatmap_top_k_selected"
+                        if heatmap_scope.startswith("Selected")
+                        else "regional_heatmap_top_k_all"
+                    ),
+                    help=(
+                        "Ranking uses the maximum absolute correlation for each row across "
+                        "only the selected outcome columns."
+                    ),
+                )
             )
             strongest = (
-                table.assign(_abs=pd.to_numeric(table[value_column], errors="coerce").abs())
-                .groupby("heatmap_row", observed=True)["_abs"].max()
-                .nlargest(int(top_n)).index
+                table.assign(
+                    _abs=pd.to_numeric(table[value_column], errors="coerce").abs()
+                )
+                .groupby("heatmap_row", observed=True, as_index=False)["_abs"]
+                .max()
+                .sort_values(
+                    ["_abs", "heatmap_row"],
+                    ascending=[False, True],
+                    na_position="last",
+                )
+                .head(top_k)["heatmap_row"]
+                .tolist()
             )
             display = table.loc[table["heatmap_row"].isin(strongest)].copy()
+            st.caption(
+                f"Showing the top {display['heatmap_row'].nunique()} of "
+                f"{available_heatmap_rows} available heatmap rows. The complete regional "
+                "correlation table remains exhaustive."
+            )
         else:
             display = table
         if display.empty:

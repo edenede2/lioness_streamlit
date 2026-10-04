@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -383,7 +384,7 @@ def test_correlation_heatmap_supports_all_features_and_module_blocks() -> None:
     assert set(table["diagnosis_group"]) == {"AD"}
     assert {"correlation", "p_value", "fdr"}.issubset(table.columns)
 
-    app = widget_with_label(app.radio, "Correlation rows").set_value(
+    app = widget_with_label(app.radio, "Rows displayed in heatmap").set_value(
         "At least one FDR < 0.05"
     ).run()
     assert_app_clean(app)
@@ -393,6 +394,30 @@ def test_correlation_heatmap_supports_all_features_and_module_blocks() -> None:
         if "absolute_correlation" in dataframe.value.columns
     )
     assert significant["fdr"].lt(0.05).all()
+
+
+def test_correlation_heatmap_supports_exact_top_k_rows() -> None:
+    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = select_view(app, "Correlation heatmaps")
+    assert_app_clean(app)
+    app = widget_with_label(app.radio, "Rows displayed in heatmap").set_value(
+        "Top K by absolute correlation"
+    ).run()
+    app = preserve_legacy_pills_state(app)
+    app = widget_with_label(
+        app.number_input, "Number of top heatmap rows (K)"
+    ).set_value(3).run()
+    assert_app_clean(app)
+    chart_spec = json.loads(app.get("plotly_chart")[0].proto.spec)
+    assert len(chart_spec["data"][0]["y"]) == 3
+    table = next(
+        dataframe.value
+        for dataframe in app.dataframe
+        if "absolute_correlation" in dataframe.value.columns
+    )
+    assert len(
+        table[["metric_family", "component", "diagnosis_group"]].drop_duplicates()
+    ) > 3
 
 
 def test_correlation_heatmap_filters_outcome_columns_and_complete_table() -> None:

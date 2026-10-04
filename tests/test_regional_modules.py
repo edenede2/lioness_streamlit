@@ -178,6 +178,22 @@ def test_regional_heatmap_filters_outcome_columns_and_table() -> None:
     assert set(table["outcome"]) == {"cogn_global", "braak_stage"}
 
 
+def test_regional_heatmap_supports_exact_top_k_rows() -> None:
+    app = _regional_view("Correlation heatmaps")
+    assert not app.exception
+    _preserve_pills(app)
+    app = _widget(app.radio, "Rows displayed in heatmap").set_value(
+        "Top K by absolute correlation"
+    ).run(timeout=300)
+    _preserve_pills(app)
+    app = _widget(
+        app.number_input, "Number of top heatmap rows (K)"
+    ).set_value(2).run(timeout=300)
+    assert not app.exception
+    chart_spec = json.loads(app.get("plotly_chart")[0].proto.spec)
+    assert len(chart_spec["data"][0]["y"]) == 2
+
+
 def test_regional_maximum_tissue_view_renders() -> None:
     app = _regional_view("Associations")
     _preserve_pills(app)

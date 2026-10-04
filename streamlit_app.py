@@ -5419,52 +5419,28 @@ if active_view == "Correlation heatmaps":
             "complete table reports the resulting family size."
         )
 
-        heatmap_row_limit = st.selectbox(
-            "Rows displayed in heatmap",
-            options=["All rows", "Top 50", "Top 100", "Top 250"],
-            help=(
-                "Top-row views rank module/feature/component/group rows by their strongest "
-                "absolute correlation across the displayed outcomes. The complete table "
-                "remains exhaustive."
-            ),
-        )
-        if heatmap_row_limit != "All rows":
-            row_count = int(heatmap_row_limit.split()[-1])
-            strongest_rows = (
-                heatmap_data.assign(
-                    _absolute_correlation=pd.to_numeric(
-                        heatmap_data[value_column], errors="coerce"
-                    ).abs()
-                )
-                .groupby("heatmap_row", observed=True)["_absolute_correlation"]
-                .max()
-                .nlargest(row_count)
-                .index
-            )
-            strongest_set = set(strongest_rows)
-            heatmap_data = heatmap_data.loc[
-                heatmap_data["heatmap_row"].isin(strongest_set)
-            ].copy()
-            row_order = [row for row in row_order if row in strongest_set]
-            if row_group_labels:
-                row_group_labels = {
-                    row: group
-                    for row, group in row_group_labels.items()
-                    if row in strongest_set
-                }
-
-    significance_view = st.radio(
-        "Correlation rows",
-        options=["All rows", "At least one FDR < 0.05"],
+    available_heatmap_rows = int(heatmap_data["heatmap_row"].nunique())
+    heatmap_row_view = st.radio(
+        "Rows displayed in heatmap",
+        options=[
+            "All rows",
+            "At least one FDR < 0.05",
+            "Top K by absolute correlation",
+        ],
         horizontal=True,
+        key=(
+            "correlation_heatmap_row_view_selected_module"
+            if heatmap_mode.startswith("Selected module")
+            else "correlation_heatmap_row_view_all_modules"
+        ),
         help=(
-            "The significant-only heatmap retains a module/feature/group row when at least "
-            "one displayed outcome has across-module FDR < 0.05. The table then contains "
-            "only its significant correlation cells."
+            "Significant rows require at least one displayed outcome with FDR < 0.05. "
+            "Top K ranks score rows by their strongest absolute selected-method "
+            "correlation across the displayed outcomes."
         ),
     )
     table_data = correlation_table.copy()
-    if significance_view == "At least one FDR < 0.05":
+    if heatmap_row_view == "At least one FDR < 0.05":
         significant_rows = set(
             heatmap_data.loc[
                 pd.to_numeric(heatmap_data[fdr_column], errors="coerce").lt(0.05),
@@ -5484,6 +5460,58 @@ if active_view == "Correlation heatmaps":
                 for row, group in row_group_labels.items()
                 if row in significant_rows
             }
+    elif heatmap_row_view == "Top K by absolute correlation":
+        top_k = int(
+            st.number_input(
+                "Number of top heatmap rows (K)",
+                min_value=1,
+                max_value=max(1, available_heatmap_rows),
+                value=min(50, max(1, available_heatmap_rows)),
+                step=1,
+                key=(
+                    "correlation_heatmap_top_k_selected_module"
+                    if heatmap_mode.startswith("Selected module")
+                    else "correlation_heatmap_top_k_all_modules"
+                ),
+                help=(
+                    "Ranking uses the maximum absolute correlation for each displayed "
+                    "score row across only the selected outcome columns."
+                ),
+            )
+        )
+        strongest_rows = (
+            heatmap_data.assign(
+                _absolute_correlation=pd.to_numeric(
+                    heatmap_data[value_column], errors="coerce"
+                ).abs()
+            )
+            .groupby("heatmap_row", observed=True, as_index=False)[
+                "_absolute_correlation"
+            ]
+            .max()
+            .sort_values(
+                ["_absolute_correlation", "heatmap_row"],
+                ascending=[False, True],
+                na_position="last",
+            )
+            .head(top_k)["heatmap_row"]
+            .tolist()
+        )
+        strongest_set = set(strongest_rows)
+        heatmap_data = heatmap_data.loc[
+            heatmap_data["heatmap_row"].isin(strongest_set)
+        ].copy()
+        row_order = [row for row in row_order if row in strongest_set]
+        if row_group_labels:
+            row_group_labels = {
+                row: group
+                for row, group in row_group_labels.items()
+                if row in strongest_set
+            }
+        st.caption(
+            f"Showing the top {len(strongest_set)} of {available_heatmap_rows} available "
+            "heatmap rows. The complete correlation table remains exhaustive."
+        )
 
     correlation_table = correlation_table.copy()
     correlation_table.insert(0, "module_definition", module_set_label)
