@@ -2129,6 +2129,12 @@ def refresh_effect_endpoint_kegg_bundle(
     manifest_path = output / "data_manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     run_manifest = json.loads(source_manifest.read_text(encoding="utf-8"))
+    validation_path = analysis_root / "validation_report.json"
+    validation = None
+    if validation_path.exists():
+        validation = json.loads(validation_path.read_text(encoding="utf-8"))
+        if validation.get("status") != "passed":
+            raise ValueError("Effect-endpoint KEGG validation did not pass")
     for module_set, specification in expected.items():
         module_output = output if module_set == "full_cohort" else output / module_set
         selected = enrichment.loc[
@@ -2198,6 +2204,24 @@ def refresh_effect_endpoint_kegg_bundle(
             "source_manifest_sha256": sha256(source_manifest),
             "source_enrichment_sha256": sha256(source),
             "source_summary_sha256": sha256(summary_source),
+            "validation": (
+                {
+                    "status": validation["status"],
+                    "report_sha256": sha256(validation_path),
+                    "direct_modules_checked": validation["direct_modules_checked"],
+                    "regional_fdr_families_checked": validation[
+                        "regional_fdr_families_checked"
+                    ],
+                    "catalog_zero_edge_endpoint_sets": validation[
+                        "zero_edge_endpoint_sets"
+                    ],
+                    "catalog_no_qualifying_pathway_endpoint_sets": validation[
+                        "no_qualifying_pathway_endpoint_sets"
+                    ],
+                }
+                if validation is not None
+                else {"status": "not_run"}
+            ),
             "expanded_fdr_definition": (
                 "BH within module, method, and effect direction across tissue-expanded "
                 "pathways meeting minimum overlap."

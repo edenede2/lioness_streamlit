@@ -34,6 +34,9 @@ def test_effect_endpoint_kegg_catalogs_are_method_and_direction_isolated() -> No
         summary = pd.read_parquet(summary_path)
         selected_summary = summary.loc[summary["network_method"].eq(method)]
         assert len(selected_summary) == expected_sets
+        assert set(selected_summary["availability_reason"]).issubset(
+            {"available", "no_retained_edges", "no_qualifying_pathway"}
+        )
         assert set(selected_summary["effect_direction"]) == {
             "ad_higher", "control_higher", "either"
         }
@@ -52,6 +55,12 @@ def test_effect_endpoint_kegg_catalogs_are_method_and_direction_isolated() -> No
             columns=["overlap_genes"],
         )
         assert not stored["overlap_genes"].astype(str).str.contains("ENSG").any()
+        loaded_summary = data.load_effect_endpoint_summary(
+            module_set=module_set,
+            method=method,
+            direction="either",
+        )
+        assert len(loaded_summary) == expected_sets // 3
 
 
 def test_kegg_regional_sharing_filters_use_regions_not_rows_times_modules() -> None:

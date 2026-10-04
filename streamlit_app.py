@@ -163,21 +163,25 @@ from app_helpers.edge_expression import (
 )
 from app_helpers import data as _data_helpers
 
-if not all(
-    hasattr(_data_helpers, name)
-    for name in (
-        "collapse_pathway_mdc_rows", "SCORE_TRANSFORM_LABELS",
-        "EIGENGENE_SOURCE_LABELS",
-        "ASSOCIATION_GROUP_LABELS", "association_level_label",
-        "PREDICTION_BLOCK_ORDER",
-        "EIGENGENE_FEATURE_LABELS", "descriptive_eigengene_data_available",
-        "effect_size_data_available", "effect_rule_key",
-        "effect_rule_label", "effect_mask_column", "load_effect_drivers",
-        "load_effect_size_manifest", "EFFECT_STATISTIC_LABELS",
-        "edge_expression_data_available", "load_edge_expression",
-        "load_edge_expression_nodes",
-        "annotate_prediction_coefficients", "coefficient_kegg_scope_lookup",
-        "TARGETED_HEDGES_MASKS",
+if (
+    getattr(_data_helpers, "EFFECT_ENDPOINT_KEGG_API_VERSION", 0) < 1
+    or not all(
+        hasattr(_data_helpers, name)
+        for name in (
+            "collapse_pathway_mdc_rows", "SCORE_TRANSFORM_LABELS",
+            "EIGENGENE_SOURCE_LABELS",
+            "ASSOCIATION_GROUP_LABELS", "association_level_label",
+            "PREDICTION_BLOCK_ORDER",
+            "EIGENGENE_FEATURE_LABELS", "descriptive_eigengene_data_available",
+            "effect_size_data_available", "effect_rule_key",
+            "effect_rule_label", "effect_mask_column", "load_effect_drivers",
+            "load_effect_size_manifest", "EFFECT_STATISTIC_LABELS",
+            "edge_expression_data_available", "load_edge_expression",
+            "load_edge_expression_nodes",
+            "annotate_prediction_coefficients", "coefficient_kegg_scope_lookup",
+            "TARGETED_HEDGES_MASKS",
+            "load_effect_endpoint_summary",
+        )
     )
 ):
     _data_helpers = importlib.reload(_data_helpers)
@@ -263,6 +267,7 @@ from app_helpers.data import (
     load_edge_expression_nodes,
     load_kegg,
     load_effect_endpoint_kegg,
+    load_effect_endpoint_summary,
     load_kegg_tsv_bytes,
     load_cluster_association_statistics,
     load_mdc_summary,
@@ -682,6 +687,21 @@ def cached_effect_endpoint_kegg(
     module: int | None,
 ) -> pd.DataFrame:
     return load_effect_endpoint_kegg(
+        module_set=module_set,
+        method=method,
+        direction=direction,
+        module=module,
+    )
+
+
+@st.cache_data(show_spinner=False, max_entries=12)
+def cached_effect_endpoint_summary(
+    module_set: str,
+    method: str,
+    direction: str,
+    module: int | None,
+) -> pd.DataFrame:
+    return load_effect_endpoint_summary(
         module_set=module_set,
         method=method,
         direction=direction,
@@ -9301,11 +9321,24 @@ if active_view == "KEGG enrichment":
             source_kegg.insert(0, "module_definition", module_set_label)
 
     if source_kegg.empty:
+        unavailable_detail = "No pathway reached the minimum overlap."
+        if kegg_source != "full_module" and kegg_effect_direction is not None:
+            endpoint_summary = cached_effect_endpoint_summary(
+                module_set, method, kegg_effect_direction, kegg_module
+            )
+            if len(endpoint_summary) == 1:
+                reason = str(endpoint_summary.iloc[0]["availability_reason"])
+                unavailable_detail = {
+                    "no_retained_edges": "No edge passed the selected endpoint rule.",
+                    "no_qualifying_pathway": (
+                        "Edges passed, but no KEGG pathway reached the minimum overlap."
+                    ),
+                    "available": "No reported pathway remains after the current query.",
+                }.get(reason, "Endpoint enrichment is unavailable.")
         st.info(
             f"{module_label(module)} has no reported pathway for {kegg_source_label}. "
-            "This can mean that no edge passed the selected endpoint rule or that no "
-            "pathway reached the minimum overlap. Choose All modules to browse the "
-            "available enrichments."
+            f"{unavailable_detail} Choose All modules to browse the available "
+            "enrichments."
         )
     else:
         st.markdown("#### Filters")

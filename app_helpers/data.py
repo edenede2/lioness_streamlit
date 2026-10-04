@@ -16,6 +16,7 @@ from app_helpers.gene_symbols import public_gene_labels
 
 
 APP_ROOT = Path(__file__).resolve().parents[1]
+EFFECT_ENDPOINT_KEGG_API_VERSION = 1
 
 MODULE_SET_LABELS = {
     "full_cohort": "Full-cohort L4 modules (154)",
@@ -1644,6 +1645,29 @@ def load_effect_endpoint_kegg(
         module_set_path(KEGG_EFFECT_ENDPOINT_FILENAME, module_set), filters
     )
     return public_gene_labels(frame, text_columns=("overlap_genes",))
+
+
+def load_effect_endpoint_summary(
+    *,
+    module_set: str,
+    method: str,
+    direction: str,
+    module: int | None = None,
+) -> pd.DataFrame:
+    """Load endpoint-set availability and coverage for one filtered catalog."""
+
+    if direction not in EFFECT_DIRECTION_LABELS:
+        raise ValueError(f"Unknown effect direction: {direction}")
+    filters: list[tuple[str, str, object]] = [
+        ("estimator", "=", "lioness"),
+        ("network_method", "=", method),
+        ("effect_direction", "=", direction),
+    ]
+    if module is not None:
+        filters.append(("cluster_id", "=", int(module)))
+    return _read_filtered(
+        module_set_path(KEGG_EFFECT_ENDPOINT_SUMMARY_FILENAME, module_set), filters
+    )
 
 
 def add_kegg_region_sharing(
