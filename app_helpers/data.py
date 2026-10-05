@@ -9,6 +9,8 @@ from typing import Iterable
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
+import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
 from app_helpers.drive_data import DATA_DIR, data_path_available, ensure_data_path
@@ -821,6 +823,51 @@ def _read_filtered(
     return table.to_pandas()
 
 
+def _read_nested_parquet_bounded(
+    path: Path,
+    filters: list[tuple[str, str, object]],
+    *,
+    batch_size: int = 128,
+) -> pd.DataFrame:
+    """Read list-heavy Parquet rows without expanding the whole dataset.
+
+    Volcano density bins contain nested arrays.  A normal dataset scan can
+    temporarily expand every row group before applying row predicates, which
+    requires gigabytes even though one module returns only a few dozen rows.
+    Filtering small Arrow record batches keeps peak memory proportional to the
+    batch size while preserving the exact stored arrays.
+    """
+
+    materialized = ensure_data_path(path, filters)
+    if isinstance(materialized, list):
+        files = [Path(value) for value in materialized]
+    elif Path(materialized).is_dir():
+        files = sorted(Path(materialized).glob("*.parquet"))
+    else:
+        files = [Path(materialized)]
+    pieces: list[pa.Table] = []
+    schema: pa.Schema | None = None
+    for file_path in files:
+        parquet_file = pq.ParquetFile(file_path)
+        schema = schema or parquet_file.schema_arrow
+        for batch in parquet_file.iter_batches(batch_size=batch_size):
+            table = pa.Table.from_batches([batch])
+            keep = None
+            for column, operator, value in filters:
+                if operator != "=":
+                    raise ValueError(
+                        "The bounded nested-Parquet reader supports equality filters only"
+                    )
+                condition = pc.equal(table[column], value)
+                keep = condition if keep is None else pc.and_kleene(keep, condition)
+            selected = table if keep is None else table.filter(pc.fill_null(keep, False))
+            if selected.num_rows:
+                pieces.append(selected)
+    if not pieces:
+        return pd.DataFrame(columns=[] if schema is None else schema.names)
+    return pa.concat_tables(pieces).to_pandas()
+
+
 def load_aggregate(
     method: str,
     module: int,
@@ -1542,7 +1589,7 @@ def load_volcano_bins(
     differential_fdr_scope: str = "global",
 ) -> pd.DataFrame:
     path = module_set_data_dir(module_set) / "differential" / "volcano_bins.parquet"
-    return _read_filtered(
+    return _read_nested_parquet_bounded(
         path,
         [
             ("estimator", "=", estimator),

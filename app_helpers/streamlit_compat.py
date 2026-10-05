@@ -1,4 +1,4 @@
-"""Small compatibility adapters for Streamlit's container-width API transition."""
+"""Small compatibility adapters for Streamlit API transitions."""
 
 from __future__ import annotations
 
@@ -56,3 +56,23 @@ def plotly_chart(
         **normalize_width_kwargs(width_kwargs),
         **kwargs,
     )
+
+
+def stateful_tabs(labels: list[str], *, key: str) -> tuple[object, ...]:
+    """Return tabs that rerun when their active selection changes.
+
+    Streamlit 1.59 added stateful tabs and the ``Tab.open`` property.  The
+    compatibility fallback keeps local/test environments on older Streamlit
+    releases functional, although those releases necessarily render all tabs.
+    """
+
+    try:
+        return tuple(st.tabs(labels, key=key, on_change="rerun"))
+    except TypeError:
+        return tuple(st.tabs(labels))
+
+
+def tab_is_open(tab: object) -> bool:
+    """Whether a stateful tab is active, or always true on older runtimes."""
+
+    return bool(getattr(tab, "open", True))

@@ -151,7 +151,7 @@ def _read_parquet(
     ).to_pandas()
 
 
-@st.cache_data(show_spinner=False, max_entries=96)
+@st.cache_data(show_spinner=False, max_entries=6, ttl=1800)
 def load_regional_scores(
     source: str,
     cohort_scope: str,
@@ -248,7 +248,7 @@ def _prepare_score_frame(
     return result
 
 
-@st.cache_data(show_spinner=False, max_entries=128)
+@st.cache_data(show_spinner=False, max_entries=2, ttl=1800)
 def regional_correlation_catalog(
     source: str,
     cohort_scope: str,
@@ -316,7 +316,7 @@ def regional_correlation_catalog(
     return result
 
 
-@st.cache_data(show_spinner=False, max_entries=128)
+@st.cache_data(show_spinner=False, max_entries=2, ttl=1800)
 def regional_categorical_catalog(
     source: str,
     cohort_scope: str,
@@ -361,7 +361,7 @@ def regional_categorical_catalog(
     return result
 
 
-@st.cache_data(show_spinner=False, max_entries=96)
+@st.cache_data(show_spinner=False, max_entries=2, ttl=1800)
 def regional_pairwise_catalog(
     source: str,
     cohort_scope: str,

@@ -32,3 +32,44 @@ def test_plotly_width_adapter_uses_stretch_on_current_streamlit(monkeypatch) -> 
         {"use_container_width": False, "height": 200}
     ) == {"width": "content", "height": 200}
     streamlit_compat.uses_modern_width_api.cache_clear()
+
+
+def test_stateful_tabs_enable_active_tab_reruns(monkeypatch) -> None:
+    calls = []
+    tabs = (object(), object())
+
+    def current_tabs(labels, **kwargs):
+        calls.append((labels, kwargs))
+        return tabs
+
+    monkeypatch.setattr(streamlit_compat.st, "tabs", current_tabs)
+    assert streamlit_compat.stateful_tabs(["One", "Two"], key="test_tabs") == tabs
+    assert calls == [
+        (["One", "Two"], {"key": "test_tabs", "on_change": "rerun"})
+    ]
+
+
+def test_stateful_tabs_fall_back_on_old_streamlit(monkeypatch) -> None:
+    calls = []
+    tabs = (object(),)
+
+    def legacy_tabs(labels, **kwargs):
+        calls.append((labels, kwargs))
+        if kwargs:
+            raise TypeError("unexpected keyword argument")
+        return tabs
+
+    monkeypatch.setattr(streamlit_compat.st, "tabs", legacy_tabs)
+    assert streamlit_compat.stateful_tabs(["One"], key="test_tabs") == tabs
+    assert calls == [
+        (["One"], {"key": "test_tabs", "on_change": "rerun"}),
+        (["One"], {}),
+    ]
+
+
+def test_tab_is_open_defaults_true_for_legacy_container() -> None:
+    class CurrentTab:
+        open = False
+
+    assert streamlit_compat.tab_is_open(object()) is True
+    assert streamlit_compat.tab_is_open(CurrentTab()) is False

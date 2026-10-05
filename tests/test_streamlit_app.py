@@ -55,6 +55,13 @@ def select_view(app: AppTest, label: str) -> AppTest:
     return result
 
 
+def select_stateful_tab(app: AppTest, key: str, label: str) -> AppTest:
+    """Select a lazy tab on current Streamlit; old runtimes render every tab."""
+
+    app.session_state[key] = label
+    return preserve_legacy_pills_state(app.run())
+
+
 def test_streamlit_hot_reload_recovers_stale_chart_helper(monkeypatch) -> None:
     monkeypatch.delattr(chart_helpers, "CONTINUOUS_COLOR_SCALES")
     app = AppTest.from_file(APP, default_timeout=180).run()
@@ -198,11 +205,9 @@ def test_donor_edge_explorer_renders_2d_ols_and_3d_triangle() -> None:
     app = preserve_legacy_pills_state(
         widget_with_label(app.number_input, "Top K edges").set_value(100).run()
     )
-    app = preserve_legacy_pills_state(
-        widget_with_label(
-            app.checkbox, "Render the 3D triangle and OLS plane"
-        ).set_value(True).run()
-    )
+    app.session_state["edge_expression_tabs"] = "3D gene triangle"
+    app.session_state["endpoint_expression_render_3d"] = True
+    app = preserve_legacy_pills_state(app.run())
     assert_app_clean(app)
     assert widget_with_label(app.selectbox, "Triangle for 3D expression plot")
     assert widget_with_label(app.selectbox, "Gene predicted by the OLS plane (Z axis)")
@@ -647,6 +652,7 @@ def test_targeted_cluster_prediction_renders_all_resolved_blocks() -> None:
     assert_app_clean(app)
     assert any("Cluster prediction is exploratory" in warning.value for warning in app.warning)
 
+    app = select_stateful_tab(app, "targeted_prediction_tabs", "OOF diagnostics")
     block = widget_with_label(app.selectbox, "OOF diagnostic predictor block")
     assert {
         "AC",
@@ -831,36 +837,38 @@ def test_streamlit_pathway_resolved_mdc_controls_both_module_sets() -> None:
     assert_app_clean(app)
     assert any(tab.label == "Region-resolved MDC" for tab in app.tabs)
     assert any(tab.label == "Pathway-resolved MDC" for tab in app.tabs)
+    app = select_stateful_tab(app, "mdc_resolution_tabs", "Pathway-resolved MDC")
     assert widget_with_label(app.selectbox, "MDC enrichment resolution").value == (
         "pathway"
     )
     assert widget_with_label(app.selectbox, "Pathway detail").value
 
-    app = widget_with_label(app.selectbox, "MDC enrichment resolution").set_value(
-        "subcategory"
-    ).run()
+    app.session_state["mdc_resolution_tabs"] = "Pathway-resolved MDC"
+    app.session_state["pathway_mdc_resolution_full_cohort"] = "subcategory"
+    app = preserve_legacy_pills_state(app.run())
     assert_app_clean(app)
     assert widget_with_label(app.selectbox, "KEGG sub-category detail").value
 
-    app = widget_with_label(app.radio, "KEGG enrichment threshold").set_value(
-        0.10
-    ).run()
+    app.session_state["mdc_resolution_tabs"] = "Pathway-resolved MDC"
+    app.session_state["pathway_mdc_kegg_threshold_full_cohort"] = 0.10
+    app = preserve_legacy_pills_state(app.run())
     assert_app_clean(app)
-    app = widget_with_label(app.radio, "Module MDC rows").set_value(
-        "MDC FDR-significant only"
-    ).run()
+    app.session_state["mdc_resolution_tabs"] = "Pathway-resolved MDC"
+    app.session_state["pathway_mdc_row_scope_full_cohort"] = "MDC FDR-significant only"
+    app = preserve_legacy_pills_state(app.run())
     assert_app_clean(app)
 
-    widget_with_label(app.selectbox, "Module definition").set_value(
+    app = widget_with_label(app.selectbox, "Module definition").set_value(
         "control_derived"
     ).run()
+    app = select_stateful_tab(app, "mdc_resolution_tabs", "Pathway-resolved MDC")
     assert_app_clean(app)
     assert widget_with_label(app.selectbox, "MDC enrichment resolution").value == (
         "pathway"
     )
-    widget_with_label(app.selectbox, "MDC enrichment resolution").set_value(
-        "category"
-    ).run()
+    app.session_state["mdc_resolution_tabs"] = "Pathway-resolved MDC"
+    app.session_state["pathway_mdc_resolution_control_derived"] = "category"
+    app = preserve_legacy_pills_state(app.run())
     assert_app_clean(app)
     assert widget_with_label(app.selectbox, "KEGG category detail").value
 

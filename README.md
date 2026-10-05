@@ -190,7 +190,9 @@ credentials_json = '''
 
 `requirements.txt` pins the direct dependency versions validated by resolving the
 complete dependency graph with binary-only CPython 3.12 Linux wheels, followed by the
-app data/chart suite and Streamlit 1.61 smoke tests.
+app data/chart suite and Streamlit 1.64 smoke tests. Heavy tab groups use Streamlit's
+stateful-tab API so only the active tab is computed; bounded, expiring data caches prevent
+cross-view browsing from retaining an unbounded set of donor-level tables in memory.
 
 ### Google Drive data backend
 

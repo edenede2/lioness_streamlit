@@ -72,8 +72,10 @@ def test_protocol_view_renders_validated_performance() -> None:
     app = _widget(app.radio, "Prediction mode").set_value("protocol_v11").run(
         timeout=300
     )
+    app.session_state["protocol_v11_tabs"] = "Results"
+    app = app.run(timeout=300)
     assert not app.exception
-    assert len(app.get("plotly_chart")) >= 2
+    assert len(app.get("plotly_chart")) >= 1
     assert any(
         "metric" in dataframe.value.columns
         and "representation" in dataframe.value.columns

@@ -128,7 +128,11 @@ from app_helpers.module_finder import (
     build_pooled_ct_ts_statistics,
 )
 from app_helpers.table_controls import filterable_dataframe
-from app_helpers.streamlit_compat import plotly_chart as render_plotly_chart
+from app_helpers.streamlit_compat import (
+    plotly_chart as render_plotly_chart,
+    stateful_tabs,
+    tab_is_open,
+)
 from app_helpers.regional_modules import (
     REGIONAL_ANALYSIS_VIEWS,
     render_regional_analysis_view,
@@ -350,7 +354,7 @@ def cached_partition_comparison_table(name: str) -> pd.DataFrame:
     return load_partition_comparison_table(name)
 
 
-@st.cache_data(show_spinner=False, max_entries=16)
+@st.cache_data(show_spinner=False, max_entries=6, ttl=1800)
 def cached_aggregate(
     module_set: str,
     estimator: str,
@@ -373,7 +377,7 @@ def cached_aggregate(
     )
 
 
-@st.cache_data(show_spinner=False, max_entries=8)
+@st.cache_data(show_spinner=False, max_entries=4, ttl=1800)
 def cached_resolved(
     module_set: str,
     estimator: str,
@@ -406,7 +410,7 @@ def cached_sample_metadata(
     return load_sample_metadata(module_set=module_set, cohort_scope=cohort_scope)
 
 
-@st.cache_data(show_spinner=False, max_entries=8)
+@st.cache_data(show_spinner=False, max_entries=3, ttl=1800)
 def cached_mdc_summary(
     module_set: str,
     estimator: str = "lioness",
@@ -425,7 +429,7 @@ def cached_mdc_summary(
     )
 
 
-@st.cache_data(show_spinner=False, max_entries=8)
+@st.cache_data(show_spinner=False, max_entries=3, ttl=1800)
 def cached_mdc_resolved(
     module_set: str,
     estimator: str = "lioness",
@@ -444,7 +448,7 @@ def cached_mdc_resolved(
     )
 
 
-@st.cache_data(show_spinner=False, max_entries=4)
+@st.cache_data(show_spinner=False, max_entries=2, ttl=1800)
 def cached_pathway_mdc_rows(
     module_set: str,
     enrichment_fdr_threshold: float,
@@ -476,7 +480,7 @@ def cached_pathway_mdc_rows(
     )
 
 
-@st.cache_data(show_spinner=False, max_entries=6)
+@st.cache_data(show_spinner=False, max_entries=3, ttl=1800)
 def cached_edge_summaries(
     module_set: str,
     estimator: str,
@@ -521,7 +525,7 @@ def cached_data_manifest() -> dict[str, object]:
     return load_data_manifest()
 
 
-@st.cache_data(show_spinner=False, max_entries=16)
+@st.cache_data(show_spinner=False, max_entries=4, ttl=1800)
 def cached_aggregate_stats(
     module_set: str,
     estimator: str,
@@ -549,7 +553,8 @@ def cached_aggregate_stats(
 
 @st.cache_data(
     show_spinner="Calculating pooled-donor CT–TS module statistics…",
-    max_entries=4,
+    max_entries=2,
+    ttl=1800,
 )
 def cached_pooled_module_finder_stats(
     module_set: str,
@@ -588,7 +593,7 @@ def cached_pooled_module_finder_stats(
     return build_pooled_ct_ts_statistics(source, phenotype=phenotype)
 
 
-@st.cache_data(show_spinner=False, max_entries=12)
+@st.cache_data(show_spinner=False, max_entries=4, ttl=1800)
 def cached_resolved_stats(
     module_set: str,
     estimator: str,
@@ -679,7 +684,7 @@ def cached_kegg(module_set: str, module: int | None) -> pd.DataFrame:
     return load_kegg(module, module_set=module_set)
 
 
-@st.cache_data(show_spinner=False, max_entries=12)
+@st.cache_data(show_spinner=False, max_entries=4, ttl=1800)
 def cached_effect_endpoint_kegg(
     module_set: str,
     method: str,
@@ -694,7 +699,7 @@ def cached_effect_endpoint_kegg(
     )
 
 
-@st.cache_data(show_spinner=False, max_entries=12)
+@st.cache_data(show_spinner=False, max_entries=4, ttl=1800)
 def cached_effect_endpoint_summary(
     module_set: str,
     method: str,
@@ -738,7 +743,7 @@ def cached_feature_definitions() -> pd.DataFrame:
     return load_feature_definitions()
 
 
-@st.cache_data(show_spinner=False, max_entries=8)
+@st.cache_data(show_spinner=False, max_entries=3, ttl=1800)
 def cached_prediction_performance(
     reference_provenance: str,
     module_definition: str,
@@ -754,7 +759,7 @@ def cached_prediction_performance(
     )
 
 
-@st.cache_data(show_spinner=False, max_entries=8)
+@st.cache_data(show_spinner=False, max_entries=2, ttl=1800)
 def cached_prediction_bootstrap(
     reference_provenance: str,
     module_definition: str,
@@ -770,32 +775,32 @@ def cached_prediction_bootstrap(
     )
 
 
-@st.cache_data(show_spinner=False, max_entries=8)
+@st.cache_data(show_spinner=False, max_entries=2, ttl=1800)
 def cached_prediction_curves(**filters: str | None) -> pd.DataFrame:
     return load_prediction_curves(**filters)
 
 
-@st.cache_data(show_spinner=False, max_entries=8)
+@st.cache_data(show_spinner=False, max_entries=2, ttl=1800)
 def cached_prediction_confusion(**filters: str | None) -> pd.DataFrame:
     return load_prediction_confusion(**filters)
 
 
-@st.cache_data(show_spinner=False, max_entries=8)
+@st.cache_data(show_spinner=False, max_entries=2, ttl=1800)
 def cached_prediction_coefficients(**filters: str | None) -> pd.DataFrame:
     return load_prediction_coefficients(**filters)
 
 
-@st.cache_data(show_spinner=False, max_entries=6)
+@st.cache_data(show_spinner=False, max_entries=2, ttl=1800)
 def cached_prediction_diagnostics(**filters: str | None) -> pd.DataFrame:
     return load_prediction_diagnostics(**filters)
 
 
-@st.cache_data(show_spinner=False, max_entries=6)
+@st.cache_data(show_spinner=False, max_entries=2, ttl=1800)
 def cached_prediction_whole_network(**filters: str | None) -> pd.DataFrame:
     return load_prediction_whole_network_features(**filters)
 
 
-@st.cache_data(show_spinner=False, max_entries=8)
+@st.cache_data(show_spinner=False, max_entries=3, ttl=1800)
 def cached_targeted_prediction_table(
     table: str,
     filters: tuple[tuple[str, object], ...] = (),
@@ -1036,7 +1041,8 @@ def standardize_stored_associations(
 
 @st.cache_data(
     show_spinner="Calculating nominal cluster associations across modules…",
-    max_entries=6,
+    max_entries=2,
+    ttl=1800,
 )
 def cached_module_set_cluster_associations(
     module_set: str,
@@ -1115,7 +1121,8 @@ def cached_module_set_cluster_associations(
 
 @st.cache_data(
     show_spinner="Calculating association FDR across the selected module set…",
-    max_entries=6,
+    max_entries=2,
+    ttl=1800,
 )
 def cached_module_set_associations(
     module_set: str,
@@ -1231,7 +1238,8 @@ def cached_module_set_associations(
 
 @st.cache_data(
     show_spinner="Calculating grouped associations across the selected module set…",
-    max_entries=4,
+    max_entries=1,
+    ttl=1800,
 )
 def cached_grouped_module_set_associations(
     module_set: str,
@@ -1346,7 +1354,8 @@ def cached_grouped_module_set_associations(
 
 @st.cache_data(
     show_spinner="Calculating categorical associations across the selected module set…",
-    max_entries=4,
+    max_entries=1,
+    ttl=1800,
 )
 def cached_categorical_module_set_associations(
     module_set: str,
@@ -1416,7 +1425,8 @@ def cached_categorical_module_set_associations(
 
 @st.cache_data(
     show_spinner="Calculating pairwise distribution effects across modules…",
-    max_entries=4,
+    max_entries=1,
+    ttl=1800,
 )
 def cached_distribution_pairwise_associations(
     module_set: str,
@@ -1469,7 +1479,11 @@ def cached_distribution_pairwise_associations(
     )
 
 
-@st.cache_data(show_spinner="Bootstrapping selected-module effect intervals…", max_entries=8)
+@st.cache_data(
+    show_spinner="Bootstrapping selected-module effect intervals…",
+    max_entries=2,
+    ttl=1800,
+)
 def cached_selected_distribution_pairwise(
     frame: pd.DataFrame,
     category_variable: str,
@@ -1501,7 +1515,11 @@ def add_correlation_labels(frame: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
-@st.cache_data(show_spinner="Calculating the selected module correlation matrix…", max_entries=6)
+@st.cache_data(
+    show_spinner="Calculating the selected module correlation matrix…",
+    max_entries=2,
+    ttl=1800,
+)
 def cached_module_correlations(
     module_set: str,
     estimator: str,
@@ -1564,7 +1582,8 @@ def cached_module_correlations(
 
 @st.cache_data(
     show_spinner="Calculating the selected module correlations by category…",
-    max_entries=6,
+    max_entries=2,
+    ttl=1800,
 )
 def cached_grouped_module_correlations(
     module_set: str,
@@ -1653,7 +1672,8 @@ def cached_grouped_module_correlations(
 
 @st.cache_data(
     show_spinner="Calculating grouped correlations across all modules…",
-    max_entries=3,
+    max_entries=1,
+    ttl=1800,
 )
 def cached_grouped_all_module_correlations(
     module_set: str,
@@ -1711,7 +1731,11 @@ def cached_grouped_all_module_correlations(
     return add_correlation_labels(result)
 
 
-@st.cache_data(show_spinner="Calculating correlations across all modules…", max_entries=3)
+@st.cache_data(
+    show_spinner="Calculating correlations across all modules…",
+    max_entries=1,
+    ttl=1800,
+)
 def cached_all_module_correlations(
     module_set: str,
     estimator: str,
@@ -2221,871 +2245,881 @@ def render_targeted_prediction_view() -> None:
     (
         summary_tab, comparison_tab, transformation_tab, source_tab, panel_tab,
         diagnostic_tab, coefficient_tab, tables_tab, methods_tab,
-    ) = st.tabs(
+    ) = stateful_tabs(
         [
             "Summary", "CT versus TS", "Transformation sensitivity", "Eigengene sources", "Panel selection",
             "OOF diagnostics", "Coefficients & KEGG", "Tables", "Methods",
-        ]
+        ],
+        key="targeted_prediction_tabs",
     )
     with summary_tab:
-        st.caption(
-            "Performance is calculated from fold-specific panels and outer-test predictions. "
-            "The consensus panel below is display-only and is never used to estimate performance."
-        )
-        if (
-            not masked_selection
-            and score_transform == "raw"
-            and evidence_tier == "primary"
-            and module_definition == "control_derived"
-            and outcome == "diagnosis_binary"
-        ):
-            absolute = performance_catalog.loc[
-                performance_catalog["evidence_tier"].eq("primary")
-                & performance_catalog["score_transform"].eq("raw")
-                & performance_catalog["edge_mask"].eq("all")
-                & performance_catalog["score_normalization"].eq("standard_pruned")
-                & performance_catalog["module_definition"].eq("control_derived")
-                & performance_catalog["network_method"].eq("control_anchored")
-                & performance_catalog["model_outcome"].eq("diagnosis_binary")
-                & performance_catalog["predictor_block"].eq("CT_pooled")
-                & performance_catalog["metric"].eq("roc_auc")
-            ]
-            absolute_specs = (
-                (
-                    "Unadjusted comparators",
-                    (
-                        ("Covariates", "tissue_neutral_ad", "covariates"),
-                        ("Connectivity", "tissue_neutral_ad", "network_only"),
-                        ("Transcriptomics", "tissue_neutral_ad", "transcriptomics_only"),
-                        ("Connectivity + transcriptomics", "tissue_neutral_ad", "network_plus_transcriptomics"),
-                    ),
-                ),
-                (
-                    "Covariate-adjusted comparators",
-                    (
-                        ("Adjusted connectivity", "tissue_neutral_ad", "covariates_plus_network"),
-                        ("Adjusted transcriptomics", "tissue_neutral_ad", "covariates_plus_transcriptomics"),
-                        ("Fully adjusted joint", "tissue_neutral_ad", "covariates_plus_network_plus_transcriptomics"),
-                        ("All-module adjusted connectivity", "all_modules", "covariates_plus_network"),
-                    ),
-                ),
+        if tab_is_open(summary_tab):
+            st.caption(
+                "Performance is calculated from fold-specific panels and outer-test predictions. "
+                "The consensus panel below is display-only and is never used to estimate performance."
             )
-            for row_label, specifications in absolute_specs:
-                st.caption(row_label)
-                absolute_metrics = st.columns(len(specifications))
-                for column, (label, strategy, variant) in zip(
-                    absolute_metrics, specifications, strict=True
-                ):
-                    value = absolute.loc[
-                        absolute["panel_strategy"].eq(strategy)
-                        & absolute["model_variant"].eq(variant),
-                        "value",
-                    ]
-                    column.metric(
-                        f"{label} ROC-AUC",
-                        f"{float(value.iloc[0]):.3f}" if len(value) else "NA",
-                    )
-        render_plotly_chart(
-            prediction_performance_figure(
-                selected,
-                metric=primary_metric,
-                block_labels=PREDICTION_BLOCK_LABELS,
-                block_order=PREDICTION_BLOCK_ORDER,
-                model_labels=PREDICTION_MODEL_LABELS,
-                title=f"Nested-CV OOF performance: {PREDICTION_OUTCOME_LABELS.get(outcome, outcome)}",
-            ),
-            use_container_width=True,
-            config={"displaylogo": False},
-        )
-        if (
-            not masked_selection and score_transform == "raw"
-            and evidence_tier == "primary" and outcome == "diagnosis_binary"
-        ):
-            comparisons = cached_targeted_prediction_table("primary_comparisons")
-            if not comparisons.empty:
-                render_plotly_chart(
-                    targeted_primary_comparison_figure(
-                        comparisons,
-                        title="Three prespecified primary paired hypotheses",
-                    ),
-                    use_container_width=True,
-                    config={"displaylogo": False},
-                )
-                st.caption(
-                    "Positive differences favor the first model. BH FDR is corrected across "
-                    "exactly these three primary hypotheses."
-                )
-                filterable_dataframe(
-                    comparisons,
-                    table_key="targeted_primary_comparisons",
-                    table_name="Three primary paired comparisons",
-                    use_container_width=True,
-                    hide_index=True,
-                )
-                st.download_button(
-                    "Download primary comparisons (TSV)",
-                    data=dataframe_to_tsv_bytes(comparisons),
-                    file_name="targeted_lioness_primary_comparisons.tsv",
-                    mime="text/tab-separated-values",
-                )
-
-    with comparison_tab:
-        adjusted = selected.loc[
-            selected["model_variant"].isin(
-                [
-                    "network_only",
-                    "covariates_plus_network",
-                    "transcriptomics_only",
-                    "covariates_plus_transcriptomics",
-                    "network_plus_transcriptomics",
-                    "covariates_plus_network_plus_transcriptomics",
+            if (
+                not masked_selection
+                and score_transform == "raw"
+                and evidence_tier == "primary"
+                and module_definition == "control_derived"
+                and outcome == "diagnosis_binary"
+            ):
+                absolute = performance_catalog.loc[
+                    performance_catalog["evidence_tier"].eq("primary")
+                    & performance_catalog["score_transform"].eq("raw")
+                    & performance_catalog["edge_mask"].eq("all")
+                    & performance_catalog["score_normalization"].eq("standard_pruned")
+                    & performance_catalog["module_definition"].eq("control_derived")
+                    & performance_catalog["network_method"].eq("control_anchored")
+                    & performance_catalog["model_outcome"].eq("diagnosis_binary")
+                    & performance_catalog["predictor_block"].eq("CT_pooled")
+                    & performance_catalog["metric"].eq("roc_auc")
                 ]
-            )
-        ].copy()
-        if adjusted.empty:
-            st.info("No CT/TS comparison is available for this selection.")
-        else:
+                absolute_specs = (
+                    (
+                        "Unadjusted comparators",
+                        (
+                            ("Covariates", "tissue_neutral_ad", "covariates"),
+                            ("Connectivity", "tissue_neutral_ad", "network_only"),
+                            ("Transcriptomics", "tissue_neutral_ad", "transcriptomics_only"),
+                            ("Connectivity + transcriptomics", "tissue_neutral_ad", "network_plus_transcriptomics"),
+                        ),
+                    ),
+                    (
+                        "Covariate-adjusted comparators",
+                        (
+                            ("Adjusted connectivity", "tissue_neutral_ad", "covariates_plus_network"),
+                            ("Adjusted transcriptomics", "tissue_neutral_ad", "covariates_plus_transcriptomics"),
+                            ("Fully adjusted joint", "tissue_neutral_ad", "covariates_plus_network_plus_transcriptomics"),
+                            ("All-module adjusted connectivity", "all_modules", "covariates_plus_network"),
+                        ),
+                    ),
+                )
+                for row_label, specifications in absolute_specs:
+                    st.caption(row_label)
+                    absolute_metrics = st.columns(len(specifications))
+                    for column, (label, strategy, variant) in zip(
+                        absolute_metrics, specifications, strict=True
+                    ):
+                        value = absolute.loc[
+                            absolute["panel_strategy"].eq(strategy)
+                            & absolute["model_variant"].eq(variant),
+                            "value",
+                        ]
+                        column.metric(
+                            f"{label} ROC-AUC",
+                            f"{float(value.iloc[0]):.3f}" if len(value) else "NA",
+                        )
             render_plotly_chart(
                 prediction_performance_figure(
-                    adjusted,
+                    selected,
                     metric=primary_metric,
                     block_labels=PREDICTION_BLOCK_LABELS,
                     block_order=PREDICTION_BLOCK_ORDER,
                     model_labels=PREDICTION_MODEL_LABELS,
-                    title="CT, TS, and resolved-component OOF comparison",
+                    title=f"Nested-CV OOF performance: {PREDICTION_OUTCOME_LABELS.get(outcome, outcome)}",
                 ),
                 use_container_width=True,
                 config={"displaylogo": False},
             )
-            fold_performance = cached_targeted_prediction_table(
-                fold_table,
-                _targeted_filters(
-                    evidence_tier=evidence_tier,
-                    module_definition=module_definition,
-                    network_method=network_method,
-                    panel_strategy=panel_strategy,
-                    model_outcome=outcome,
-                    model_variant="covariates_plus_network",
-                    edge_mask=edge_mask,
-                    score_normalization=score_normalization,
-                    score_transform=score_transform,
-                ),
-            )
-            if not fold_performance.empty:
-                render_plotly_chart(
-                    targeted_fold_robustness_figure(
-                        fold_performance,
-                        metric=primary_metric,
-                        block_labels=PREDICTION_BLOCK_LABELS,
-                        block_order=PREDICTION_BLOCK_ORDER,
-                        title="Outer-fold robustness",
-                    ),
-                    use_container_width=True,
-                    config={"displaylogo": False},
-                )
-            if not masked_selection and evidence_tier in {"secondary", "exploratory"}:
-                tier_comparisons = cached_targeted_prediction_table(
-                    "tier_comparisons",
-                    _targeted_filters(
-                        evidence_tier=evidence_tier,
-                        module_definition=module_definition,
-                        network_method=network_method,
-                        model_outcome=outcome,
-                        score_transform=score_transform,
-                    ),
-                )
-                if not tier_comparisons.empty:
+            if (
+                not masked_selection and score_transform == "raw"
+                and evidence_tier == "primary" and outcome == "diagnosis_binary"
+            ):
+                comparisons = cached_targeted_prediction_table("primary_comparisons")
+                if not comparisons.empty:
+                    render_plotly_chart(
+                        targeted_primary_comparison_figure(
+                            comparisons,
+                            title="Three prespecified primary paired hypotheses",
+                        ),
+                        use_container_width=True,
+                        config={"displaylogo": False},
+                    )
                     st.caption(
-                        "Secondary and exploratory paired comparisons use separate BH families; "
-                        "exploratory rows retain both global-tier and within-outcome FDR."
+                        "Positive differences favor the first model. BH FDR is corrected across "
+                        "exactly these three primary hypotheses."
                     )
                     filterable_dataframe(
-                        tier_comparisons,
-                        table_key="targeted_tier_comparisons",
-                        table_name="Nested-CV paired performance comparisons",
+                        comparisons,
+                        table_key="targeted_primary_comparisons",
+                        table_name="Three primary paired comparisons",
                         use_container_width=True,
                         hide_index=True,
                     )
                     st.download_button(
-                        "Download paired comparisons (TSV)",
-                        data=dataframe_to_tsv_bytes(tier_comparisons),
-                        file_name="targeted_lioness_nested_cv_paired_comparisons.tsv",
+                        "Download primary comparisons (TSV)",
+                        data=dataframe_to_tsv_bytes(comparisons),
+                        file_name="targeted_lioness_primary_comparisons.tsv",
                         mime="text/tab-separated-values",
                     )
 
-    with transformation_tab:
-        if hedges_selection:
-            st.info(
-                "Score-transformation sensitivity applies to the all-edge targeted catalog. "
-                "This Hedges’ g sensitivity is intentionally fixed to Raw standard-pruned "
-                "connectivity so the edge-direction comparison is not mixed with another "
-                "robustness axis."
-            )
-        elif fdr_masked_selection:
-            st.info(
-                "Transformation sensitivity applies to the all-edge targeted catalog. "
-                "The differential-edge masked catalog remains the existing asinh analysis."
-            )
-        elif int(manifest.get("schema_version", 2)) < 3:
-            st.info(
-                "This deployed snapshot contains the corrected legacy asinh catalog only. "
-                "Raw will appear here after its first validated incremental publication."
-            )
-        else:
-            transform_status = cached_targeted_prediction_table("transformation_status")
-            if not transform_status.empty:
-                filterable_dataframe(
-                    transform_status,
-                    table_key="targeted_transform_status",
-                    table_name="Transformation analysis status",
-                    use_container_width=True,
-                    hide_index=True,
+    with comparison_tab:
+        if tab_is_open(comparison_tab):
+            adjusted = selected.loc[
+                selected["model_variant"].isin(
+                    [
+                        "network_only",
+                        "covariates_plus_network",
+                        "transcriptomics_only",
+                        "covariates_plus_transcriptomics",
+                        "network_plus_transcriptomics",
+                        "covariates_plus_network_plus_transcriptomics",
+                    ]
                 )
-            transform_comparisons = cached_targeted_prediction_table(
-                "transformation_comparisons",
-                _targeted_filters(
-                    module_definition=module_definition,
-                    network_method=network_method,
-                    panel_strategy=panel_strategy,
-                    model_outcome=outcome,
-                ),
-            )
-            if transform_comparisons.empty:
-                st.info(
-                    "Paired transformed-versus-Raw comparisons will appear after a robustness "
-                    "transformation completes for this configuration."
-                )
+            ].copy()
+            if adjusted.empty:
+                st.info("No CT/TS comparison is available for this selection.")
             else:
-                st.caption(
-                    "These comparisons are exploratory. Positive oriented differences favor "
-                    "asinh or RINT over Raw; global and within-outcome BH FDRs are both shown."
-                )
                 render_plotly_chart(
-                    targeted_transform_comparison_figure(
-                        transform_comparisons,
-                        block_labels=PREDICTION_BLOCK_LABELS,
-                        model_labels=PREDICTION_MODEL_LABELS,
-                        title="Transformation sensitivity: paired donor-averaged OOF performance",
-                    ),
-                    use_container_width=True,
-                    config={"displaylogo": False},
-                )
-                render_plotly_chart(
-                    targeted_transform_heatmap_figure(
-                        transform_comparisons,
+                    prediction_performance_figure(
+                        adjusted,
+                        metric=primary_metric,
                         block_labels=PREDICTION_BLOCK_LABELS,
                         block_order=PREDICTION_BLOCK_ORDER,
                         model_labels=PREDICTION_MODEL_LABELS,
-                        title="Oriented primary-metric difference versus Raw",
+                        title="CT, TS, and resolved-component OOF comparison",
                     ),
                     use_container_width=True,
                     config={"displaylogo": False},
                 )
-                filterable_dataframe(
-                    transform_comparisons,
-                    table_key="targeted_transform_comparisons",
-                    table_name="Paired transformation comparisons",
-                    use_container_width=True,
-                    hide_index=True,
+                fold_performance = cached_targeted_prediction_table(
+                    fold_table,
+                    _targeted_filters(
+                        evidence_tier=evidence_tier,
+                        module_definition=module_definition,
+                        network_method=network_method,
+                        panel_strategy=panel_strategy,
+                        model_outcome=outcome,
+                        model_variant="covariates_plus_network",
+                        edge_mask=edge_mask,
+                        score_normalization=score_normalization,
+                        score_transform=score_transform,
+                    ),
                 )
-            if panel_strategy != "all_modules":
-                selection_outcome = str(
-                    outcome_catalog.loc[
-                        outcome_catalog["panel_strategy"].eq(panel_strategy),
-                        "selection_outcome",
-                    ].iloc[0]
+                if not fold_performance.empty:
+                    render_plotly_chart(
+                        targeted_fold_robustness_figure(
+                            fold_performance,
+                            metric=primary_metric,
+                            block_labels=PREDICTION_BLOCK_LABELS,
+                            block_order=PREDICTION_BLOCK_ORDER,
+                            title="Outer-fold robustness",
+                        ),
+                        use_container_width=True,
+                        config={"displaylogo": False},
+                    )
+                if not masked_selection and evidence_tier in {"secondary", "exploratory"}:
+                    tier_comparisons = cached_targeted_prediction_table(
+                        "tier_comparisons",
+                        _targeted_filters(
+                            evidence_tier=evidence_tier,
+                            module_definition=module_definition,
+                            network_method=network_method,
+                            model_outcome=outcome,
+                            score_transform=score_transform,
+                        ),
+                    )
+                    if not tier_comparisons.empty:
+                        st.caption(
+                            "Secondary and exploratory paired comparisons use separate BH families; "
+                            "exploratory rows retain both global-tier and within-outcome FDR."
+                        )
+                        filterable_dataframe(
+                            tier_comparisons,
+                            table_key="targeted_tier_comparisons",
+                            table_name="Nested-CV paired performance comparisons",
+                            use_container_width=True,
+                            hide_index=True,
+                        )
+                        st.download_button(
+                            "Download paired comparisons (TSV)",
+                            data=dataframe_to_tsv_bytes(tier_comparisons),
+                            file_name="targeted_lioness_nested_cv_paired_comparisons.tsv",
+                            mime="text/tab-separated-values",
+                        )
+
+    with transformation_tab:
+        if tab_is_open(transformation_tab):
+            if hedges_selection:
+                st.info(
+                    "Score-transformation sensitivity applies to the all-edge targeted catalog. "
+                    "This Hedges’ g sensitivity is intentionally fixed to Raw standard-pruned "
+                    "connectivity so the edge-direction comparison is not mixed with another "
+                    "robustness axis."
                 )
-                overlap = cached_targeted_prediction_table(
-                    "panel_transform_overlap",
+            elif fdr_masked_selection:
+                st.info(
+                    "Transformation sensitivity applies to the all-edge targeted catalog. "
+                    "The differential-edge masked catalog remains the existing asinh analysis."
+                )
+            elif int(manifest.get("schema_version", 2)) < 3:
+                st.info(
+                    "This deployed snapshot contains the corrected legacy asinh catalog only. "
+                    "Raw will appear here after its first validated incremental publication."
+                )
+            else:
+                transform_status = cached_targeted_prediction_table("transformation_status")
+                if not transform_status.empty:
+                    filterable_dataframe(
+                        transform_status,
+                        table_key="targeted_transform_status",
+                        table_name="Transformation analysis status",
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+                transform_comparisons = cached_targeted_prediction_table(
+                    "transformation_comparisons",
                     _targeted_filters(
                         module_definition=module_definition,
                         network_method=network_method,
                         panel_strategy=panel_strategy,
-                        selection_outcome=selection_outcome,
+                        model_outcome=outcome,
                     ),
                 )
-                if not overlap.empty:
+                if transform_comparisons.empty:
+                    st.info(
+                        "Paired transformed-versus-Raw comparisons will appear after a robustness "
+                        "transformation completes for this configuration."
+                    )
+                else:
+                    st.caption(
+                        "These comparisons are exploratory. Positive oriented differences favor "
+                        "asinh or RINT over Raw; global and within-outcome BH FDRs are both shown."
+                    )
                     render_plotly_chart(
-                        targeted_panel_overlap_figure(
-                            overlap,
-                            title="Fold-specific panel overlap with Raw",
+                        targeted_transform_comparison_figure(
+                            transform_comparisons,
+                            block_labels=PREDICTION_BLOCK_LABELS,
+                            model_labels=PREDICTION_MODEL_LABELS,
+                            title="Transformation sensitivity: paired donor-averaged OOF performance",
                         ),
                         use_container_width=True,
                         config={"displaylogo": False},
                     )
-                    k_summary = overlap.groupby(
-                        "transformed_scale", observed=True
-                    ).agg(
-                        folds=("outer_fold", "size"),
-                        median_raw_k=("raw_k", "median"),
-                        median_transformed_k=("transformed_k", "median"),
-                        median_jaccard=("jaccard", "median"),
-                    ).reset_index()
-                    filterable_dataframe(
-                        k_summary,
-                        table_key="targeted_transform_k_summary",
-                        table_name="K and panel-overlap summary",
-                        use_container_width=True,
-                        hide_index=True,
-                    )
-            if not transform_comparisons.empty:
-                st.download_button(
-                    "Download transformation sensitivity (TSV)",
-                    data=dataframe_to_tsv_bytes(transform_comparisons),
-                    file_name="targeted_lioness_transformation_sensitivity.tsv",
-                    mime="text/tab-separated-values",
-                )
-
-    with source_tab:
-        source_rows = []
-        for source_id, values in source_registry.items():
-            module_counts = values.get("module_counts", {})
-            assignment_counts = values.get("assignment_counts", {})
-            source_rows.append(
-                {
-                    "eigengene_source": source_id,
-                    "label": values.get(
-                        "label", EIGENGENE_SOURCE_LABELS.get(source_id, source_id)
-                    ),
-                    "status": values.get("status", "unavailable"),
-                    "selectable": bool(values.get("selectable", False)),
-                    "partition_level": values.get("partition_level"),
-                    "tissue_scoped_modules": values.get("tissue_scoped_modules"),
-                    "ac_modules": module_counts.get("AC"),
-                    "dlpfc_modules": module_counts.get("DLPFC"),
-                    "pcg_modules": module_counts.get("PCG"),
-                    "assigned_tissue_genes": (
-                        sum(assignment_counts.values()) if assignment_counts else None
-                    ),
-                    "raw_configurations": values.get("raw_configurations", 0),
-                }
-            )
-        if source_rows:
-            filterable_dataframe(
-                pd.DataFrame(source_rows),
-                table_key="targeted_eigengene_source_registry",
-                table_name="Eigengene-source availability",
-                use_container_width=True,
-                hide_index=True,
-            )
-        if fdr_masked_selection or score_transform != "raw":
-            st.info(
-                "Independent eigengene-source comparisons are available only for the "
-                "all-edge Raw catalog. This selection retains the matched multi-tissue source."
-            )
-        else:
-            source_table = "hedges_oof_performance" if hedges_selection else "oof_performance"
-            source_performance = cached_targeted_prediction_table(
-                source_table,
-                _targeted_filters(
-                    evidence_tier=evidence_tier,
-                    module_definition=module_definition,
-                    network_method=network_method,
-                    panel_strategy=panel_strategy,
-                    model_outcome=outcome,
-                    edge_mask=edge_mask,
-                    score_normalization="standard_pruned",
-                    score_transform="raw",
-                ),
-            )
-            completed_sources = (
-                set(hedges_manifest.get("eigengene_sources", []))
-                if hedges_selection
-                else {
-                    source
-                    for source, values in source_registry.items()
-                    if bool(values.get("selectable", False))
-                }
-            )
-            source_performance = source_performance.loc[
-                source_performance["model_variant"].isin(transcriptomic_variants)
-                & source_performance["eigengene_source"].isin(completed_sources)
-            ].copy()
-            source_variant_order = [
-                value
-                for value in (
-                    "transcriptomics_only",
-                    "covariates_plus_transcriptomics",
-                    "network_plus_transcriptomics",
-                    "covariates_plus_network_plus_transcriptomics",
-                )
-                if value in set(source_performance["model_variant"].astype(str))
-            ]
-            if source_variant_order:
-                source_variant = st.selectbox(
-                    "Source-comparison model",
-                    options=source_variant_order,
-                    format_func=lambda value: PREDICTION_MODEL_LABELS.get(value, value),
-                    key="targeted_eigengene_source_model_variant",
-                )
-                source_metric_rows = source_performance.loc[
-                    source_performance["model_variant"].eq(source_variant)
-                    & source_performance["metric"].eq(primary_metric)
-                ].copy()
-                if not source_metric_rows.empty:
-                    source_metric_rows["model_variant"] = source_metric_rows[
-                        "eigengene_source"
-                    ]
                     render_plotly_chart(
-                        prediction_performance_figure(
-                            source_metric_rows,
-                            metric=primary_metric,
+                        targeted_transform_heatmap_figure(
+                            transform_comparisons,
                             block_labels=PREDICTION_BLOCK_LABELS,
                             block_order=PREDICTION_BLOCK_ORDER,
-                            model_labels=EIGENGENE_SOURCE_LABELS,
-                            title="OOF performance by eigengene source",
+                            model_labels=PREDICTION_MODEL_LABELS,
+                            title="Oriented primary-metric difference versus Raw",
                         ),
                         use_container_width=True,
                         config={"displaylogo": False},
                     )
-                predictor_counts = source_performance.loc[
-                    source_performance["model_variant"].eq(source_variant),
-                    [
-                        "eigengene_source", "predictor_block",
-                        "n_transcriptomic_predictors",
-                    ],
-                ].drop_duplicates()
-                if not predictor_counts.empty:
-                    predictor_counts["eigengene_source"] = predictor_counts[
-                        "eigengene_source"
-                    ].map(lambda value: EIGENGENE_SOURCE_LABELS.get(value, value))
-                    predictor_counts["predictor_block"] = predictor_counts[
-                        "predictor_block"
-                    ].map(lambda value: PREDICTION_BLOCK_LABELS.get(value, value))
                     filterable_dataframe(
-                        predictor_counts.sort_values(
-                            ["eigengene_source", "n_transcriptomic_predictors"]
-                        ),
-                        table_key="targeted_eigengene_source_predictor_counts",
-                        table_name="Eigengene predictor counts",
+                        transform_comparisons,
+                        table_key="targeted_transform_comparisons",
+                        table_name="Paired transformation comparisons",
                         use_container_width=True,
                         hide_index=True,
                     )
-                if st.checkbox(
-                    "Load outer-fold source robustness",
-                    value=False,
-                    key="targeted_load_eigengene_source_folds",
-                    help="Loads the larger fold-level table only when requested.",
+                if panel_strategy != "all_modules":
+                    selection_outcome = str(
+                        outcome_catalog.loc[
+                            outcome_catalog["panel_strategy"].eq(panel_strategy),
+                            "selection_outcome",
+                        ].iloc[0]
+                    )
+                    overlap = cached_targeted_prediction_table(
+                        "panel_transform_overlap",
+                        _targeted_filters(
+                            module_definition=module_definition,
+                            network_method=network_method,
+                            panel_strategy=panel_strategy,
+                            selection_outcome=selection_outcome,
+                        ),
+                    )
+                    if not overlap.empty:
+                        render_plotly_chart(
+                            targeted_panel_overlap_figure(
+                                overlap,
+                                title="Fold-specific panel overlap with Raw",
+                            ),
+                            use_container_width=True,
+                            config={"displaylogo": False},
+                        )
+                        k_summary = overlap.groupby(
+                            "transformed_scale", observed=True
+                        ).agg(
+                            folds=("outer_fold", "size"),
+                            median_raw_k=("raw_k", "median"),
+                            median_transformed_k=("transformed_k", "median"),
+                            median_jaccard=("jaccard", "median"),
+                        ).reset_index()
+                        filterable_dataframe(
+                            k_summary,
+                            table_key="targeted_transform_k_summary",
+                            table_name="K and panel-overlap summary",
+                            use_container_width=True,
+                            hide_index=True,
+                        )
+                if not transform_comparisons.empty:
+                    st.download_button(
+                        "Download transformation sensitivity (TSV)",
+                        data=dataframe_to_tsv_bytes(transform_comparisons),
+                        file_name="targeted_lioness_transformation_sensitivity.tsv",
+                        mime="text/tab-separated-values",
+                    )
+
+    with source_tab:
+        if tab_is_open(source_tab):
+            source_rows = []
+            for source_id, values in source_registry.items():
+                module_counts = values.get("module_counts", {})
+                assignment_counts = values.get("assignment_counts", {})
+                source_rows.append(
+                    {
+                        "eigengene_source": source_id,
+                        "label": values.get(
+                            "label", EIGENGENE_SOURCE_LABELS.get(source_id, source_id)
+                        ),
+                        "status": values.get("status", "unavailable"),
+                        "selectable": bool(values.get("selectable", False)),
+                        "partition_level": values.get("partition_level"),
+                        "tissue_scoped_modules": values.get("tissue_scoped_modules"),
+                        "ac_modules": module_counts.get("AC"),
+                        "dlpfc_modules": module_counts.get("DLPFC"),
+                        "pcg_modules": module_counts.get("PCG"),
+                        "assigned_tissue_genes": (
+                            sum(assignment_counts.values()) if assignment_counts else None
+                        ),
+                        "raw_configurations": values.get("raw_configurations", 0),
+                    }
+                )
+            if source_rows:
+                filterable_dataframe(
+                    pd.DataFrame(source_rows),
+                    table_key="targeted_eigengene_source_registry",
+                    table_name="Eigengene-source availability",
+                    use_container_width=True,
+                    hide_index=True,
+                )
+            if fdr_masked_selection or score_transform != "raw":
+                st.info(
+                    "Independent eigengene-source comparisons are available only for the "
+                    "all-edge Raw catalog. This selection retains the matched multi-tissue source."
+                )
+            else:
+                source_table = "hedges_oof_performance" if hedges_selection else "oof_performance"
+                source_performance = cached_targeted_prediction_table(
+                    source_table,
+                    _targeted_filters(
+                        evidence_tier=evidence_tier,
+                        module_definition=module_definition,
+                        network_method=network_method,
+                        panel_strategy=panel_strategy,
+                        model_outcome=outcome,
+                        edge_mask=edge_mask,
+                        score_normalization="standard_pruned",
+                        score_transform="raw",
+                    ),
+                )
+                completed_sources = (
+                    set(hedges_manifest.get("eigengene_sources", []))
+                    if hedges_selection
+                    else {
+                        source
+                        for source, values in source_registry.items()
+                        if bool(values.get("selectable", False))
+                    }
+                )
+                source_performance = source_performance.loc[
+                    source_performance["model_variant"].isin(transcriptomic_variants)
+                    & source_performance["eigengene_source"].isin(completed_sources)
+                ].copy()
+                source_variant_order = [
+                    value
+                    for value in (
+                        "transcriptomics_only",
+                        "covariates_plus_transcriptomics",
+                        "network_plus_transcriptomics",
+                        "covariates_plus_network_plus_transcriptomics",
+                    )
+                    if value in set(source_performance["model_variant"].astype(str))
+                ]
+                if source_variant_order:
+                    source_variant = st.selectbox(
+                        "Source-comparison model",
+                        options=source_variant_order,
+                        format_func=lambda value: PREDICTION_MODEL_LABELS.get(value, value),
+                        key="targeted_eigengene_source_model_variant",
+                    )
+                    source_metric_rows = source_performance.loc[
+                        source_performance["model_variant"].eq(source_variant)
+                        & source_performance["metric"].eq(primary_metric)
+                    ].copy()
+                    if not source_metric_rows.empty:
+                        source_metric_rows["model_variant"] = source_metric_rows[
+                            "eigengene_source"
+                        ]
+                        render_plotly_chart(
+                            prediction_performance_figure(
+                                source_metric_rows,
+                                metric=primary_metric,
+                                block_labels=PREDICTION_BLOCK_LABELS,
+                                block_order=PREDICTION_BLOCK_ORDER,
+                                model_labels=EIGENGENE_SOURCE_LABELS,
+                                title="OOF performance by eigengene source",
+                            ),
+                            use_container_width=True,
+                            config={"displaylogo": False},
+                        )
+                    predictor_counts = source_performance.loc[
+                        source_performance["model_variant"].eq(source_variant),
+                        [
+                            "eigengene_source", "predictor_block",
+                            "n_transcriptomic_predictors",
+                        ],
+                    ].drop_duplicates()
+                    if not predictor_counts.empty:
+                        predictor_counts["eigengene_source"] = predictor_counts[
+                            "eigengene_source"
+                        ].map(lambda value: EIGENGENE_SOURCE_LABELS.get(value, value))
+                        predictor_counts["predictor_block"] = predictor_counts[
+                            "predictor_block"
+                        ].map(lambda value: PREDICTION_BLOCK_LABELS.get(value, value))
+                        filterable_dataframe(
+                            predictor_counts.sort_values(
+                                ["eigengene_source", "n_transcriptomic_predictors"]
+                            ),
+                            table_key="targeted_eigengene_source_predictor_counts",
+                            table_name="Eigengene predictor counts",
+                            use_container_width=True,
+                            hide_index=True,
+                        )
+                    if st.checkbox(
+                        "Load outer-fold source robustness",
+                        value=False,
+                        key="targeted_load_eigengene_source_folds",
+                        help="Loads the larger fold-level table only when requested.",
+                    ):
+                        source_folds = cached_targeted_prediction_table(
+                            "hedges_fold_performance" if hedges_selection else "fold_performance",
+                            _targeted_filters(
+                                evidence_tier=evidence_tier,
+                                module_definition=module_definition,
+                                network_method=network_method,
+                                panel_strategy=panel_strategy,
+                                model_outcome=outcome,
+                                edge_mask=edge_mask,
+                                score_normalization="standard_pruned",
+                                score_transform="raw",
+                                model_variant=source_variant,
+                                metric=primary_metric,
+                            ),
+                        )
+                        source_folds = source_folds.loc[
+                            source_folds["eigengene_source"].isin(completed_sources)
+                        ].copy()
+                        if not source_folds.empty:
+                            source_folds["source_block"] = source_folds.apply(
+                                lambda row: (
+                                    f"{row['predictor_block']}__{row['eigengene_source']}"
+                                ),
+                                axis=1,
+                            )
+                            source_block_labels = {
+                                value: (
+                                    f"{PREDICTION_BLOCK_LABELS.get(value.split('__', 1)[0], value)} · "
+                                    f"{EIGENGENE_SOURCE_LABELS.get(value.split('__', 1)[1], value)}"
+                                )
+                                for value in source_folds["source_block"].astype(str).unique()
+                            }
+                            source_folds["predictor_block"] = source_folds["source_block"]
+                            render_plotly_chart(
+                                targeted_fold_robustness_figure(
+                                    source_folds,
+                                    metric=primary_metric,
+                                    block_labels=source_block_labels,
+                                    title="Outer-fold robustness by eigengene source",
+                                ),
+                                use_container_width=True,
+                                config={"displaylogo": False},
+                            )
+                if hedges_selection:
+                    st.info(
+                        "The chart and fold view above compare the two independent regional "
+                        "eigengene sources under the selected fold-local Hedges’ g mask. Paired "
+                        "bootstrap source intervals will be added at final reconciliation."
+                    )
+                    source_comparisons = pd.DataFrame()
+                elif "targeted_eigengene_source_comparisons.parquet" not in manifest.get(
+                    "files", {}
                 ):
-                    source_folds = cached_targeted_prediction_table(
-                        "hedges_fold_performance" if hedges_selection else "fold_performance",
+                    st.info(
+                        "Paired source-comparison intervals will appear after the first "
+                        "independent regional eigengene source finishes and passes validation."
+                    )
+                    source_comparisons = pd.DataFrame()
+                else:
+                    source_comparisons = cached_targeted_prediction_table(
+                        "eigengene_source_comparisons",
                         _targeted_filters(
                             evidence_tier=evidence_tier,
                             module_definition=module_definition,
                             network_method=network_method,
                             panel_strategy=panel_strategy,
                             model_outcome=outcome,
-                            edge_mask=edge_mask,
-                            score_normalization="standard_pruned",
                             score_transform="raw",
-                            model_variant=source_variant,
-                            metric=primary_metric,
                         ),
                     )
-                    source_folds = source_folds.loc[
-                        source_folds["eigengene_source"].isin(completed_sources)
+                    source_comparisons = source_comparisons.loc[
+                        source_comparisons["source_a"].eq(eigengene_source)
+                        | source_comparisons["source_b"].eq(eigengene_source)
                     ].copy()
-                    if not source_folds.empty:
-                        source_folds["source_block"] = source_folds.apply(
-                            lambda row: (
-                                f"{row['predictor_block']}__{row['eigengene_source']}"
-                            ),
-                            axis=1,
+                if source_comparisons.empty:
+                    if (
+                        not hedges_selection
+                        and "targeted_eigengene_source_comparisons.parquet" in manifest.get(
+                        "files", {}
                         )
-                        source_block_labels = {
-                            value: (
-                                f"{PREDICTION_BLOCK_LABELS.get(value.split('__', 1)[0], value)} · "
-                                f"{EIGENGENE_SOURCE_LABELS.get(value.split('__', 1)[1], value)}"
-                            )
-                            for value in source_folds["source_block"].astype(str).unique()
-                        }
-                        source_folds["predictor_block"] = source_folds["source_block"]
-                        render_plotly_chart(
-                            targeted_fold_robustness_figure(
-                                source_folds,
-                                metric=primary_metric,
-                                block_labels=source_block_labels,
-                                title="Outer-fold robustness by eigengene source",
-                            ),
-                            use_container_width=True,
-                            config={"displaylogo": False},
-                        )
-            if hedges_selection:
-                st.info(
-                    "The chart and fold view above compare the two independent regional "
-                    "eigengene sources under the selected fold-local Hedges’ g mask. Paired "
-                    "bootstrap source intervals will be added at final reconciliation."
-                )
-                source_comparisons = pd.DataFrame()
-            elif "targeted_eigengene_source_comparisons.parquet" not in manifest.get(
-                "files", {}
-            ):
-                st.info(
-                    "Paired source-comparison intervals will appear after the first "
-                    "independent regional eigengene source finishes and passes validation."
-                )
-                source_comparisons = pd.DataFrame()
-            else:
-                source_comparisons = cached_targeted_prediction_table(
-                    "eigengene_source_comparisons",
-                    _targeted_filters(
-                        evidence_tier=evidence_tier,
-                        module_definition=module_definition,
-                        network_method=network_method,
-                        panel_strategy=panel_strategy,
-                        model_outcome=outcome,
-                        score_transform="raw",
-                    ),
-                )
-                source_comparisons = source_comparisons.loc[
-                    source_comparisons["source_a"].eq(eigengene_source)
-                    | source_comparisons["source_b"].eq(eigengene_source)
-                ].copy()
-            if source_comparisons.empty:
-                if (
-                    not hedges_selection
-                    and "targeted_eigengene_source_comparisons.parquet" in manifest.get(
-                    "files", {}
+                    ):
+                        st.info("No paired source comparison matches the selected analysis.")
+                else:
+                    st.caption(
+                        "Exploratory paired comparisons use identical donors and outer folds. "
+                        "Positive differences favor Source A. Global and within-outcome BH FDRs "
+                        "are retained; these comparisons do not change the prespecified primary tests."
                     )
-                ):
-                    st.info("No paired source comparison matches the selected analysis.")
-            else:
-                st.caption(
-                    "Exploratory paired comparisons use identical donors and outer folds. "
-                    "Positive differences favor Source A. Global and within-outcome BH FDRs "
-                    "are retained; these comparisons do not change the prespecified primary tests."
-                )
-                render_plotly_chart(
-                    targeted_eigengene_source_comparison_figure(
-                        source_comparisons,
-                        block_labels=PREDICTION_BLOCK_LABELS,
-                        model_labels=PREDICTION_MODEL_LABELS,
-                        title="Eigengene-source sensitivity: paired OOF performance",
-                    ),
-                    use_container_width=True,
-                    config={"displaylogo": False},
-                )
-                filterable_dataframe(
-                    source_comparisons,
-                    table_key="targeted_eigengene_source_comparisons",
-                    table_name="Paired eigengene-source comparisons",
-                    use_container_width=True,
-                    hide_index=True,
-                )
-                st.download_button(
-                    "Download eigengene-source comparisons (TSV)",
-                    data=dataframe_to_tsv_bytes(source_comparisons),
-                    file_name="targeted_lioness_eigengene_source_comparisons.tsv",
-                    mime="text/tab-separated-values",
-                )
-
-    with panel_tab:
-        if panel_strategy == "all_modules":
-            st.info("All-module benchmark uses no data-derived targeted panel.")
-        else:
-            panel_filters = _targeted_filters(
-                module_definition=module_definition,
-                network_method=network_method,
-                panel_strategy=panel_strategy,
-                selection_outcome=str(outcome_catalog.loc[
-                    outcome_catalog["panel_strategy"].eq(panel_strategy), "selection_outcome"
-                ].iloc[0]),
-                score_transform=score_transform,
-            )
-            consensus = cached_targeted_prediction_table("consensus_panels", panel_filters)
-            selection = cached_targeted_prediction_table("panel_selection", panel_filters)
-            if consensus.empty:
-                st.info("Consensus selection results are unavailable for this panel.")
-            else:
-                render_plotly_chart(
-                    targeted_selection_frequency_figure(
-                        consensus,
-                        title="Display-only consensus panel stability",
-                    ),
-                    use_container_width=True,
-                    config={"displaylogo": False},
-                )
-                st.caption(
-                    "KEGG annotations were joined only after selection and are interpretive only."
-                )
-                filterable_dataframe(
-                    consensus,
-                    table_key="targeted_consensus_panel",
-                    table_name="Targeted consensus panel",
-                    use_container_width=True,
-                    hide_index=True,
-                )
-                st.download_button(
-                    "Download consensus panel (TSV)",
-                    data=dataframe_to_tsv_bytes(consensus),
-                    file_name="targeted_lioness_consensus_panel.tsv",
-                    mime="text/tab-separated-values",
-                )
-            if not selection.empty:
-                k_distribution = (
-                    selection[["outer_repeat", "outer_fold", "selected_k"]]
-                    .drop_duplicates()
-                    .value_counts("selected_k")
-                    .rename("outer_folds")
-                    .reset_index()
-                )
-                filterable_dataframe(
-                    k_distribution,
-                    table_key="targeted_k_distribution",
-                    table_name="One-standard-error K distribution",
-                    use_container_width=True,
-                    hide_index=True,
-                )
-
-    with diagnostic_tab:
-        blocks = ordered_prediction_blocks(selected["predictor_block"])
-        diagnostic_block = st.selectbox(
-            "OOF diagnostic predictor block",
-            options=blocks,
-            format_func=lambda value: PREDICTION_BLOCK_LABELS.get(value, value),
-            key="targeted_diagnostic_block",
-        )
-        variants = selected.loc[
-            selected["predictor_block"].eq(diagnostic_block), "model_variant"
-        ].drop_duplicates().tolist()
-        diagnostic_variant = st.selectbox(
-            "OOF diagnostic model",
-            options=variants,
-            format_func=lambda value: PREDICTION_MODEL_LABELS.get(value, value),
-            index=variants.index("covariates_plus_network") if "covariates_plus_network" in variants else 0,
-            key="targeted_diagnostic_variant",
-        )
-        diagnostics = cached_targeted_prediction_table(
-            diagnostic_table,
-            _targeted_filters(
-                evidence_tier=evidence_tier,
-                module_definition=module_definition,
-                network_method=network_method,
-                panel_strategy=panel_strategy,
-                model_outcome=outcome,
-                predictor_block=diagnostic_block,
-                model_variant=diagnostic_variant,
-                edge_mask=edge_mask,
-                score_normalization=score_normalization,
-                score_transform=score_transform,
-                eigengene_source=(
-                    eigengene_source
-                    if diagnostic_variant in transcriptomic_variants
-                    else "not_applicable"
-                ),
-            ),
-        )
-        if diagnostics.empty:
-            st.info("OOF donor diagnostics are unavailable for this model.")
-        elif outcome in {"diagnosis_binary", "diagnosis_three_class", "parkinsonism", "clusters"}:
-            confusion = (
-                diagnostics.groupby(["target", "predicted"], observed=True)
-                .size().rename("n").reset_index()
-                .rename(columns={"target": "actual", "predicted": "predicted_class"})
-            )
-            render_plotly_chart(
-                prediction_confusion_figure(confusion, title="Donor-averaged OOF confusion matrix"),
-                use_container_width=True,
-                config={"displaylogo": False},
-            )
-            diagnostic_curves = classification_diagnostic_rows(diagnostics)
-            if not diagnostic_curves.empty:
-                curve_columns = st.columns(3)
-                for curve_column, curve_name in zip(
-                    curve_columns,
-                    ("ROC", "Precision-recall", "Calibration"),
-                    strict=True,
-                ):
-                    curve_column.plotly_chart(
-                        prediction_curve_figure(
-                            diagnostic_curves,
-                            curve=curve_name,
-                            title=f"OOF {curve_name}",
+                    render_plotly_chart(
+                        targeted_eigengene_source_comparison_figure(
+                            source_comparisons,
+                            block_labels=PREDICTION_BLOCK_LABELS,
+                            model_labels=PREDICTION_MODEL_LABELS,
+                            title="Eigengene-source sensitivity: paired OOF performance",
                         ),
                         use_container_width=True,
                         config={"displaylogo": False},
                     )
-            if len([column for column in diagnostics if column.startswith("probability_")]) == 2:
+                    filterable_dataframe(
+                        source_comparisons,
+                        table_key="targeted_eigengene_source_comparisons",
+                        table_name="Paired eigengene-source comparisons",
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+                    st.download_button(
+                        "Download eigengene-source comparisons (TSV)",
+                        data=dataframe_to_tsv_bytes(source_comparisons),
+                        file_name="targeted_lioness_eigengene_source_comparisons.tsv",
+                        mime="text/tab-separated-values",
+                    )
+
+    with panel_tab:
+        if tab_is_open(panel_tab):
+            if panel_strategy == "all_modules":
+                st.info("All-module benchmark uses no data-derived targeted panel.")
+            else:
+                panel_filters = _targeted_filters(
+                    module_definition=module_definition,
+                    network_method=network_method,
+                    panel_strategy=panel_strategy,
+                    selection_outcome=str(outcome_catalog.loc[
+                        outcome_catalog["panel_strategy"].eq(panel_strategy), "selection_outcome"
+                    ].iloc[0]),
+                    score_transform=score_transform,
+                )
+                consensus = cached_targeted_prediction_table("consensus_panels", panel_filters)
+                selection = cached_targeted_prediction_table("panel_selection", panel_filters)
+                if consensus.empty:
+                    st.info("Consensus selection results are unavailable for this panel.")
+                else:
+                    render_plotly_chart(
+                        targeted_selection_frequency_figure(
+                            consensus,
+                            title="Display-only consensus panel stability",
+                        ),
+                        use_container_width=True,
+                        config={"displaylogo": False},
+                    )
+                    st.caption(
+                        "KEGG annotations were joined only after selection and are interpretive only."
+                    )
+                    filterable_dataframe(
+                        consensus,
+                        table_key="targeted_consensus_panel",
+                        table_name="Targeted consensus panel",
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+                    st.download_button(
+                        "Download consensus panel (TSV)",
+                        data=dataframe_to_tsv_bytes(consensus),
+                        file_name="targeted_lioness_consensus_panel.tsv",
+                        mime="text/tab-separated-values",
+                    )
+                if not selection.empty:
+                    k_distribution = (
+                        selection[["outer_repeat", "outer_fold", "selected_k"]]
+                        .drop_duplicates()
+                        .value_counts("selected_k")
+                        .rename("outer_folds")
+                        .reset_index()
+                    )
+                    filterable_dataframe(
+                        k_distribution,
+                        table_key="targeted_k_distribution",
+                        table_name="One-standard-error K distribution",
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+
+    with diagnostic_tab:
+        if tab_is_open(diagnostic_tab):
+            blocks = ordered_prediction_blocks(selected["predictor_block"])
+            diagnostic_block = st.selectbox(
+                "OOF diagnostic predictor block",
+                options=blocks,
+                format_func=lambda value: PREDICTION_BLOCK_LABELS.get(value, value),
+                key="targeted_diagnostic_block",
+            )
+            variants = selected.loc[
+                selected["predictor_block"].eq(diagnostic_block), "model_variant"
+            ].drop_duplicates().tolist()
+            diagnostic_variant = st.selectbox(
+                "OOF diagnostic model",
+                options=variants,
+                format_func=lambda value: PREDICTION_MODEL_LABELS.get(value, value),
+                index=variants.index("covariates_plus_network") if "covariates_plus_network" in variants else 0,
+                key="targeted_diagnostic_variant",
+            )
+            diagnostics = cached_targeted_prediction_table(
+                diagnostic_table,
+                _targeted_filters(
+                    evidence_tier=evidence_tier,
+                    module_definition=module_definition,
+                    network_method=network_method,
+                    panel_strategy=panel_strategy,
+                    model_outcome=outcome,
+                    predictor_block=diagnostic_block,
+                    model_variant=diagnostic_variant,
+                    edge_mask=edge_mask,
+                    score_normalization=score_normalization,
+                    score_transform=score_transform,
+                    eigengene_source=(
+                        eigengene_source
+                        if diagnostic_variant in transcriptomic_variants
+                        else "not_applicable"
+                    ),
+                ),
+            )
+            if diagnostics.empty:
+                st.info("OOF donor diagnostics are unavailable for this model.")
+            elif outcome in {"diagnosis_binary", "diagnosis_three_class", "parkinsonism", "clusters"}:
+                confusion = (
+                    diagnostics.groupby(["target", "predicted"], observed=True)
+                    .size().rename("n").reset_index()
+                    .rename(columns={"target": "actual", "predicted": "predicted_class"})
+                )
                 render_plotly_chart(
-                    prediction_threshold_figure(diagnostics, title="Donor-averaged OOF threshold diagnostics"),
+                    prediction_confusion_figure(confusion, title="Donor-averaged OOF confusion matrix"),
                     use_container_width=True,
                     config={"displaylogo": False},
                 )
-        else:
-            render_plotly_chart(
-                prediction_observed_figure(
-                    diagnostics,
-                    title="Observed versus donor-averaged OOF prediction",
-                ),
-                use_container_width=True,
-                config={"displaylogo": False},
-            )
-            render_plotly_chart(
-                prediction_error_figure(diagnostics, title="OOF residual diagnostics"),
-                use_container_width=True,
-                config={"displaylogo": False},
-            )
-        if not diagnostics.empty:
-            filterable_dataframe(
-                diagnostics,
-                table_key="targeted_oof_diagnostics",
-                table_name="Sanitized donor-averaged OOF predictions",
-                use_container_width=True,
-                hide_index=True,
-            )
-            st.download_button(
-                "Download selected OOF predictions (TSV)",
-                data=dataframe_to_tsv_bytes(diagnostics),
-                file_name="targeted_lioness_oof_predictions.tsv",
-                mime="text/tab-separated-values",
-            )
-
-    with coefficient_tab:
-        coefficients = cached_targeted_prediction_table(
-            coefficient_table,
-            _targeted_filters(
-                evidence_tier=evidence_tier,
-                module_definition=module_definition,
-                network_method=network_method,
-                panel_strategy=panel_strategy,
-                model_outcome=outcome,
-                edge_mask=edge_mask,
-                score_normalization=score_normalization,
-                score_transform=score_transform,
-            ),
-        )
-        coefficients = coefficients.loc[
-            ~coefficients["model_variant"].isin(transcriptomic_variants)
-            | coefficients["eigengene_source"].eq(eigengene_source)
-        ].copy()
-        if coefficients.empty:
-            st.info("No nonzero coefficients are available for this model family.")
-        else:
-            coefficient_block = st.selectbox(
-                "Targeted coefficient block",
-                options=ordered_prediction_blocks(coefficients["predictor_block"]),
-                format_func=lambda value: PREDICTION_BLOCK_LABELS.get(value, value),
-                key="targeted_coefficient_block",
-            )
-            coefficient_variants = coefficients.loc[
-                coefficients["predictor_block"].eq(coefficient_block),
-                "model_variant",
-            ].drop_duplicates().tolist()
-            coefficient_variant = st.selectbox(
-                "Targeted coefficient model",
-                options=coefficient_variants,
-                format_func=lambda value: PREDICTION_MODEL_LABELS.get(value, value),
-                index=(
-                    coefficient_variants.index("covariates_plus_network")
-                    if "covariates_plus_network" in coefficient_variants else 0
-                ),
-                key="targeted_coefficient_variant",
-            )
-            shown = coefficients.loc[
-                coefficients["predictor_block"].eq(coefficient_block)
-                & coefficients["model_variant"].eq(coefficient_variant)
-            ].copy()
-            shown = annotate_prediction_coefficients(
-                shown, cached_coefficient_kegg_scopes(module_definition)
-            )
-            render_plotly_chart(
-                prediction_coefficient_figure(
-                    shown,
-                    title="Largest standardized outer-fold coefficients",
-                ),
-                use_container_width=True,
-                config={"displaylogo": False},
-            )
-            st.caption("KEGG enrichment is interpretive only and never enters ranking or fitting.")
-            filterable_dataframe(
-                shown,
-                table_key="targeted_coefficients",
-                table_name="Fold coefficients with post-selection KEGG annotations",
-                use_container_width=True,
-                hide_index=True,
-            )
-            module_coefficients = shown.loc[shown["module"].notna()].copy()
-            if not module_coefficients.empty:
-                module_coefficients["component"] = (
-                    module_coefficients["feature_name"].astype(str)
-                    .str.split("__", n=1).str[1]
-                    .str.replace("MFBA9BA46", "DLPFC", regex=False)
+                diagnostic_curves = classification_diagnostic_rows(diagnostics)
+                if not diagnostic_curves.empty:
+                    curve_columns = st.columns(3)
+                    for curve_column, curve_name in zip(
+                        curve_columns,
+                        ("ROC", "Precision-recall", "Calibration"),
+                        strict=True,
+                    ):
+                        curve_column.plotly_chart(
+                            prediction_curve_figure(
+                                diagnostic_curves,
+                                curve=curve_name,
+                                title=f"OOF {curve_name}",
+                            ),
+                            use_container_width=True,
+                            config={"displaylogo": False},
+                        )
+                if len([column for column in diagnostics if column.startswith("probability_")]) == 2:
+                    render_plotly_chart(
+                        prediction_threshold_figure(diagnostics, title="Donor-averaged OOF threshold diagnostics"),
+                        use_container_width=True,
+                        config={"displaylogo": False},
+                    )
+            else:
+                render_plotly_chart(
+                    prediction_observed_figure(
+                        diagnostics,
+                        title="Observed versus donor-averaged OOF prediction",
+                    ),
+                    use_container_width=True,
+                    config={"displaylogo": False},
                 )
-                component_summary = module_coefficients.groupby(
-                    ["coefficient_label", "component"], observed=True
-                ).agg(
-                    outer_fold_coefficients=("standardized_coefficient", "size"),
-                    coefficient_sum=("standardized_coefficient", "sum"),
-                    absolute_coefficient_sum=("abs_standardized_coefficient", "sum"),
-                    median_absolute_coefficient=("abs_standardized_coefficient", "median"),
-                ).reset_index()
+                render_plotly_chart(
+                    prediction_error_figure(diagnostics, title="OOF residual diagnostics"),
+                    use_container_width=True,
+                    config={"displaylogo": False},
+                )
+            if not diagnostics.empty:
                 filterable_dataframe(
-                    component_summary,
-                    table_key="targeted_component_coefficients",
-                    table_name="Component-level coefficient summary",
+                    diagnostics,
+                    table_key="targeted_oof_diagnostics",
+                    table_name="Sanitized donor-averaged OOF predictions",
                     use_container_width=True,
                     hide_index=True,
                 )
+                st.download_button(
+                    "Download selected OOF predictions (TSV)",
+                    data=dataframe_to_tsv_bytes(diagnostics),
+                    file_name="targeted_lioness_oof_predictions.tsv",
+                    mime="text/tab-separated-values",
+                )
+
+    with coefficient_tab:
+        if tab_is_open(coefficient_tab):
+            coefficients = cached_targeted_prediction_table(
+                coefficient_table,
+                _targeted_filters(
+                    evidence_tier=evidence_tier,
+                    module_definition=module_definition,
+                    network_method=network_method,
+                    panel_strategy=panel_strategy,
+                    model_outcome=outcome,
+                    edge_mask=edge_mask,
+                    score_normalization=score_normalization,
+                    score_transform=score_transform,
+                ),
+            )
+            coefficients = coefficients.loc[
+                ~coefficients["model_variant"].isin(transcriptomic_variants)
+                | coefficients["eigengene_source"].eq(eigengene_source)
+            ].copy()
+            if coefficients.empty:
+                st.info("No nonzero coefficients are available for this model family.")
+            else:
+                coefficient_block = st.selectbox(
+                    "Targeted coefficient block",
+                    options=ordered_prediction_blocks(coefficients["predictor_block"]),
+                    format_func=lambda value: PREDICTION_BLOCK_LABELS.get(value, value),
+                    key="targeted_coefficient_block",
+                )
+                coefficient_variants = coefficients.loc[
+                    coefficients["predictor_block"].eq(coefficient_block),
+                    "model_variant",
+                ].drop_duplicates().tolist()
+                coefficient_variant = st.selectbox(
+                    "Targeted coefficient model",
+                    options=coefficient_variants,
+                    format_func=lambda value: PREDICTION_MODEL_LABELS.get(value, value),
+                    index=(
+                        coefficient_variants.index("covariates_plus_network")
+                        if "covariates_plus_network" in coefficient_variants else 0
+                    ),
+                    key="targeted_coefficient_variant",
+                )
+                shown = coefficients.loc[
+                    coefficients["predictor_block"].eq(coefficient_block)
+                    & coefficients["model_variant"].eq(coefficient_variant)
+                ].copy()
+                shown = annotate_prediction_coefficients(
+                    shown, cached_coefficient_kegg_scopes(module_definition)
+                )
+                render_plotly_chart(
+                    prediction_coefficient_figure(
+                        shown,
+                        title="Largest standardized outer-fold coefficients",
+                    ),
+                    use_container_width=True,
+                    config={"displaylogo": False},
+                )
+                st.caption("KEGG enrichment is interpretive only and never enters ranking or fitting.")
+                filterable_dataframe(
+                    shown,
+                    table_key="targeted_coefficients",
+                    table_name="Fold coefficients with post-selection KEGG annotations",
+                    use_container_width=True,
+                    hide_index=True,
+                )
+                module_coefficients = shown.loc[shown["module"].notna()].copy()
+                if not module_coefficients.empty:
+                    module_coefficients["component"] = (
+                        module_coefficients["feature_name"].astype(str)
+                        .str.split("__", n=1).str[1]
+                        .str.replace("MFBA9BA46", "DLPFC", regex=False)
+                    )
+                    component_summary = module_coefficients.groupby(
+                        ["coefficient_label", "component"], observed=True
+                    ).agg(
+                        outer_fold_coefficients=("standardized_coefficient", "size"),
+                        coefficient_sum=("standardized_coefficient", "sum"),
+                        absolute_coefficient_sum=("abs_standardized_coefficient", "sum"),
+                        median_absolute_coefficient=("abs_standardized_coefficient", "median"),
+                    ).reset_index()
+                    filterable_dataframe(
+                        component_summary,
+                        table_key="targeted_component_coefficients",
+                        table_name="Component-level coefficient summary",
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+                st.download_button(
+                    "Download selected coefficients (TSV)",
+                    data=dataframe_to_tsv_bytes(shown),
+                    file_name="targeted_lioness_coefficients.tsv",
+                    mime="text/tab-separated-values",
+                )
+
+    with tables_tab:
+        if tab_is_open(tables_tab):
+            filterable_dataframe(
+                selected,
+                table_key="targeted_oof_performance",
+                table_name="Donor-averaged OOF performance",
+                use_container_width=True,
+                hide_index=True,
+            )
             st.download_button(
-                "Download selected coefficients (TSV)",
-                data=dataframe_to_tsv_bytes(shown),
-                file_name="targeted_lioness_coefficients.tsv",
+                "Download selected OOF metrics (TSV)",
+                data=dataframe_to_tsv_bytes(selected),
+                file_name="targeted_lioness_nested_cv_metrics.tsv",
                 mime="text/tab-separated-values",
             )
 
-    with tables_tab:
-        filterable_dataframe(
-            selected,
-            table_key="targeted_oof_performance",
-            table_name="Donor-averaged OOF performance",
-            use_container_width=True,
-            hide_index=True,
-        )
-        st.download_button(
-            "Download selected OOF metrics (TSV)",
-            data=dataframe_to_tsv_bytes(selected),
-            file_name="targeted_lioness_nested_cv_metrics.tsv",
-            mime="text/tab-separated-values",
-        )
-
     with methods_tab:
-        st.markdown(
-            "Each outer-test fold is excluded from the LIONESS reference, panel ranking, "
-            "redundancy pruning, K selection, preprocessing, and elastic-net tuning. Standard "
-            "LIONESS uses outer-training donors; Control-referenced LIONESS uses outer-training "
-            "Controls. Test donors are add-one scored against the frozen reference. Panel size "
-            "and regularization are selected inside the outer-training partition."
-        )
-        st.markdown(
-            "**Score transformations.** Raw uses `metric_raw` and is the only primary scale. "
-            "asinh applies `arcsinh(metric_raw)`. RINT uses average ranks and is fitted anew "
-            "inside every stability-selection subsample, inner-training fold, and outer-training "
-            "fold; validation/test values are mapped through the training-derived monotone "
-            "interpolation and clipped outside the training range. Panels and K may differ by "
-            "transformation."
-        )
-        st.markdown(
-            "**Transcriptomic comparator.** For every module, tissue-specific PCA1 "
-            "eigengenes use training-only gene medians, scaling, loadings, and deterministic "
-            "sign alignment. A single-tissue block uses that tissue; a tissue-pair block uses "
-            "the two represented tissues; pooled CT/TS and resolved blocks concatenate AC, "
-            "DLPFC, and PCG eigengenes without a second PCA. The matched source uses the same "
-            "frozen LIONESS panel. Independent single-region sources instead use all level-3 "
-            "regional modules from the represented tissues; joint models combine those "
-            "eigengenes with the unchanged fold-selected LIONESS panel. Expression never "
-            "contributes to LIONESS panel selection."
-        )
-        st.caption(
-            "Regional partitions are fixed unsupervised structures discovered from broader "
-            "expression cohorts. Eigengene preprocessing and PCA loadings are outer-training "
-            "only, but partition discovery itself is not external validation."
-        )
-        st.caption(
-            "The current fixed 70/30 held-out results are previously inspected sensitivity "
-            "data and cannot sort, tune, or modify a targeted panel. Module discovery used the "
-            "broader cohort, so this is not external validation."
-        )
-        st.json(manifest, expanded=False)
+        if tab_is_open(methods_tab):
+            st.markdown(
+                "Each outer-test fold is excluded from the LIONESS reference, panel ranking, "
+                "redundancy pruning, K selection, preprocessing, and elastic-net tuning. Standard "
+                "LIONESS uses outer-training donors; Control-referenced LIONESS uses outer-training "
+                "Controls. Test donors are add-one scored against the frozen reference. Panel size "
+                "and regularization are selected inside the outer-training partition."
+            )
+            st.markdown(
+                "**Score transformations.** Raw uses `metric_raw` and is the only primary scale. "
+                "asinh applies `arcsinh(metric_raw)`. RINT uses average ranks and is fitted anew "
+                "inside every stability-selection subsample, inner-training fold, and outer-training "
+                "fold; validation/test values are mapped through the training-derived monotone "
+                "interpolation and clipped outside the training range. Panels and K may differ by "
+                "transformation."
+            )
+            st.markdown(
+                "**Transcriptomic comparator.** For every module, tissue-specific PCA1 "
+                "eigengenes use training-only gene medians, scaling, loadings, and deterministic "
+                "sign alignment. A single-tissue block uses that tissue; a tissue-pair block uses "
+                "the two represented tissues; pooled CT/TS and resolved blocks concatenate AC, "
+                "DLPFC, and PCG eigengenes without a second PCA. The matched source uses the same "
+                "frozen LIONESS panel. Independent single-region sources instead use all level-3 "
+                "regional modules from the represented tissues; joint models combine those "
+                "eigengenes with the unchanged fold-selected LIONESS panel. Expression never "
+                "contributes to LIONESS panel selection."
+            )
+            st.caption(
+                "Regional partitions are fixed unsupervised structures discovered from broader "
+                "expression cohorts. Eigengene preprocessing and PCA loadings are outer-training "
+                "only, but partition discovery itself is not external validation."
+            )
+            st.caption(
+                "The current fixed 70/30 held-out results are previously inspected sensitivity "
+                "data and cannot sort, tune, or modify a targeted panel. Module discovery used the "
+                "broader cohort, so this is not external validation."
+            )
+            st.json(manifest, expanded=False)
 
 
 def render_prediction_view() -> None:
@@ -3241,337 +3275,344 @@ def render_prediction_view() -> None:
     summary_columns[2].metric("Primary metric", primary_metric)
     summary_columns[3].metric("Edge mask", PREDICTION_MASK_LABELS[edge_mask])
 
-    overview_tab, comparison_tab, diagnostics_tab, coefficient_tab, tables_tab, methods_tab = st.tabs(
-        ["Performance", "CT versus TS", "Diagnostics", "Coefficients", "Tables", "Methods"]
+    overview_tab, comparison_tab, diagnostics_tab, coefficient_tab, tables_tab, methods_tab = stateful_tabs(
+        ["Performance", "CT versus TS", "Diagnostics", "Coefficients", "Tables", "Methods"],
+        key="benchmark_prediction_tabs",
     )
     with overview_tab:
-        figure = prediction_performance_figure(
-            selected_performance,
-            metric=primary_metric,
-            block_labels=PREDICTION_BLOCK_LABELS,
-            block_order=PREDICTION_BLOCK_ORDER,
-            model_labels=PREDICTION_MODEL_LABELS,
-            title=f"Held-out {PREDICTION_OUTCOME_LABELS[outcome]} performance",
-        )
-        render_plotly_chart(figure, use_container_width=True, config={"displaylogo": False})
-        st.caption(
-            "Lower is better for CogDx MAE. Higher is better for all other primary "
-            "metrics; held-out R² may be negative when a model performs worse than "
-            "predicting the held-out outcome mean."
-        )
-        adjusted = performance.loc[
-            performance["model_variant"].eq("covariates_plus_network")
-            & performance["status"].eq("available")
-            & performance["metric"].eq(performance["primary_metric"])
-        ].copy()
-        adjusted.loc[~adjusted["higher_is_better"].astype(bool), "value"] *= -1
-        adjusted["metric"] = "primary_performance"
-        if not adjusted.empty:
-            render_plotly_chart(
-                prediction_heatmap_figure(
-                    adjusted,
-                    metric="primary_performance",
-                    block_labels=PREDICTION_BLOCK_LABELS,
-                    block_order=PREDICTION_BLOCK_ORDER,
-                    outcome_labels=PREDICTION_OUTCOME_LABELS,
-                    title="Covariate-adjusted held-out primary performance by outcome and component block",
-                ),
-                use_container_width=True,
-                config={"displaylogo": False},
+        if tab_is_open(overview_tab):
+            figure = prediction_performance_figure(
+                selected_performance,
+                metric=primary_metric,
+                block_labels=PREDICTION_BLOCK_LABELS,
+                block_order=PREDICTION_BLOCK_ORDER,
+                model_labels=PREDICTION_MODEL_LABELS,
+                title=f"Held-out {PREDICTION_OUTCOME_LABELS[outcome]} performance",
             )
+            render_plotly_chart(figure, use_container_width=True, config={"displaylogo": False})
             st.caption(
-                "Cells use each outcome's prespecified primary metric. CogDx is displayed as "
-                "negative MAE so that larger values consistently mean better performance; the "
-                "numerical scales are still not directly interchangeable across columns."
+                "Lower is better for CogDx MAE. Higher is better for all other primary "
+                "metrics; held-out R² may be negative when a model performs worse than "
+                "predicting the held-out outcome mean."
             )
-        if predictor_design == "edge_sums":
-            with st.expander("Whole-network retained-edge sums", expanded=False):
-                whole_network = cached_prediction_whole_network(
-                    reference_provenance=reference_provenance,
-                    module_definition=module_definition,
-                    network_method=network_method,
-                    edge_mask=edge_mask,
+            adjusted = performance.loc[
+                performance["model_variant"].eq("covariates_plus_network")
+                & performance["status"].eq("available")
+                & performance["metric"].eq(performance["primary_metric"])
+            ].copy()
+            adjusted.loc[~adjusted["higher_is_better"].astype(bool), "value"] *= -1
+            adjusted["metric"] = "primary_performance"
+            if not adjusted.empty:
+                render_plotly_chart(
+                    prediction_heatmap_figure(
+                        adjusted,
+                        metric="primary_performance",
+                        block_labels=PREDICTION_BLOCK_LABELS,
+                        block_order=PREDICTION_BLOCK_ORDER,
+                        outcome_labels=PREDICTION_OUTCOME_LABELS,
+                        title="Covariate-adjusted held-out primary performance by outcome and component block",
+                    ),
+                    use_container_width=True,
+                    config={"displaylogo": False},
                 )
                 st.caption(
-                    "Positive and negative magnitudes are the two independent model inputs. "
-                    "Signed and absolute sums are retained here for interpretation and download. "
-                    "These totals aggregate only retained within-module edges; no between-module "
-                    "edges are introduced."
+                    "Cells use each outcome's prespecified primary metric. CogDx is displayed as "
+                    "negative MAE so that larger values consistently mean better performance; the "
+                    "numerical scales are still not directly interchangeable across columns."
+                )
+            if predictor_design == "edge_sums":
+                with st.expander("Whole-network retained-edge sums", expanded=False):
+                    whole_network = cached_prediction_whole_network(
+                        reference_provenance=reference_provenance,
+                        module_definition=module_definition,
+                        network_method=network_method,
+                        edge_mask=edge_mask,
+                    )
+                    st.caption(
+                        "Positive and negative magnitudes are the two independent model inputs. "
+                        "Signed and absolute sums are retained here for interpretation and download. "
+                        "These totals aggregate only retained within-module edges; no between-module "
+                        "edges are introduced."
+                    )
+                    filterable_dataframe(
+                        whole_network,
+                        table_key="prediction_whole_network_features",
+                        table_name="Whole-network edge-sum predictors",
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+                    st.download_button(
+                        "Download whole-network predictor values (TSV)",
+                        data=dataframe_to_tsv_bytes(whole_network),
+                        file_name="lioness_prediction_whole_network_edge_sums.tsv",
+                        mime="text/tab-separated-values",
+                    )
+
+    with comparison_tab:
+        if tab_is_open(comparison_tab):
+            bootstrap = cached_prediction_bootstrap(
+                reference_provenance, module_definition, network_method, predictor_design, edge_mask,
+                score_normalization, None,
+            )
+            if bootstrap.empty:
+                st.info("CT-versus-TS bootstrap comparisons are unavailable for this selection.")
+            else:
+                render_plotly_chart(
+                    prediction_ct_ts_figure(
+                        bootstrap,
+                        outcome_labels=PREDICTION_OUTCOME_LABELS,
+                        title="Paired held-out CT-minus-TS performance with 95% bootstrap intervals",
+                    ),
+                    use_container_width=True,
+                    config={"displaylogo": False},
+                )
+                st.caption(
+                    "Positive values favor CT. For CogDx, the sign is reversed after calculating "
+                    "MAE so that positive still means better CT performance. Global BH covers all "
+                    "displayed prediction comparisons; within-outcome BH is also retained."
                 )
                 filterable_dataframe(
-                    whole_network,
-                    table_key="prediction_whole_network_features",
-                    table_name="Whole-network edge-sum predictors",
+                    bootstrap,
+                    table_key="prediction_bootstrap",
+                    table_name="CT versus TS bootstrap comparisons",
                     use_container_width=True,
                     hide_index=True,
                 )
-                st.download_button(
-                    "Download whole-network predictor values (TSV)",
-                    data=dataframe_to_tsv_bytes(whole_network),
-                    file_name="lioness_prediction_whole_network_edge_sums.tsv",
-                    mime="text/tab-separated-values",
-                )
-
-    with comparison_tab:
-        bootstrap = cached_prediction_bootstrap(
-            reference_provenance, module_definition, network_method, predictor_design, edge_mask,
-            score_normalization, None,
-        )
-        if bootstrap.empty:
-            st.info("CT-versus-TS bootstrap comparisons are unavailable for this selection.")
-        else:
-            render_plotly_chart(
-                prediction_ct_ts_figure(
-                    bootstrap,
-                    outcome_labels=PREDICTION_OUTCOME_LABELS,
-                    title="Paired held-out CT-minus-TS performance with 95% bootstrap intervals",
-                ),
-                use_container_width=True,
-                config={"displaylogo": False},
-            )
-            st.caption(
-                "Positive values favor CT. For CogDx, the sign is reversed after calculating "
-                "MAE so that positive still means better CT performance. Global BH covers all "
-                "displayed prediction comparisons; within-outcome BH is also retained."
-            )
-            filterable_dataframe(
-                bootstrap,
-                table_key="prediction_bootstrap",
-                table_name="CT versus TS bootstrap comparisons",
-                use_container_width=True,
-                hide_index=True,
-            )
 
     with diagnostics_tab:
-        available_blocks = [
-            block for block in PREDICTION_BLOCK_ORDER
-            if block in set(selected_performance["predictor_block"])
-        ]
-        diagnostic_block = st.selectbox(
-            "Diagnostic predictor block",
-            options=available_blocks,
-            format_func=lambda value: PREDICTION_BLOCK_LABELS[value],
-        )
-        diagnostic_variant = st.radio(
-            "Diagnostic model",
-            options=[
-                value
-                for value in (
-                    "network_only",
-                    "covariates_plus_network",
-                    "transcriptomics_only",
-                    "covariates_plus_transcriptomics",
-                    "network_plus_transcriptomics",
-                    "covariates_plus_network_plus_transcriptomics",
-                )
-                if value in set(selected_performance["model_variant"])
-            ],
-            format_func=lambda value: PREDICTION_MODEL_LABELS[value],
-            horizontal=True,
-        )
-        filters = {
-            "reference_provenance": reference_provenance,
-            "module_definition": module_definition,
-            "network_method": network_method,
-            "predictor_design": predictor_design,
-            "edge_mask": edge_mask,
-            "score_normalization": score_normalization,
-            "outcome": outcome,
-            "predictor_block": diagnostic_block,
-            "model_variant": diagnostic_variant,
-        }
-        diagnostics = cached_prediction_diagnostics(**filters)
-        if outcome in {"diagnosis_binary", "diagnosis_three_class", "parkinsonism"}:
-            curves = cached_prediction_curves(**filters)
-            confusion = cached_prediction_confusion(**filters)
-            if curves.empty:
-                st.info("Classification curves are unavailable for this fitted model.")
-            else:
-                curve_columns = st.columns(3)
-                for column, curve_name in zip(
-                    curve_columns, ["ROC", "Precision-recall", "Calibration"], strict=True
-                ):
-                    column.plotly_chart(
-                        prediction_curve_figure(
-                            curves, curve=curve_name,
-                            title=curve_name,
+        if tab_is_open(diagnostics_tab):
+            available_blocks = [
+                block for block in PREDICTION_BLOCK_ORDER
+                if block in set(selected_performance["predictor_block"])
+            ]
+            diagnostic_block = st.selectbox(
+                "Diagnostic predictor block",
+                options=available_blocks,
+                format_func=lambda value: PREDICTION_BLOCK_LABELS[value],
+            )
+            diagnostic_variant = st.radio(
+                "Diagnostic model",
+                options=[
+                    value
+                    for value in (
+                        "network_only",
+                        "covariates_plus_network",
+                        "transcriptomics_only",
+                        "covariates_plus_transcriptomics",
+                        "network_plus_transcriptomics",
+                        "covariates_plus_network_plus_transcriptomics",
+                    )
+                    if value in set(selected_performance["model_variant"])
+                ],
+                format_func=lambda value: PREDICTION_MODEL_LABELS[value],
+                horizontal=True,
+            )
+            filters = {
+                "reference_provenance": reference_provenance,
+                "module_definition": module_definition,
+                "network_method": network_method,
+                "predictor_design": predictor_design,
+                "edge_mask": edge_mask,
+                "score_normalization": score_normalization,
+                "outcome": outcome,
+                "predictor_block": diagnostic_block,
+                "model_variant": diagnostic_variant,
+            }
+            diagnostics = cached_prediction_diagnostics(**filters)
+            if outcome in {"diagnosis_binary", "diagnosis_three_class", "parkinsonism"}:
+                curves = cached_prediction_curves(**filters)
+                confusion = cached_prediction_confusion(**filters)
+                if curves.empty:
+                    st.info("Classification curves are unavailable for this fitted model.")
+                else:
+                    curve_columns = st.columns(3)
+                    for column, curve_name in zip(
+                        curve_columns, ["ROC", "Precision-recall", "Calibration"], strict=True
+                    ):
+                        column.plotly_chart(
+                            prediction_curve_figure(
+                                curves, curve=curve_name,
+                                title=curve_name,
+                            ),
+                            use_container_width=True,
+                            config={"displaylogo": False},
+                        )
+                if not confusion.empty:
+                    render_plotly_chart(
+                        prediction_confusion_figure(
+                            confusion, title="Held-out confusion matrix"
                         ),
                         use_container_width=True,
                         config={"displaylogo": False},
                     )
-            if not confusion.empty:
+                if outcome in {"diagnosis_binary", "parkinsonism"} and not diagnostics.empty:
+                    render_plotly_chart(
+                        prediction_threshold_figure(
+                            diagnostics, title="Held-out threshold diagnostics"
+                        ),
+                        use_container_width=True,
+                        config={"displaylogo": False},
+                    )
+            elif diagnostics.empty:
+                st.info("Held-out donor diagnostics are unavailable in the local cache.")
+            else:
                 render_plotly_chart(
-                    prediction_confusion_figure(
-                        confusion, title="Held-out confusion matrix"
+                    prediction_observed_figure(
+                        diagnostics,
+                        title=f"Observed versus held-out prediction: {PREDICTION_OUTCOME_LABELS[outcome]}",
                     ),
                     use_container_width=True,
                     config={"displaylogo": False},
                 )
-            if outcome in {"diagnosis_binary", "parkinsonism"} and not diagnostics.empty:
                 render_plotly_chart(
-                    prediction_threshold_figure(
-                        diagnostics, title="Held-out threshold diagnostics"
+                    prediction_error_figure(
+                        diagnostics,
+                        title="Held-out residual and error diagnostics",
                     ),
                     use_container_width=True,
                     config={"displaylogo": False},
                 )
-        elif diagnostics.empty:
-            st.info("Held-out donor diagnostics are unavailable in the local cache.")
-        else:
-            render_plotly_chart(
-                prediction_observed_figure(
+            if not diagnostics.empty:
+                filterable_dataframe(
                     diagnostics,
-                    title=f"Observed versus held-out prediction: {PREDICTION_OUTCOME_LABELS[outcome]}",
-                ),
-                use_container_width=True,
-                config={"displaylogo": False},
-            )
-            render_plotly_chart(
-                prediction_error_figure(
-                    diagnostics,
-                    title="Held-out residual and error diagnostics",
-                ),
-                use_container_width=True,
-                config={"displaylogo": False},
-            )
-        if not diagnostics.empty:
+                    table_key="prediction_diagnostics",
+                    table_name="Held-out prediction diagnostics",
+                    use_container_width=True,
+                    hide_index=True,
+                )
+                st.download_button(
+                    "Download selected held-out diagnostics (TSV)",
+                    data=dataframe_to_tsv_bytes(diagnostics),
+                    file_name="lioness_prediction_heldout_diagnostics.tsv",
+                    mime="text/tab-separated-values",
+                )
+
+    with coefficient_tab:
+        if tab_is_open(coefficient_tab):
+            coefficient_filters = {
+                "reference_provenance": reference_provenance,
+                "module_definition": module_definition,
+                "network_method": network_method,
+                "predictor_design": predictor_design,
+                "edge_mask": edge_mask,
+                "score_normalization": score_normalization,
+                "outcome": outcome,
+            }
+            coefficients = cached_prediction_coefficients(**coefficient_filters)
+            coefficients = coefficients.loc[
+                coefficients["model_variant"].isin(
+                    [
+                        "network_only",
+                        "covariates_plus_network",
+                        "transcriptomics_only",
+                        "covariates_plus_transcriptomics",
+                        "network_plus_transcriptomics",
+                        "covariates_plus_network_plus_transcriptomics",
+                    ]
+                )
+            ]
+            if coefficients.empty:
+                st.info("No nonzero influential coefficients are available for this selection.")
+            else:
+                coefficient_block = st.selectbox(
+                    "Coefficient predictor block",
+                    options=ordered_prediction_blocks(coefficients["predictor_block"]),
+                    format_func=lambda value: PREDICTION_BLOCK_LABELS.get(value, value),
+                )
+                coefficient_variant = st.radio(
+                    "Coefficient model",
+                    options=sorted(coefficients["model_variant"].unique()),
+                    format_func=lambda value: PREDICTION_MODEL_LABELS.get(value, value),
+                    horizontal=True,
+                    key="prediction_coefficient_variant",
+                )
+                shown = coefficients.loc[
+                    coefficients["predictor_block"].eq(coefficient_block)
+                    & coefficients["model_variant"].eq(coefficient_variant)
+                ].copy()
+                shown = annotate_prediction_coefficients(
+                    shown, cached_coefficient_kegg_scopes(module_definition)
+                )
+                render_plotly_chart(
+                    prediction_coefficient_figure(
+                        shown,
+                        title="Largest standardized module/component coefficients",
+                    ),
+                    use_container_width=True,
+                    config={"displaylogo": False},
+                )
+                filterable_dataframe(
+                    shown,
+                    table_key="prediction_coefficients",
+                    table_name="Prediction coefficients and KEGG annotations",
+                    use_container_width=True,
+                    hide_index=True,
+                )
+                module_coefficients = shown.loc[shown["module"].notna()].copy()
+                if not module_coefficients.empty:
+                    module_coefficients["component"] = (
+                        module_coefficients["feature_name"].astype(str)
+                        .str.split("__", n=1).str[1]
+                        .str.replace("MFBA9BA46", "DLPFC", regex=False)
+                    )
+                    component_summary = module_coefficients.groupby(
+                        ["coefficient_label", "component"], observed=True
+                    ).agg(
+                        modules_shown=("module", "nunique"),
+                        coefficient_sum=("standardized_coefficient", "sum"),
+                        absolute_coefficient_sum=("abs_standardized_coefficient", "sum"),
+                        median_absolute_coefficient=("abs_standardized_coefficient", "median"),
+                    ).reset_index()
+                    filterable_dataframe(
+                        component_summary,
+                        table_key="prediction_component_coefficients",
+                        table_name="Component-level coefficient summary",
+                        use_container_width=True,
+                        hide_index=True,
+                    )
+
+    with tables_tab:
+        if tab_is_open(tables_tab):
             filterable_dataframe(
-                diagnostics,
-                table_key="prediction_diagnostics",
-                table_name="Held-out prediction diagnostics",
+                selected_performance,
+                table_key="prediction_performance",
+                table_name="Held-out model metrics",
                 use_container_width=True,
                 hide_index=True,
             )
             st.download_button(
-                "Download selected held-out diagnostics (TSV)",
-                data=dataframe_to_tsv_bytes(diagnostics),
-                file_name="lioness_prediction_heldout_diagnostics.tsv",
+                "Download selected held-out metrics (TSV)",
+                data=dataframe_to_tsv_bytes(selected_performance),
+                file_name="lioness_prediction_heldout_metrics.tsv",
                 mime="text/tab-separated-values",
             )
 
-    with coefficient_tab:
-        coefficient_filters = {
-            "reference_provenance": reference_provenance,
-            "module_definition": module_definition,
-            "network_method": network_method,
-            "predictor_design": predictor_design,
-            "edge_mask": edge_mask,
-            "score_normalization": score_normalization,
-            "outcome": outcome,
-        }
-        coefficients = cached_prediction_coefficients(**coefficient_filters)
-        coefficients = coefficients.loc[
-            coefficients["model_variant"].isin(
-                [
-                    "network_only",
-                    "covariates_plus_network",
-                    "transcriptomics_only",
-                    "covariates_plus_transcriptomics",
-                    "network_plus_transcriptomics",
-                    "covariates_plus_network_plus_transcriptomics",
-                ]
-            )
-        ]
-        if coefficients.empty:
-            st.info("No nonzero influential coefficients are available for this selection.")
-        else:
-            coefficient_block = st.selectbox(
-                "Coefficient predictor block",
-                options=ordered_prediction_blocks(coefficients["predictor_block"]),
-                format_func=lambda value: PREDICTION_BLOCK_LABELS.get(value, value),
-            )
-            coefficient_variant = st.radio(
-                "Coefficient model",
-                options=sorted(coefficients["model_variant"].unique()),
-                format_func=lambda value: PREDICTION_MODEL_LABELS.get(value, value),
-                horizontal=True,
-                key="prediction_coefficient_variant",
-            )
-            shown = coefficients.loc[
-                coefficients["predictor_block"].eq(coefficient_block)
-                & coefficients["model_variant"].eq(coefficient_variant)
-            ].copy()
-            shown = annotate_prediction_coefficients(
-                shown, cached_coefficient_kegg_scopes(module_definition)
-            )
-            render_plotly_chart(
-                prediction_coefficient_figure(
-                    shown,
-                    title="Largest standardized module/component coefficients",
-                ),
-                use_container_width=True,
-                config={"displaylogo": False},
-            )
-            filterable_dataframe(
-                shown,
-                table_key="prediction_coefficients",
-                table_name="Prediction coefficients and KEGG annotations",
-                use_container_width=True,
-                hide_index=True,
-            )
-            module_coefficients = shown.loc[shown["module"].notna()].copy()
-            if not module_coefficients.empty:
-                module_coefficients["component"] = (
-                    module_coefficients["feature_name"].astype(str)
-                    .str.split("__", n=1).str[1]
-                    .str.replace("MFBA9BA46", "DLPFC", regex=False)
-                )
-                component_summary = module_coefficients.groupby(
-                    ["coefficient_label", "component"], observed=True
-                ).agg(
-                    modules_shown=("module", "nunique"),
-                    coefficient_sum=("standardized_coefficient", "sum"),
-                    absolute_coefficient_sum=("abs_standardized_coefficient", "sum"),
-                    median_absolute_coefficient=("abs_standardized_coefficient", "median"),
-                ).reset_index()
-                filterable_dataframe(
-                    component_summary,
-                    table_key="prediction_component_coefficients",
-                    table_name="Component-level coefficient summary",
-                    use_container_width=True,
-                    hide_index=True,
-                )
-
-    with tables_tab:
-        filterable_dataframe(
-            selected_performance,
-            table_key="prediction_performance",
-            table_name="Held-out model metrics",
-            use_container_width=True,
-            hide_index=True,
-        )
-        st.download_button(
-            "Download selected held-out metrics (TSV)",
-            data=dataframe_to_tsv_bytes(selected_performance),
-            file_name="lioness_prediction_heldout_metrics.tsv",
-            mime="text/tab-separated-values",
-        )
-
     with methods_tab:
-        st.markdown(
-            "Development-standard LIONESS uses all 314 development donors as its frozen "
-            "reference. Development donors are leave-one-out scored and held-out donors are "
-            "add-one scored. Development-Control LIONESS uses the 114 development Controls; "
-            "all other donors are add-one scored without using their outcome label. Differential "
-            "edge masks use only the 117 development AD and 114 development Controls. Models "
-            "use elastic-net regularization with five-fold development-only cross-validation "
-            "before one held-out evaluation. Logistic models use a 50/50 L1/L2 mix and tune "
-            "three regularization strengths; continuous models tune both the mixing fraction "
-            "and regularization strength."
-        )
-        st.markdown(
-            "Module eigengenes are fitted on development expression only and applied to the "
-            "held-out donors with frozen gene preprocessing and PCA loadings. Tissue and "
-            "tissue-pair blocks use only their represented regions; pooled blocks concatenate "
-            "AC, DLPFC, and PCG eigengenes. Transcriptomic-only and joint network–transcriptomic "
-            "models are displayed beside the dummy, demographic/APOE, and network models."
-        )
-        st.caption(
-            "For prediction only, 30 exact repeated full-cohort tissue–gene assignment "
-            "rows were removed before scoring in both reference designs. Existing "
-            "association analyses elsewhere in the app were not changed."
-        )
-        st.json(manifest, expanded=False)
+        if tab_is_open(methods_tab):
+            st.markdown(
+                "Development-standard LIONESS uses all 314 development donors as its frozen "
+                "reference. Development donors are leave-one-out scored and held-out donors are "
+                "add-one scored. Development-Control LIONESS uses the 114 development Controls; "
+                "all other donors are add-one scored without using their outcome label. Differential "
+                "edge masks use only the 117 development AD and 114 development Controls. Models "
+                "use elastic-net regularization with five-fold development-only cross-validation "
+                "before one held-out evaluation. Logistic models use a 50/50 L1/L2 mix and tune "
+                "three regularization strengths; continuous models tune both the mixing fraction "
+                "and regularization strength."
+            )
+            st.markdown(
+                "Module eigengenes are fitted on development expression only and applied to the "
+                "held-out donors with frozen gene preprocessing and PCA loadings. Tissue and "
+                "tissue-pair blocks use only their represented regions; pooled blocks concatenate "
+                "AC, DLPFC, and PCG eigengenes. Transcriptomic-only and joint network–transcriptomic "
+                "models are displayed beside the dummy, demographic/APOE, and network models."
+            )
+            st.caption(
+                "For prediction only, 30 exact repeated full-cohort tissue–gene assignment "
+                "rows were removed before scoring in both reference designs. Existing "
+                "association analyses elsewhere in the app were not changed."
+            )
+            st.json(manifest, expanded=False)
 
 
 try:
@@ -3678,45 +3719,49 @@ def render_partition_comparison_view() -> None:
         partition="Matched-donor full cohort"
     )
     structural = pd.concat([new_details, matched_details], ignore_index=True)
-    size_tab, entropy_tab, type_tab = st.tabs(
-        ["Module sizes", "Tissue-mixing entropy", "CT/TS composition"]
+    size_tab, entropy_tab, type_tab = stateful_tabs(
+        ["Module sizes", "Tissue-mixing entropy", "CT/TS composition"],
+        key="partition_structure_tabs",
     )
     with size_tab:
-        render_plotly_chart(
-            px.histogram(
-                structural, x="module_size", color="partition", barmode="overlay",
-                opacity=0.65, marginal="box", nbins=35,
-                labels={"module_size": "Genes per module"},
-                title="Module-size distributions",
-            ),
-            key="partition_size_distribution",
-        )
+        if tab_is_open(size_tab):
+            render_plotly_chart(
+                px.histogram(
+                    structural, x="module_size", color="partition", barmode="overlay",
+                    opacity=0.65, marginal="box", nbins=35,
+                    labels={"module_size": "Genes per module"},
+                    title="Module-size distributions",
+                ),
+                key="partition_size_distribution",
+            )
     with entropy_tab:
-        render_plotly_chart(
-            px.histogram(
-                structural, x="tissue_entropy_normalized", color="partition",
-                barmode="overlay", opacity=0.65, marginal="box", nbins=25,
-                labels={"tissue_entropy_normalized": "Normalized Shannon entropy"},
-                title="Continuous tissue-mixing distributions",
-            ),
-            key="partition_entropy_distribution",
-        )
+        if tab_is_open(entropy_tab):
+            render_plotly_chart(
+                px.histogram(
+                    structural, x="tissue_entropy_normalized", color="partition",
+                    barmode="overlay", opacity=0.65, marginal="box", nbins=25,
+                    labels={"tissue_entropy_normalized": "Normalized Shannon entropy"},
+                    title="Continuous tissue-mixing distributions",
+                ),
+                key="partition_entropy_distribution",
+            )
     with type_tab:
-        type_counts = (
-            structural.groupby(["partition", "cluster_type"], observed=True)
-            .size().rename("modules").reset_index()
-        )
-        type_counts["proportion"] = type_counts["modules"] / type_counts.groupby(
-            "partition", observed=True
-        )["modules"].transform("sum")
-        render_plotly_chart(
-            px.bar(
-                type_counts, x="partition", y="proportion", color="cluster_type",
-                barmode="stack", text="modules", title="CT/TS module proportions",
-                labels={"proportion": "Proportion of modules", "cluster_type": "Type"},
-            ),
-            key="partition_ct_ts_proportions",
-        )
+        if tab_is_open(type_tab):
+            type_counts = (
+                structural.groupby(["partition", "cluster_type"], observed=True)
+                .size().rename("modules").reset_index()
+            )
+            type_counts["proportion"] = type_counts["modules"] / type_counts.groupby(
+                "partition", observed=True
+            )["modules"].transform("sum")
+            render_plotly_chart(
+                px.bar(
+                    type_counts, x="partition", y="proportion", color="cluster_type",
+                    barmode="stack", text="modules", title="CT/TS module proportions",
+                    labels={"proportion": "Proportion of modules", "cluster_type": "Type"},
+                ),
+                key="partition_ct_ts_proportions",
+            )
     mapping_mode = st.radio(
         "Module correspondence",
         options=["best_many_to_one", "maximum_weight_one_to_one"],
@@ -3762,80 +3807,84 @@ def render_partition_comparison_view() -> None:
     association = cached_partition_comparison_table("association_concordance")
     mdc = cached_partition_comparison_table("mdc_concordance")
     kegg = cached_partition_comparison_table("kegg_concordance")
-    association_tab, mdc_tab, kegg_tab = st.tabs(
-        ["Association concordance", "MDC concordance", "KEGG overlap"]
+    association_tab, mdc_tab, kegg_tab = stateful_tabs(
+        ["Association concordance", "MDC concordance", "KEGG overlap"],
+        key="partition_concordance_tabs",
     )
     with association_tab:
-        if association.empty:
-            st.info("Association concordance will appear after the new statistics finish.")
-        else:
-            filters = {}
-            filter_columns = [
-                column for column in (
-                    "lioness_method", "metric_family", "component", "phenotype",
-                    "diagnosis_group", "scale", "correlation_method",
-                ) if column in association
-            ]
-            controls = st.columns(min(3, max(1, len(filter_columns))))
-            for index, column in enumerate(filter_columns):
-                options = sorted(association[column].dropna().astype(str).unique())
-                filters[column] = controls[index % len(controls)].selectbox(
-                    column.replace("_", " ").title(), options,
-                    key=f"partition_assoc_{column}",
+        if tab_is_open(association_tab):
+            if association.empty:
+                st.info("Association concordance will appear after the new statistics finish.")
+            else:
+                filters = {}
+                filter_columns = [
+                    column for column in (
+                        "lioness_method", "metric_family", "component", "phenotype",
+                        "diagnosis_group", "scale", "correlation_method",
+                    ) if column in association
+                ]
+                controls = st.columns(min(3, max(1, len(filter_columns))))
+                for index, column in enumerate(filter_columns):
+                    options = sorted(association[column].dropna().astype(str).unique())
+                    filters[column] = controls[index % len(controls)].selectbox(
+                        column.replace("_", " ").title(), options,
+                        key=f"partition_assoc_{column}",
+                    )
+                view = association.copy()
+                for column, value in filters.items():
+                    view = view.loc[view[column].astype(str).eq(value)]
+                if {"new_effect", "matched_effect"}.issubset(view.columns):
+                    figure = px.scatter(
+                        view, x="matched_effect", y="new_effect", color="component"
+                        if "component" in view else None,
+                        hover_data=[
+                            column for column in (
+                                "new_module", "matched_module", "jaccard",
+                                "new_fdr", "matched_fdr",
+                            ) if column in view
+                        ],
+                        title="Matched-module association effects",
+                    )
+                    low = min(view["matched_effect"].min(), view["new_effect"].min())
+                    high = max(view["matched_effect"].max(), view["new_effect"].max())
+                    figure.add_shape(type="line", x0=low, y0=low, x1=high, y1=high,
+                                     line=dict(color="gray", dash="dash"))
+                    render_plotly_chart(figure, key="partition_association_concordance")
+                filterable_dataframe(
+                    view, table_key="partition_association_table",
+                    table_name="Association concordance table",
                 )
-            view = association.copy()
-            for column, value in filters.items():
-                view = view.loc[view[column].astype(str).eq(value)]
-            if {"new_effect", "matched_effect"}.issubset(view.columns):
-                figure = px.scatter(
-                    view, x="matched_effect", y="new_effect", color="component"
-                    if "component" in view else None,
-                    hover_data=[
-                        column for column in (
-                            "new_module", "matched_module", "jaccard",
-                            "new_fdr", "matched_fdr",
-                        ) if column in view
-                    ],
-                    title="Matched-module association effects",
-                )
-                low = min(view["matched_effect"].min(), view["new_effect"].min())
-                high = max(view["matched_effect"].max(), view["new_effect"].max())
-                figure.add_shape(type="line", x0=low, y0=low, x1=high, y1=high,
-                                 line=dict(color="gray", dash="dash"))
-                render_plotly_chart(figure, key="partition_association_concordance")
-            filterable_dataframe(
-                view, table_key="partition_association_table",
-                table_name="Association concordance table",
-            )
     with mdc_tab:
-        if mdc.empty:
-            st.info("MDC concordance will appear after the new permutation run finishes.")
-        else:
-            if {"new_log2_mdc", "matched_log2_mdc"}.issubset(mdc.columns):
-                figure = px.scatter(
-                    mdc, x="matched_log2_mdc", y="new_log2_mdc",
-                    color="component" if "component" in mdc else None,
-                    hover_data=[
-                        column for column in (
-                            "new_module", "matched_module", "jaccard",
-                            "new_directional_fdr", "matched_directional_fdr",
-                        ) if column in mdc
-                    ],
-                    title="Matched-module MDC concordance",
+        if tab_is_open(mdc_tab):
+            if mdc.empty:
+                st.info("MDC concordance will appear after the new permutation run finishes.")
+            else:
+                if {"new_log2_mdc", "matched_log2_mdc"}.issubset(mdc.columns):
+                    figure = px.scatter(
+                        mdc, x="matched_log2_mdc", y="new_log2_mdc",
+                        color="component" if "component" in mdc else None,
+                        hover_data=[
+                            column for column in (
+                                "new_module", "matched_module", "jaccard",
+                                "new_directional_fdr", "matched_directional_fdr",
+                            ) if column in mdc
+                        ],
+                        title="Matched-module MDC concordance",
+                    )
+                    render_plotly_chart(figure, key="partition_mdc_concordance")
+                filterable_dataframe(
+                    mdc, table_key="partition_mdc_table",
+                    table_name="MDC concordance table",
                 )
-                render_plotly_chart(figure, key="partition_mdc_concordance")
-            filterable_dataframe(
-                mdc, table_key="partition_mdc_table",
-                table_name="MDC concordance table",
-            )
     with kegg_tab:
-        if kegg.empty:
-            st.info("KEGG overlap will appear after enrichment finishes.")
-        else:
-            filterable_dataframe(
-                kegg, table_key="partition_kegg_table",
-                table_name="KEGG overlap table",
-            )
+        if tab_is_open(kegg_tab):
+            if kegg.empty:
+                st.info("KEGG overlap will appear after enrichment finishes.")
+            else:
+                filterable_dataframe(
+                    kegg, table_key="partition_kegg_table",
+                    table_name="KEGG overlap table",
+                )
 
 
 view_options = [
@@ -7577,408 +7626,412 @@ if active_view == "Donor edge explorer":
 
             node_metadata = cached_edge_expression_nodes(module_set, module)
             node_lookup = node_metadata.set_index("node_index")
-            endpoint_tabs = st.tabs(["2D edge", "3D gene triangle"])
+            endpoint_tabs = stateful_tabs(
+                ["2D edge", "3D gene triangle"], key="edge_expression_tabs"
+            )
             with endpoint_tabs[0]:
-                edge_options = top_edges["edge_index"].astype(int).tolist()
-                selected_edge_index = st.selectbox(
-                    "Edge for 2D expression plot",
-                    options=edge_options,
-                    format_func=lambda value: (
-                        f"#{int(top_edges.loc[top_edges['edge_index'].eq(value), 'edge_rank'].iloc[0])} · "
-                        f"{top_edges.loc[top_edges['edge_index'].eq(value), 'edge_label'].iloc[0]}"
-                    ),
-                    key="endpoint_expression_2d_edge",
-                )
-                edge = top_edges.loc[
-                    top_edges["edge_index"].eq(selected_edge_index)
-                ].iloc[0]
-                endpoint_nodes = [int(edge["row_index"]), int(edge["column_index"])]
-                endpoint_labels = {
-                    int(edge["row_index"]): f"{edge['tissue_a']}:{edge['gene_a']}",
-                    int(edge["column_index"]): f"{edge['tissue_b']}:{edge['gene_b']}",
-                }
-                right_node = st.selectbox(
-                    "Gene predicted by the 2D OLS line (Y axis)",
-                    options=endpoint_nodes,
-                    index=1,
-                    format_func=lambda value: endpoint_labels[value],
-                    key="endpoint_expression_2d_response",
-                )
-                left_node = next(node for node in endpoint_nodes if node != right_node)
-                left_column, right_column = f"node_{left_node}", f"node_{right_node}"
-                left_label = endpoint_labels[left_node]
-                right_label = endpoint_labels[right_node]
-                expression_2d = cached_edge_expression(
-                    module_set, module, tuple(sorted((left_node, right_node)))
-                )
-                expression_2d = attach_metadata(expression_2d, module_set=module_set)
-                expression_2d = expression_2d.loc[
-                    expression_2d["diagnosis_group"].isin(diagnoses)
-                ].copy()
-                if differential_edge_rule != "all" and analysis_subset != "all_donors":
-                    selected_split = {
-                        "discovery_ad_control": "Discovery",
-                        "validation_ad_control": "Validation",
-                        "mci_external": "MCI_external",
-                    }[analysis_subset]
-                    expression_2d = expression_2d.loc[
-                        expression_2d["ad_control_split"].eq(selected_split)
-                    ].copy()
-                expression_2d = expression_2d.dropna(
-                    subset=[left_column, right_column]
-                )
-                expression_fit_scope_2d = st.radio(
-                    "OLS fit scope",
-                    options=["pooled", "diagnosis"],
-                    format_func=lambda value: {
-                        "pooled": "All displayed donors (pooled)",
-                        "diagnosis": "Separate diagnosis-group fits",
-                    }[value],
-                    horizontal=True,
-                    key="endpoint_expression_2d_fit_scope",
-                )
-                fits_2d, fit_summary_2d, coefficients_2d = _expression_ols_fits(
-                    expression_2d, right_column, [left_column], expression_fit_scope_2d
-                )
-                categorical_color = color_by in CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES
-                expression_2d["plot_color"] = (
-                    expression_2d[color_by].map(
-                        lambda value: association_level_label(color_by, value)
-                    )
-                    if categorical_color else pd.to_numeric(
-                        expression_2d[color_by], errors="coerce"
-                    )
-                )
-                hover_columns = [
-                    column for column in (
-                        "sample_id", "diagnosis_group", phenotype, "clusters", "cogdx",
-                        "braak_stage", "cerad_score", "adnc", "parkinsonism",
-                    ) if column in expression_2d
-                ]
-                point_figure_2d = px.scatter(
-                    expression_2d,
-                    x=left_column,
-                    y=right_column,
-                    color="plot_color",
-                    symbol="diagnosis_group",
-                    hover_name="sample_id",
-                    hover_data=hover_columns,
-                    labels={
-                        left_column: f"{left_label} expression (Z-score)",
-                        right_column: f"{right_label} expression (Z-score)",
-                        "plot_color": COLOR_LABELS[color_by],
-                        "diagnosis_group": "Diagnosis",
-                    },
-                    title=f"M{module} endpoint expression: {left_label} ↔ {right_label}",
-                    **_edge_expression_color_kwargs(
-                        expression_2d, color_by, continuous_colorscale,
-                        reverse_colorscale,
-                    ),
-                )
-                fit_colors = {
-                    "All displayed donors": "#20262E",
-                    "Control": "#2C7FB8", "MCI": "#D8A500", "AD": "#E66101",
-                }
-                for fit_label, ols_fit in fits_2d.items():
-                    coefficient = ols_fit.coefficients.set_index("term")["estimate"]
-                    x_min = float(ols_fit.diagnostics[left_column].min())
-                    x_max = float(ols_fit.diagnostics[left_column].max())
-                    x_line = np.linspace(x_min, x_max, 100)
-                    y_line = coefficient["Intercept"] + coefficient[left_column] * x_line
-                    point_figure_2d.add_trace(
-                        go.Scatter(
-                            x=x_line, y=y_line, mode="lines",
-                            name=f"OLS: {fit_label}",
-                            line={"color": fit_colors.get(fit_label, "#65727E"), "width": 3},
-                            hovertemplate=(
-                                f"OLS: {fit_label}<br>{right_label} fitted=%{{y:.3f}}<extra></extra>"
-                            ),
-                        )
-                    )
-                if selected_pair:
-                    highlighted = expression_2d.loc[
-                        expression_2d["sample_id"].isin(selected_pair)
-                    ]
-                    point_figure_2d.add_trace(
-                        go.Scatter(
-                            x=highlighted[left_column], y=highlighted[right_column],
-                            mode="markers+text", text=highlighted["sample_id"],
-                            textposition="top center", name="Selected donor pair",
-                            marker={
-                                "size": 14, "symbol": "circle-open", "color": "black",
-                                "line": {"width": 3, "color": "black"},
-                            },
-                        )
-                    )
-                point_figure_2d.update_layout(legend={"orientation": "h", "y": 1.12})
-                render_plotly_chart(point_figure_2d, key="endpoint_expression_2d_plot")
-                _render_expression_residuals(fits_2d, key="endpoint_expression_2d")
-                if not fit_summary_2d.empty:
-                    fit_tables_2d = st.columns(2)
-                    with fit_tables_2d[0]:
-                        filterable_dataframe(
-                            fit_summary_2d,
-                            table_key="endpoint_expression_2d_fit_summary",
-                            table_name="2D OLS fit summary",
-                        )
-                    with fit_tables_2d[1]:
-                        filterable_dataframe(
-                            coefficients_2d,
-                            table_key="endpoint_expression_2d_coefficients",
-                            table_name="2D OLS coefficients",
-                        )
-                significant_kegg_2d = st.checkbox(
-                    "Show only module KEGG enrichments with FDR < 0.05",
-                    value=True,
-                    key="endpoint_expression_2d_significant_kegg",
-                )
-                predictor_metadata = node_lookup.loc[left_node]
-                response_metadata_2d = node_lookup.loc[right_node]
-                genes_2d = pd.DataFrame(
-                    [
-                        {
-                            "role": "X axis / OLS predictor",
-                            "gene_symbol": predictor_metadata["gene_symbol"],
-                            "tissue": predictor_metadata["tissue"],
-                        },
-                        {
-                            "role": "Y axis / OLS response",
-                            "gene_symbol": response_metadata_2d["gene_symbol"],
-                            "tissue": response_metadata_2d["tissue"],
-                        },
-                    ]
-                )
-                memberships_2d = gene_pathway_membership(
-                    genes_2d,
-                    cached_kegg(module_set, module),
-                    significant_only=significant_kegg_2d,
-                )
-                filterable_dataframe(
-                    memberships_2d,
-                    table_key="endpoint_expression_2d_gene_kegg",
-                    table_name="Selected genes and module KEGG memberships",
-                    height=420,
-                )
-
-            with endpoint_tabs[1]:
-                if not st.checkbox(
-                    "Render the 3D triangle and OLS plane",
-                    value=False,
-                    key="endpoint_expression_render_3d",
-                    help=(
-                        "3D rendering is opt-in because Streamlit tabs otherwise execute "
-                        "hidden charts and consume memory even while the 2D tab is open."
-                    ),
-                ):
-                    st.caption(
-                        "Enable this option to search the current top-K graph for complete "
-                        "three-edge triangles and render the interactive OLS plane."
-                    )
-                    st.stop()
-                triangles = find_edge_triangles(top_edges)
-                if triangles.empty:
-                    st.info(
-                        "No three-edge triangle exists among the current top K edges. "
-                        "Increase K or select TS pooled/a tissue block. A single CT tissue "
-                        "pair is bipartite, so it cannot contain a three-edge triangle."
-                    )
-                else:
-                    triangle_index = st.selectbox(
-                        "Triangle for 3D expression plot",
-                        options=list(range(len(triangles))),
+                if tab_is_open(endpoint_tabs[0]):
+                    edge_options = top_edges["edge_index"].astype(int).tolist()
+                    selected_edge_index = st.selectbox(
+                        "Edge for 2D expression plot",
+                        options=edge_options,
                         format_func=lambda value: (
-                            f"{triangles.loc[value, 'triangle_label']} · worst edge rank "
-                            f"{int(triangles.loc[value, 'worst_edge_rank'])}"
+                            f"#{int(top_edges.loc[top_edges['edge_index'].eq(value), 'edge_rank'].iloc[0])} · "
+                            f"{top_edges.loc[top_edges['edge_index'].eq(value), 'edge_label'].iloc[0]}"
                         ),
-                        key="endpoint_expression_3d_triangle",
+                        key="endpoint_expression_2d_edge",
                     )
-                    triangle = triangles.loc[triangle_index]
-                    triangle_nodes = [
-                        int(triangle["node_x"]), int(triangle["node_y"]),
-                        int(triangle["node_z"]),
-                    ]
-                    triangle_labels = {
-                        int(triangle["node_x"]): str(triangle["gene_x"]),
-                        int(triangle["node_y"]): str(triangle["gene_y"]),
-                        int(triangle["node_z"]): str(triangle["gene_z"]),
+                    edge = top_edges.loc[
+                        top_edges["edge_index"].eq(selected_edge_index)
+                    ].iloc[0]
+                    endpoint_nodes = [int(edge["row_index"]), int(edge["column_index"])]
+                    endpoint_labels = {
+                        int(edge["row_index"]): f"{edge['tissue_a']}:{edge['gene_a']}",
+                        int(edge["column_index"]): f"{edge['tissue_b']}:{edge['gene_b']}",
                     }
-                    response_node = st.selectbox(
-                        "Gene predicted by the OLS plane (Z axis)",
-                        options=triangle_nodes,
-                        format_func=lambda value: triangle_labels[value],
-                        key="endpoint_expression_3d_response",
+                    right_node = st.selectbox(
+                        "Gene predicted by the 2D OLS line (Y axis)",
+                        options=endpoint_nodes,
+                        index=1,
+                        format_func=lambda value: endpoint_labels[value],
+                        key="endpoint_expression_2d_response",
                     )
-                    predictor_nodes = [node for node in triangle_nodes if node != response_node]
-                    response_column = f"node_{response_node}"
-                    predictor_columns = [f"node_{node}" for node in predictor_nodes]
-                    expression_3d = cached_edge_expression(
-                        module_set, module, tuple(sorted(triangle_nodes))
+                    left_node = next(node for node in endpoint_nodes if node != right_node)
+                    left_column, right_column = f"node_{left_node}", f"node_{right_node}"
+                    left_label = endpoint_labels[left_node]
+                    right_label = endpoint_labels[right_node]
+                    expression_2d = cached_edge_expression(
+                        module_set, module, tuple(sorted((left_node, right_node)))
                     )
-                    expression_3d = attach_metadata(expression_3d, module_set=module_set)
-                    expression_3d = expression_3d.loc[
-                        expression_3d["diagnosis_group"].isin(diagnoses)
-                    ].dropna(subset=[response_column, *predictor_columns]).copy()
+                    expression_2d = attach_metadata(expression_2d, module_set=module_set)
+                    expression_2d = expression_2d.loc[
+                        expression_2d["diagnosis_group"].isin(diagnoses)
+                    ].copy()
                     if differential_edge_rule != "all" and analysis_subset != "all_donors":
                         selected_split = {
                             "discovery_ad_control": "Discovery",
                             "validation_ad_control": "Validation",
                             "mci_external": "MCI_external",
                         }[analysis_subset]
-                        expression_3d = expression_3d.loc[
-                            expression_3d["ad_control_split"].eq(selected_split)
+                        expression_2d = expression_2d.loc[
+                            expression_2d["ad_control_split"].eq(selected_split)
                         ].copy()
-                    expression_fit_scope_3d = st.radio(
-                        "OLS plane scope",
+                    expression_2d = expression_2d.dropna(
+                        subset=[left_column, right_column]
+                    )
+                    expression_fit_scope_2d = st.radio(
+                        "OLS fit scope",
                         options=["pooled", "diagnosis"],
                         format_func=lambda value: {
                             "pooled": "All displayed donors (pooled)",
-                            "diagnosis": "Separate diagnosis-group planes",
+                            "diagnosis": "Separate diagnosis-group fits",
                         }[value],
                         horizontal=True,
-                        key="endpoint_expression_3d_fit_scope",
+                        key="endpoint_expression_2d_fit_scope",
                     )
-                    fits_3d, fit_summary_3d, coefficients_3d = _expression_ols_fits(
-                        expression_3d, response_column, predictor_columns,
-                        expression_fit_scope_3d,
+                    fits_2d, fit_summary_2d, coefficients_2d = _expression_ols_fits(
+                        expression_2d, right_column, [left_column], expression_fit_scope_2d
                     )
-                    categorical_color_3d = color_by in CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES
-                    expression_3d["plot_color"] = (
-                        expression_3d[color_by].map(
+                    categorical_color = color_by in CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES
+                    expression_2d["plot_color"] = (
+                        expression_2d[color_by].map(
                             lambda value: association_level_label(color_by, value)
                         )
-                        if categorical_color_3d else pd.to_numeric(
-                            expression_3d[color_by], errors="coerce"
+                        if categorical_color else pd.to_numeric(
+                            expression_2d[color_by], errors="coerce"
                         )
                     )
-                    point_figure_3d = px.scatter_3d(
-                        expression_3d,
-                        x=predictor_columns[0], y=predictor_columns[1], z=response_column,
-                        color="plot_color", symbol="diagnosis_group",
+                    hover_columns = [
+                        column for column in (
+                            "sample_id", "diagnosis_group", phenotype, "clusters", "cogdx",
+                            "braak_stage", "cerad_score", "adnc", "parkinsonism",
+                        ) if column in expression_2d
+                    ]
+                    point_figure_2d = px.scatter(
+                        expression_2d,
+                        x=left_column,
+                        y=right_column,
+                        color="plot_color",
+                        symbol="diagnosis_group",
                         hover_name="sample_id",
-                        hover_data=[
-                            column for column in (
-                                "diagnosis_group", phenotype, "clusters", "cogdx",
-                                "braak_stage", "cerad_score", "adnc", "parkinsonism",
-                            ) if column in expression_3d
-                        ],
+                        hover_data=hover_columns,
                         labels={
-                            predictor_columns[0]: f"{triangle_labels[predictor_nodes[0]]} expression",
-                            predictor_columns[1]: f"{triangle_labels[predictor_nodes[1]]} expression",
-                            response_column: f"{triangle_labels[response_node]} expression",
+                            left_column: f"{left_label} expression (Z-score)",
+                            right_column: f"{right_label} expression (Z-score)",
                             "plot_color": COLOR_LABELS[color_by],
+                            "diagnosis_group": "Diagnosis",
                         },
-                        title=f"M{module} three-gene expression triangle with OLS plane",
+                        title=f"M{module} endpoint expression: {left_label} ↔ {right_label}",
                         **_edge_expression_color_kwargs(
-                            expression_3d, color_by, continuous_colorscale,
+                            expression_2d, color_by, continuous_colorscale,
                             reverse_colorscale,
                         ),
                     )
-                    plane_colors = {
-                        "All displayed donors": "#65727E",
+                    fit_colors = {
+                        "All displayed donors": "#20262E",
                         "Control": "#2C7FB8", "MCI": "#D8A500", "AD": "#E66101",
                     }
-                    for fit_label, ols_fit in fits_3d.items():
-                        coefficients = ols_fit.coefficients.set_index("term")["estimate"]
-                        x_grid = np.linspace(
-                            ols_fit.diagnostics[predictor_columns[0]].min(),
-                            ols_fit.diagnostics[predictor_columns[0]].max(), 12,
-                        )
-                        y_grid = np.linspace(
-                            ols_fit.diagnostics[predictor_columns[1]].min(),
-                            ols_fit.diagnostics[predictor_columns[1]].max(), 12,
-                        )
-                        grid_x, grid_y = np.meshgrid(x_grid, y_grid)
-                        grid_z = (
-                            coefficients["Intercept"]
-                            + coefficients[predictor_columns[0]] * grid_x
-                            + coefficients[predictor_columns[1]] * grid_y
-                        )
-                        plane_color = plane_colors.get(fit_label, "#65727E")
-                        point_figure_3d.add_trace(
-                            go.Surface(
-                                x=grid_x, y=grid_y, z=grid_z,
-                                name=f"OLS plane: {fit_label}",
-                                colorscale=[[0, plane_color], [1, plane_color]],
-                                opacity=0.27, showscale=False,
+                    for fit_label, ols_fit in fits_2d.items():
+                        coefficient = ols_fit.coefficients.set_index("term")["estimate"]
+                        x_min = float(ols_fit.diagnostics[left_column].min())
+                        x_max = float(ols_fit.diagnostics[left_column].max())
+                        x_line = np.linspace(x_min, x_max, 100)
+                        y_line = coefficient["Intercept"] + coefficient[left_column] * x_line
+                        point_figure_2d.add_trace(
+                            go.Scatter(
+                                x=x_line, y=y_line, mode="lines",
+                                name=f"OLS: {fit_label}",
+                                line={"color": fit_colors.get(fit_label, "#65727E"), "width": 3},
                                 hovertemplate=(
-                                    f"OLS plane: {fit_label}<br>fitted expression=%{{z:.3f}}"
-                                    "<extra></extra>"
+                                    f"OLS: {fit_label}<br>{right_label} fitted=%{{y:.3f}}<extra></extra>"
                                 ),
                             )
                         )
                     if selected_pair:
-                        highlighted_3d = expression_3d.loc[
-                            expression_3d["sample_id"].isin(selected_pair)
+                        highlighted = expression_2d.loc[
+                            expression_2d["sample_id"].isin(selected_pair)
                         ]
-                        point_figure_3d.add_trace(
-                            go.Scatter3d(
-                                x=highlighted_3d[predictor_columns[0]],
-                                y=highlighted_3d[predictor_columns[1]],
-                                z=highlighted_3d[response_column],
-                                mode="markers+text", text=highlighted_3d["sample_id"],
-                                name="Selected donor pair",
-                                marker={"size": 8, "symbol": "circle-open", "color": "black"},
+                        point_figure_2d.add_trace(
+                            go.Scatter(
+                                x=highlighted[left_column], y=highlighted[right_column],
+                                mode="markers+text", text=highlighted["sample_id"],
+                                textposition="top center", name="Selected donor pair",
+                                marker={
+                                    "size": 14, "symbol": "circle-open", "color": "black",
+                                    "line": {"width": 3, "color": "black"},
+                                },
                             )
                         )
-                    point_figure_3d.update_layout(
-                        height=760,
-                        legend={"orientation": "h", "y": 1.08},
-                        scene={
-                            "xaxis_title": f"{triangle_labels[predictor_nodes[0]]}<br>expression Z-score",
-                            "yaxis_title": f"{triangle_labels[predictor_nodes[1]]}<br>expression Z-score",
-                            "zaxis_title": f"{triangle_labels[response_node]}<br>expression Z-score",
-                        },
-                    )
-                    render_plotly_chart(point_figure_3d, key="endpoint_expression_3d_plot")
-                    _render_expression_residuals(fits_3d, key="endpoint_expression_3d")
-                    if not fit_summary_3d.empty:
-                        fit_tables_3d = st.columns(2)
-                        with fit_tables_3d[0]:
+                    point_figure_2d.update_layout(legend={"orientation": "h", "y": 1.12})
+                    render_plotly_chart(point_figure_2d, key="endpoint_expression_2d_plot")
+                    _render_expression_residuals(fits_2d, key="endpoint_expression_2d")
+                    if not fit_summary_2d.empty:
+                        fit_tables_2d = st.columns(2)
+                        with fit_tables_2d[0]:
                             filterable_dataframe(
-                                fit_summary_3d,
-                                table_key="endpoint_expression_3d_fit_summary",
-                                table_name="3D-plane OLS fit summary",
+                                fit_summary_2d,
+                                table_key="endpoint_expression_2d_fit_summary",
+                                table_name="2D OLS fit summary",
                             )
-                        with fit_tables_3d[1]:
+                        with fit_tables_2d[1]:
                             filterable_dataframe(
-                                coefficients_3d,
-                                table_key="endpoint_expression_3d_coefficients",
-                                table_name="3D-plane OLS coefficients",
+                                coefficients_2d,
+                                table_key="endpoint_expression_2d_coefficients",
+                                table_name="2D OLS coefficients",
                             )
-                    significant_kegg_3d = st.checkbox(
-                        "Show only triangle-gene KEGG enrichments with FDR < 0.05",
+                    significant_kegg_2d = st.checkbox(
+                        "Show only module KEGG enrichments with FDR < 0.05",
                         value=True,
-                        key="endpoint_expression_3d_significant_kegg",
+                        key="endpoint_expression_2d_significant_kegg",
                     )
-                    triangle_gene_rows = []
-                    for node in predictor_nodes:
-                        metadata_row = node_lookup.loc[node]
-                        triangle_gene_rows.append(
+                    predictor_metadata = node_lookup.loc[left_node]
+                    response_metadata_2d = node_lookup.loc[right_node]
+                    genes_2d = pd.DataFrame(
+                        [
                             {
-                                "role": "OLS predictor",
-                                "gene_symbol": metadata_row["gene_symbol"],
-                                "tissue": metadata_row["tissue"],
-                            }
-                        )
-                    response_metadata = node_lookup.loc[response_node]
-                    triangle_gene_rows.append(
-                        {
-                            "role": "Z axis / OLS response",
-                            "gene_symbol": response_metadata["gene_symbol"],
-                            "tissue": response_metadata["tissue"],
-                        }
+                                "role": "X axis / OLS predictor",
+                                "gene_symbol": predictor_metadata["gene_symbol"],
+                                "tissue": predictor_metadata["tissue"],
+                            },
+                            {
+                                "role": "Y axis / OLS response",
+                                "gene_symbol": response_metadata_2d["gene_symbol"],
+                                "tissue": response_metadata_2d["tissue"],
+                            },
+                        ]
                     )
-                    memberships_3d = gene_pathway_membership(
-                        pd.DataFrame(triangle_gene_rows),
+                    memberships_2d = gene_pathway_membership(
+                        genes_2d,
                         cached_kegg(module_set, module),
-                        significant_only=significant_kegg_3d,
+                        significant_only=significant_kegg_2d,
                     )
                     filterable_dataframe(
-                        memberships_3d,
-                        table_key="endpoint_expression_3d_gene_kegg",
-                        table_name="Triangle genes and module KEGG memberships",
+                        memberships_2d,
+                        table_key="endpoint_expression_2d_gene_kegg",
+                        table_name="Selected genes and module KEGG memberships",
                         height=420,
                     )
+
+            with endpoint_tabs[1]:
+                if tab_is_open(endpoint_tabs[1]):
+                    if not st.checkbox(
+                        "Render the 3D triangle and OLS plane",
+                        value=False,
+                        key="endpoint_expression_render_3d",
+                        help=(
+                            "3D rendering is opt-in because Streamlit tabs otherwise execute "
+                            "hidden charts and consume memory even while the 2D tab is open."
+                        ),
+                    ):
+                        st.caption(
+                            "Enable this option to search the current top-K graph for complete "
+                            "three-edge triangles and render the interactive OLS plane."
+                        )
+                        st.stop()
+                    triangles = find_edge_triangles(top_edges)
+                    if triangles.empty:
+                        st.info(
+                            "No three-edge triangle exists among the current top K edges. "
+                            "Increase K or select TS pooled/a tissue block. A single CT tissue "
+                            "pair is bipartite, so it cannot contain a three-edge triangle."
+                        )
+                    else:
+                        triangle_index = st.selectbox(
+                            "Triangle for 3D expression plot",
+                            options=list(range(len(triangles))),
+                            format_func=lambda value: (
+                                f"{triangles.loc[value, 'triangle_label']} · worst edge rank "
+                                f"{int(triangles.loc[value, 'worst_edge_rank'])}"
+                            ),
+                            key="endpoint_expression_3d_triangle",
+                        )
+                        triangle = triangles.loc[triangle_index]
+                        triangle_nodes = [
+                            int(triangle["node_x"]), int(triangle["node_y"]),
+                            int(triangle["node_z"]),
+                        ]
+                        triangle_labels = {
+                            int(triangle["node_x"]): str(triangle["gene_x"]),
+                            int(triangle["node_y"]): str(triangle["gene_y"]),
+                            int(triangle["node_z"]): str(triangle["gene_z"]),
+                        }
+                        response_node = st.selectbox(
+                            "Gene predicted by the OLS plane (Z axis)",
+                            options=triangle_nodes,
+                            format_func=lambda value: triangle_labels[value],
+                            key="endpoint_expression_3d_response",
+                        )
+                        predictor_nodes = [node for node in triangle_nodes if node != response_node]
+                        response_column = f"node_{response_node}"
+                        predictor_columns = [f"node_{node}" for node in predictor_nodes]
+                        expression_3d = cached_edge_expression(
+                            module_set, module, tuple(sorted(triangle_nodes))
+                        )
+                        expression_3d = attach_metadata(expression_3d, module_set=module_set)
+                        expression_3d = expression_3d.loc[
+                            expression_3d["diagnosis_group"].isin(diagnoses)
+                        ].dropna(subset=[response_column, *predictor_columns]).copy()
+                        if differential_edge_rule != "all" and analysis_subset != "all_donors":
+                            selected_split = {
+                                "discovery_ad_control": "Discovery",
+                                "validation_ad_control": "Validation",
+                                "mci_external": "MCI_external",
+                            }[analysis_subset]
+                            expression_3d = expression_3d.loc[
+                                expression_3d["ad_control_split"].eq(selected_split)
+                            ].copy()
+                        expression_fit_scope_3d = st.radio(
+                            "OLS plane scope",
+                            options=["pooled", "diagnosis"],
+                            format_func=lambda value: {
+                                "pooled": "All displayed donors (pooled)",
+                                "diagnosis": "Separate diagnosis-group planes",
+                            }[value],
+                            horizontal=True,
+                            key="endpoint_expression_3d_fit_scope",
+                        )
+                        fits_3d, fit_summary_3d, coefficients_3d = _expression_ols_fits(
+                            expression_3d, response_column, predictor_columns,
+                            expression_fit_scope_3d,
+                        )
+                        categorical_color_3d = color_by in CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES
+                        expression_3d["plot_color"] = (
+                            expression_3d[color_by].map(
+                                lambda value: association_level_label(color_by, value)
+                            )
+                            if categorical_color_3d else pd.to_numeric(
+                                expression_3d[color_by], errors="coerce"
+                            )
+                        )
+                        point_figure_3d = px.scatter_3d(
+                            expression_3d,
+                            x=predictor_columns[0], y=predictor_columns[1], z=response_column,
+                            color="plot_color", symbol="diagnosis_group",
+                            hover_name="sample_id",
+                            hover_data=[
+                                column for column in (
+                                    "diagnosis_group", phenotype, "clusters", "cogdx",
+                                    "braak_stage", "cerad_score", "adnc", "parkinsonism",
+                                ) if column in expression_3d
+                            ],
+                            labels={
+                                predictor_columns[0]: f"{triangle_labels[predictor_nodes[0]]} expression",
+                                predictor_columns[1]: f"{triangle_labels[predictor_nodes[1]]} expression",
+                                response_column: f"{triangle_labels[response_node]} expression",
+                                "plot_color": COLOR_LABELS[color_by],
+                            },
+                            title=f"M{module} three-gene expression triangle with OLS plane",
+                            **_edge_expression_color_kwargs(
+                                expression_3d, color_by, continuous_colorscale,
+                                reverse_colorscale,
+                            ),
+                        )
+                        plane_colors = {
+                            "All displayed donors": "#65727E",
+                            "Control": "#2C7FB8", "MCI": "#D8A500", "AD": "#E66101",
+                        }
+                        for fit_label, ols_fit in fits_3d.items():
+                            coefficients = ols_fit.coefficients.set_index("term")["estimate"]
+                            x_grid = np.linspace(
+                                ols_fit.diagnostics[predictor_columns[0]].min(),
+                                ols_fit.diagnostics[predictor_columns[0]].max(), 12,
+                            )
+                            y_grid = np.linspace(
+                                ols_fit.diagnostics[predictor_columns[1]].min(),
+                                ols_fit.diagnostics[predictor_columns[1]].max(), 12,
+                            )
+                            grid_x, grid_y = np.meshgrid(x_grid, y_grid)
+                            grid_z = (
+                                coefficients["Intercept"]
+                                + coefficients[predictor_columns[0]] * grid_x
+                                + coefficients[predictor_columns[1]] * grid_y
+                            )
+                            plane_color = plane_colors.get(fit_label, "#65727E")
+                            point_figure_3d.add_trace(
+                                go.Surface(
+                                    x=grid_x, y=grid_y, z=grid_z,
+                                    name=f"OLS plane: {fit_label}",
+                                    colorscale=[[0, plane_color], [1, plane_color]],
+                                    opacity=0.27, showscale=False,
+                                    hovertemplate=(
+                                        f"OLS plane: {fit_label}<br>fitted expression=%{{z:.3f}}"
+                                        "<extra></extra>"
+                                    ),
+                                )
+                            )
+                        if selected_pair:
+                            highlighted_3d = expression_3d.loc[
+                                expression_3d["sample_id"].isin(selected_pair)
+                            ]
+                            point_figure_3d.add_trace(
+                                go.Scatter3d(
+                                    x=highlighted_3d[predictor_columns[0]],
+                                    y=highlighted_3d[predictor_columns[1]],
+                                    z=highlighted_3d[response_column],
+                                    mode="markers+text", text=highlighted_3d["sample_id"],
+                                    name="Selected donor pair",
+                                    marker={"size": 8, "symbol": "circle-open", "color": "black"},
+                                )
+                            )
+                        point_figure_3d.update_layout(
+                            height=760,
+                            legend={"orientation": "h", "y": 1.08},
+                            scene={
+                                "xaxis_title": f"{triangle_labels[predictor_nodes[0]]}<br>expression Z-score",
+                                "yaxis_title": f"{triangle_labels[predictor_nodes[1]]}<br>expression Z-score",
+                                "zaxis_title": f"{triangle_labels[response_node]}<br>expression Z-score",
+                            },
+                        )
+                        render_plotly_chart(point_figure_3d, key="endpoint_expression_3d_plot")
+                        _render_expression_residuals(fits_3d, key="endpoint_expression_3d")
+                        if not fit_summary_3d.empty:
+                            fit_tables_3d = st.columns(2)
+                            with fit_tables_3d[0]:
+                                filterable_dataframe(
+                                    fit_summary_3d,
+                                    table_key="endpoint_expression_3d_fit_summary",
+                                    table_name="3D-plane OLS fit summary",
+                                )
+                            with fit_tables_3d[1]:
+                                filterable_dataframe(
+                                    coefficients_3d,
+                                    table_key="endpoint_expression_3d_coefficients",
+                                    table_name="3D-plane OLS coefficients",
+                                )
+                        significant_kegg_3d = st.checkbox(
+                            "Show only triangle-gene KEGG enrichments with FDR < 0.05",
+                            value=True,
+                            key="endpoint_expression_3d_significant_kegg",
+                        )
+                        triangle_gene_rows = []
+                        for node in predictor_nodes:
+                            metadata_row = node_lookup.loc[node]
+                            triangle_gene_rows.append(
+                                {
+                                    "role": "OLS predictor",
+                                    "gene_symbol": metadata_row["gene_symbol"],
+                                    "tissue": metadata_row["tissue"],
+                                }
+                            )
+                        response_metadata = node_lookup.loc[response_node]
+                        triangle_gene_rows.append(
+                            {
+                                "role": "Z axis / OLS response",
+                                "gene_symbol": response_metadata["gene_symbol"],
+                                "tissue": response_metadata["tissue"],
+                            }
+                        )
+                        memberships_3d = gene_pathway_membership(
+                            pd.DataFrame(triangle_gene_rows),
+                            cached_kegg(module_set, module),
+                            significant_only=significant_kegg_3d,
+                        )
+                        filterable_dataframe(
+                            memberships_3d,
+                            table_key="endpoint_expression_3d_gene_kegg",
+                            table_name="Triangle genes and module KEGG memberships",
+                            height=420,
+                        )
 
 if active_view == "Edge volcano":
     st.subheader("AD–Control differential edges")
@@ -8688,453 +8741,456 @@ if active_view == "MDC":
         "source used 200 sample permutations and 200 gene permutations."
     )
 
-    region_mdc_tab, pathway_mdc_tab = st.tabs(
-        ["Region-resolved MDC", "Pathway-resolved MDC"]
+    region_mdc_tab, pathway_mdc_tab = stateful_tabs(
+        ["Region-resolved MDC", "Pathway-resolved MDC"],
+        key="mdc_resolution_tabs",
     )
     with region_mdc_tab:
-        st.markdown("#### Tissue-resolved MDC")
-        st.caption(
-            "Resolved MDC separates the three within-tissue blocks and the three cross-tissue "
-            "pairs. Gene permutations preserve each module's AC, DLPFC, and PCG feature counts. "
-            "For each component and direction, BH correction uses only modules where that edge "
-            "block structurally exists; unavailable blocks remain missing."
-        )
-        resolved_mdc = cached_mdc_resolved(
-            module_set,
-            estimator,
-            method,
-            differential_edge_rule,
-            differential_fdr_scope,
-            differential_fdr_threshold,
-        ).copy()
-        resolved_components_available = resolved_mdc[
-            ["component", "component_label"]
-        ].drop_duplicates()
-        selected_mdc_components = st.multiselect(
-            "Resolved MDC components",
-            options=resolved_components_available["component"].tolist(),
-            default=resolved_components_available["component"].tolist(),
-            format_func=lambda value: resolved_components_available.loc[
-                resolved_components_available["component"].eq(value), "component_label"
-            ].iloc[0],
-            key=f"resolved_mdc_components_{module_set}",
-        )
-        resolved_mdc = resolved_mdc.loc[
-            resolved_mdc["component"].isin(selected_mdc_components)
-        ].copy()
-        resolved_significance = st.selectbox(
-            "Resolved MDC rows",
-            options=["All", "FDR significant", "Not FDR significant"],
-            key=f"resolved_mdc_significance_{module_set}",
-        )
-        resolved_is_significant = pd.to_numeric(
-            resolved_mdc["directional_fdr"], errors="coerce"
-        ).lt(mdc_threshold)
-        if resolved_significance == "FDR significant":
-            resolved_mdc = resolved_mdc.loc[resolved_is_significant]
-        elif resolved_significance == "Not FDR significant":
-            resolved_mdc = resolved_mdc.loc[~resolved_is_significant]
-        selected_resolved_mdc = resolved_mdc.loc[
-            resolved_mdc["module"].astype(int).eq(int(module))
-        ]
-        if selected_resolved_mdc.empty:
-            st.info("The selected module has no resolved MDC row under the current filters.")
-        else:
-            render_plotly_chart(
-                mdc_resolved_module_figure(
-                    selected_resolved_mdc,
-                    mdc_threshold,
-                    module_definition=module_set_label,
-                    scale=mdc_scale,
-                ),
-                use_container_width=True,
-                config={"displaylogo": False},
+        if tab_is_open(region_mdc_tab):
+            st.markdown("#### Tissue-resolved MDC")
+            st.caption(
+                "Resolved MDC separates the three within-tissue blocks and the three cross-tissue "
+                "pairs. Gene permutations preserve each module's AC, DLPFC, and PCG feature counts. "
+                "For each component and direction, BH correction uses only modules where that edge "
+                "block structurally exists; unavailable blocks remain missing."
             )
-        if resolved_mdc.empty:
-            st.info("No resolved MDC rows remain under the current filters.")
-        else:
-            render_plotly_chart(
-                mdc_resolved_heatmap_figure(
+            resolved_mdc = cached_mdc_resolved(
+                module_set,
+                estimator,
+                method,
+                differential_edge_rule,
+                differential_fdr_scope,
+                differential_fdr_threshold,
+            ).copy()
+            resolved_components_available = resolved_mdc[
+                ["component", "component_label"]
+            ].drop_duplicates()
+            selected_mdc_components = st.multiselect(
+                "Resolved MDC components",
+                options=resolved_components_available["component"].tolist(),
+                default=resolved_components_available["component"].tolist(),
+                format_func=lambda value: resolved_components_available.loc[
+                    resolved_components_available["component"].eq(value), "component_label"
+                ].iloc[0],
+                key=f"resolved_mdc_components_{module_set}",
+            )
+            resolved_mdc = resolved_mdc.loc[
+                resolved_mdc["component"].isin(selected_mdc_components)
+            ].copy()
+            resolved_significance = st.selectbox(
+                "Resolved MDC rows",
+                options=["All", "FDR significant", "Not FDR significant"],
+                key=f"resolved_mdc_significance_{module_set}",
+            )
+            resolved_is_significant = pd.to_numeric(
+                resolved_mdc["directional_fdr"], errors="coerce"
+            ).lt(mdc_threshold)
+            if resolved_significance == "FDR significant":
+                resolved_mdc = resolved_mdc.loc[resolved_is_significant]
+            elif resolved_significance == "Not FDR significant":
+                resolved_mdc = resolved_mdc.loc[~resolved_is_significant]
+            selected_resolved_mdc = resolved_mdc.loc[
+                resolved_mdc["module"].astype(int).eq(int(module))
+            ]
+            if selected_resolved_mdc.empty:
+                st.info("The selected module has no resolved MDC row under the current filters.")
+            else:
+                render_plotly_chart(
+                    mdc_resolved_module_figure(
+                        selected_resolved_mdc,
+                        mdc_threshold,
+                        module_definition=module_set_label,
+                        scale=mdc_scale,
+                    ),
+                    use_container_width=True,
+                    config={"displaylogo": False},
+                )
+            if resolved_mdc.empty:
+                st.info("No resolved MDC rows remain under the current filters.")
+            else:
+                render_plotly_chart(
+                    mdc_resolved_heatmap_figure(
+                        resolved_mdc,
+                        mdc_threshold,
+                        selected_module=module,
+                        module_definition=module_set_label,
+                        scale=mdc_scale,
+                    ),
+                    use_container_width=True,
+                    config={"displaylogo": False, "scrollZoom": True},
+                )
+                resolved_mdc.insert(0, "module_definition_label", module_set_label)
+                filterable_dataframe(
                     resolved_mdc,
-                    mdc_threshold,
-                    selected_module=module,
-                    module_definition=module_set_label,
-                    scale=mdc_scale,
-                ),
-                use_container_width=True,
-                config={"displaylogo": False, "scrollZoom": True},
-            )
-            resolved_mdc.insert(0, "module_definition_label", module_set_label)
-            filterable_dataframe(
-                resolved_mdc,
-                table_key="resolved_mdc",
-                table_name="Resolved MDC",
-                use_container_width=True,
-                hide_index=True,
-                height=520,
-            )
-            st.download_button(
-                "Download displayed resolved MDC rows (TSV)",
-                data=dataframe_to_tsv_bytes(resolved_mdc),
-                file_name=f"{download_prefix}AD_Control_resolved_MDC.tsv",
-                mime="text/tab-separated-values",
-            )
+                    table_key="resolved_mdc",
+                    table_name="Resolved MDC",
+                    use_container_width=True,
+                    hide_index=True,
+                    height=520,
+                )
+                st.download_button(
+                    "Download displayed resolved MDC rows (TSV)",
+                    data=dataframe_to_tsv_bytes(resolved_mdc),
+                    file_name=f"{download_prefix}AD_Control_resolved_MDC.tsv",
+                    mime="text/tab-separated-values",
+                )
 
     with pathway_mdc_tab:
-        st.markdown("#### Pathway-annotated regional MDC")
-        st.caption(
-            "MDC remains a module-level statistic. This view annotates each module-component "
-            "MDC with KEGG pathways enriched in the matching region, then summarizes MDC "
-            "across enriched modules. For a CT tissue pair, both regions must meet the KEGG "
-            "threshold; the displayed pair FDR is the larger regional FDR and is not a new "
-            "combined p-value."
-        )
-        pathway_control_columns = st.columns(4)
-        with pathway_control_columns[0]:
-            pathway_mdc_resolution = st.selectbox(
-                "MDC enrichment resolution",
-                options=list(MDC_ENRICHMENT_RESOLUTION_LABELS),
-                format_func=MDC_ENRICHMENT_RESOLUTION_LABELS.get,
-                key=f"pathway_mdc_resolution_{module_set}",
+        if tab_is_open(pathway_mdc_tab):
+            st.markdown("#### Pathway-annotated regional MDC")
+            st.caption(
+                "MDC remains a module-level statistic. This view annotates each module-component "
+                "MDC with KEGG pathways enriched in the matching region, then summarizes MDC "
+                "across enriched modules. For a CT tissue pair, both regions must meet the KEGG "
+                "threshold; the displayed pair FDR is the larger regional FDR and is not a new "
+                "combined p-value."
             )
-        with pathway_control_columns[1]:
-            pathway_kegg_threshold = st.radio(
-                "KEGG enrichment threshold",
-                options=[0.05, 0.10],
-                format_func=lambda value: (
-                    f"FDR < {value:.2f}"
-                    + (" (exploratory)" if np.isclose(value, 0.10) else "")
-                ),
-                horizontal=True,
-                key=f"pathway_mdc_kegg_threshold_{module_set}",
-            )
-        with pathway_control_columns[2]:
-            minimum_pathway_modules = st.slider(
-                "Minimum enriched modules per cell",
-                min_value=1,
-                max_value=10,
-                value=1,
-                key=f"pathway_mdc_minimum_modules_{module_set}",
-            )
-        with pathway_control_columns[3]:
-            pathway_mdc_row_scope = st.radio(
-                "Module MDC rows",
-                options=["All", "MDC FDR-significant only"],
-                horizontal=True,
-                key=f"pathway_mdc_row_scope_{module_set}",
-            )
-
-        pathway_rows = cached_pathway_mdc_rows(
-            module_set,
-            pathway_kegg_threshold,
-            estimator,
-            method,
-            differential_edge_rule,
-            differential_fdr_scope,
-            differential_fdr_threshold,
-        ).copy()
-        component_preference = [
-            "TS_AC",
-            "TS_DLPFC",
-            "TS_PCGBA23",
-            "CT_AC__DLPFC",
-            "CT_AC__PCGBA23",
-            "CT_DLPFC__PCGBA23",
-            "total",
-            "TS",
-            "CT",
-        ]
-        component_labels = (
-            pathway_rows[["component", "component_label"]]
-            .drop_duplicates("component")
-            .set_index("component")["component_label"]
-            .to_dict()
-        )
-        available_pathway_components = [
-            value for value in component_preference if value in component_labels
-        ]
-        default_pathway_components = available_pathway_components[:6]
-        selected_pathway_components = st.multiselect(
-            "Regions and tissue pairs",
-            options=available_pathway_components,
-            default=default_pathway_components,
-            format_func=lambda value: component_labels[value],
-            key=f"pathway_mdc_components_{module_set}",
-        )
-        pathway_rows = pathway_rows.loc[
-            pathway_rows["component"].isin(selected_pathway_components)
-        ].copy()
-        if pathway_mdc_row_scope == "MDC FDR-significant only":
-            pathway_rows = pathway_rows.loc[
-                pd.to_numeric(pathway_rows["directional_fdr"], errors="coerce").lt(
-                    mdc_threshold
+            pathway_control_columns = st.columns(4)
+            with pathway_control_columns[0]:
+                pathway_mdc_resolution = st.selectbox(
+                    "MDC enrichment resolution",
+                    options=list(MDC_ENRICHMENT_RESOLUTION_LABELS),
+                    format_func=MDC_ENRICHMENT_RESOLUTION_LABELS.get,
+                    key=f"pathway_mdc_resolution_{module_set}",
                 )
-            ].copy()
+            with pathway_control_columns[1]:
+                pathway_kegg_threshold = st.radio(
+                    "KEGG enrichment threshold",
+                    options=[0.05, 0.10],
+                    format_func=lambda value: (
+                        f"FDR < {value:.2f}"
+                        + (" (exploratory)" if np.isclose(value, 0.10) else "")
+                    ),
+                    horizontal=True,
+                    key=f"pathway_mdc_kegg_threshold_{module_set}",
+                )
+            with pathway_control_columns[2]:
+                minimum_pathway_modules = st.slider(
+                    "Minimum enriched modules per cell",
+                    min_value=1,
+                    max_value=10,
+                    value=1,
+                    key=f"pathway_mdc_minimum_modules_{module_set}",
+                )
+            with pathway_control_columns[3]:
+                pathway_mdc_row_scope = st.radio(
+                    "Module MDC rows",
+                    options=["All", "MDC FDR-significant only"],
+                    horizontal=True,
+                    key=f"pathway_mdc_row_scope_{module_set}",
+                )
 
-        category_options = sorted(
-            pathway_rows["category_level1"].dropna().astype(str).unique().tolist()
-        )
-        filter_columns = st.columns([2, 3])
-        selected_pathway_categories = filter_columns[0].multiselect(
-            "KEGG categories",
-            options=category_options,
-            default=[],
-            placeholder="All categories",
-            key=f"pathway_mdc_categories_{module_set}",
-        )
-        pathway_search = filter_columns[1].text_input(
-            "Search pathways",
-            placeholder="Pathway, category, sub-category, or KEGG ID",
-            key=f"pathway_mdc_search_{module_set}",
-        ).strip()
-        if selected_pathway_categories:
+            pathway_rows = cached_pathway_mdc_rows(
+                module_set,
+                pathway_kegg_threshold,
+                estimator,
+                method,
+                differential_edge_rule,
+                differential_fdr_scope,
+                differential_fdr_threshold,
+            ).copy()
+            component_preference = [
+                "TS_AC",
+                "TS_DLPFC",
+                "TS_PCGBA23",
+                "CT_AC__DLPFC",
+                "CT_AC__PCGBA23",
+                "CT_DLPFC__PCGBA23",
+                "total",
+                "TS",
+                "CT",
+            ]
+            component_labels = (
+                pathway_rows[["component", "component_label"]]
+                .drop_duplicates("component")
+                .set_index("component")["component_label"]
+                .to_dict()
+            )
+            available_pathway_components = [
+                value for value in component_preference if value in component_labels
+            ]
+            default_pathway_components = available_pathway_components[:6]
+            selected_pathway_components = st.multiselect(
+                "Regions and tissue pairs",
+                options=available_pathway_components,
+                default=default_pathway_components,
+                format_func=lambda value: component_labels[value],
+                key=f"pathway_mdc_components_{module_set}",
+            )
             pathway_rows = pathway_rows.loc[
-                pathway_rows["category_level1"].isin(selected_pathway_categories)
+                pathway_rows["component"].isin(selected_pathway_components)
             ].copy()
-        if pathway_search:
-            searchable = pathway_rows[
-                [
+            if pathway_mdc_row_scope == "MDC FDR-significant only":
+                pathway_rows = pathway_rows.loc[
+                    pd.to_numeric(pathway_rows["directional_fdr"], errors="coerce").lt(
+                        mdc_threshold
+                    )
+                ].copy()
+
+            category_options = sorted(
+                pathway_rows["category_level1"].dropna().astype(str).unique().tolist()
+            )
+            filter_columns = st.columns([2, 3])
+            selected_pathway_categories = filter_columns[0].multiselect(
+                "KEGG categories",
+                options=category_options,
+                default=[],
+                placeholder="All categories",
+                key=f"pathway_mdc_categories_{module_set}",
+            )
+            pathway_search = filter_columns[1].text_input(
+                "Search pathways",
+                placeholder="Pathway, category, sub-category, or KEGG ID",
+                key=f"pathway_mdc_search_{module_set}",
+            ).strip()
+            if selected_pathway_categories:
+                pathway_rows = pathway_rows.loc[
+                    pathway_rows["category_level1"].isin(selected_pathway_categories)
+                ].copy()
+            if pathway_search:
+                searchable = pathway_rows[
+                    [
+                        "pathway_id",
+                        "pathway_label",
+                        "category_level1",
+                        "category_level2",
+                    ]
+                ].fillna("").astype(str)
+                pathway_rows = pathway_rows.loc[
+                    searchable.agg(" ".join, axis=1).str.contains(
+                        pathway_search, case=False, regex=False
+                    )
+                ].copy()
+
+            pathway_group_rows = collapse_pathway_mdc_rows(
+                pathway_rows,
+                resolution=pathway_mdc_resolution,
+            )
+            pathway_summary = summarize_pathway_mdc_rows(
+                pathway_group_rows,
+                mdc_fdr_threshold=mdc_threshold,
+                minimum_modules=minimum_pathway_modules,
+                resolution=pathway_mdc_resolution,
+            )
+            if pathway_summary.empty:
+                st.info("No KEGG-annotated MDC cells remain under the current filters.")
+            else:
+                retained_pathway_ids = set(pathway_summary["pathway_id"].astype(str))
+                pathway_group_rows = pathway_group_rows.loc[
+                    pathway_group_rows["pathway_id"]
+                    .astype(str)
+                    .isin(retained_pathway_ids)
+                ].copy()
+                pathway_ranking = (
+                    pathway_summary.assign(
+                        absolute_mean_log2_mdc=pathway_summary["mean_log2_mdc"].abs()
+                    )
+                    .groupby(["pathway_id", "pathway_label"], observed=True)
+                    .agg(
+                        maximum_absolute_mean_log2_mdc=(
+                            "absolute_mean_log2_mdc",
+                            "max",
+                        ),
+                        minimum_enrichment_fdr=("minimum_enrichment_fdr", "min"),
+                        maximum_module_support=("n_modules", "max"),
+                    )
+                    .reset_index()
+                    .sort_values(
+                        [
+                            "maximum_absolute_mean_log2_mdc",
+                            "minimum_enrichment_fdr",
+                            "maximum_module_support",
+                        ],
+                        ascending=[False, True, False],
+                        kind="stable",
+                    )
+                )
+                pathway_metric_columns = st.columns(4)
+                resolution_singular = MDC_ENRICHMENT_RESOLUTION_LABELS[
+                    pathway_mdc_resolution
+                ]
+                resolution_plural = {
+                    "pathway": "Pathways",
+                    "subcategory": "KEGG sub-categories",
+                    "category": "KEGG categories",
+                }[pathway_mdc_resolution]
+                pathway_metric_columns[0].metric(
+                    resolution_plural,
+                    f"{pathway_summary['pathway_id'].nunique():,}",
+                )
+                pathway_metric_columns[1].metric(
+                    "Modules", f"{pathway_group_rows['module'].nunique():,}"
+                )
+                pathway_metric_columns[2].metric(
+                    f"Region/{resolution_singular.lower()} cells",
+                    f"{len(pathway_summary):,}",
+                )
+                pathway_metric_columns[3].metric(
+                    "Module-component annotations", f"{len(pathway_group_rows):,}"
+                )
+                pathway_options = pathway_ranking["pathway_id"].astype(str).tolist()
+                pathway_label_map = pathway_ranking.set_index("pathway_id")[
+                    "pathway_label"
+                ].to_dict()
+                pathway_selection_columns = st.columns([2, 1])
+                selected_pathway_id = pathway_selection_columns[0].selectbox(
+                    f"{resolution_singular} detail",
+                    options=pathway_options,
+                    format_func=lambda value: (
+                        f"{pathway_label_map[value]} ({value})"
+                        if pathway_mdc_resolution == "pathway"
+                        else pathway_label_map[value]
+                    ),
+                    key=(
+                        f"pathway_mdc_selected_{module_set}_"
+                        f"{pathway_mdc_resolution}"
+                    ),
+                )
+                maximum_top_pathways = min(60, len(pathway_options))
+                top_pathways = pathway_selection_columns[1].slider(
+                    f"{resolution_plural} in heatmap",
+                    min_value=1,
+                    max_value=maximum_top_pathways,
+                    value=min(25, maximum_top_pathways),
+                    key=(
+                        f"pathway_mdc_top_n_{module_set}_"
+                        f"{pathway_mdc_resolution}"
+                    ),
+                )
+                render_plotly_chart(
+                    pathway_mdc_heatmap_figure(
+                        pathway_summary,
+                        scale=mdc_scale,
+                        top_n=top_pathways,
+                        selected_pathway_id=selected_pathway_id,
+                        module_definition=module_set_label,
+                        resolution=pathway_mdc_resolution,
+                    ),
+                    use_container_width=True,
+                    config={"displaylogo": False, "scrollZoom": True},
+                )
+                st.caption(
+                    "Each heatmap cell gives equal weight to every qualifying enriched module. "
+                    "At category and sub-category resolution, a module with several supporting "
+                    "pathways is counted once and uses its smallest component-matched KEGG FDR. "
+                    "On log2 scale it is the arithmetic mean log2 MDC; on raw scale it is the "
+                    "equivalent geometric mean MDC ratio. Cell n is the number of enriched modules; "
+                    "hover also reports the number of distinct supporting pathways."
+                )
+                selected_pathway_rows = pathway_group_rows.loc[
+                    pathway_group_rows["pathway_id"]
+                    .astype(str)
+                    .eq(selected_pathway_id)
+                ].copy()
+                render_plotly_chart(
+                    pathway_mdc_detail_figure(
+                        selected_pathway_rows,
+                        pathway_id=selected_pathway_id,
+                        selected_module=module,
+                        threshold=mdc_threshold,
+                        scale=mdc_scale,
+                        module_definition=module_set_label,
+                        resolution=pathway_mdc_resolution,
+                    ),
+                    use_container_width=True,
+                    config={"displaylogo": False},
+                )
+                pathway_detail_columns = [
+                    "enrichment_resolution_label",
+                    "pathway_label",
+                    "category_level1",
+                    "category_level2",
+                    "supporting_pathway_count",
+                    "supporting_pathway_ids",
+                    "supporting_pathway_names",
+                    "supporting_subcategories",
+                    "best_supporting_pathway_id",
+                    "best_supporting_pathway_name",
+                    "module",
+                    "component_label",
+                    "enrichment_scope",
+                    "enrichment_p",
+                    "enrichment_fdr",
+                    "enrichment_region_a",
+                    "enrichment_fdr_region_a",
+                    "enrichment_region_b",
+                    "enrichment_fdr_region_b",
+                    "mdc",
+                    "log2_mdc",
+                    "direction",
+                    "directional_fdr",
+                    "n_edges",
+                ]
+                if pathway_mdc_resolution == "pathway":
+                    pathway_detail_columns[1:1] = ["pathway_id"]
+                    pathway_detail_columns.extend(["overlap_k", "overlap_genes"])
+                selected_pathway_rows = selected_pathway_rows.sort_values(
+                    ["component_label", "directional_fdr", "enrichment_fdr"],
+                    kind="stable",
+                )
+                filterable_dataframe(
+                    selected_pathway_rows[pathway_detail_columns],
+                    table_key=f"pathway_mdc_detail_{pathway_mdc_resolution}",
+                    table_name=f"{resolution_singular}-resolved MDC detail",
+                    use_container_width=True,
+                    hide_index=True,
+                    height=480,
+                    column_config={
+                        **(
+                            {"overlap_genes": "Overlap gene symbols"}
+                            if pathway_mdc_resolution == "pathway"
+                            else {}
+                        ),
+                        "supporting_pathway_names": "Supporting pathway names",
+                        "best_supporting_pathway_name": "Best-FDR supporting pathway",
+                    },
+                )
+                download_columns = [
+                    "enrichment_resolution",
+                    "enrichment_resolution_label",
                     "pathway_id",
                     "pathway_label",
                     "category_level1",
                     "category_level2",
+                    "component",
+                    "component_label",
+                    "enrichment_scope",
+                    "n_modules",
+                    "n_pathways",
+                    "mean_log2_mdc",
+                    "geometric_mean_mdc",
+                    "median_mdc",
+                    "minimum_enrichment_fdr",
+                    "median_enrichment_fdr",
+                    "n_mdc_significant",
+                    "proportion_mdc_significant",
+                    "minimum_mdc_fdr",
+                    "total_edges",
                 ]
-            ].fillna("").astype(str)
-            pathway_rows = pathway_rows.loc[
-                searchable.agg(" ".join, axis=1).str.contains(
-                    pathway_search, case=False, regex=False
-                )
-            ].copy()
-
-        pathway_group_rows = collapse_pathway_mdc_rows(
-            pathway_rows,
-            resolution=pathway_mdc_resolution,
-        )
-        pathway_summary = summarize_pathway_mdc_rows(
-            pathway_group_rows,
-            mdc_fdr_threshold=mdc_threshold,
-            minimum_modules=minimum_pathway_modules,
-            resolution=pathway_mdc_resolution,
-        )
-        if pathway_summary.empty:
-            st.info("No KEGG-annotated MDC cells remain under the current filters.")
-        else:
-            retained_pathway_ids = set(pathway_summary["pathway_id"].astype(str))
-            pathway_group_rows = pathway_group_rows.loc[
-                pathway_group_rows["pathway_id"]
-                .astype(str)
-                .isin(retained_pathway_ids)
-            ].copy()
-            pathway_ranking = (
-                pathway_summary.assign(
-                    absolute_mean_log2_mdc=pathway_summary["mean_log2_mdc"].abs()
-                )
-                .groupby(["pathway_id", "pathway_label"], observed=True)
-                .agg(
-                    maximum_absolute_mean_log2_mdc=(
-                        "absolute_mean_log2_mdc",
-                        "max",
+                download_columns = [
+                    column for column in download_columns if column in pathway_summary
+                ]
+                pathway_download_columns = st.columns(2)
+                pathway_download_columns[0].download_button(
+                    f"Download {resolution_singular.lower()}-component summary (TSV)",
+                    data=dataframe_to_tsv_bytes(pathway_summary[download_columns]),
+                    file_name=(
+                        f"{download_prefix}{pathway_mdc_resolution}_resolved_"
+                        "MDC_summary.tsv"
                     ),
-                    minimum_enrichment_fdr=("minimum_enrichment_fdr", "min"),
-                    maximum_module_support=("n_modules", "max"),
+                    mime="text/tab-separated-values",
                 )
-                .reset_index()
-                .sort_values(
-                    [
-                        "maximum_absolute_mean_log2_mdc",
-                        "minimum_enrichment_fdr",
-                        "maximum_module_support",
-                    ],
-                    ascending=[False, True, False],
-                    kind="stable",
-                )
-            )
-            pathway_metric_columns = st.columns(4)
-            resolution_singular = MDC_ENRICHMENT_RESOLUTION_LABELS[
-                pathway_mdc_resolution
-            ]
-            resolution_plural = {
-                "pathway": "Pathways",
-                "subcategory": "KEGG sub-categories",
-                "category": "KEGG categories",
-            }[pathway_mdc_resolution]
-            pathway_metric_columns[0].metric(
-                resolution_plural,
-                f"{pathway_summary['pathway_id'].nunique():,}",
-            )
-            pathway_metric_columns[1].metric(
-                "Modules", f"{pathway_group_rows['module'].nunique():,}"
-            )
-            pathway_metric_columns[2].metric(
-                f"Region/{resolution_singular.lower()} cells",
-                f"{len(pathway_summary):,}",
-            )
-            pathway_metric_columns[3].metric(
-                "Module-component annotations", f"{len(pathway_group_rows):,}"
-            )
-            pathway_options = pathway_ranking["pathway_id"].astype(str).tolist()
-            pathway_label_map = pathway_ranking.set_index("pathway_id")[
-                "pathway_label"
-            ].to_dict()
-            pathway_selection_columns = st.columns([2, 1])
-            selected_pathway_id = pathway_selection_columns[0].selectbox(
-                f"{resolution_singular} detail",
-                options=pathway_options,
-                format_func=lambda value: (
-                    f"{pathway_label_map[value]} ({value})"
-                    if pathway_mdc_resolution == "pathway"
-                    else pathway_label_map[value]
-                ),
-                key=(
-                    f"pathway_mdc_selected_{module_set}_"
-                    f"{pathway_mdc_resolution}"
-                ),
-            )
-            maximum_top_pathways = min(60, len(pathway_options))
-            top_pathways = pathway_selection_columns[1].slider(
-                f"{resolution_plural} in heatmap",
-                min_value=1,
-                max_value=maximum_top_pathways,
-                value=min(25, maximum_top_pathways),
-                key=(
-                    f"pathway_mdc_top_n_{module_set}_"
-                    f"{pathway_mdc_resolution}"
-                ),
-            )
-            render_plotly_chart(
-                pathway_mdc_heatmap_figure(
-                    pathway_summary,
-                    scale=mdc_scale,
-                    top_n=top_pathways,
-                    selected_pathway_id=selected_pathway_id,
-                    module_definition=module_set_label,
-                    resolution=pathway_mdc_resolution,
-                ),
-                use_container_width=True,
-                config={"displaylogo": False, "scrollZoom": True},
-            )
-            st.caption(
-                "Each heatmap cell gives equal weight to every qualifying enriched module. "
-                "At category and sub-category resolution, a module with several supporting "
-                "pathways is counted once and uses its smallest component-matched KEGG FDR. "
-                "On log2 scale it is the arithmetic mean log2 MDC; on raw scale it is the "
-                "equivalent geometric mean MDC ratio. Cell n is the number of enriched modules; "
-                "hover also reports the number of distinct supporting pathways."
-            )
-            selected_pathway_rows = pathway_group_rows.loc[
-                pathway_group_rows["pathway_id"]
-                .astype(str)
-                .eq(selected_pathway_id)
-            ].copy()
-            render_plotly_chart(
-                pathway_mdc_detail_figure(
-                    selected_pathway_rows,
-                    pathway_id=selected_pathway_id,
-                    selected_module=module,
-                    threshold=mdc_threshold,
-                    scale=mdc_scale,
-                    module_definition=module_set_label,
-                    resolution=pathway_mdc_resolution,
-                ),
-                use_container_width=True,
-                config={"displaylogo": False},
-            )
-            pathway_detail_columns = [
-                "enrichment_resolution_label",
-                "pathway_label",
-                "category_level1",
-                "category_level2",
-                "supporting_pathway_count",
-                "supporting_pathway_ids",
-                "supporting_pathway_names",
-                "supporting_subcategories",
-                "best_supporting_pathway_id",
-                "best_supporting_pathway_name",
-                "module",
-                "component_label",
-                "enrichment_scope",
-                "enrichment_p",
-                "enrichment_fdr",
-                "enrichment_region_a",
-                "enrichment_fdr_region_a",
-                "enrichment_region_b",
-                "enrichment_fdr_region_b",
-                "mdc",
-                "log2_mdc",
-                "direction",
-                "directional_fdr",
-                "n_edges",
-            ]
-            if pathway_mdc_resolution == "pathway":
-                pathway_detail_columns[1:1] = ["pathway_id"]
-                pathway_detail_columns.extend(["overlap_k", "overlap_genes"])
-            selected_pathway_rows = selected_pathway_rows.sort_values(
-                ["component_label", "directional_fdr", "enrichment_fdr"],
-                kind="stable",
-            )
-            filterable_dataframe(
-                selected_pathway_rows[pathway_detail_columns],
-                table_key=f"pathway_mdc_detail_{pathway_mdc_resolution}",
-                table_name=f"{resolution_singular}-resolved MDC detail",
-                use_container_width=True,
-                hide_index=True,
-                height=480,
-                column_config={
-                    **(
-                        {"overlap_genes": "Overlap gene symbols"}
-                        if pathway_mdc_resolution == "pathway"
-                        else {}
+                pathway_download_columns[1].download_button(
+                    f"Download selected {resolution_singular.lower()} module rows (TSV)",
+                    data=dataframe_to_tsv_bytes(
+                        selected_pathway_rows[pathway_detail_columns]
                     ),
-                    "supporting_pathway_names": "Supporting pathway names",
-                    "best_supporting_pathway_name": "Best-FDR supporting pathway",
-                },
-            )
-            download_columns = [
-                "enrichment_resolution",
-                "enrichment_resolution_label",
-                "pathway_id",
-                "pathway_label",
-                "category_level1",
-                "category_level2",
-                "component",
-                "component_label",
-                "enrichment_scope",
-                "n_modules",
-                "n_pathways",
-                "mean_log2_mdc",
-                "geometric_mean_mdc",
-                "median_mdc",
-                "minimum_enrichment_fdr",
-                "median_enrichment_fdr",
-                "n_mdc_significant",
-                "proportion_mdc_significant",
-                "minimum_mdc_fdr",
-                "total_edges",
-            ]
-            download_columns = [
-                column for column in download_columns if column in pathway_summary
-            ]
-            pathway_download_columns = st.columns(2)
-            pathway_download_columns[0].download_button(
-                f"Download {resolution_singular.lower()}-component summary (TSV)",
-                data=dataframe_to_tsv_bytes(pathway_summary[download_columns]),
-                file_name=(
-                    f"{download_prefix}{pathway_mdc_resolution}_resolved_"
-                    "MDC_summary.tsv"
-                ),
-                mime="text/tab-separated-values",
-            )
-            pathway_download_columns[1].download_button(
-                f"Download selected {resolution_singular.lower()} module rows (TSV)",
-                data=dataframe_to_tsv_bytes(
-                    selected_pathway_rows[pathway_detail_columns]
-                ),
-                file_name=(
-                    f"{download_prefix}selected_{pathway_mdc_resolution}_"
-                    "regional_MDC_modules.tsv"
-                ),
-                mime="text/tab-separated-values",
-            )
+                    file_name=(
+                        f"{download_prefix}selected_{pathway_mdc_resolution}_"
+                        "regional_MDC_modules.tsv"
+                    ),
+                    mime="text/tab-separated-values",
+                )
 
 if active_view == "Statistics":
     st.subheader("Robust association statistics")

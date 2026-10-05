@@ -10,7 +10,12 @@ import plotly.express as px
 import streamlit as st
 
 from app_helpers.drive_data import DATA_DIR, data_path_available, ensure_data_path
-from app_helpers.streamlit_compat import normalize_width_kwargs, plotly_chart
+from app_helpers.streamlit_compat import (
+    normalize_width_kwargs,
+    plotly_chart,
+    stateful_tabs,
+    tab_is_open,
+)
 from app_helpers.table_controls import filterable_dataframe
 
 
@@ -258,63 +263,69 @@ def render_protocol_v11_view() -> None:
             "has not been built yet."
         )
         return
-    status_tab, outcome_tab, result_tab, importance_tab, methods_tab = st.tabs(
-        ["Status & gates", "Outcomes", "Results", "Feature importance", "Methods"]
+    status_tab, outcome_tab, result_tab, importance_tab, methods_tab = stateful_tabs(
+        ["Status & gates", "Outcomes", "Results", "Feature importance", "Methods"],
+        key="protocol_v11_tabs",
     )
     with status_tab:
-        _render_status(manifest)
-        qa = load_protocol_table("qa")
-        resources = load_protocol_table("resources")
-        null_progress = load_protocol_table("null_progress")
-        if not qa.empty:
-            filterable_dataframe(
-                qa,
-                table_key="protocol_v11_qa",
-                table_name="Formula, null, invariance, and leakage QA",
-                hide_index=True,
-            )
-        if not resources.empty:
-            filterable_dataframe(
-                resources,
-                table_key="protocol_v11_resources",
-                table_name="Measured and projected resources, including null suites",
-                hide_index=True,
-            )
-        if not null_progress.empty:
-            st.caption(
-                "Only the controlled role-artifact experiment has a chance-level gate. "
-                "Study×sex permutations are a descriptive conditional null."
-            )
-            filterable_dataframe(
-                null_progress,
-                table_key="protocol_v11_null_progress",
-                table_name="Level-B null-experiment progress",
-                hide_index=True,
-            )
+        if tab_is_open(status_tab):
+            _render_status(manifest)
+            qa = load_protocol_table("qa")
+            resources = load_protocol_table("resources")
+            null_progress = load_protocol_table("null_progress")
+            if not qa.empty:
+                filterable_dataframe(
+                    qa,
+                    table_key="protocol_v11_qa",
+                    table_name="Formula, null, invariance, and leakage QA",
+                    hide_index=True,
+                )
+            if not resources.empty:
+                filterable_dataframe(
+                    resources,
+                    table_key="protocol_v11_resources",
+                    table_name="Measured and projected resources, including null suites",
+                    hide_index=True,
+                )
+            if not null_progress.empty:
+                st.caption(
+                    "Only the controlled role-artifact experiment has a chance-level gate. "
+                    "Study×sex permutations are a descriptive conditional null."
+                )
+                filterable_dataframe(
+                    null_progress,
+                    table_key="protocol_v11_null_progress",
+                    table_name="Level-B null-experiment progress",
+                    hide_index=True,
+                )
     with outcome_tab:
-        _render_outcomes()
+        if tab_is_open(outcome_tab):
+            _render_outcomes()
     with result_tab:
-        _render_results(manifest)
+        if tab_is_open(result_tab):
+            _render_results(manifest)
     with importance_tab:
-        _render_importance()
+        if tab_is_open(importance_tab):
+            _render_importance()
     with methods_tab:
-        st.markdown(
-            "The controlled role-artifact null permutes diagnosis across the eligible "
-            "AD/Control cohort and has chance-level AUC gates. The separate study×sex "
-            "conditional permutation preserves stratum-specific prevalence; its pooled "
-            "AUC is summarized empirically and is not required to lie in 0.48–0.52."
-        )
-        st.markdown(
-            "Changing inner-validation labels cannot alter inner-training references, "
-            "features, preprocessing, or fixed candidate models, but may change validation "
-            "scores and hyperparameter selection. Outer-test outcomes never influence "
-            "fitting or selection."
-        )
-        st.markdown(
-            "If the role-artifact gate fails, every donor uses the same deterministic "
-            "label-independent reference-fold assignment. Equal-size Control references "
-            "are built only from the applicable training partition, and a training "
-            "Control's assigned fold is excluded from its own reference at inner and "
-            "outer levels."
-        )
-        st.json(manifest, expanded=False)
+        if tab_is_open(methods_tab):
+            st.markdown(
+                "The controlled role-artifact null permutes diagnosis across the eligible "
+                "AD/Control cohort and has chance-level AUC gates. The separate study×sex "
+                "conditional permutation preserves stratum-specific prevalence; its pooled "
+                "AUC is summarized empirically and is not required to lie in 0.48–0.52."
+            )
+            st.markdown(
+                "Changing inner-validation labels cannot alter inner-training references, "
+                "features, preprocessing, or fixed candidate models, but may change validation "
+                "scores and hyperparameter selection. Outer-test outcomes never influence "
+                "fitting or selection."
+            )
+            st.markdown(
+                "If the role-artifact gate fails, every donor uses the same deterministic "
+                "label-independent reference-fold assignment. Equal-size Control references "
+                "are built only from the applicable training partition, and a training "
+                "Control's assigned fold is excluded from its own reference at inner and "
+                "outer levels."
+            )
+            st.json(manifest, expanded=False)
