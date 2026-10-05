@@ -52,8 +52,11 @@ def test_protocol_results_loader_exposes_only_complete_aggregate_performance() -
     performance = protocol_v11.load_protocol_table("performance")
     assert not performance.empty
     assert set(performance["outcome"]) == {"diagnosis_binary"}
-    assert set(performance["representation"]) == {"G"}
-    assert set(performance["model_family"]) == {"logistic_l2"}
+    assert set(performance["representation"]) == {"B", "G", "E", "C0"}
+    assert set(performance["model_family"]) == {
+        "logistic_l2",
+        "logistic_elastic_net",
+    }
     assert set(performance["completed_folds"]) == {25}
     assert set(performance["n_donors"]) == {331}
     assert {"donor", "projid", "donor_id"}.isdisjoint(performance.columns)

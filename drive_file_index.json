@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
   "root_folder_id": "1dTj5SkLxuDIvII5LayLViqOzjKQt-dos",
-  "generated_at_utc": "2026-10-02T11:08:41.521544+00:00",
-  "file_count": 9833,
-  "total_bytes": 46607091019,
+  "generated_at_utc": "2026-10-05T08:00:30.603997+00:00",
+  "file_count": 9847,
+  "total_bytes": 46614626748,
   "drive_list_requests": 25,
   "validated_prefixes": [
-    "regional_modules"
+    "protocol_v1_1"
   ],
   "files": {
     ".repo_bootstrap": {
@@ -140439,6 +140439,90 @@
       "size": 8859,
       "md5": "7829369b2b92d52b329c7beb27fbd760",
       "modified_time": "2026-09-07T12:00:58.030Z"
+    },
+    "protocol_v1_1/analysis_spec.json": {
+      "id": "1HvjGEpYdaliNr7vz8RdcjDDUaxWjN4JE",
+      "size": 15084,
+      "md5": "2225acf1ea6c24297f5745f88ad6d455",
+      "modified_time": "2026-10-05T07:56:48.441Z"
+    },
+    "protocol_v1_1/explanation_completion.tsv": {
+      "id": "1k7W1O2bNsxoSVvNIEd-oE2PdJnrEVZni",
+      "size": 5249696,
+      "md5": "94b61685ba6c571127ade69e76dd5ea2",
+      "modified_time": "2026-10-05T07:56:50.457Z"
+    },
+    "protocol_v1_1/expression_inventory.tsv": {
+      "id": "1wrosifnEaj4RFBuBfB3pHyvTa-ObUnuC",
+      "size": 431,
+      "md5": "1ac41ee248af9d0cc356411488ee2c70",
+      "modified_time": "2026-10-05T07:56:51.786Z"
+    },
+    "protocol_v1_1/linear_model_completion.tsv": {
+      "id": "1998snkEhZRizw6NjLSVaJP4X_1tDfcAZ",
+      "size": 34807,
+      "md5": "974db73e9cd25ba8ffd8dddb228ce91c",
+      "modified_time": "2026-10-05T07:56:53.181Z"
+    },
+    "protocol_v1_1/manifest.json": {
+      "id": "1wmXZ36tRJyth6J3HvtwzexOE1I3F_fGY",
+      "size": 6149,
+      "md5": "e3d94a809acc2d10efd4c31909b31ea6",
+      "modified_time": "2026-10-05T07:56:54.630Z"
+    },
+    "protocol_v1_1/null_progress.tsv": {
+      "id": "1skDkoSCBuiitai723C3Q14FP6IR23NkA",
+      "size": 542,
+      "md5": "ecdaa5fc9bf6c11f257f8170299d2776",
+      "modified_time": "2026-10-05T07:56:56.227Z"
+    },
+    "protocol_v1_1/outcome_dictionary.tsv": {
+      "id": "1CMc1zlKK-Jj0viIWnsoBfmhhn9N7b5ix",
+      "size": 7073,
+      "md5": "ccd86ccf5e68eaa0df6a51dee3f600a4",
+      "modified_time": "2026-10-05T07:56:57.548Z"
+    },
+    "protocol_v1_1/outcome_exclusions.tsv": {
+      "id": "1V8klexjz6irIwrUTVsmVdnCXj-V1wdCg",
+      "size": 1315,
+      "md5": "2107ec8f020311ddd8b84ab2ead0fe2f",
+      "modified_time": "2026-10-05T07:56:59.681Z"
+    },
+    "protocol_v1_1/performance.parquet": {
+      "id": "1QtTUkSB0JIbZJaA0Wwjkjx-nAfupj1FR",
+      "size": 15630,
+      "md5": "12d6c15058b77943a3bfeeed32fa5852",
+      "modified_time": "2026-10-05T07:57:00.995Z"
+    },
+    "protocol_v1_1/prediction_completion.tsv": {
+      "id": "1vXUm7o8Dijn7yXClS1Ki4tdunEKrZlWg",
+      "size": 2200778,
+      "md5": "7bec45b0ec6781d2deb57f175d677e25",
+      "modified_time": "2026-10-05T07:57:02.984Z"
+    },
+    "protocol_v1_1/qa_gates.tsv": {
+      "id": "17ZF_GxmzpL6fdMuMfCaZh9081uBNcN2N",
+      "size": 1437,
+      "md5": "e8ec6930f4d99f7f4c0e823f246b45c6",
+      "modified_time": "2026-10-05T07:57:04.497Z"
+    },
+    "protocol_v1_1/resource_measurements.tsv": {
+      "id": "1HG0smHtBg_i7-Cr9aZ0q1UsIT_fu7iiC",
+      "size": 825,
+      "md5": "6dfef4a41663b5146c967269d9d97a72",
+      "modified_time": "2026-10-05T07:57:05.935Z"
+    },
+    "protocol_v1_1/source_inventory.tsv": {
+      "id": "1dtT4aYSaxhAX_49fTCpGRBxJ3Jc6GU_P",
+      "size": 864,
+      "md5": "b9dfb79dd62809fa94393a2f7db642fa",
+      "modified_time": "2026-10-05T07:57:07.487Z"
+    },
+    "protocol_v1_1/split_registry_summary.tsv": {
+      "id": "1I8362_5OWat3UktYDpp3LGkNYQBVxmI7",
+      "size": 1098,
+      "md5": "807969961ff975ea61f3e4a33938dd0a",
+      "modified_time": "2026-10-05T07:57:08.824Z"
     },
     "regional_modules/kegg_enrichment.parquet": {
       "id": "1RssHMVZwb7HGWeRGeco6SFrv2MJXv8IL",
