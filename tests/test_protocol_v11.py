@@ -54,20 +54,26 @@ def test_protocol_results_loader_exposes_only_complete_aggregate_performance() -
     assert set(performance["outcome"]) == {
         "diagnosis_binary",
         "diagnosis_three_class",
+        "gpath",
     }
     binary = performance.loc[performance["outcome"].eq("diagnosis_binary")]
     three_class = performance.loc[
         performance["outcome"].eq("diagnosis_three_class")
     ]
+    gpath = performance.loc[performance["outcome"].eq("gpath")]
     assert set(binary["representation"]) == {"B", "G", "E", "C0"}
     assert set(three_class["representation"]) == {"B", "E", "C0"}
+    assert set(gpath["representation"]) == {"B", "E", "C0"}
     assert set(performance["model_family"]) == {
         "logistic_l2",
         "logistic_elastic_net",
+        "ridge",
+        "elastic_net",
     }
     assert set(performance["completed_folds"]) == {25}
     assert set(binary["n_donors"]) == {331}
     assert set(three_class["n_donors"]) == {450}
+    assert set(gpath["n_donors"]) == {457}
     assert {"donor", "projid", "donor_id"}.isdisjoint(performance.columns)
     assert protocol_v11.load_protocol_table("coefficients").empty
 
