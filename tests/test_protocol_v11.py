@@ -51,14 +51,23 @@ def test_protocol_outcomes_preserve_verified_and_blocked_definitions() -> None:
 def test_protocol_results_loader_exposes_only_complete_aggregate_performance() -> None:
     performance = protocol_v11.load_protocol_table("performance")
     assert not performance.empty
-    assert set(performance["outcome"]) == {"diagnosis_binary"}
-    assert set(performance["representation"]) == {"B", "G", "E", "C0"}
+    assert set(performance["outcome"]) == {
+        "diagnosis_binary",
+        "diagnosis_three_class",
+    }
+    binary = performance.loc[performance["outcome"].eq("diagnosis_binary")]
+    three_class = performance.loc[
+        performance["outcome"].eq("diagnosis_three_class")
+    ]
+    assert set(binary["representation"]) == {"B", "G", "E", "C0"}
+    assert set(three_class["representation"]) == {"B", "E", "C0"}
     assert set(performance["model_family"]) == {
         "logistic_l2",
         "logistic_elastic_net",
     }
     assert set(performance["completed_folds"]) == {25}
-    assert set(performance["n_donors"]) == {331}
+    assert set(binary["n_donors"]) == {331}
+    assert set(three_class["n_donors"]) == {450}
     assert {"donor", "projid", "donor_id"}.isdisjoint(performance.columns)
     assert protocol_v11.load_protocol_table("coefficients").empty
 
@@ -73,6 +82,8 @@ def test_protocol_view_renders_validated_performance() -> None:
         timeout=300
     )
     app.session_state["protocol_v11_tabs"] = "Results"
+    if not hasattr(app, "pills"):
+        _analysis_selector(app)._value = ["Prediction"]
     app = app.run(timeout=300)
     assert not app.exception
     assert len(app.get("plotly_chart")) >= 1
