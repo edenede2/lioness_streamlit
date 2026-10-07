@@ -52,18 +52,23 @@ def test_protocol_results_loader_exposes_only_complete_aggregate_performance() -
     performance = protocol_v11.load_protocol_table("performance")
     assert not performance.empty
     assert set(performance["outcome"]) == {
+        "amyloid",
         "diagnosis_binary",
         "diagnosis_three_class",
         "gpath",
+        "tangles",
     }
     binary = performance.loc[performance["outcome"].eq("diagnosis_binary")]
     three_class = performance.loc[
         performance["outcome"].eq("diagnosis_three_class")
     ]
     gpath = performance.loc[performance["outcome"].eq("gpath")]
+    amyloid = performance.loc[performance["outcome"].eq("amyloid")]
+    tangles = performance.loc[performance["outcome"].eq("tangles")]
     assert set(binary["representation"]) == {"B", "G", "E", "C0"}
     assert set(three_class["representation"]) == {"B", "E", "C0"}
-    assert set(gpath["representation"]) == {"B", "E", "C0"}
+    for regression in (gpath, amyloid, tangles):
+        assert set(regression["representation"]) == {"B", "E", "C0"}
     assert set(performance["model_family"]) == {
         "logistic_l2",
         "logistic_elastic_net",
@@ -74,6 +79,8 @@ def test_protocol_results_loader_exposes_only_complete_aggregate_performance() -
     assert set(binary["n_donors"]) == {331}
     assert set(three_class["n_donors"]) == {450}
     assert set(gpath["n_donors"]) == {457}
+    assert set(amyloid["n_donors"]) == {456}
+    assert set(tangles["n_donors"]) == {455}
     assert {"donor", "projid", "donor_id"}.isdisjoint(performance.columns)
     assert protocol_v11.load_protocol_table("coefficients").empty
 
