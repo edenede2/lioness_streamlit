@@ -192,6 +192,17 @@ def _render_results(manifest: dict[str, object]) -> None:
             key=f"protocol_v11_{column}",
         )
         selected = selected.loc[selected[column].astype(str).eq(choice)]
+    if "fold_metric_status" in selected:
+        partial = selected.loc[
+            selected["fold_metric_status"].astype(str).eq("partially_unavailable")
+        ]
+        if not partial.empty:
+            st.warning(
+                "Some fold-level correlation metrics are undefined because the fitted "
+                "model produced constant predictions in those folds. Donor-averaged "
+                "repeated-OOF performance remains available; see valid_fold_metrics in "
+                "the table for the fold-level summary coverage."
+            )
     if {"metric", "value", "representation"}.issubset(selected.columns):
         figure = px.bar(
             selected,

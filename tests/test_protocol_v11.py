@@ -58,6 +58,7 @@ def test_protocol_results_loader_exposes_only_complete_aggregate_performance() -
         "diagnosis_three_class",
         "gpath",
         "motor_function",
+        "parkinsonian_signs",
         "tangles",
     }
     binary = performance.loc[performance["outcome"].eq("diagnosis_binary")]
@@ -68,10 +69,20 @@ def test_protocol_results_loader_exposes_only_complete_aggregate_performance() -
     amyloid = performance.loc[performance["outcome"].eq("amyloid")]
     cogn_global = performance.loc[performance["outcome"].eq("cogn_global")]
     motor_function = performance.loc[performance["outcome"].eq("motor_function")]
+    parkinsonian_signs = performance.loc[
+        performance["outcome"].eq("parkinsonian_signs")
+    ]
     tangles = performance.loc[performance["outcome"].eq("tangles")]
     assert set(binary["representation"]) == {"B", "G", "E", "C0"}
     assert set(three_class["representation"]) == {"B", "E", "C0"}
-    for regression in (gpath, amyloid, cogn_global, motor_function, tangles):
+    for regression in (
+        gpath,
+        amyloid,
+        cogn_global,
+        motor_function,
+        parkinsonian_signs,
+        tangles,
+    ):
         assert set(regression["representation"]) == {"B", "E", "C0"}
     assert set(performance["model_family"]) == {
         "logistic_l2",
@@ -86,6 +97,11 @@ def test_protocol_results_loader_exposes_only_complete_aggregate_performance() -
     assert set(amyloid["n_donors"]) == {456}
     assert set(cogn_global["n_donors"]) == {456}
     assert set(motor_function["n_donors"]) == {436}
+    assert set(parkinsonian_signs["n_donors"]) == {448}
+    assert set(parkinsonian_signs["fold_metric_status"]) == {
+        "complete",
+        "partially_unavailable",
+    }
     assert set(tangles["n_donors"]) == {455}
     assert {"donor", "projid", "donor_id"}.isdisjoint(performance.columns)
     assert protocol_v11.load_protocol_table("coefficients").empty
