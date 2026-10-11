@@ -53,6 +53,7 @@ def test_protocol_results_loader_exposes_only_complete_aggregate_performance() -
     assert not performance.empty
     assert set(performance["outcome"]) == {
         "amyloid",
+        "clinical_pd",
         "cogn_global",
         "diagnosis_binary",
         "diagnosis_three_class",
@@ -62,6 +63,7 @@ def test_protocol_results_loader_exposes_only_complete_aggregate_performance() -
         "tangles",
     }
     binary = performance.loc[performance["outcome"].eq("diagnosis_binary")]
+    clinical_pd = performance.loc[performance["outcome"].eq("clinical_pd")]
     three_class = performance.loc[
         performance["outcome"].eq("diagnosis_three_class")
     ]
@@ -74,6 +76,7 @@ def test_protocol_results_loader_exposes_only_complete_aggregate_performance() -
     ]
     tangles = performance.loc[performance["outcome"].eq("tangles")]
     assert set(binary["representation"]) == {"B", "G", "E", "C0"}
+    assert set(clinical_pd["representation"]) == {"B", "E", "C0"}
     assert set(three_class["representation"]) == {"B", "E", "C0"}
     for regression in (
         gpath,
@@ -92,6 +95,8 @@ def test_protocol_results_loader_exposes_only_complete_aggregate_performance() -
     }
     assert set(performance["completed_folds"]) == {25}
     assert set(binary["n_donors"]) == {331}
+    assert set(clinical_pd["n_donors"]) == {355}
+    assert set(clinical_pd["weighting_policy"]) == {"inverse_frequency"}
     assert set(three_class["n_donors"]) == {450}
     assert set(gpath["n_donors"]) == {457}
     assert set(amyloid["n_donors"]) == {456}
