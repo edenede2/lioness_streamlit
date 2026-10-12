@@ -4151,13 +4151,28 @@ with st.sidebar:
             ),
         )
     else:
+        effect_manifest = cached_effect_size_manifest(module_set)
+        available_effect_statistics = effect_manifest.get(
+            "available_effect_statistics", list(EFFECT_STATISTIC_LABELS)
+        )
+        available_effect_statistics = [
+            value for value in available_effect_statistics
+            if value in EFFECT_STATISTIC_LABELS
+        ] or list(EFFECT_STATISTIC_LABELS)
         effect_statistic = st.radio(
             "Effect statistic",
-            options=list(EFFECT_STATISTIC_LABELS),
+            options=available_effect_statistics,
             format_func=lambda value: EFFECT_STATISTIC_LABELS[value],
             horizontal=True,
         )
-        cutoff_modes = ["fixed", "module_top_fraction"] if effect_statistic == "hedges_g" else ["module_top_fraction"]
+        available_cutoff_modes = effect_manifest.get("available_cutoff_modes", {})
+        cutoff_modes = available_cutoff_modes.get(effect_statistic)
+        if not cutoff_modes:
+            cutoff_modes = (
+                ["fixed", "module_top_fraction"]
+                if effect_statistic == "hedges_g"
+                else ["module_top_fraction"]
+            )
         effect_cutoff_mode = st.radio(
             "Effect threshold type",
             options=cutoff_modes,
@@ -4168,23 +4183,39 @@ with st.sidebar:
             horizontal=True,
         )
         if effect_cutoff_mode == "fixed":
+            fixed_options = effect_manifest.get(
+                "available_fixed_hedges_g", list(HEDGES_FIXED_THRESHOLDS)
+            )
+            fixed_options = [float(value) for value in fixed_options]
+            default_fixed = 0.40 if 0.40 in fixed_options else fixed_options[0]
             effect_cutoff_value = st.select_slider(
                 "Absolute Hedges’ g cutoff",
-                options=list(HEDGES_FIXED_THRESHOLDS),
-                value=0.40,
+                options=fixed_options,
+                value=default_fixed,
                 format_func=lambda value: f"|g| ≥ {value:.2f}",
             )
         else:
+            fraction_options = effect_manifest.get(
+                "available_module_top_fractions", list(MODULE_TOP_FRACTIONS)
+            )
+            fraction_options = [float(value) for value in fraction_options]
             effect_cutoff_value = st.radio(
                 "Retained module edges",
-                options=list(MODULE_TOP_FRACTIONS),
+                options=fraction_options,
                 format_func=lambda value: f"Top {int(round(100 * value))}%",
-                index=1,
+                index=min(1, len(fraction_options) - 1),
                 horizontal=True,
             )
+        available_directions = effect_manifest.get(
+            "available_directions", list(EFFECT_DIRECTION_LABELS)
+        )
+        available_directions = [
+            value for value in available_directions
+            if value in EFFECT_DIRECTION_LABELS
+        ] or list(EFFECT_DIRECTION_LABELS)
         effect_direction = st.radio(
             "Effect direction",
-            options=list(EFFECT_DIRECTION_LABELS),
+            options=available_directions,
             format_func=lambda value: EFFECT_DIRECTION_LABELS[value],
             horizontal=True,
         )
@@ -4192,6 +4223,11 @@ with st.sidebar:
             effect_statistic, effect_cutoff_mode,
             float(effect_cutoff_value), effect_direction,
         )
+        # Effect-only catalogs are guaranteed to retain the exact module-level
+        # Welch/BH statistics. Global BH remains available only where the full
+        # differential-edge catalog was explicitly generated.
+        if not differential_available:
+            differential_fdr_scope = "per_module"
     if not differential_available and not effect_available:
         if feature == "eigengene":
             st.caption("Edge-subset controls do not apply to expression eigengenes.")
@@ -4201,9 +4237,20 @@ with st.sidebar:
         score_normalization = "standard_pruned"
         analysis_subset = "all_donors"
     else:
+        available_score_normalizations = (
+            cached_effect_size_manifest(module_set).get(
+                "available_score_normalizations", list(SCORE_NORMALIZATION_LABELS)
+            )
+            if differential_edge_rule.startswith("ad_control_discovery_effect__")
+            else list(SCORE_NORMALIZATION_LABELS)
+        )
+        available_score_normalizations = [
+            value for value in available_score_normalizations
+            if value in SCORE_NORMALIZATION_LABELS
+        ] or list(SCORE_NORMALIZATION_LABELS)
         score_normalization = st.radio(
             "Score handling",
-            options=list(SCORE_NORMALIZATION_LABELS),
+            options=available_score_normalizations,
             format_func=lambda value: SCORE_NORMALIZATION_LABELS[value],
             help=(
                 "Standard pruning preserves the module-gene denominator. Retained-edge "
@@ -8061,15 +8108,25 @@ if active_view == "Edge volcano":
             "validation view uses the held-out 50 AD and 50 Control donors and never "
             "changes the discovery mask."
         )
-    if not differential_available:
+    if not differential_available and not effect_volcano:
         st.info("The differential-edge volcano bundle is not available in this deployment.")
     else:
         volcano_candidates = cached_volcano_candidates(
             module_set, estimator, method, module, differential_edge_rule
         )
-        volcano_bins = cached_volcano_bins(
-            module_set, estimator, method, module, differential_fdr_scope
-        )
+        if effect_volcano and not differential_available:
+            # An effect-only release keeps exact retained points without forcing
+            # the much larger all-edge density/FDR bundle into Streamlit memory.
+            volcano_bins = pd.DataFrame(
+                columns=[
+                    "analysis_set", "fdr_scope", "scope", "x_metric",
+                    "y_metric", "x_edges", "y_edges", "counts",
+                ]
+            )
+        else:
+            volcano_bins = cached_volcano_bins(
+                module_set, estimator, method, module, differential_fdr_scope
+            )
         volcano_left, volcano_middle, volcano_right = st.columns(3)
         with volcano_left:
             volcano_analysis_set = st.radio(
@@ -8105,7 +8162,11 @@ if active_view == "Edge volcano":
                 ),
             )
         with volcano_right:
-            volcano_scope_options = volcano_bins["scope"].drop_duplicates().tolist()
+            volcano_scope_options = (
+                ["total", "TS", "CT", *active_component_order]
+                if volcano_bins.empty
+                else volcano_bins["scope"].drop_duplicates().tolist()
+            )
             volcano_scope = st.selectbox(
                 "Edge scope",
                 options=volcano_scope_options,
@@ -8253,8 +8314,13 @@ if active_view == "Edge volcano":
         )
         st.caption(
             "Exact dots are colored by tissue component: circles are within-tissue "
-            "edges and diamonds are cross-tissue pairs. The gray density background "
-            "includes every edge in the selected scope. "
+            "edges and diamonds are cross-tissue pairs. "
+            + (
+                "This effect-only catalog omits the all-edge density background to keep "
+                "the public app lightweight. "
+                if volcano_bins.empty
+                else "The gray density background includes every edge in the selected scope. "
+            )
             + (
                 "Exact hoverable rows are the union of all supported effect-size masks; "
                 "the checkbox narrows them to the active criterion and its discovery direction."
@@ -8446,6 +8512,9 @@ if active_view == "MDC":
             "log-symmetric around MDC=1, so reciprocal changes such as 0.5 and 2 "
             "have equal color intensity in opposite directions."
         )
+    mdc_inference_complete = bool(
+        mdc_metadata.get("permutation_significance_complete", False)
+    )
 
     mdc_view = mdc_summary.copy()
     if "module_definition" in mdc_view:
@@ -8544,6 +8613,18 @@ if active_view == "MDC":
                 st.caption(
                     f"{direction} · directional FDR={fdr_value_text} · {significance_text}"
                 )
+                inference_column = f"inference_available_{scope}"
+                reason_column = f"inference_unavailable_reason_{scope}"
+                if (
+                    mdc_inference_complete
+                    and inference_column in selected_mdc_row.index
+                    and not bool(selected_mdc_row[inference_column])
+                ):
+                    reason = str(selected_mdc_row.get(reason_column, "")).strip()
+                    st.warning(
+                        "Descriptive MDC only"
+                        + (f": {reason}." if reason else ".")
+                    )
 
         selected_mdc_chart = mdc_module_figure(
             selected_mdc_row,
@@ -8630,16 +8711,35 @@ if active_view == "MDC":
                 f"{module_label(module)} in this module definition."
             )
 
+    significance_options = ["All modules"]
+    if mdc_inference_complete:
+        significance_options.extend(
+            [
+                "Any significant",
+                "Total significant",
+                "TS significant",
+                "CT significant",
+                "Evaluated, no significant MDC",
+                "Inference unavailable",
+            ]
+        )
     significance_filter = st.selectbox(
         "Modules to show in the MDC overview and entropy plots",
-        options=[
-            "All modules",
-            "Any significant",
-            "Total significant",
-            "TS significant",
-            "CT significant",
-            "No significant MDC",
-        ],
+        options=significance_options,
+    )
+    aggregate_inference_columns = [
+        column
+        for column in (
+            "inference_available_total",
+            "inference_available_ts",
+            "inference_available_ct",
+        )
+        if column in mdc_view.columns
+    ]
+    any_inference_available = (
+        mdc_view[aggregate_inference_columns].any(axis=1)
+        if aggregate_inference_columns
+        else pd.Series(False, index=mdc_view.index)
     )
     filter_masks = {
         "All modules": pd.Series(True, index=mdc_view.index),
@@ -8647,7 +8747,10 @@ if active_view == "MDC":
         "Total significant": mdc_view["significant_total"],
         "TS significant": mdc_view["significant_ts"],
         "CT significant": mdc_view["significant_ct"],
-        "No significant MDC": ~mdc_view["any_significant"],
+        "Evaluated, no significant MDC": (
+            any_inference_available & ~mdc_view["any_significant"]
+        ),
+        "Inference unavailable": ~any_inference_available,
     }
     displayed_mdc = mdc_view.loc[filter_masks[significance_filter]].copy()
     mdc_overview = mdc_overview_figure(
@@ -8788,6 +8891,19 @@ if active_view == "MDC":
         "n_ts_edges",
         "n_ct_edges",
     ]
+    for scope in ("total", "ts", "ct"):
+        mdc_columns.extend(
+            column
+            for column in (
+                f"mean_abs_ad_{scope}",
+                f"mean_abs_control_{scope}",
+                f"inference_available_{scope}",
+                f"inference_unavailable_reason_{scope}",
+                f"mdc_stable_for_inference_{scope}",
+                f"mdc_stability_reason_{scope}",
+            )
+            if column in displayed_mdc.columns
+        )
     if differential_edge_rule != "all":
         mdc_columns.extend(
             [
@@ -8902,16 +9018,49 @@ if active_view == "MDC":
             ].copy()
             resolved_significance = st.selectbox(
                 "Resolved MDC rows",
-                options=["All", "FDR significant", "Not FDR significant"],
+                options=[
+                    "All",
+                    "FDR significant",
+                    "Evaluated, not FDR significant",
+                    "FDR unavailable",
+                ],
                 key=f"resolved_mdc_significance_{module_set}",
             )
-            resolved_is_significant = pd.to_numeric(
+            resolved_fdr = pd.to_numeric(
                 resolved_mdc["directional_fdr"], errors="coerce"
-            ).lt(mdc_threshold)
+            )
+            resolved_is_significant = resolved_fdr.lt(mdc_threshold)
             if resolved_significance == "FDR significant":
                 resolved_mdc = resolved_mdc.loc[resolved_is_significant]
-            elif resolved_significance == "Not FDR significant":
-                resolved_mdc = resolved_mdc.loc[~resolved_is_significant]
+            elif resolved_significance == "Evaluated, not FDR significant":
+                resolved_mdc = resolved_mdc.loc[
+                    resolved_fdr.notna() & ~resolved_is_significant
+                ]
+            elif resolved_significance == "FDR unavailable":
+                resolved_mdc = resolved_mdc.loc[resolved_fdr.isna()]
+            if mdc_inference_complete and "mdc_stable_for_inference" in resolved_mdc:
+                unstable_count = int(
+                    (~resolved_mdc["mdc_stable_for_inference"].fillna(False)).sum()
+                )
+                show_descriptive_only = st.checkbox(
+                    "Include descriptive-only unstable components",
+                    value=False,
+                    key=f"resolved_mdc_unstable_{module_set}",
+                    help=(
+                        "These components have fewer than 10 edges or a near-zero AD/Control "
+                        "mean absolute weight. Their raw ratios may be extreme, so no FDR is "
+                        "reported."
+                    ),
+                )
+                if unstable_count:
+                    st.caption(
+                        f"{unstable_count:,} displayed component rows are descriptive-only "
+                        "before applying this stability filter."
+                    )
+                if not show_descriptive_only:
+                    resolved_mdc = resolved_mdc.loc[
+                        resolved_mdc["mdc_stable_for_inference"].fillna(False)
+                    ]
             selected_resolved_mdc = resolved_mdc.loc[
                 resolved_mdc["module"].astype(int).eq(int(module))
             ]
@@ -10166,42 +10315,70 @@ if active_view == "Module details":
 
 if active_view == "Methods & data":
     st.subheader("Analysis methods and deploy data")
+    selected_donor_count = int(
+        module_manifest.get("donors_per_method", {}).get(method, 450)
+    )
+    selected_group_counts = module_manifest.get(
+        "diagnosis_counts_per_method", {}
+    ).get(method, {"Control": 164, "MCI": 119, "AD": 167})
+    selected_control_count = int(selected_group_counts.get("Control", 164))
     st.markdown(
         f"**Selected module definition:** {module_set_label}. Module IDs are scoped to "
         "this definition; the same number in the other definition can contain a different "
         "set of tissue-gene members."
     )
-    st.markdown(
-        "**Standard LIONESS** scores each donor relative to the complete 450-donor "
-        "reference network. **Control-referenced LIONESS** uses the 164 Controls as the "
-        "reference and scores Controls by leave-one-out and MCI/AD by donor addition."
-    )
-    st.markdown(
-        "**BONOBO** estimates one empirical-Bayes covariance network for each of the same "
-        "450 donors. The donor/module delta is estimated automatically, correlations are "
-        "converted with the same signedAlt β=3 TS and β=2 CT weighting, and the app can "
-        "summarize all edges or edges passing the native posterior p<0.05 or within-"
-        "donor-module BH FDR<0.05 rule. BONOBO edge significance tests nonzero covariance, "
-        "not AD/MCI/Control differences."
-    )
+    if "standard" in allowed_methods:
+        st.markdown(
+            f"**Standard LIONESS** scores each donor relative to the complete "
+            f"{selected_donor_count}-donor reference network. "
+            f"**Control-referenced LIONESS** uses the {selected_control_count} Controls "
+            "as the reference and scores Controls by leave-one-out and MCI/AD by donor "
+            "addition."
+        )
+    else:
+        st.markdown(
+            f"**Control-referenced LIONESS** is the only supported network method for "
+            f"this Control-derived module definition. It uses the {selected_control_count} "
+            "Controls as the reference and scores Controls by leave-one-out and MCI/AD "
+            "by donor addition."
+        )
+    if "bonobo" in module_manifest.get("estimators", []):
+        st.markdown(
+            "**BONOBO** estimates one empirical-Bayes covariance network for each donor. "
+            "The donor/module delta is estimated automatically and the app can summarize "
+            "all edges or edges passing the native posterior p<0.05 or within-donor-module "
+            "BH FDR<0.05 rule. BONOBO edge significance tests nonzero covariance, not "
+            "AD/MCI/Control differences."
+        )
     formula_col1, formula_col2 = st.columns(2)
     with formula_col1:
         st.markdown("Standard donor network")
-        st.latex(r"A_i = N A_{all} - (N-1)A_{all\\setminus i},\\quad N=450")
+        st.latex(
+            rf"A_i = N A_{{all}} - (N-1)A_{{all\\setminus i}},\\quad N={selected_donor_count}"
+        )
         st.markdown("Control donor")
-        st.latex(r"A_i = n_C A_C - (n_C-1)A_{C\\setminus i},\\quad n_C=164")
+        st.latex(
+            rf"A_i = n_C A_C - (n_C-1)A_{{C\\setminus i}},\\quad n_C={selected_control_count}"
+        )
     with formula_col2:
         st.markdown("MCI or AD donor added to the Control reference")
         st.latex(r"A_i = (n_C+1)A_{C+i} - n_C A_C")
-        st.markdown(
-            "Networks use signedAlt adjacency with β=3 for tissue-specific edges and "
-            "β=2 for cross-tissue edges. Each undirected edge is counted once and the "
-            "diagonal is excluded."
-        )
+        if module_set == "muscle_control_l4":
+            st.markdown(
+                "Donor networks use the frozen signedAlt block powers from the muscle "
+                "partition: VH=5, SMA=7, QUAD=13; VH–SMA=8, VH–QUAD=10, and "
+                "SMA–QUAD=10. Each undirected edge is counted once and the diagonal is excluded."
+            )
+        else:
+            st.markdown(
+                "Networks use signedAlt adjacency with β=3 for tissue-specific edges and "
+                "β=2 for cross-tissue edges. Each undirected edge is counted once and the "
+                "diagonal is excluded."
+            )
     st.markdown(
         "For each estimator/method, module, feature, and CT/TS or resolved component, "
         "the app stores raw values, a robust-scale asinh transformation, and a rank "
-        "inverse-normal Z-score calculated across all 450 donors."
+        f"inverse-normal Z-score calculated across all {selected_donor_count} donors."
     )
     st.markdown(
         "For the all-donor CorShrink maximum-component sensitivity, transformations are "
@@ -10213,8 +10390,8 @@ if active_view == "Methods & data":
         "**Grouped associations** use diagnosis by default and may instead stratify "
         "correlations by clusters, CogDx, Braak, CERAD, ADNC, Parkinsonism, sex code, "
         "or APOE genotype. Pearson and Spearman are calculated separately within each "
-        "eligible displayed level. Their BH FDR families contain only the modules in "
-        "the selected definition (138, 154, or 186), while holding every other analysis and "
+        "eligible displayed level. Their BH FDR families contain only the "
+        f"{module_count} modules in the selected definition, while holding every other analysis and "
         "grouping field fixed; missing and constant tests are excluded from the denominator. "
         "OLS trend lines are descriptive guides. Categorical comparisons use Kruskal–Wallis "
         "and epsilon-squared and never correlate nominal codes. Feature-distribution "
@@ -10235,8 +10412,19 @@ if active_view == "Methods & data":
         "associated with diagnosis in this cohort."
     )
     st.markdown("#### AD–Control differential-edge filtering")
+    current_effect_manifest = cached_effect_size_manifest(module_set)
+    current_split_counts = {
+        (str(row.get("ad_control_split")), str(row.get("diagnosis_group"))): int(row.get("n", 0))
+        for row in current_effect_manifest.get("split_counts", [])
+    }
+    discovery_ad = current_split_counts.get(("Discovery", "AD"), 117)
+    discovery_control = current_split_counts.get(("Discovery", "Control"), 114)
+    validation_ad = current_split_counts.get(("Validation", "AD"), 50)
+    validation_control = current_split_counts.get(("Validation", "Control"), 50)
+    external_mci = current_split_counts.get(("MCI_external", "MCI"), 119)
     st.markdown(
-        "A diagnosis-and-sex-stratified discovery cohort (117 AD, 114 Control) defines "
+        f"A diagnosis-and-sex-stratified discovery cohort ({discovery_ad} AD, "
+        f"{discovery_control} Control) defines "
         "the optional edge mask with two-sided Welch tests on raw signedAlt donor-edge "
         "weights. Every edge stores AD and Control means, AD-minus-Control difference, "
         "Hedges’ g, p-value, **global BH FDR**, and **per-module BH FDR**. Global BH is "
@@ -10249,15 +10437,22 @@ if active_view == "Methods & data":
         "Selecting All edges continues to use the original unfiltered data."
     )
     st.markdown(
-        "The default filtered evaluation uses 50 held-out AD and 50 held-out Control "
-        "donors. MCI (n=119) is external to edge selection. Validation labels do not "
+        f"The default filtered evaluation uses {validation_ad} held-out AD and "
+        f"{validation_control} held-out Control donors. MCI (n={external_mci}) is "
+        "external to edge selection. Validation labels do not "
         "alter the discovery mask, although the underlying unsupervised donor-network "
         "estimation is not a completely external network validation."
     )
+    effect_threshold_text = (
+        "the fixed |g| ≥ 0.40 mask"
+        if current_effect_manifest.get("available_fixed_hedges_g") == [0.4]
+        else "fixed absolute thresholds 0.20–0.50 or exact within-module top 1%, 5%, and 10% masks"
+    )
     st.markdown(
         "**Effect-size filtering** reuses the same discovery edge table without rerunning "
-        "Welch tests. Hedges’ g supports fixed absolute thresholds 0.20–0.50 or exact "
-        "within-module top 1%, 5%, and 10% masks; raw AD-minus-Control mean differences "
+        f"Welch tests. This selected module definition exposes {effect_threshold_text}; "
+        "other completed catalogs may additionally expose percentile masks. Raw "
+        "AD-minus-Control mean differences "
         "use the within-module percentage masks. Percentage selection uses absolute effect "
         "and deterministic edge-index tie breaking before applying the AD-higher or "
         "Control-higher direction. BONOBO additionally intersects this mask with the "

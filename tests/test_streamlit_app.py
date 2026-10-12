@@ -715,6 +715,8 @@ def test_streamlit_muscle_module_set_core_views_render() -> None:
     app = preserve_legacy_pills_state(app)
     assert_app_clean(app)
     assert widget_with_label(app.radio, "Network estimator").options == ["LIONESS"]
+    method = widget_with_label(app.radio, "Network method")
+    assert method.options == ["Control-referenced LIONESS"]
     assert any("Method 5 extended SFN" in info.value for info in app.info)
 
     for view in (
