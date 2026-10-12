@@ -94,6 +94,12 @@ MDC_COMPONENT_LABEL_ORDER = [
     "CT: AC - DLPFC",
     "CT: AC - PCG",
     "CT: DLPFC - PCG",
+    "TS: VH",
+    "TS: SMA",
+    "TS: QUAD",
+    "CT: VH - SMA",
+    "CT: VH - QUAD",
+    "CT: SMA - QUAD",
 ]
 CONTINUOUS_COLOR_SCALES = {
     "Blue–white–orange": [
@@ -2472,27 +2478,19 @@ def module_region_composition_figure(
     frame: pd.DataFrame,
     module_definition: str | None = None,
 ) -> go.Figure:
-    """Rank modules by size and show their AC, DLPFC, and PCG gene composition."""
-    required = {
-        "module",
-        "module_size",
-        "cluster_type",
-        "n_genes_ac",
-        "n_genes_dlpfc",
-        "n_genes_pcg",
-    }
+    """Rank modules by size and show their three-tissue gene composition."""
+    tissue_columns = (
+        [("AC", "n_genes_ac"), ("DLPFC", "n_genes_dlpfc"), ("PCG", "n_genes_pcg")]
+        if "n_genes_ac" in frame.columns
+        else [("VH", "n_genes_vh"), ("SMA", "n_genes_sma"), ("QUAD", "n_genes_quad")]
+    )
+    required = {"module", "module_size", "cluster_type", *[value for _, value in tissue_columns]}
     missing = required.difference(frame.columns)
     if missing:
         raise ValueError(f"Missing module-composition columns: {sorted(missing)}")
 
     data = frame.copy()
-    numeric_columns = [
-        "module",
-        "module_size",
-        "n_genes_ac",
-        "n_genes_dlpfc",
-        "n_genes_pcg",
-    ]
+    numeric_columns = ["module", "module_size", *[value for _, value in tissue_columns]]
     data[numeric_columns] = data[numeric_columns].apply(
         pd.to_numeric, errors="coerce"
     )
@@ -2505,11 +2503,8 @@ def module_region_composition_figure(
 
     module_labels = data["module"].astype(int).map(lambda value: f"M{value}")
     figure = go.Figure()
-    region_columns = [
-        ("AC", "n_genes_ac"),
-        ("DLPFC", "n_genes_dlpfc"),
-        ("PCG", "n_genes_pcg"),
-    ]
+    region_columns = tissue_columns
+    fallback_colors = px.colors.qualitative.Safe
     for region, count_column in region_columns:
         counts = data[count_column].fillna(0).astype(int)
         proportions = np.divide(
@@ -2532,7 +2527,9 @@ def module_region_composition_figure(
                 orientation="h",
                 name=region,
                 marker={
-                    "color": REGION_COLORS[region],
+                    "color": REGION_COLORS.get(
+                        region, fallback_colors[len(figure.data) % len(fallback_colors)]
+                    ),
                     "line": {"color": "white", "width": 0.35},
                 },
                 customdata=customdata,
@@ -2632,7 +2629,9 @@ def kegg_region_combination_figure(
         ).index
     ]
     module_labels = [f"M{value}" for value in module_order]
-    for combination in KEGG_REGION_COMBINATION_COLORS:
+    combinations = sorted(selected["significant_regions"].dropna().astype(str).unique())
+    fallback_colors = px.colors.qualitative.Safe + px.colors.qualitative.Bold
+    for index, combination in enumerate(combinations):
         group = selected.loc[selected["significant_regions"].eq(combination)]
         values = (
             group.set_index("cluster_id")["pathway_count"]
@@ -2647,7 +2646,11 @@ def kegg_region_combination_figure(
                 y=module_labels,
                 orientation="h",
                 name=combination,
-                marker={"color": KEGG_REGION_COMBINATION_COLORS[combination]},
+                marker={
+                    "color": KEGG_REGION_COMBINATION_COLORS.get(
+                        combination, fallback_colors[index % len(fallback_colors)]
+                    )
+                },
                 hovertemplate=(
                     "Module: %{y}<br>Significant regions: "
                     + combination
@@ -2687,11 +2690,21 @@ def kegg_region_heatmap_figure(
 ) -> go.Figure:
     """Show regional FDRs for the strongest module–pathway rows."""
 
-    region_columns = {
+    candidate_region_columns = {
         "AC": ("p_AC", "fdr_AC", "overlap_AC"),
         "DLPFC": ("p_DLPFC", "fdr_DLPFC", "overlap_DLPFC"),
         "PCG": ("p_PCGBA23", "fdr_PCGBA23", "overlap_PCGBA23"),
+        "VH": ("p_VH", "fdr_VH", "overlap_VH"),
+        "SMA": ("p_SMA", "fdr_SMA", "overlap_SMA"),
+        "QUAD": ("p_QUAD", "fdr_QUAD", "overlap_QUAD"),
     }
+    region_columns = {
+        region: columns
+        for region, columns in candidate_region_columns.items()
+        if all(column in frame.columns for column in columns)
+    }
+    if len(region_columns) != 3:
+        raise ValueError("KEGG regional heatmap requires one complete three-tissue family")
     required = {"cluster_id", "pathway_name", "significant_region_count"}
     required.update(column for values in region_columns.values() for column in values)
     missing = required.difference(frame.columns)
@@ -2782,7 +2795,7 @@ def kegg_region_heatmap_figure(
         template="plotly_white",
         height=max(500, min(1800, 230 + 25 * len(data))),
         margin={"l": 330, "r": 70, "t": 100, "b": 55},
-        xaxis={"title": "Brain region", "side": "top"},
+        xaxis={"title": "Tissue / region", "side": "top"},
         yaxis={"title": "Module · pathway", "autorange": "reversed", "tickfont": {"size": 10}},
     )
     return figure
@@ -3452,12 +3465,7 @@ def mdc_resolved_heatmap_figure(
         module_order.remove(int(selected_module))
         module_order.insert(0, int(selected_module))
     component_order = [
-        value
-        for value in [
-            "TS: AC", "TS: DLPFC", "TS: PCG",
-            "CT: AC - DLPFC", "CT: AC - PCG", "CT: DLPFC - PCG",
-        ]
-        if value in pivot.columns
+        value for value in MDC_COMPONENT_LABEL_ORDER if value in pivot.columns
     ]
     pivot = pivot.reindex(index=module_order, columns=component_order)
     raw = raw.reindex(index=module_order, columns=component_order)

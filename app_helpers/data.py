@@ -24,16 +24,46 @@ MODULE_SET_LABELS = {
     "full_cohort": "Full-cohort L4 modules (154)",
     "control_derived": "Control-derived L4 modules (186)",
     "all_donor_corrshrink_l4": "All-donor CorShrink M1 L4 modules",
+    "muscle_control_l4": "Control-derived VH/SMA/QUAD M5 L4 modules (155)",
 }
 MODULE_SET_DIRS = {
     "full_cohort": DATA_DIR,
     "control_derived": DATA_DIR / "control_derived",
     "all_donor_corrshrink_l4": DATA_DIR / "all_donor_corrshrink_l4",
+    "muscle_control_l4": DATA_DIR / "muscle_control_l4",
 }
 MODULE_SET_METHODS = {
     "full_cohort": ("standard", "control_anchored"),
     "control_derived": ("control_anchored",),
     "all_donor_corrshrink_l4": ("standard", "control_anchored"),
+    "muscle_control_l4": ("standard", "control_anchored"),
+}
+MODULE_SET_TISSUES = {
+    "full_cohort": ("AC", "DLPFC", "PCG"),
+    "control_derived": ("AC", "DLPFC", "PCG"),
+    "all_donor_corrshrink_l4": ("AC", "DLPFC", "PCG"),
+    "muscle_control_l4": ("VH", "SMA", "QUAD"),
+}
+_BRAIN_COMPONENTS = (
+    "CT_AC__DLPFC",
+    "CT_AC__PCGBA23",
+    "CT_DLPFC__PCGBA23",
+    "TS_AC",
+    "TS_DLPFC",
+    "TS_PCGBA23",
+)
+MODULE_SET_COMPONENTS = {
+    "full_cohort": _BRAIN_COMPONENTS,
+    "control_derived": _BRAIN_COMPONENTS,
+    "all_donor_corrshrink_l4": _BRAIN_COMPONENTS,
+    "muscle_control_l4": (
+        "CT_VH__SMA",
+        "CT_VH__QUAD",
+        "CT_SMA__QUAD",
+        "TS_VH",
+        "TS_SMA",
+        "TS_QUAD",
+    ),
 }
 PREDICTION_MODULE_SETS = ("full_cohort", "control_derived")
 COHORT_SCOPE_LABELS = {
@@ -88,19 +118,34 @@ KEGG_REGION_FDR_COLUMNS = {
     "AC": "fdr_AC",
     "DLPFC": "fdr_DLPFC",
     "PCG": "fdr_PCGBA23",
+    "VH": "fdr_VH",
+    "SMA": "fdr_SMA",
+    "QUAD": "fdr_QUAD",
 }
 KEGG_REGION_P_COLUMNS = {
     "AC": "p_AC",
     "DLPFC": "p_DLPFC",
     "PCG": "p_PCGBA23",
+    "VH": "p_VH",
+    "SMA": "p_SMA",
+    "QUAD": "p_QUAD",
 }
 KEGG_COMPONENT_REGIONS = {
     "TS_AC": ("AC",),
     "TS_DLPFC": ("DLPFC",),
+    "TS_PCG": ("PCG",),
     "TS_PCGBA23": ("PCG",),
     "CT_AC__DLPFC": ("AC", "DLPFC"),
+    "CT_AC__PCG": ("AC", "PCG"),
     "CT_AC__PCGBA23": ("AC", "PCG"),
+    "CT_DLPFC__PCG": ("DLPFC", "PCG"),
     "CT_DLPFC__PCGBA23": ("DLPFC", "PCG"),
+    "TS_VH": ("VH",),
+    "TS_SMA": ("SMA",),
+    "TS_QUAD": ("QUAD",),
+    "CT_VH__SMA": ("VH", "SMA"),
+    "CT_VH__QUAD": ("VH", "QUAD"),
+    "CT_SMA__QUAD": ("SMA", "QUAD"),
 }
 KEGG_PRIORITY_PATTERN = (
     r"lipid|fatty acid|cholesterol|glycerolipid|glycerophospholipid|"
@@ -433,6 +478,12 @@ COMPONENT_ORDER = [
     "TS_AC",
     "TS_DLPFC",
     "TS_PCGBA23",
+    "CT_VH__SMA",
+    "CT_VH__QUAD",
+    "CT_SMA__QUAD",
+    "TS_VH",
+    "TS_SMA",
+    "TS_QUAD",
 ]
 EDGE_SCOPE_LABELS = {
     "total": "Total",
@@ -444,7 +495,34 @@ EDGE_SCOPE_LABELS = {
     "CT_AC__DLPFC": "CT: AC - DLPFC",
     "CT_AC__PCGBA23": "CT: AC - PCG",
     "CT_DLPFC__PCGBA23": "CT: DLPFC - PCG",
+    "TS_VH": "TS: VH",
+    "TS_SMA": "TS: SMA",
+    "TS_QUAD": "TS: QUAD",
+    "CT_VH__SMA": "CT: VH - SMA",
+    "CT_VH__QUAD": "CT: VH - QUAD",
+    "CT_SMA__QUAD": "CT: SMA - QUAD",
 }
+
+
+def module_set_tissues(module_set: str) -> tuple[str, ...]:
+    """Return the three tissue labels belonging to a module definition."""
+
+    return MODULE_SET_TISSUES.get(module_set, MODULE_SET_TISSUES["full_cohort"])
+
+
+def module_set_components(module_set: str) -> tuple[str, ...]:
+    """Return the ordered resolved components for a module definition."""
+
+    return MODULE_SET_COMPONENTS.get(module_set, tuple(COMPONENT_ORDER))
+
+
+def module_set_tissue_detail_columns(module_set: str) -> tuple[tuple[str, str, str], ...]:
+    """Return display label, count column, and proportion column per tissue."""
+
+    return tuple(
+        (tissue, f"n_genes_{tissue.lower()}", f"proportion_{tissue.lower()}")
+        for tissue in module_set_tissues(module_set)
+    )
 
 
 def module_set_data_dir(module_set: str = "full_cohort") -> Path:
@@ -797,6 +875,14 @@ def require_data_files() -> None:
                     EDGE_EXPRESSION_DIR / module_set / "module_nodes.parquet",
                 ]
             )
+        if module_manifest.get("categorical_statistics_local", False):
+            required.append(
+                module_set_path("cluster_association_statistics.parquet", module_set)
+            )
+        if module_manifest.get("capabilities", {}).get(
+            "descriptive_eigengenes", False
+        ):
+            required.append(module_set_path("module_eigengenes.parquet", module_set))
     missing = [
         str(path.relative_to(APP_ROOT)) if path.is_relative_to(APP_ROOT) else str(path)
         for path in required
@@ -1351,7 +1437,11 @@ def load_sample_metadata(
     """
 
     if cohort_scope == "complete_450":
-        path = SAMPLE_METADATA
+        path = (
+            module_set_data_dir(module_set) / "sample_metadata.parquet"
+            if module_set == "muscle_control_l4"
+            else SAMPLE_METADATA
+        )
     elif module_set == "all_donor_corrshrink_l4" and cohort_scope == "maximum_component":
         path = module_set_data_dir(module_set) / "expanded" / "sample_metadata.parquet"
     else:
@@ -1388,7 +1478,9 @@ def load_cluster_association_statistics(
         filters.append(("component", "=", component))
     if diagnosis_group is not None:
         filters.append(("diagnosis_group", "=", diagnosis_group))
-    return _read_filtered(CLUSTER_ASSOCIATION_STATS, filters)
+    local_path = module_set_path("cluster_association_statistics.parquet", module_set)
+    source = local_path if data_path_available(local_path) else CLUSTER_ASSOCIATION_STATS
+    return _read_filtered(source, filters)
 
 
 def load_mdc_summary(
@@ -1771,9 +1863,13 @@ def add_kegg_region_sharing(
     flags: dict[str, pd.Series] = {}
     for region, column in KEGG_REGION_FDR_COLUMNS.items():
         if column not in result:
-            raise ValueError(f"KEGG regional FDR column is missing: {column}")
+            continue
         flags[region] = pd.to_numeric(result[column], errors="coerce").le(
             float(fdr_threshold)
+        )
+    if len(flags) != 3:
+        raise ValueError(
+            "KEGG table must contain exactly one complete three-tissue regional family"
         )
     flag_frame = pd.DataFrame(flags, index=result.index)
     result["significant_region_count"] = flag_frame.sum(axis=1).astype("int8")
@@ -2048,6 +2144,12 @@ def build_pathway_mdc_rows(
         "directional_fdr",
         "n_edges",
     }
+    resolved_components = set(mdc_resolved.get("component", pd.Series(dtype=str)).astype(str))
+    resolved_regions = {
+        region
+        for component in resolved_components
+        for region in KEGG_COMPONENT_REGIONS.get(component, ())
+    }
     required_kegg = {
         "cluster_id",
         "pathway_id",
@@ -2056,8 +2158,8 @@ def build_pathway_mdc_rows(
         "category_level2",
         "p",
         "fdr",
-        *KEGG_REGION_P_COLUMNS.values(),
-        *KEGG_REGION_FDR_COLUMNS.values(),
+        *(KEGG_REGION_P_COLUMNS[region] for region in resolved_regions),
+        *(KEGG_REGION_FDR_COLUMNS[region] for region in resolved_regions),
     }
     for label, frame, required in (
         ("MDC summary", mdc_summary, required_summary),

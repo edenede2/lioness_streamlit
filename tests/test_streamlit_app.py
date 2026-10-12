@@ -58,6 +58,7 @@ def select_view(app: AppTest, label: str) -> AppTest:
 def select_stateful_tab(app: AppTest, key: str, label: str) -> AppTest:
     """Select a lazy tab on current Streamlit; old runtimes render every tab."""
 
+    preserve_legacy_pills_state(app)
     app.session_state[key] = label
     return preserve_legacy_pills_state(app.run())
 
@@ -703,6 +704,33 @@ def test_streamlit_smoke_lioness_and_bonobo_module_definitions() -> None:
     network_method = widget_with_label(app.radio, "Network method")
     assert network_method.value == "bonobo"
     assert network_method.options == ["All-donor empirical-Bayes BONOBO"]
+
+
+def test_streamlit_muscle_module_set_core_views_render() -> None:
+    app = AppTest.from_file(APP, default_timeout=240).run()
+    assert_app_clean(app)
+    app = widget_with_label(app.selectbox, "Module definition").set_value(
+        "muscle_control_l4"
+    ).run()
+    app = preserve_legacy_pills_state(app)
+    assert_app_clean(app)
+    assert widget_with_label(app.radio, "Network estimator").options == ["LIONESS"]
+    assert any("Method 5 extended SFN" in info.value for info in app.info)
+
+    for view in (
+        "Feature distributions",
+        "Correlation heatmaps",
+        "KEGG enrichment",
+        "MDC",
+        "Statistics",
+        "Module details",
+    ):
+        app = select_view(app, view)
+        assert_app_clean(app)
+
+    app = select_view(app, "MDC")
+    assert_app_clean(app)
+    assert any("full M5" in warning.value for warning in app.warning)
 
 
 def test_streamlit_differential_filter_can_switch_bh_scope_and_cutoff() -> None:

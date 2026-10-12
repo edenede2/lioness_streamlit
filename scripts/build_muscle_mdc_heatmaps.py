@@ -26,7 +26,13 @@ DEFAULT_ASSIGNMENTS = (
 DEFAULT_MDC_ROOT = REPO_ROOT / "out/mdc_muscle_control_l4/20261012_m5_ad_vs_control"
 
 
-def render(module: int, ad: np.ndarray, control: np.ndarray, output: Path) -> dict[str, object]:
+def render(
+    module: int,
+    ad: np.ndarray,
+    control: np.ndarray,
+    output: Path,
+    mdc_stats: dict[str, float],
+) -> dict[str, object]:
     ordering = np.argsort(-np.abs(ad).sum(axis=1), kind="stable")
     ad = ad[np.ix_(ordering, ordering)]
     control = control[np.ix_(ordering, ordering)]
@@ -55,9 +61,11 @@ def render(module: int, ad: np.ndarray, control: np.ndarray, output: Path) -> di
     axis.set_xlabel("Genes")
     axis.set_ylabel("Genes")
     axis.set_title(
-        f"Module {module}: AD vs Control Method-5 adjacency\n"
-        f"Upper triangle: AD  |  Lower triangle: Control  |  n={count} nodes",
+        f"Module {module} | MDC={mdc_stats['total']:.2f} "
+        f"(TS={mdc_stats['TS']:.2f}, CT={mdc_stats['CT']:.2f})\n"
+        f"Upper=AD, Lower=Control | full M5 | n={count} nodes",
         fontsize=12,
+        fontweight="bold",
         pad=12,
     )
     colorbar = figure.colorbar(image, ax=axis, fraction=0.045, pad=0.035)
@@ -101,27 +109,27 @@ def main() -> None:
         assignments["Cluster ID"].isin(sizes.loc[sizes.ge(30)].index)
     ].copy()
     modules = args.module or sorted(assignments["Cluster ID"].unique().tolist())
-    network_paths = {
-        group: args.mdc_root / "networks" / group / "m5_adjacency_upper_float32.npy"
+    module_roots = {
+        group: args.mdc_root / "recovered_modules" / group / "modules"
         for group in ("ad", "control")
     }
     manifests = {
         group: json.loads(
-            (args.mdc_root / "networks" / group / "manifest.json").read_text()
+            (args.mdc_root / "recovered_modules" / group / "manifest.json").read_text()
         )
-        for group in network_paths
+        for group in module_roots
     }
     if any(manifest.get("status") != "complete" for manifest in manifests.values()):
-        raise RuntimeError("Both AD and Control full-M5 networks must be complete")
-    ad_upper = np.load(network_paths["ad"], mmap_mode="r")
-    control_upper = np.load(network_paths["control"], mmap_mode="r")
-    nodes = pd.read_parquet(args.mdc_root / "networks/control/node_index.parquet")
-    ad_nodes = pd.read_parquet(args.mdc_root / "networks/ad/node_index.parquet")
-    if not nodes.equals(ad_nodes):
-        raise ValueError("AD and Control M5 node order differs")
-    lookup = dict(
-        zip(zip(nodes["tissue"], nodes["gene_id"], strict=True), nodes["node_index"], strict=True)
-    )
+        raise RuntimeError("Both AD and Control recovered-module M5 networks must be complete")
+    observed = pd.read_parquet(args.mdc_root / "mdc_observed.parquet")
+    mdc_lookup = {
+        int(module): {
+            str(row.scope): float(row.mdc_raw)
+            for row in group.itertuples(index=False)
+            if str(row.scope) in {"total", "TS", "CT"}
+        }
+        for module, group in observed.groupby("module", observed=True)
+    }
     rows: list[dict[str, object]] = []
     for index, module in enumerate(modules, start=1):
         destination = args.output / f"M{module}.png"
@@ -135,27 +143,17 @@ def main() -> None:
                 "lower_triangle": "Control",
             })
             continue
-        module_rows = assignments.loc[assignments["Cluster ID"].eq(module)]
-        keys = list(
-            zip(
-                module_rows["Tissue"].astype(str),
-                module_rows["Gene ID"].astype(str),
-                strict=True,
-            )
+        ad_data = np.load(module_roots["ad"] / f"M{module}.npz", allow_pickle=False)
+        control_data = np.load(
+            module_roots["control"] / f"M{module}.npz", allow_pickle=False
         )
-        indices = np.asarray([lookup[key] for key in keys], dtype=np.int64)
-        global_i, global_j = np.triu_indices(len(indices), k=1)
-        lower = np.minimum(indices[global_i], indices[global_j])
-        upper = np.maximum(indices[global_i], indices[global_j])
-        ad = np.zeros((len(indices), len(indices)), dtype=np.float64)
-        control = np.zeros_like(ad)
-        ad_values = ad_upper[lower, upper]
-        control_values = control_upper[lower, upper]
-        ad[global_i, global_j] = ad_values
-        ad[global_j, global_i] = ad_values
-        control[global_i, global_j] = control_values
-        control[global_j, global_i] = control_values
-        rows.append(render(module, ad, control, destination))
+        if not np.array_equal(ad_data["tissues"], control_data["tissues"]):
+            raise ValueError(f"M{module}: AD/Control node order differs")
+        if not np.array_equal(ad_data["gene_ids"], control_data["gene_ids"]):
+            raise ValueError(f"M{module}: AD/Control gene order differs")
+        ad = ad_data["weights"]
+        control = control_data["weights"]
+        rows.append(render(module, ad, control, destination, mdc_lookup[int(module)]))
         if index % 10 == 0 or index == len(modules):
             print(f"Rendered {index}/{len(modules)} modules", flush=True)
     args.output.mkdir(parents=True, exist_ok=True)

@@ -318,6 +318,9 @@ from app_helpers.data import (
     load_volcano_bins,
     load_volcano_candidates,
     module_label,
+    module_set_components,
+    module_set_tissue_detail_columns,
+    module_set_tissues,
     partition_comparison_available,
     prediction_data_available,
     targeted_prediction_data_available,
@@ -3967,7 +3970,18 @@ with st.sidebar:
         ),
     )
     module_set_label = MODULE_SET_LABELS[module_set]
+    active_tissues = module_set_tissues(module_set)
+    active_component_order = list(module_set_components(module_set))
+    active_tissue_detail_columns = module_set_tissue_detail_columns(module_set)
     module_manifest = data_manifest.get("module_sets", {}).get(module_set, {})
+    if module_set == "muscle_control_l4":
+        st.info(
+            "These Control-derived partitions were discovered with Method 5 extended "
+            "SFN (bootstrap stability, CT null excess, signed block powers, and blockwise "
+            "q90 normalization). The MDC context is rebuilt with that same M5 functional. "
+            "The donor-specific LIONESS scores remain the separately labeled Pearson "
+            "signedAlt analysis with the frozen Control-derived block powers."
+        )
     annotations = cached_annotations(module_set)
     modules = sorted(annotations["module"].astype(int).unique().tolist())
     module_count = int(module_manifest.get("modules", len(modules)))
@@ -4223,11 +4237,19 @@ with st.sidebar:
     cohort_scope = st.radio(
         "Donor cohort scope",
         options=cohort_scope_options,
-        format_func=lambda value: COHORT_SCOPE_LABELS[value],
+        format_func=lambda value: (
+            "Complete VH/SMA/QUAD comparison cohort (357)"
+            if module_set == "muscle_control_l4" and value == "complete_450"
+            else COHORT_SCOPE_LABELS[value]
+        ),
         help=(
             "The maximum-component sensitivity uses every donor available separately "
             "for each tissue or tissue pair. Pooled CT/TS remains restricted to the "
-            "same 450 complete-tissue donors used by the matched-partition comparison."
+            + (
+                "same 357 complete-tissue donors in the VH/SMA/QUAD comparison cohort."
+                if module_set == "muscle_control_l4"
+                else "same 450 complete-tissue donors used by the matched-partition comparison."
+            )
         ),
     )
     resolution_options = (
@@ -4238,8 +4260,9 @@ with st.sidebar:
     resolution = st.radio("Resolution", resolution_options)
     if feature == "eigengene":
         st.caption(
-            "Module eigengenes are tissue-specific PCA1 expression summaries for AC, "
-            "DLPFC, and PCG. They are independent of the selected LIONESS method and "
+            "Module eigengenes are tissue-specific PCA1 expression summaries for "
+            + ", ".join(active_tissues)
+            + ". They are independent of the selected LIONESS method and "
             "edge filter; a cross-tissue pair eigengene is not defined."
         )
     if cohort_scope == "maximum_component" and active_view in {
@@ -4672,7 +4695,7 @@ available_components = (
     .drop_duplicates()
     .assign(
         component_order=lambda frame: frame["component"].map(
-            {component: index for index, component in enumerate(COMPONENT_ORDER)}
+            {component: index for index, component in enumerate(active_component_order)}
         )
     )
     .sort_values(["component_order", "component"])
@@ -4682,9 +4705,9 @@ if active_view == "Correlation heatmaps" and feature == "eigengene":
     # "all features" mode must still be able to include the network CT pairs.
     available_components = pd.DataFrame(
         {
-            "component": COMPONENT_ORDER,
-            "component_label": [EDGE_SCOPE_LABELS[value] for value in COMPONENT_ORDER],
-            "component_order": list(range(len(COMPONENT_ORDER))),
+            "component": active_component_order,
+            "component_label": [EDGE_SCOPE_LABELS[value] for value in active_component_order],
+            "component_order": list(range(len(active_component_order))),
         }
     )
 component_labels = dict(
@@ -4835,11 +4858,7 @@ tissue_composition = pd.DataFrame(
             "Genes": int(selected_details[count_column]),
             "Module proportion": float(selected_details[proportion_column]),
         }
-        for tissue, count_column, proportion_column in [
-            ("AC", "n_genes_ac", "proportion_ac"),
-            ("DLPFC", "n_genes_dlpfc", "proportion_dlpfc"),
-            ("PCG", "n_genes_pcg", "proportion_pcg"),
-        ]
+        for tissue, count_column, proportion_column in active_tissue_detail_columns
     ]
 )
 tissue_composition["Possible TS edges"] = tissue_composition["Genes"].map(
@@ -4856,7 +4875,10 @@ with st.expander(
 ):
     detail_cols = st.columns(4)
     detail_cols[0].metric("Module size", f"{int(selected_details['module_size']):,} genes")
-    detail_cols[1].metric("Tissues represented", f"{int(selected_details['n_tissues'])} of 3")
+    detail_cols[1].metric(
+        "Tissues represented",
+        f"{int(selected_details['n_tissues'])} of {len(active_tissues)}",
+    )
     detail_cols[2].metric("Module type", str(selected_details["cluster_type"]))
     detail_cols[3].metric("Dominant tissue", str(selected_details["dominant_tissue"]))
     filterable_dataframe(
@@ -5399,7 +5421,7 @@ if active_view == "Correlation heatmaps":
             if correlation_method == "Pearson"
             else "spearman_fdr_displayed_family"
         )
-        component_rank = {value: index for index, value in enumerate(COMPONENT_ORDER)}
+        component_rank = {value: index for index, value in enumerate(active_component_order)}
         feature_rank = {
             value: index for index, value in enumerate(heatmap_feature_labels)
         }
@@ -5462,8 +5484,9 @@ if active_view == "Correlation heatmaps":
                     else 1
                 ),
                 help=(
-                    "All components combines AC, DLPFC, PCG, AC–DLPFC, AC–PCG, "
-                    "and DLPFC–PCG in the same heatmap and complete table."
+                    "All components combines "
+                    + ", ".join(component_labels[value] for value in component_options)
+                    + " in the same heatmap and complete table."
                 ),
             )
         else:
@@ -5570,7 +5593,7 @@ if active_view == "Correlation heatmaps":
         diagnosis_rank = {
             value: index for index, value in enumerate(heatmap_group_order)
         }
-        component_order = COMPONENT_ORDER if resolved else ["CT", "TS"]
+        component_order = active_component_order if resolved else ["CT", "TS"]
         component_rank = {
             value: index for index, value in enumerate(component_order)
         }
@@ -6103,7 +6126,7 @@ if active_view == "Feature distributions":
                 "resolved to include eigengenes in this heatmap."
             )
         heatmap_component_options = (
-            list(COMPONENT_ORDER) if resolved else ["CT", "TS"]
+            list(active_component_order) if resolved else ["CT", "TS"]
         )
         selected_heatmap_components = st.multiselect(
             "Components to compare",
@@ -8340,8 +8363,13 @@ if active_view == "MDC":
     if mdc_summary.empty:
         st.error("No MDC rows are available for the selected edge mask and network method.")
         st.stop()
+    mdc_network_label = (
+        "full Method-5 extended-SFN adjacency"
+        if module_set == "muscle_control_l4"
+        else "signedAlt adjacency"
+    )
     st.caption(
-        "MDC compares the mean absolute signedAlt adjacency in AD with Control. "
+        f"MDC compares the mean absolute {mdc_network_label} in AD with Control. "
         "Values above 1 indicate higher connectivity in AD; values below 1 indicate "
         "higher connectivity in Control. Total uses all edges, TS uses same-tissue edges, "
         "and CT uses cross-tissue edges."
@@ -8362,14 +8390,28 @@ if active_view == "MDC":
             "an additional group-MDC filter."
         )
     )
-    st.warning(
-        "Cohort scope differs from the donor-complete LIONESS analysis. The MDC source "
-        f"assembled {mdc_metadata.get('reference_assembled_donors', 517)} AD and "
-        f"{mdc_metadata.get('target_assembled_donors', 408)} Control donors across the "
-        "tissue union, including the 167 AD and 164 Control complete-three-tissue donors "
-        "used here plus donors with partial tissue availability. MCI was not included. "
-        + estimator_note
-    )
+    if module_set == "muscle_control_l4":
+        st.warning(
+            "The muscle MDC uses the 155 AD and 120 Control donors with complete VH, "
+            "SMA, and QUAD expression. It rebuilds the recovered within-module networks "
+            "with the full M5 bootstrap-stability, CT null-excess, signed-power, and "
+            "block-q90 functional used for the partition. MCI was not included. "
+            + estimator_note
+        )
+        if not mdc_metadata.get("permutation_significance_complete", False):
+            st.info(
+                "Observed full-M5 MDC is available, but directional permutation FDR is "
+                "still unavailable. NA FDR values mean not evaluated—not nonsignificant."
+            )
+    else:
+        st.warning(
+            "Cohort scope differs from the donor-complete LIONESS analysis. The MDC source "
+            f"assembled {mdc_metadata.get('reference_assembled_donors', 517)} AD and "
+            f"{mdc_metadata.get('target_assembled_donors', 408)} Control donors across the "
+            "tissue union, including the 167 AD and 164 Control complete-three-tissue donors "
+            "used here plus donors with partial tissue availability. MCI was not included. "
+            + estimator_note
+        )
     if differential_edge_rule != "all":
         st.warning(
             "Filtered MDC is exploratory post-selection context. The AD–Control discovery "
@@ -8487,9 +8529,13 @@ if active_view == "MDC":
                 "NA" if pd.isna(directional_fdr) else f"{float(directional_fdr):.3g}"
             )
             significance_text = (
-                "Significant"
-                if pd.notna(directional_fdr) and directional_fdr < mdc_threshold
-                else "Not significant"
+                "Not evaluated"
+                if pd.isna(directional_fdr)
+                else (
+                    "Significant"
+                    if directional_fdr < mdc_threshold
+                    else "Not significant"
+                )
             )
             if pd.isna(ratio):
                 significance_text = "Not available"
@@ -8540,7 +8586,7 @@ if active_view == "MDC":
         st.caption(
             "The upper triangle shows the AD group network and the lower triangle "
             "shows the Control group network. Both triangles use the same absolute "
-            "signedAlt-adjacency color scale and the AD-derived node ordering."
+            f"{mdc_network_label} color scale and the AD-derived node ordering."
         )
         if differential_edge_rule != "all":
             st.info(
@@ -8798,13 +8844,22 @@ if active_view == "MDC":
         ),
         mime="text/tab-separated-values",
     )
-    st.info(
-        "For each scope and direction, sample-permutation and gene-permutation p-values were "
-        f"Benjamini–Hochberg adjusted separately across the {module_count} modules. The "
-        "directional FDR is the larger of those two adjusted values for the observed MDC "
-        "direction, making significance require support from both null models. The latest "
-        "source used 200 sample permutations and 200 gene permutations."
-    )
+    if module_set == "muscle_control_l4" and not mdc_metadata.get(
+        "permutation_significance_complete", False
+    ):
+        st.info(
+            "These rows contain observed full-M5 MDC ratios. Directional permutation p-values "
+            "and FDRs have not been evaluated for this M5 functional, so the FDR fields remain "
+            "NA and no significance claim is made."
+        )
+    else:
+        st.info(
+            "For each scope and direction, sample-permutation and gene-permutation p-values were "
+            f"Benjamini–Hochberg adjusted separately across the {module_count} modules. The "
+            "directional FDR is the larger of those two adjusted values for the observed MDC "
+            "direction, making significance require support from both null models. The latest "
+            "source used 200 sample permutations and 200 gene permutations."
+        )
 
     region_mdc_tab, pathway_mdc_tab = stateful_tabs(
         ["Region-resolved MDC", "Pathway-resolved MDC"],
@@ -8815,9 +8870,12 @@ if active_view == "MDC":
             st.markdown("#### Tissue-resolved MDC")
             st.caption(
                 "Resolved MDC separates the three within-tissue blocks and the three cross-tissue "
-                "pairs. Gene permutations preserve each module's AC, DLPFC, and PCG feature counts. "
-                "For each component and direction, BH correction uses only modules where that edge "
-                "block structurally exists; unavailable blocks remain missing."
+                "pairs. Gene permutations, when available for the selected module definition, "
+                "preserve each module's "
+                + ", ".join(active_tissues)
+                + " feature counts. For each component and direction, BH correction uses only "
+                "modules where that edge block structurally exists; unavailable or unevaluated "
+                "blocks remain missing."
             )
             resolved_mdc = cached_mdc_resolved(
                 module_set,
@@ -8971,12 +9029,8 @@ if active_view == "MDC":
                 differential_fdr_threshold,
             ).copy()
             component_preference = [
-                "TS_AC",
-                "TS_DLPFC",
-                "TS_PCGBA23",
-                "CT_AC__DLPFC",
-                "CT_AC__PCGBA23",
-                "CT_DLPFC__PCGBA23",
+                *[value for value in active_component_order if value.startswith("TS_")],
+                *[value for value in active_component_order if value.startswith("CT_")],
                 "total",
                 "TS",
                 "CT",
@@ -9514,14 +9568,20 @@ if active_view == "KEGG enrichment":
                 disabled=True,
                 key=f"kegg_selected_module_{module_set}",
             )
+        kegg_region_suffix = {
+            "AC": "AC",
+            "DLPFC": "DLPFC",
+            "PCG": "PCGBA23",
+            "VH": "VH",
+            "SMA": "SMA",
+            "QUAD": "QUAD",
+        }
         statistical_scope = filter_row_one[1].selectbox(
             "Statistical scope",
             options=[
-                "All regions (expanded)",
-                "Any individual region",
-                "AC",
-                "DLPFC",
-                "PCG",
+                "All tissues (expanded)",
+                "Any individual tissue",
+                *active_tissues,
             ],
             key=f"kegg_statistical_scope_{module_set}_{kegg_scope}",
             help=(
@@ -9609,15 +9669,25 @@ if active_view == "KEGG enrichment":
             "FDR-significant only": "significant",
             "Not FDR-significant": "not_significant",
         }[significance_label]
+        regional_significance_columns = [
+            f"significant_{kegg_region_suffix[tissue]}" for tissue in active_tissues
+        ]
+        regional_fdr_columns = [
+            f"fdr_{kegg_region_suffix[tissue]}" for tissue in active_tissues
+        ]
         statistical_scope_columns = {
-            "All regions (expanded)": (["significant"], ["fdr"]),
-            "Any individual region": (
-                ["significant_AC", "significant_DLPFC", "significant_PCGBA23"],
-                ["fdr_AC", "fdr_DLPFC", "fdr_PCGBA23"],
+            "All tissues (expanded)": (["significant"], ["fdr"]),
+            "Any individual tissue": (
+                regional_significance_columns,
+                regional_fdr_columns,
             ),
-            "AC": (["significant_AC"], ["fdr_AC"]),
-            "DLPFC": (["significant_DLPFC"], ["fdr_DLPFC"]),
-            "PCG": (["significant_PCGBA23"], ["fdr_PCGBA23"]),
+            **{
+                tissue: (
+                    [f"significant_{kegg_region_suffix[tissue]}"],
+                    [f"fdr_{kegg_region_suffix[tissue]}"],
+                )
+                for tissue in active_tissues
+            },
         }
         significance_columns, fdr_columns = statistical_scope_columns[statistical_scope]
         shown_kegg = filter_kegg_enrichments(
@@ -9731,6 +9801,15 @@ if active_view == "KEGG enrichment":
                     "feature": feature,
                 },
             )
+        regional_priority_columns = [
+            column
+            for tissue in active_tissues
+            for column in (
+                f"p_{kegg_region_suffix[tissue]}",
+                f"fdr_{kegg_region_suffix[tissue]}",
+                f"significant_{kegg_region_suffix[tissue]}",
+            )
+        ]
         kegg_priority_columns = [
             "module_definition",
             "cluster_id",
@@ -9743,15 +9822,7 @@ if active_view == "KEGG enrichment":
             "p",
             "fdr",
             "significant",
-            "p_AC",
-            "fdr_AC",
-            "significant_AC",
-            "p_DLPFC",
-            "fdr_DLPFC",
-            "significant_DLPFC",
-            "p_PCGBA23",
-            "fdr_PCGBA23",
-            "significant_PCGBA23",
+            *regional_priority_columns,
             "retained_edge_count",
             "endpoint_count",
             "endpoint_coverage",
@@ -9768,6 +9839,26 @@ if active_view == "KEGG enrichment":
                 if column not in kegg_priority_columns
             ]
         ]
+        regional_column_config = {
+            f"p_{kegg_region_suffix[tissue]}": st.column_config.NumberColumn(
+                f"{tissue} p-value", format="%.3e"
+            )
+            for tissue in active_tissues
+        }
+        regional_column_config.update(
+            {
+                f"fdr_{kegg_region_suffix[tissue]}": st.column_config.NumberColumn(
+                    f"{tissue} FDR", format="%.3e"
+                )
+                for tissue in active_tissues
+            }
+        )
+        regional_column_config.update(
+            {
+                f"significant_{kegg_region_suffix[tissue]}": f"{tissue} significant"
+                for tissue in active_tissues
+            }
+        )
         filterable_dataframe(
             displayed_kegg,
             table_key="kegg_enrichments",
@@ -9784,23 +9875,7 @@ if active_view == "KEGG enrichment":
                     "All regions FDR (expanded)", format="%.3e"
                 ),
                 "significant": "All regions significant (expanded)",
-                "p_AC": st.column_config.NumberColumn("AC p-value", format="%.3e"),
-                "fdr_AC": st.column_config.NumberColumn("AC FDR", format="%.3e"),
-                "significant_AC": "AC significant",
-                "p_DLPFC": st.column_config.NumberColumn(
-                    "DLPFC p-value", format="%.3e"
-                ),
-                "fdr_DLPFC": st.column_config.NumberColumn(
-                    "DLPFC FDR", format="%.3e"
-                ),
-                "significant_DLPFC": "DLPFC significant",
-                "p_PCGBA23": st.column_config.NumberColumn(
-                    "PCG p-value", format="%.3e"
-                ),
-                "fdr_PCGBA23": st.column_config.NumberColumn(
-                    "PCG FDR", format="%.3e"
-                ),
-                "significant_PCGBA23": "PCG significant",
+                **regional_column_config,
                 "significant_region_count": st.column_config.NumberColumn(
                     "Significant regions", format="%d"
                 ),
@@ -9851,11 +9926,14 @@ if active_view == "KEGG enrichment":
         file_name=f"{download_prefix}method4_tissue_expanded_kegg_annotated.tsv",
         mime="text/tab-separated-values",
     )
+    kegg_pathway_space = int(
+        module_manifest.get("kegg", {}).get("per_region_pathways_per_module_max", 350)
+    )
     st.caption(
-        "All-regions p/FDR uses the tissue-expanded enrichment test. AC, DLPFC, and "
-        "PCG p-values use separate region-specific ORA tests against their corresponding "
+        f"All-tissues p/FDR uses the tissue-expanded enrichment test. {', '.join(active_tissues)} "
+        "p-values use separate tissue-specific ORA tests against their corresponding "
         "expression backgrounds. Each regional FDR is Benjamini-Hochberg adjusted within "
-        "that module and region across 350 KEGG pathways; pathways below the minimum "
+        f"that module and region across {kegg_pathway_space} KEGG pathways; pathways below the minimum "
         "overlap receive p=1. Values are supplied by the enrichment analyses and are not "
         "recalculated by this app. Endpoint enrichments are exploratory because genes "
         "incident to many retained edges are more likely to enter the tested gene set."
@@ -9886,7 +9964,7 @@ if active_view == "Module details":
         step=0.01,
         key=f"module_entropy_range_{module_set}",
         help=(
-            "Zero is a single-tissue module; one is equal AC/DLPFC/PCG "
+            f"Zero is a single-tissue module; one is equal {'/'.join(active_tissues)} "
             "composition. This filter combines with the CT/TS filter."
         ),
     )
@@ -9978,7 +10056,8 @@ if active_view == "Module details":
             },
         )
         st.caption(
-            "Total bar width is module size; colored segments are AC, DLPFC, and PCG "
+            f"Total bar width is module size; colored segments are {', '.join(active_tissues[:-1])}, "
+            f"and {active_tissues[-1]} "
             "gene counts. Modules are ordered largest to smallest. Hover for exact "
             "counts and proportions; drag or scroll to zoom. Entropy is the continuous "
             "tissue-mixing complement to the discrete CT/TS module classification: zero "
@@ -9996,6 +10075,11 @@ if active_view == "Module details":
             mime="text/tab-separated-values",
         )
 
+    tissue_detail_columns = [
+        column
+        for _tissue, count_column, proportion_column in active_tissue_detail_columns
+        for column in (count_column, proportion_column)
+    ]
     detail_columns = [
         "module_definition",
         "module",
@@ -10006,13 +10090,20 @@ if active_view == "Module details":
         "dominant_tissue",
         "tissue_entropy",
         "tissue_entropy_normalized",
-        "n_genes_ac",
-        "proportion_ac",
-        "n_genes_dlpfc",
-        "proportion_dlpfc",
-        "n_genes_pcg",
-        "proportion_pcg",
+        *tissue_detail_columns,
     ]
+    tissue_column_config = {
+        count_column: st.column_config.NumberColumn(f"{tissue} genes", format="%d")
+        for tissue, count_column, _proportion_column in active_tissue_detail_columns
+    }
+    tissue_column_config.update(
+        {
+            proportion_column: st.column_config.NumberColumn(
+                f"{tissue} proportion", format="percent"
+            )
+            for tissue, _count_column, proportion_column in active_tissue_detail_columns
+        }
+    )
     module_details = module_details.copy()
     module_details.insert(0, "module_definition", module_set_label)
     st.markdown(f"#### Selected module: {module_label(module)}")
@@ -10035,14 +10126,7 @@ if active_view == "Module details":
             "tissue_entropy_normalized": st.column_config.ProgressColumn(
                 "Normalized tissue entropy", format="%.3f", min_value=0.0, max_value=1.0
             ),
-            "n_genes_ac": st.column_config.NumberColumn("AC genes", format="%d"),
-            "proportion_ac": st.column_config.NumberColumn("AC proportion", format="percent"),
-            "n_genes_dlpfc": st.column_config.NumberColumn("DLPFC genes", format="%d"),
-            "proportion_dlpfc": st.column_config.NumberColumn(
-                "DLPFC proportion", format="percent"
-            ),
-            "n_genes_pcg": st.column_config.NumberColumn("PCG genes", format="%d"),
-            "proportion_pcg": st.column_config.NumberColumn("PCG proportion", format="percent"),
+            **tissue_column_config,
         },
     )
     st.markdown(f"#### All {module_count} modules")
@@ -10066,14 +10150,7 @@ if active_view == "Module details":
             "tissue_entropy_normalized": st.column_config.ProgressColumn(
                 "Normalized tissue entropy", format="%.3f", min_value=0.0, max_value=1.0
             ),
-            "n_genes_ac": st.column_config.NumberColumn("AC genes", format="%d"),
-            "proportion_ac": st.column_config.NumberColumn("AC proportion", format="percent"),
-            "n_genes_dlpfc": st.column_config.NumberColumn("DLPFC genes", format="%d"),
-            "proportion_dlpfc": st.column_config.NumberColumn(
-                "DLPFC proportion", format="percent"
-            ),
-            "n_genes_pcg": st.column_config.NumberColumn("PCG genes", format="%d"),
-            "proportion_pcg": st.column_config.NumberColumn("PCG proportion", format="percent"),
+            **tissue_column_config,
         },
     )
     st.download_button(

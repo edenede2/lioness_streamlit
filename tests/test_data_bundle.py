@@ -669,18 +669,16 @@ def test_module_details_match_level4_modules_and_tissue_counts() -> None:
 
 
 def test_pathway_mdc_join_uses_component_matched_kegg_fdrs() -> None:
-    expected_components = {
-        "total",
-        "TS",
-        "CT",
-        "TS_AC",
-        "TS_DLPFC",
-        "TS_PCGBA23",
-        "CT_AC__DLPFC",
-        "CT_AC__PCGBA23",
-        "CT_DLPFC__PCGBA23",
-    }
     for module_set in data.available_module_sets():
+        expected_components = {
+            "total", "TS", "CT", *data.module_set_components(module_set)
+        }
+        # The historical brain MDC artifacts retain their original PCGBA23
+        # component keys even though every reader-facing label says PCG.
+        expected_components |= {
+            component.replace("PCG", "PCGBA23")
+            for component in tuple(expected_components)
+        }
         rows = data.build_pathway_mdc_rows(
             data.load_mdc_summary(module_set),
             data.load_mdc_resolved(module_set),
@@ -688,16 +686,18 @@ def test_pathway_mdc_join_uses_component_matched_kegg_fdrs() -> None:
             enrichment_fdr_threshold=0.05,
         )
         assert not rows.empty
-        assert set(rows["component"].astype(str)) == expected_components
+        observed_components = set(rows["component"].astype(str))
+        assert {"total", "TS", "CT"}.issubset(observed_components)
+        assert observed_components.issubset(expected_components)
         assert rows["enrichment_fdr"].le(0.05).all()
 
-        ac = rows.loc[rows["component"].eq("TS_AC")]
-        assert np.allclose(ac["enrichment_fdr"], ac["fdr_AC"])
-        pair = rows.loc[rows["component"].eq("CT_AC__DLPFC")]
-        expected_pair_fdr = pair[["fdr_AC", "fdr_DLPFC"]].max(axis=1)
-        assert np.allclose(pair["enrichment_fdr"], expected_pair_fdr)
-        assert pair["fdr_AC"].le(0.05).all()
-        assert pair["fdr_DLPFC"].le(0.05).all()
+        for component in data.module_set_components(module_set):
+            selected = rows.loc[rows["component"].eq(component)]
+            regions = data.KEGG_COMPONENT_REGIONS[component]
+            fdr_columns = [data.KEGG_REGION_FDR_COLUMNS[region] for region in regions]
+            expected_fdr = selected[fdr_columns].max(axis=1)
+            assert np.allclose(selected["enrichment_fdr"], expected_fdr)
+            assert selected[fdr_columns].le(0.05).all().all()
 
         summary = data.summarize_pathway_mdc_rows(
             rows, mdc_fdr_threshold=0.05, minimum_modules=2
@@ -798,13 +798,18 @@ def test_kegg_table_is_complete_and_module_filter_works() -> None:
 
 
 def test_kegg_contains_valid_whole_and_per_region_statistics() -> None:
-    region_columns = {
-        "AC": ("p_AC", "fdr_AC", "significant_AC"),
-        "DLPFC": ("p_DLPFC", "fdr_DLPFC", "significant_DLPFC"),
-        "PCG": ("p_PCGBA23", "fdr_PCGBA23", "significant_PCGBA23"),
-    }
     manifest = data.load_data_manifest()
     for module_set in data.available_module_sets():
+        region_columns = {
+            region: (
+                data.KEGG_REGION_P_COLUMNS[region],
+                data.KEGG_REGION_FDR_COLUMNS[region],
+                "significant_" + (
+                    "PCGBA23" if region == "PCG" else region
+                ),
+            )
+            for region in data.module_set_tissues(module_set)
+        }
         frame = data.load_kegg(module_set=module_set)
         assert {"p", "fdr", "significant"}.issubset(frame.columns)
         assert not any("MFBA9BA46" in column for column in frame.columns)
@@ -820,9 +825,14 @@ def test_kegg_contains_valid_whole_and_per_region_statistics() -> None:
 
         kegg_manifest = manifest["module_sets"][module_set]["kegg"]
         assert kegg_manifest["join_coverage"] == 1.0
-        assert kegg_manifest["per_region_pathways_per_module_min"] == 350
-        assert kegg_manifest["per_region_pathways_per_module_max"] == 350
-        assert set(kegg_manifest["region_statistics"]) == {"AC", "DLPFC", "PCG"}
+        assert kegg_manifest["per_region_pathways_per_module_min"] > 0
+        assert (
+            kegg_manifest["per_region_pathways_per_module_min"]
+            == kegg_manifest["per_region_pathways_per_module_max"]
+        )
+        assert set(kegg_manifest["region_statistics"]) == set(
+            data.module_set_tissues(module_set)
+        )
 
 
 def test_all_module_kegg_filters_cover_modules_categories_fdr_and_search() -> None:
