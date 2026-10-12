@@ -779,6 +779,22 @@ def test_streamlit_mdc_can_switch_to_raw_scale() -> None:
     assert widget_with_label(app.radio, "MDC display scale").value == "raw"
 
 
+def test_streamlit_mdc_split_triangle_heatmap_loads_on_demand() -> None:
+    app = AppTest.from_file(APP, default_timeout=180).run()
+    assert_app_clean(app)
+    app = select_view(app, "MDC")
+    assert_app_clean(app)
+
+    heatmap_toggle = widget_with_label(
+        app.toggle, "Load the selected module adjacency heatmap"
+    )
+    assert heatmap_toggle.value is False
+    heatmap_toggle.set_value(True).run()
+    assert_app_clean(app)
+    assert widget_with_label(
+        app.toggle, "Load the selected module adjacency heatmap"
+    ).value is True
+
 def test_streamlit_mdc_uses_selected_ad_control_edge_mask() -> None:
     app = AppTest.from_file(APP, default_timeout=180).run()
     assert_app_clean(app)

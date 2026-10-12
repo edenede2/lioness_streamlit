@@ -177,6 +177,26 @@ def test_effect_size_availability_requires_complete_manifest(
     assert not data.effect_size_data_available("full_cohort", "bonobo", "bonobo")
 
 
+def test_mdc_split_heatmap_is_lazy_and_all_edge_only(
+    tmp_path: Path, monkeypatch
+) -> None:
+    module_root = tmp_path / "full"
+    monkeypatch.setitem(data.MODULE_SET_DIRS, "full_cohort", module_root)
+    image = module_root / "mdc_split_heatmaps/all_edges/M1918.png"
+    image.parent.mkdir(parents=True)
+    image.write_bytes(b"\x89PNG\r\n\x1a\nfixture")
+
+    assert data.mdc_split_heatmap_available("full_cohort", 1918)
+    assert not data.mdc_split_heatmap_available(
+        "full_cohort", 1918, "ad_control_discovery_fdr05"
+    )
+    assert data.load_mdc_split_heatmap("full_cohort", 1918) == image
+    with pytest.raises(ValueError, match="only for all edges"):
+        data.load_mdc_split_heatmap(
+            "full_cohort", 1918, "ad_control_discovery_fdr05"
+        )
+
+
 def test_effect_driver_loader_merges_directions_and_keeps_top_twenty(
     tmp_path: Path, monkeypatch
 ) -> None:

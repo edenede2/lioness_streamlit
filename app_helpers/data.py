@@ -122,6 +122,7 @@ TISSUE_MAPPING = DATA_DIR / "tissue_mapping.tsv"
 SAMPLE_METADATA = DATA_DIR / "sample_metadata.parquet"
 MDC_SUMMARY = DATA_DIR / "mdc_ad_vs_control_summary.tsv"
 MDC_RESOLVED = DATA_DIR / "mdc_resolved_ad_vs_control.tsv"
+MDC_SPLIT_HEATMAP_DIRNAME = "mdc_split_heatmaps"
 DATA_MANIFEST = DATA_DIR / "data_manifest.json"
 PREDICTION_DIR = DATA_DIR / "prediction"
 PREDICTION_MANIFEST = PREDICTION_DIR / "prediction_public_manifest.json"
@@ -1448,6 +1449,47 @@ def load_mdc_resolved(
             ("differential_fdr_threshold", "=", float(differential_fdr_threshold)),
         ],
     )
+
+
+def mdc_split_heatmap_available(
+    module_set: str,
+    module: int,
+    differential_edge_rule: str = "all",
+) -> bool:
+    """Return whether the selected all-edge module heatmap is locally or remotely available."""
+
+    if differential_edge_rule != "all":
+        return False
+    path = (
+        module_set_data_dir(module_set)
+        / MDC_SPLIT_HEATMAP_DIRNAME
+        / "all_edges"
+        / f"M{int(module)}.png"
+    )
+    return data_path_available(path)
+
+
+def load_mdc_split_heatmap(
+    module_set: str,
+    module: int,
+    differential_edge_rule: str = "all",
+) -> Path:
+    """Materialize one selected module's AD/Control split-triangle PNG lazily."""
+
+    if differential_edge_rule != "all":
+        raise ValueError(
+            "Split-triangle MDC heatmaps are currently available only for all edges."
+        )
+    path = (
+        module_set_data_dir(module_set)
+        / MDC_SPLIT_HEATMAP_DIRNAME
+        / "all_edges"
+        / f"M{int(module)}.png"
+    )
+    materialized = ensure_data_path(path)
+    if isinstance(materialized, list):
+        raise ValueError(f"Expected one MDC heatmap file, found {len(materialized)}")
+    return materialized
 
 
 def load_edge_summaries(

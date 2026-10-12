@@ -63,6 +63,31 @@ def plotly_chart(
     )
 
 
+def image(
+    image_value: object,
+    *,
+    caption: str | list[str] | None = None,
+    stretch: bool = True,
+    **kwargs: Any,
+) -> object:
+    """Render an image across both legacy and modern Streamlit width APIs."""
+
+    if stretch:
+        try:
+            return st.image(image_value, caption=caption, width="stretch", **kwargs)
+        except TypeError:
+            return st.image(
+                image_value,
+                caption=caption,
+                use_container_width=True,
+                **kwargs,
+            )
+    try:
+        return st.image(image_value, caption=caption, width="content", **kwargs)
+    except TypeError:
+        return st.image(image_value, caption=caption, **kwargs)
+
+
 def stateful_tabs(labels: list[str], *, key: str) -> tuple[object, ...]:
     """Return tabs that rerun when their active selection changes.
 

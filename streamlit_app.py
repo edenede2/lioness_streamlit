@@ -145,6 +145,7 @@ from app_helpers.module_finder import (
 )
 from app_helpers.table_controls import filterable_dataframe
 from app_helpers.streamlit_compat import (
+    image as render_streamlit_image,
     stateful_tabs,
     tab_is_open,
 )
@@ -200,6 +201,7 @@ if (
             "annotate_prediction_coefficients", "coefficient_kegg_scope_lookup",
             "TARGETED_HEDGES_MASKS",
             "load_effect_endpoint_summary",
+            "load_mdc_split_heatmap", "mdc_split_heatmap_available",
         )
     )
 ):
@@ -291,6 +293,8 @@ from app_helpers.data import (
     load_cluster_association_statistics,
     load_mdc_summary,
     load_mdc_resolved,
+    load_mdc_split_heatmap,
+    mdc_split_heatmap_available,
     load_module_annotations,
     load_module_details,
     load_partition_comparison_summary,
@@ -8531,6 +8535,54 @@ if active_view == "MDC":
             "Orange indicates higher connectivity in AD, blue indicates higher connectivity "
             "in Control, and ★ marks significance at the selected threshold."
         )
+
+        st.markdown("##### AD and Control module adjacency")
+        st.caption(
+            "The upper triangle shows the AD group network and the lower triangle "
+            "shows the Control group network. Both triangles use the same absolute "
+            "signedAlt-adjacency color scale and the AD-derived node ordering."
+        )
+        if differential_edge_rule != "all":
+            st.info(
+                "The split-triangle adjacency image is currently available for the "
+                "all-edge MDC network only. Select **All edges** to view it."
+            )
+        elif mdc_split_heatmap_available(module_set, module, differential_edge_rule):
+            show_mdc_adjacency = st.toggle(
+                "Load the selected module adjacency heatmap",
+                value=False,
+                key=f"show_mdc_split_heatmap_{module_set}_{module}",
+                help=(
+                    "Images are fetched one module at a time from the Drive backend to "
+                    "keep the Streamlit app within its memory limit."
+                ),
+            )
+            if show_mdc_adjacency:
+                with st.spinner("Loading the selected AD/Control adjacency heatmap…"):
+                    mdc_heatmap_path = load_mdc_split_heatmap(
+                        module_set, module, differential_edge_rule
+                    )
+                render_streamlit_image(
+                    str(mdc_heatmap_path),
+                    caption=(
+                        f"{module_label(module)}: upper triangle = AD; "
+                        "lower triangle = Control"
+                    ),
+                )
+                st.download_button(
+                    "Download selected adjacency heatmap (PNG)",
+                    data=mdc_heatmap_path.read_bytes(),
+                    file_name=(
+                        f"{download_prefix}M{module}_AD_Control_"
+                        "split_triangle_adjacency.png"
+                    ),
+                    mime="image/png",
+                )
+        else:
+            st.info(
+                "The split-triangle adjacency image has not yet been published for "
+                f"{module_label(module)} in this module definition."
+            )
 
     significance_filter = st.selectbox(
         "Modules to show in the MDC overview and entropy plots",
