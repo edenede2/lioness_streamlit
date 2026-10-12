@@ -75,10 +75,14 @@ def test_protocol_results_loader_exposes_only_complete_aggregate_performance() -
         performance["outcome"].eq("parkinsonian_signs")
     ]
     tangles = performance.loc[performance["outcome"].eq("tangles")]
-    assert set(binary["representation"]) == {"B", "G", "E", "C0"}
-    assert set(clinical_pd["representation"]) == {"B", "E", "C0"}
-    assert set(three_class["representation"]) == {"B", "E", "C0"}
-    for regression in (
+    expected_core = {"B", "E", "C0"}
+    allowed_incremental = expected_core | {"G", "G_HVG"}
+    assert expected_core.issubset(set(binary["representation"]))
+    assert "G" in set(binary["representation"])
+    assert expected_core.issubset(set(three_class["representation"]))
+    assert "G" in set(three_class["representation"])
+    for result in (
+        clinical_pd,
         gpath,
         amyloid,
         cogn_global,
@@ -86,7 +90,9 @@ def test_protocol_results_loader_exposes_only_complete_aggregate_performance() -
         parkinsonian_signs,
         tangles,
     ):
-        assert set(regression["representation"]) == {"B", "E", "C0"}
+        assert expected_core.issubset(set(result["representation"]))
+    for _, result in performance.groupby("outcome", observed=True):
+        assert set(result["representation"]).issubset(allowed_incremental)
     assert set(performance["model_family"]) == {
         "logistic_l2",
         "logistic_elastic_net",
