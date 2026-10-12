@@ -4,6 +4,7 @@ __pycache__/
 .streamlit/secrets.toml
 .venv/
 data/
+artifacts/
 google-drive-service-account.json
 streamSecrets*.txt
 manuscript_story/

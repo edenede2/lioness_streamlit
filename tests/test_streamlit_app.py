@@ -961,6 +961,38 @@ def test_streamlit_configurable_grouped_and_ordinal_associations_render() -> Non
     assert not {"pearson_r", "spearman_rho"}.intersection(categorical_table.columns)
 
 
+def test_publication_dialog_captures_current_association_data_and_statistics(monkeypatch) -> None:
+    import io
+    from PIL import Image
+    from app_helpers.figure_export import ui
+    from app_helpers.figure_export.config import widget_key
+
+    buffer = io.BytesIO()
+    Image.new("RGB", (100, 80), "white").save(buffer, format="PNG")
+    captures = []
+
+    def render(spec, config, content):
+        captures.append(spec)
+        return buffer.getvalue(), ()
+
+    monkeypatch.setattr(ui, "_render_cached", render)
+    app = AppTest.from_file(APP, default_timeout=240).run()
+    assert_app_clean(app)
+    outcome = widget_with_label(app.selectbox, "Association outcome").value
+    plotted = next(
+        json.loads(chart.proto.spec) for chart in app.get("plotly_chart")
+        if json.loads(chart.proto.spec).get("layout", {}).get("meta", {}).get("figure_export")
+    )
+    app = app.button(widget_key("main.figure", "entry", "open")).click().run()
+    assert_app_clean(app)
+    assert widget_with_label(app.selectbox, "Publication preset")
+    assert widget_with_label(app.selectbox, "Association outcome").value == outcome
+    captured = json.loads(captures[-1].figure_snapshot)
+    assert captured["data"] == plotted["data"]
+    assert captured["layout"]["meta"] == plotted["layout"]["meta"]
+    assert dict(captures[-1].metadata)["outcome"] == outcome
+
+
 def test_numeric_correlation_heatmap_supports_selected_category_levels() -> None:
     app = AppTest.from_file(APP, default_timeout=240).run()
     assert_app_clean(app)

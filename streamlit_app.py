@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
+from app_helpers.figure_export import render_exportable_plot as render_plotly_chart
+
+
 import hashlib
 import importlib
 from collections.abc import Iterable
 
 import numpy as np
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
 import streamlit as st
 
 # Streamlit Community Cloud may hot-reload this entrypoint while retaining an older
@@ -19,6 +20,7 @@ from app_helpers import charts as _chart_helpers
 
 if (
     getattr(_chart_helpers, "DISTRIBUTION_GROUPING_API_VERSION", 0) < 3
+    or getattr(_chart_helpers, "PUBLICATION_EXPORT_API_VERSION", 0) < 1
     or getattr(_chart_helpers, "ASSOCIATION_STYLE_API_VERSION", 0) < 1
     or not all(
         hasattr(_chart_helpers, name)
@@ -55,6 +57,20 @@ if (
     _chart_helpers = importlib.reload(_chart_helpers)
 
 from app_helpers.charts import (
+    donor_edge_composition_figure,
+    donor_edge_difference_figure,
+    donor_edge_driver_figure,
+    donor_edge_scatter_figure,
+    endpoint_expression_2d_figure,
+    endpoint_expression_3d_figure,
+    expression_residual_figure,
+    partition_association_concordance_figure,
+    partition_entropy_figure,
+    partition_mdc_concordance_figure,
+    partition_overlap_figure,
+    partition_proportion_figure,
+    partition_size_figure,
+
     CONTINUOUS_COLOR_SCALES,
     EDGE_COMPONENT_LABELS,
     aggregate_to_long,
@@ -129,7 +145,6 @@ from app_helpers.module_finder import (
 )
 from app_helpers.table_controls import filterable_dataframe
 from app_helpers.streamlit_compat import (
-    plotly_chart as render_plotly_chart,
     stateful_tabs,
     tab_is_open,
 )
@@ -951,21 +966,7 @@ def _render_expression_residuals(
         st.info("OLS is unavailable because too few complete points or a constant axis remain.")
         return
     residuals = pd.concat(diagnostics, ignore_index=True)
-    residual_figure = px.scatter(
-        residuals,
-        x="ols_fitted",
-        y="ols_residual",
-        color="fit_group",
-        hover_name="sample_id" if "sample_id" in residuals else None,
-        labels={
-            "ols_fitted": "OLS fitted expression (Z-score)",
-            "ols_residual": "Expression residual (observed − fitted)",
-            "fit_group": "OLS fit",
-        },
-        title="OLS residuals versus fitted values",
-    )
-    residual_figure.add_hline(y=0, line_dash="dash", line_color="#65727E")
-    residual_figure.update_traces(marker={"size": 7, "opacity": 0.72})
+    residual_figure = expression_residual_figure(residuals)
     render_plotly_chart(residual_figure, key=f"{key}_residuals")
 
 
@@ -2322,6 +2323,7 @@ def render_targeted_prediction_view() -> None:
                 ),
                 use_container_width=True,
                 config={"displaylogo": False},
+                plot_id="render_targeted_prediction_view.prediction_performance_figure",
             )
             if (
                 not masked_selection and score_transform == "raw"
@@ -2336,6 +2338,7 @@ def render_targeted_prediction_view() -> None:
                         ),
                         use_container_width=True,
                         config={"displaylogo": False},
+                        plot_id="render_targeted_prediction_view.targeted_primary_comparison_figure",
                     )
                     st.caption(
                         "Positive differences favor the first model. BH FDR is corrected across "
@@ -2383,6 +2386,7 @@ def render_targeted_prediction_view() -> None:
                     ),
                     use_container_width=True,
                     config={"displaylogo": False},
+                    plot_id="render_targeted_prediction_view.prediction_performance_figure.2",
                 )
                 fold_performance = cached_targeted_prediction_table(
                     fold_table,
@@ -2409,6 +2413,7 @@ def render_targeted_prediction_view() -> None:
                         ),
                         use_container_width=True,
                         config={"displaylogo": False},
+                        plot_id="render_targeted_prediction_view.targeted_fold_robustness_figure",
                     )
                 if not masked_selection and evidence_tier in {"secondary", "exploratory"}:
                     tier_comparisons = cached_targeted_prediction_table(
@@ -2497,6 +2502,7 @@ def render_targeted_prediction_view() -> None:
                         ),
                         use_container_width=True,
                         config={"displaylogo": False},
+                        plot_id="render_targeted_prediction_view.targeted_transform_comparison_figure",
                     )
                     render_plotly_chart(
                         targeted_transform_heatmap_figure(
@@ -2508,6 +2514,7 @@ def render_targeted_prediction_view() -> None:
                         ),
                         use_container_width=True,
                         config={"displaylogo": False},
+                        plot_id="render_targeted_prediction_view.targeted_transform_heatmap_figure",
                     )
                     filterable_dataframe(
                         transform_comparisons,
@@ -2540,6 +2547,7 @@ def render_targeted_prediction_view() -> None:
                             ),
                             use_container_width=True,
                             config={"displaylogo": False},
+                            plot_id="render_targeted_prediction_view.targeted_panel_overlap_figure",
                         )
                         k_summary = overlap.groupby(
                             "transformed_scale", observed=True
@@ -2666,6 +2674,7 @@ def render_targeted_prediction_view() -> None:
                             ),
                             use_container_width=True,
                             config={"displaylogo": False},
+                            plot_id="render_targeted_prediction_view.prediction_performance_figure.3",
                         )
                     predictor_counts = source_performance.loc[
                         source_performance["model_variant"].eq(source_variant),
@@ -2738,6 +2747,7 @@ def render_targeted_prediction_view() -> None:
                                 ),
                                 use_container_width=True,
                                 config={"displaylogo": False},
+                                plot_id="render_targeted_prediction_view.targeted_fold_robustness_figure.2",
                             )
                 if hedges_selection:
                     st.info(
@@ -2793,6 +2803,7 @@ def render_targeted_prediction_view() -> None:
                         ),
                         use_container_width=True,
                         config={"displaylogo": False},
+                        plot_id="render_targeted_prediction_view.targeted_eigengene_source_comparison_figure",
                     )
                     filterable_dataframe(
                         source_comparisons,
@@ -2834,6 +2845,7 @@ def render_targeted_prediction_view() -> None:
                         ),
                         use_container_width=True,
                         config={"displaylogo": False},
+                        plot_id="render_targeted_prediction_view.targeted_selection_frequency_figure",
                     )
                     st.caption(
                         "KEGG annotations were joined only after selection and are interpretive only."
@@ -2918,6 +2930,7 @@ def render_targeted_prediction_view() -> None:
                     prediction_confusion_figure(confusion, title="Donor-averaged OOF confusion matrix"),
                     use_container_width=True,
                     config={"displaylogo": False},
+                    plot_id="render_targeted_prediction_view.prediction_confusion_figure",
                 )
                 diagnostic_curves = classification_diagnostic_rows(diagnostics)
                 if not diagnostic_curves.empty:
@@ -2927,20 +2940,19 @@ def render_targeted_prediction_view() -> None:
                         ("ROC", "Precision-recall", "Calibration"),
                         strict=True,
                     ):
-                        curve_column.plotly_chart(
-                            prediction_curve_figure(
-                                diagnostic_curves,
-                                curve=curve_name,
-                                title=f"OOF {curve_name}",
-                            ),
-                            use_container_width=True,
-                            config={"displaylogo": False},
-                        )
+                        with curve_column:
+                            render_plotly_chart(
+                                prediction_curve_figure(diagnostic_curves, curve=curve_name, title=f"OOF {curve_name}"),
+                                use_container_width=True,
+                                config={"displaylogo": False},
+                                plot_id=f"targeted_prediction.curve.{curve_name}",
+                            )
                 if len([column for column in diagnostics if column.startswith("probability_")]) == 2:
                     render_plotly_chart(
                         prediction_threshold_figure(diagnostics, title="Donor-averaged OOF threshold diagnostics"),
                         use_container_width=True,
                         config={"displaylogo": False},
+                        plot_id="render_targeted_prediction_view.prediction_threshold_figure",
                     )
             else:
                 render_plotly_chart(
@@ -2950,11 +2962,13 @@ def render_targeted_prediction_view() -> None:
                     ),
                     use_container_width=True,
                     config={"displaylogo": False},
+                    plot_id="render_targeted_prediction_view.prediction_observed_figure",
                 )
                 render_plotly_chart(
                     prediction_error_figure(diagnostics, title="OOF residual diagnostics"),
                     use_container_width=True,
                     config={"displaylogo": False},
+                    plot_id="render_targeted_prediction_view.prediction_error_figure",
                 )
             if not diagnostics.empty:
                 filterable_dataframe(
@@ -3027,6 +3041,7 @@ def render_targeted_prediction_view() -> None:
                     ),
                     use_container_width=True,
                     config={"displaylogo": False},
+                    plot_id="render_targeted_prediction_view.prediction_coefficient_figure",
                 )
                 st.caption("KEGG enrichment is interpretive only and never enters ranking or fitting.")
                 filterable_dataframe(
@@ -3289,7 +3304,12 @@ def render_prediction_view() -> None:
                 model_labels=PREDICTION_MODEL_LABELS,
                 title=f"Held-out {PREDICTION_OUTCOME_LABELS[outcome]} performance",
             )
-            render_plotly_chart(figure, use_container_width=True, config={"displaylogo": False})
+            render_plotly_chart(
+                figure,
+                use_container_width=True,
+                config={"displaylogo": False},
+                plot_id="render_prediction_view.figure",
+            )
             st.caption(
                 "Lower is better for CogDx MAE. Higher is better for all other primary "
                 "metrics; held-out R² may be negative when a model performs worse than "
@@ -3314,6 +3334,7 @@ def render_prediction_view() -> None:
                     ),
                     use_container_width=True,
                     config={"displaylogo": False},
+                    plot_id="render_prediction_view.prediction_heatmap_figure",
                 )
                 st.caption(
                     "Cells use each outcome's prespecified primary metric. CogDx is displayed as "
@@ -3365,6 +3386,7 @@ def render_prediction_view() -> None:
                     ),
                     use_container_width=True,
                     config={"displaylogo": False},
+                    plot_id="render_prediction_view.prediction_ct_ts_figure",
                 )
                 st.caption(
                     "Positive values favor CT. For CogDx, the sign is reversed after calculating "
@@ -3429,29 +3451,26 @@ def render_prediction_view() -> None:
                     for column, curve_name in zip(
                         curve_columns, ["ROC", "Precision-recall", "Calibration"], strict=True
                     ):
-                        column.plotly_chart(
-                            prediction_curve_figure(
-                                curves, curve=curve_name,
-                                title=curve_name,
-                            ),
-                            use_container_width=True,
-                            config={"displaylogo": False},
-                        )
+                        with column:
+                            render_plotly_chart(
+                                prediction_curve_figure(curves, curve=curve_name, title=curve_name),
+                                use_container_width=True,
+                                config={"displaylogo": False},
+                                plot_id=f"prediction.curve.{curve_name}",
+                            )
                 if not confusion.empty:
                     render_plotly_chart(
-                        prediction_confusion_figure(
-                            confusion, title="Held-out confusion matrix"
-                        ),
+                        prediction_confusion_figure(confusion, title="Held-out confusion matrix"),
                         use_container_width=True,
                         config={"displaylogo": False},
+                        plot_id="render_prediction_view.prediction_confusion_figure",
                     )
                 if outcome in {"diagnosis_binary", "parkinsonism"} and not diagnostics.empty:
                     render_plotly_chart(
-                        prediction_threshold_figure(
-                            diagnostics, title="Held-out threshold diagnostics"
-                        ),
+                        prediction_threshold_figure(diagnostics, title="Held-out threshold diagnostics"),
                         use_container_width=True,
                         config={"displaylogo": False},
+                        plot_id="render_prediction_view.prediction_threshold_figure",
                     )
             elif diagnostics.empty:
                 st.info("Held-out donor diagnostics are unavailable in the local cache.")
@@ -3463,6 +3482,7 @@ def render_prediction_view() -> None:
                     ),
                     use_container_width=True,
                     config={"displaylogo": False},
+                    plot_id="render_prediction_view.prediction_observed_figure",
                 )
                 render_plotly_chart(
                     prediction_error_figure(
@@ -3471,6 +3491,7 @@ def render_prediction_view() -> None:
                     ),
                     use_container_width=True,
                     config={"displaylogo": False},
+                    plot_id="render_prediction_view.prediction_error_figure",
                 )
             if not diagnostics.empty:
                 filterable_dataframe(
@@ -3540,6 +3561,7 @@ def render_prediction_view() -> None:
                     ),
                     use_container_width=True,
                     config={"displaylogo": False},
+                    plot_id="render_prediction_view.prediction_coefficient_figure",
                 )
                 filterable_dataframe(
                     shown,
@@ -3726,9 +3748,14 @@ def render_partition_comparison_view() -> None:
     with size_tab:
         if tab_is_open(size_tab):
             render_plotly_chart(
-                px.histogram(
-                    structural, x="module_size", color="partition", barmode="overlay",
-                    opacity=0.65, marginal="box", nbins=35,
+                partition_size_figure(
+                    structural,
+                    x="module_size",
+                    color="partition",
+                    barmode="overlay",
+                    opacity=0.65,
+                    marginal="box",
+                    nbins=35,
                     labels={"module_size": "Genes per module"},
                     title="Module-size distributions",
                 ),
@@ -3737,9 +3764,14 @@ def render_partition_comparison_view() -> None:
     with entropy_tab:
         if tab_is_open(entropy_tab):
             render_plotly_chart(
-                px.histogram(
-                    structural, x="tissue_entropy_normalized", color="partition",
-                    barmode="overlay", opacity=0.65, marginal="box", nbins=25,
+                partition_entropy_figure(
+                    structural,
+                    x="tissue_entropy_normalized",
+                    color="partition",
+                    barmode="overlay",
+                    opacity=0.65,
+                    marginal="box",
+                    nbins=25,
                     labels={"tissue_entropy_normalized": "Normalized Shannon entropy"},
                     title="Continuous tissue-mixing distributions",
                 ),
@@ -3755,9 +3787,14 @@ def render_partition_comparison_view() -> None:
                 "partition", observed=True
             )["modules"].transform("sum")
             render_plotly_chart(
-                px.bar(
-                    type_counts, x="partition", y="proportion", color="cluster_type",
-                    barmode="stack", text="modules", title="CT/TS module proportions",
+                partition_proportion_figure(
+                    type_counts,
+                    x="partition",
+                    y="proportion",
+                    color="cluster_type",
+                    barmode="stack",
+                    text="modules",
+                    title="CT/TS module proportions",
                     labels={"proportion": "Proportion of modules", "cluster_type": "Type"},
                 ),
                 key="partition_ct_ts_proportions",
@@ -3774,13 +3811,7 @@ def render_partition_comparison_view() -> None:
     selected_mapping = mapping.loc[mapping["mapping"].eq(mapping_mode)].copy()
     left, right = st.columns([1.1, 1])
     with left:
-        figure = px.histogram(
-            selected_mapping,
-            x="jaccard",
-            nbins=30,
-            title="Distribution of module-overlap Jaccard values",
-            labels={"jaccard": "Tissue–gene Jaccard", "count": "Module pairs"},
-        )
+        figure = partition_overlap_figure(selected_mapping)
         render_plotly_chart(figure, key=f"partition_jaccard_{mapping_mode}")
     with right:
         selected_new_module = st.selectbox(
@@ -3834,21 +3865,7 @@ def render_partition_comparison_view() -> None:
                 for column, value in filters.items():
                     view = view.loc[view[column].astype(str).eq(value)]
                 if {"new_effect", "matched_effect"}.issubset(view.columns):
-                    figure = px.scatter(
-                        view, x="matched_effect", y="new_effect", color="component"
-                        if "component" in view else None,
-                        hover_data=[
-                            column for column in (
-                                "new_module", "matched_module", "jaccard",
-                                "new_fdr", "matched_fdr",
-                            ) if column in view
-                        ],
-                        title="Matched-module association effects",
-                    )
-                    low = min(view["matched_effect"].min(), view["new_effect"].min())
-                    high = max(view["matched_effect"].max(), view["new_effect"].max())
-                    figure.add_shape(type="line", x0=low, y0=low, x1=high, y1=high,
-                                     line=dict(color="gray", dash="dash"))
+                    figure = partition_association_concordance_figure(view)
                     render_plotly_chart(figure, key="partition_association_concordance")
                 filterable_dataframe(
                     view, table_key="partition_association_table",
@@ -3860,17 +3877,7 @@ def render_partition_comparison_view() -> None:
                 st.info("MDC concordance will appear after the new permutation run finishes.")
             else:
                 if {"new_log2_mdc", "matched_log2_mdc"}.issubset(mdc.columns):
-                    figure = px.scatter(
-                        mdc, x="matched_log2_mdc", y="new_log2_mdc",
-                        color="component" if "component" in mdc else None,
-                        hover_data=[
-                            column for column in (
-                                "new_module", "matched_module", "jaccard",
-                                "new_directional_fdr", "matched_directional_fdr",
-                            ) if column in mdc
-                        ],
-                        title="Matched-module MDC concordance",
-                    )
+                    figure = partition_mdc_concordance_figure(mdc)
                     render_plotly_chart(figure, key="partition_mdc_concordance")
                 filterable_dataframe(
                     mdc, table_key="partition_mdc_table",
@@ -5004,6 +5011,14 @@ if active_view == "Associations":
                 "scale": 3,
             },
         },
+        plot_id="main.figure",
+        metadata={
+            "module_set": module_set,
+            "method": method,
+            "module": f"M{module}",
+            "outcome": phenotype,
+            "feature": feature,
+        },
     )
     public_columns = list(dict.fromkeys([
         "sample_id",
@@ -5201,6 +5216,14 @@ if active_view == "Correlation heatmaps":
                 ),
                 use_container_width=True,
                 config={"displaylogo": False},
+                plot_id="main.cluster_association_heatmap_figure",
+                metadata={
+                    "module_set": module_set,
+                    "method": method,
+                    "module": f"M{module}",
+                    "outcome": phenotype,
+                    "feature": feature,
+                },
             )
             filterable_dataframe(
                 cluster_table,
@@ -5758,6 +5781,14 @@ if active_view == "Correlation heatmaps":
                     "scale": 3,
                 },
             },
+            plot_id="main.correlation_heatmap",
+            metadata={
+                "module_set": module_set,
+                "method": method,
+                "module": f"M{module}",
+                "outcome": phenotype,
+                "feature": feature,
+            },
         )
     if heatmap_clustering != "None":
         st.caption(
@@ -5992,11 +6023,17 @@ if active_view == "Feature distributions":
                 "displaylogo": False,
                 "toImageButtonOptions": {
                     "format": "png",
-                    "filename": (
-                        f"{download_prefix}M{module}_{feature}_{method}_distribution"
-                    ),
+                    "filename": (f"{download_prefix}M{module}_{feature}_{method}_distribution"),
                     "scale": 3,
                 },
+            },
+            plot_id="main.distribution",
+            metadata={
+                "module_set": module_set,
+                "method": method,
+                "module": f"M{module}",
+                "outcome": phenotype,
+                "feature": feature,
             },
         )
         summary = distribution_summary(
@@ -6280,6 +6317,14 @@ if active_view == "Feature distributions":
                         ),
                         use_container_width=True,
                         config={"displaylogo": False},
+                        plot_id="main.distribution_feature_heatmap_figure",
+                        metadata={
+                            "module_set": module_set,
+                            "method": method,
+                            "module": f"M{module}",
+                            "outcome": phenotype,
+                            "feature": feature,
+                        },
                     )
                 st.caption(
                     "BH is calculated across valid modules only, separately for each "
@@ -6342,6 +6387,14 @@ if active_view == "Feature distributions":
                 ),
                 use_container_width=True,
                 config={"displaylogo": False},
+                plot_id="main.distribution_omnibus_component_figure",
+                metadata={
+                    "module_set": module_set,
+                    "method": method,
+                    "module": f"M{module}",
+                    "outcome": phenotype,
+                    "feature": feature,
+                },
             )
             selected_omnibus.insert(0, "module_definition", module_set_label)
             filterable_dataframe(
@@ -6413,6 +6466,14 @@ if active_view == "Feature distributions":
                     ),
                     use_container_width=True,
                     config={"displaylogo": False},
+                    plot_id="main.distribution_pairwise_forest_figure",
+                    metadata={
+                        "module_set": module_set,
+                        "method": method,
+                        "module": f"M{module}",
+                        "outcome": phenotype,
+                        "feature": feature,
+                    },
                 )
                 render_plotly_chart(
                     distribution_pairwise_heatmap_figure(
@@ -6422,6 +6483,14 @@ if active_view == "Feature distributions":
                     ),
                     use_container_width=True,
                     config={"displaylogo": False},
+                    plot_id="main.distribution_pairwise_heatmap_figure",
+                    metadata={
+                        "module_set": module_set,
+                        "method": method,
+                        "module": f"M{module}",
+                        "outcome": phenotype,
+                        "feature": feature,
+                    },
                 )
                 pairwise_columns = [
                     "module", "metric_family", "component", "component_label",
@@ -6581,6 +6650,14 @@ if active_view == "Feature distributions":
                         ),
                         use_container_width=True,
                         config={"displaylogo": False},
+                        plot_id="main.distribution_module_ranking_figure",
+                        metadata={
+                            "module_set": module_set,
+                            "method": method,
+                            "module": f"M{module}",
+                            "outcome": phenotype,
+                            "feature": feature,
+                        },
                     )
                 ranking_catalog.insert(0, "module_definition", module_set_label)
                 filterable_dataframe(
@@ -7079,6 +7156,14 @@ if active_view == "Module finder":
                     "scale": 3,
                 },
             },
+            plot_id="main.finder_figure",
+            metadata={
+                "module_set": module_set,
+                "method": method,
+                "module": f"M{module}",
+                "outcome": phenotype,
+                "feature": feature,
+            },
         )
         finder_columns = [
             "display_rank",
@@ -7238,6 +7323,14 @@ if active_view == "Edge summaries":
             ),
             use_container_width=True,
             config={"displaylogo": False},
+            plot_id="main.edge_summary_figure",
+            metadata={
+                "module_set": module_set,
+                "method": method,
+                "module": f"M{module}",
+                "outcome": phenotype,
+                "feature": feature,
+            },
         )
         edge_group_summary = (
             edge_data.groupby(
@@ -7388,25 +7481,18 @@ if active_view == "Donor edge explorer":
             selected_row = pair_table.iloc[labels.index(selected_label)]
             selected_pair = (str(selected_row["sample_a"]), str(selected_row["sample_b"]))
 
-    explorer_scatter = px.scatter(
-        candidates,
-        x="metric_value",
-        y=phenotype,
-        color="diagnosis_group",
-        hover_name="sample_id",
-        labels={"metric_value": active_feature_labels.get(feature, feature)},
-        title=f"M{module} {component_labels.get(explorer_component, explorer_component)}",
-        color_discrete_map={"Control": "#2878B5", "MCI": "#D5A021", "AD": "#E87532"},
+    explorer_scatter = donor_edge_scatter_figure(active_feature_labels, candidates, component_labels, explorer_component, feature, module, phenotype, selected_pair)
+    render_plotly_chart(
+        explorer_scatter,
+        key="donor_edge_explorer_scatter",
+        metadata={
+            "module_set": module_set,
+            "method": method,
+            "module": f"M{module}",
+            "outcome": phenotype,
+            "feature": feature,
+        },
     )
-    if selected_pair:
-        highlighted = candidates.loc[candidates["sample_id"].isin(selected_pair)]
-        explorer_scatter.add_scatter(
-            x=highlighted["metric_value"], y=highlighted[phenotype], mode="markers+text",
-            text=highlighted["sample_id"], textposition="top center",
-            marker={"size": 15, "symbol": "circle-open", "color": "black", "line": {"width": 3}},
-            name="Selected donors",
-        )
-    render_plotly_chart(explorer_scatter, key="donor_edge_explorer_scatter")
 
     if selected_pair:
         edge_data = attach_metadata(
@@ -7442,14 +7528,18 @@ if active_view == "Donor edge explorer":
         component_chart["edge_sign"] = component_chart["edge_sign"].map({
             "positive_weight_sum": "Positive", "negative_weight_magnitude": "Negative"
         })
-        composition_figure = px.bar(
-            component_chart, x="scope_label", y="weight_sum", color="edge_sign",
-            facet_row="sample_id", barmode="relative",
-            color_discrete_map={"Positive": "#2878B5", "Negative": "#D95F4A"},
-            title="Positive and negative component contributions",
+        composition_figure = donor_edge_composition_figure(component_chart)
+        render_plotly_chart(
+            composition_figure,
+            key="donor_edge_composition",
+            metadata={
+                "module_set": module_set,
+                "method": method,
+                "module": f"M{module}",
+                "outcome": phenotype,
+                "feature": feature,
+            },
         )
-        composition_figure.update_layout(height=620)
-        render_plotly_chart(composition_figure, key="donor_edge_composition")
         difference_metrics = [
             "signed_weight_sum", "positive_weight_sum", "negative_weight_magnitude",
             "absolute_weight_sum", "n_retained_edges", "cancellation_index",
@@ -7490,19 +7580,18 @@ if active_view == "Donor edge explorer":
                 delta_plot = delta_frame.loc[
                     delta_frame["metric"].eq(selected_difference_metric)
                 ]
-                difference_figure = px.bar(
-                    delta_plot,
-                    x="scope_label",
-                    y="difference",
-                    color="difference",
-                    color_continuous_scale="RdBu_r",
-                    color_continuous_midpoint=0,
-                    title=(
-                        f"Component differences: {selected_pair[1]} minus "
-                        f"{selected_pair[0]}"
-                    ),
+                difference_figure = donor_edge_difference_figure(delta_plot, selected_pair)
+                render_plotly_chart(
+                    difference_figure,
+                    key="donor_edge_component_difference",
+                    metadata={
+                        "module_set": module_set,
+                        "method": method,
+                        "module": f"M{module}",
+                        "outcome": phenotype,
+                        "feature": feature,
+                    },
                 )
-                render_plotly_chart(difference_figure, key="donor_edge_component_difference")
         filterable_dataframe(
             edge_data[comparison_columns], table_key="donor_edge_comparison",
             table_name="Selected-donor edge decomposition", height=460,
@@ -7519,14 +7608,18 @@ if active_view == "Donor edge explorer":
                     drivers["tissue_a"].astype(str) + ":" + drivers["gene_a"].astype(str)
                     + " ↔ " + drivers["tissue_b"].astype(str) + ":" + drivers["gene_b"].astype(str)
                 )
-                driver_figure = px.bar(
-                    drivers.sort_values("driver_absolute_deviation"),
-                    x="driver_absolute_deviation", y="edge", color="sample_id",
-                    orientation="h", facet_col="sample_id",
-                    title="Top donor-specific deviations from the discovery-Control edge mean",
+                driver_figure = donor_edge_driver_figure(drivers)
+                render_plotly_chart(
+                    driver_figure,
+                    key="donor_edge_drivers",
+                    metadata={
+                        "module_set": module_set,
+                        "method": method,
+                        "module": f"M{module}",
+                        "outcome": phenotype,
+                        "feature": feature,
+                    },
                 )
-                driver_figure.update_layout(height=max(520, 24 * len(drivers)))
-                render_plotly_chart(driver_figure, key="donor_edge_drivers")
                 filterable_dataframe(
                     drivers, table_key="donor_edge_driver_table",
                     table_name="Top gene-pair drivers", height=520,
@@ -7707,63 +7800,18 @@ if active_view == "Donor edge explorer":
                             "braak_stage", "cerad_score", "adnc", "parkinsonism",
                         ) if column in expression_2d
                     ]
-                    point_figure_2d = px.scatter(
-                        expression_2d,
-                        x=left_column,
-                        y=right_column,
-                        color="plot_color",
-                        symbol="diagnosis_group",
-                        hover_name="sample_id",
-                        hover_data=hover_columns,
-                        labels={
-                            left_column: f"{left_label} expression (Z-score)",
-                            right_column: f"{right_label} expression (Z-score)",
-                            "plot_color": COLOR_LABELS[color_by],
-                            "diagnosis_group": "Diagnosis",
+                    point_figure_2d = endpoint_expression_2d_figure(COLOR_LABELS, _edge_expression_color_kwargs, color_by, continuous_colorscale, expression_2d, fits_2d, hover_columns, left_column, left_label, module, reverse_colorscale, right_column, right_label, selected_pair)
+                    render_plotly_chart(
+                        point_figure_2d,
+                        key="endpoint_expression_2d_plot",
+                        metadata={
+                            "module_set": module_set,
+                            "method": method,
+                            "module": f"M{module}",
+                            "outcome": phenotype,
+                            "feature": feature,
                         },
-                        title=f"M{module} endpoint expression: {left_label} ↔ {right_label}",
-                        **_edge_expression_color_kwargs(
-                            expression_2d, color_by, continuous_colorscale,
-                            reverse_colorscale,
-                        ),
                     )
-                    fit_colors = {
-                        "All displayed donors": "#20262E",
-                        "Control": "#2C7FB8", "MCI": "#D8A500", "AD": "#E66101",
-                    }
-                    for fit_label, ols_fit in fits_2d.items():
-                        coefficient = ols_fit.coefficients.set_index("term")["estimate"]
-                        x_min = float(ols_fit.diagnostics[left_column].min())
-                        x_max = float(ols_fit.diagnostics[left_column].max())
-                        x_line = np.linspace(x_min, x_max, 100)
-                        y_line = coefficient["Intercept"] + coefficient[left_column] * x_line
-                        point_figure_2d.add_trace(
-                            go.Scatter(
-                                x=x_line, y=y_line, mode="lines",
-                                name=f"OLS: {fit_label}",
-                                line={"color": fit_colors.get(fit_label, "#65727E"), "width": 3},
-                                hovertemplate=(
-                                    f"OLS: {fit_label}<br>{right_label} fitted=%{{y:.3f}}<extra></extra>"
-                                ),
-                            )
-                        )
-                    if selected_pair:
-                        highlighted = expression_2d.loc[
-                            expression_2d["sample_id"].isin(selected_pair)
-                        ]
-                        point_figure_2d.add_trace(
-                            go.Scatter(
-                                x=highlighted[left_column], y=highlighted[right_column],
-                                mode="markers+text", text=highlighted["sample_id"],
-                                textposition="top center", name="Selected donor pair",
-                                marker={
-                                    "size": 14, "symbol": "circle-open", "color": "black",
-                                    "line": {"width": 3, "color": "black"},
-                                },
-                            )
-                        )
-                    point_figure_2d.update_layout(legend={"orientation": "h", "y": 1.12})
-                    render_plotly_chart(point_figure_2d, key="endpoint_expression_2d_plot")
                     _render_expression_residuals(fits_2d, key="endpoint_expression_2d")
                     if not fit_summary_2d.empty:
                         fit_tables_2d = st.columns(2)
@@ -7903,86 +7951,18 @@ if active_view == "Donor edge explorer":
                                 expression_3d[color_by], errors="coerce"
                             )
                         )
-                        point_figure_3d = px.scatter_3d(
-                            expression_3d,
-                            x=predictor_columns[0], y=predictor_columns[1], z=response_column,
-                            color="plot_color", symbol="diagnosis_group",
-                            hover_name="sample_id",
-                            hover_data=[
-                                column for column in (
-                                    "diagnosis_group", phenotype, "clusters", "cogdx",
-                                    "braak_stage", "cerad_score", "adnc", "parkinsonism",
-                                ) if column in expression_3d
-                            ],
-                            labels={
-                                predictor_columns[0]: f"{triangle_labels[predictor_nodes[0]]} expression",
-                                predictor_columns[1]: f"{triangle_labels[predictor_nodes[1]]} expression",
-                                response_column: f"{triangle_labels[response_node]} expression",
-                                "plot_color": COLOR_LABELS[color_by],
-                            },
-                            title=f"M{module} three-gene expression triangle with OLS plane",
-                            **_edge_expression_color_kwargs(
-                                expression_3d, color_by, continuous_colorscale,
-                                reverse_colorscale,
-                            ),
-                        )
-                        plane_colors = {
-                            "All displayed donors": "#65727E",
-                            "Control": "#2C7FB8", "MCI": "#D8A500", "AD": "#E66101",
-                        }
-                        for fit_label, ols_fit in fits_3d.items():
-                            coefficients = ols_fit.coefficients.set_index("term")["estimate"]
-                            x_grid = np.linspace(
-                                ols_fit.diagnostics[predictor_columns[0]].min(),
-                                ols_fit.diagnostics[predictor_columns[0]].max(), 12,
-                            )
-                            y_grid = np.linspace(
-                                ols_fit.diagnostics[predictor_columns[1]].min(),
-                                ols_fit.diagnostics[predictor_columns[1]].max(), 12,
-                            )
-                            grid_x, grid_y = np.meshgrid(x_grid, y_grid)
-                            grid_z = (
-                                coefficients["Intercept"]
-                                + coefficients[predictor_columns[0]] * grid_x
-                                + coefficients[predictor_columns[1]] * grid_y
-                            )
-                            plane_color = plane_colors.get(fit_label, "#65727E")
-                            point_figure_3d.add_trace(
-                                go.Surface(
-                                    x=grid_x, y=grid_y, z=grid_z,
-                                    name=f"OLS plane: {fit_label}",
-                                    colorscale=[[0, plane_color], [1, plane_color]],
-                                    opacity=0.27, showscale=False,
-                                    hovertemplate=(
-                                        f"OLS plane: {fit_label}<br>fitted expression=%{{z:.3f}}"
-                                        "<extra></extra>"
-                                    ),
-                                )
-                            )
-                        if selected_pair:
-                            highlighted_3d = expression_3d.loc[
-                                expression_3d["sample_id"].isin(selected_pair)
-                            ]
-                            point_figure_3d.add_trace(
-                                go.Scatter3d(
-                                    x=highlighted_3d[predictor_columns[0]],
-                                    y=highlighted_3d[predictor_columns[1]],
-                                    z=highlighted_3d[response_column],
-                                    mode="markers+text", text=highlighted_3d["sample_id"],
-                                    name="Selected donor pair",
-                                    marker={"size": 8, "symbol": "circle-open", "color": "black"},
-                                )
-                            )
-                        point_figure_3d.update_layout(
-                            height=760,
-                            legend={"orientation": "h", "y": 1.08},
-                            scene={
-                                "xaxis_title": f"{triangle_labels[predictor_nodes[0]]}<br>expression Z-score",
-                                "yaxis_title": f"{triangle_labels[predictor_nodes[1]]}<br>expression Z-score",
-                                "zaxis_title": f"{triangle_labels[response_node]}<br>expression Z-score",
+                        point_figure_3d = endpoint_expression_3d_figure(COLOR_LABELS, _edge_expression_color_kwargs, color_by, continuous_colorscale, expression_3d, fits_3d, module, phenotype, predictor_columns, predictor_nodes, response_column, response_node, reverse_colorscale, selected_pair, triangle_labels)
+                        render_plotly_chart(
+                            point_figure_3d,
+                            key="endpoint_expression_3d_plot",
+                            metadata={
+                                "module_set": module_set,
+                                "method": method,
+                                "module": f"M{module}",
+                                "outcome": phenotype,
+                                "feature": feature,
                             },
                         )
-                        render_plotly_chart(point_figure_3d, key="endpoint_expression_3d_plot")
                         _render_expression_residuals(fits_3d, key="endpoint_expression_3d")
                         if not fit_summary_3d.empty:
                             fit_tables_3d = st.columns(2)
@@ -8234,6 +8214,14 @@ if active_view == "Edge volcano":
                     "filename": f"{download_prefix}M{module}_edge_volcano",
                     "scale": 3,
                 },
+            },
+            plot_id="main.volcano",
+            metadata={
+                "module_set": module_set,
+                "method": method,
+                "module": f"M{module}",
+                "outcome": phenotype,
+                "feature": feature,
             },
         )
         st.caption(
@@ -8524,6 +8512,14 @@ if active_view == "MDC":
                     "scale": 3,
                 },
             },
+            plot_id="main.selected_mdc_chart",
+            metadata={
+                "module_set": module_set,
+                "method": method,
+                "module": f"M{module}",
+                "outcome": phenotype,
+                "feature": feature,
+            },
         )
         st.caption(
             (
@@ -8573,6 +8569,14 @@ if active_view == "MDC":
                 "filename": f"{download_prefix}AD_Control_TS_CT_MDC_overview",
                 "scale": 3,
             },
+        },
+        plot_id="main.mdc_overview",
+        metadata={
+            "module_set": module_set,
+            "method": method,
+            "module": f"M{module}",
+            "outcome": phenotype,
+            "feature": feature,
         },
     )
     if differential_edge_rule == "all":
@@ -8639,6 +8643,15 @@ if active_view == "MDC":
                         ),
                         "scale": 3,
                     },
+                },
+                plot_id=f"main.mdc_entropy_figure.{entropy_scope}",
+                metadata={
+                    "module_set": module_set,
+                    "method": method,
+                    "module": f"M{module}",
+                    "outcome": phenotype,
+                    "feature": feature,
+                    "component": entropy_scope,
                 },
             )
 
@@ -8804,6 +8817,14 @@ if active_view == "MDC":
                     ),
                     use_container_width=True,
                     config={"displaylogo": False},
+                    plot_id="main.mdc_resolved_module_figure",
+                    metadata={
+                        "module_set": module_set,
+                        "method": method,
+                        "module": f"M{module}",
+                        "outcome": phenotype,
+                        "feature": feature,
+                    },
                 )
             if resolved_mdc.empty:
                 st.info("No resolved MDC rows remain under the current filters.")
@@ -8818,6 +8839,14 @@ if active_view == "MDC":
                     ),
                     use_container_width=True,
                     config={"displaylogo": False, "scrollZoom": True},
+                    plot_id="main.mdc_resolved_heatmap_figure",
+                    metadata={
+                        "module_set": module_set,
+                        "method": method,
+                        "module": f"M{module}",
+                        "outcome": phenotype,
+                        "feature": feature,
+                    },
                 )
                 resolved_mdc.insert(0, "module_definition_label", module_set_label)
                 filterable_dataframe(
@@ -9068,6 +9097,14 @@ if active_view == "MDC":
                     ),
                     use_container_width=True,
                     config={"displaylogo": False, "scrollZoom": True},
+                    plot_id="main.pathway_mdc_heatmap_figure",
+                    metadata={
+                        "module_set": module_set,
+                        "method": method,
+                        "module": f"M{module}",
+                        "outcome": phenotype,
+                        "feature": feature,
+                    },
                 )
                 st.caption(
                     "Each heatmap cell gives equal weight to every qualifying enriched module. "
@@ -9094,6 +9131,14 @@ if active_view == "MDC":
                     ),
                     use_container_width=True,
                     config={"displaylogo": False},
+                    plot_id="main.pathway_mdc_detail_figure",
+                    metadata={
+                        "module_set": module_set,
+                        "method": method,
+                        "module": f"M{module}",
+                        "outcome": phenotype,
+                        "feature": feature,
+                    },
                 )
                 pathway_detail_columns = [
                     "enrichment_resolution_label",
@@ -9626,6 +9671,13 @@ if active_view == "KEGG enrichment":
                     f"kegg_regional_{regional_visualization}_{module_set}_{method}_"
                     f"{kegg_source}_{kegg_scope}"
                 ),
+                metadata={
+                    "module_set": module_set,
+                    "method": method,
+                    "module": f"M{module}",
+                    "outcome": phenotype,
+                    "feature": feature,
+                },
             )
         kegg_priority_columns = [
             "module_definition",
@@ -9828,6 +9880,13 @@ if active_view == "Module details":
             use_container_width=True,
             config={"displaylogo": False, "responsive": True},
             key=f"module_size_distribution_{module_set}_{module_type_scope}",
+            metadata={
+                "module_set": module_set,
+                "method": method,
+                "module": f"M{module}",
+                "outcome": phenotype,
+                "feature": feature,
+            },
         )
         render_plotly_chart(
             module_region_composition_figure(
@@ -9841,6 +9900,13 @@ if active_view == "Module details":
                 "scrollZoom": True,
             },
             key=f"module_region_composition_{module_set}_{module_type_scope}",
+            metadata={
+                "module_set": module_set,
+                "method": method,
+                "module": f"M{module}",
+                "outcome": phenotype,
+                "feature": feature,
+            },
         )
         render_plotly_chart(
             module_entropy_figure(
@@ -9851,6 +9917,13 @@ if active_view == "Module details":
             use_container_width=True,
             config={"displaylogo": False, "responsive": True},
             key=f"module_entropy_{module_set}_{module_type_scope}",
+            metadata={
+                "module_set": module_set,
+                "method": method,
+                "module": f"M{module}",
+                "outcome": phenotype,
+                "feature": feature,
+            },
         )
         st.caption(
             "Total bar width is module size; colored segments are AC, DLPFC, and PCG "

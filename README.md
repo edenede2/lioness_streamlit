@@ -3,6 +3,91 @@
 A GitHub-ready Streamlit app for exploring the completed ROSMAP LIONESS and
 BONOBO analyses.
 
+### Publication figure exports
+
+Every application chart has an **Export figure** button. It opens a native
+Streamlit dialog with a scaled preview, publication presets, physical dimensions,
+typography, plot-appropriate presentation controls, editable filenames, and a
+reset button. Select **Prepare download**, then **Download figure**. Multi-panel
+figures support panel selection/order, combined exports, or a ZIP containing one
+file per selected panel. Export settings never change the main application plot.
+On runtimes without dialogs, the popover's **Configure export** checkbox starts
+the workflow without rendering previews while the interface is collapsed.
+
+Presets use the following starting values; all values remain editable:
+
+| Preset | Width | Height | Base font | DPI |
+|---|---:|---|---:|---:|
+| Manuscript – single column | 85 mm | Automatic | 9 pt | 600 |
+| Manuscript – double column | 180 mm | Automatic | 10 pt | 600 |
+| Grant figure | 165 mm | Automatic | 12 pt | 600 |
+| Presentation | 13.33 in | Automatic | 18 pt | 300 |
+| Poster | 180 mm | Automatic | 16 pt | 300 |
+| Custom | Starts from current settings | Editable | Editable | Editable |
+
+Automatic height starts from the source figure's layout aspect ratio and expands
+when physical text would leave too little room for observations. The output
+summary reports this effective size. Manual sizes
+accept millimetres, centimetres, or inches; changing units preserves physical size.
+All font and line sizes are final physical points, independent of preview scaling.
+Grant typography starts at 16 pt title, 13 pt subtitle/axis titles, and 11 pt ticks,
+legend and statistical text. Arial falls back to DejaVu Sans when unavailable;
+the dialog identifies the actual fallback. White background and tight layout are
+defaults; transparent output is optional.
+
+PNG and lossless LZW TIFF are rendered at the requested resolution, with DPI
+metadata. SVG and PDF use vector marks/text; PDF page dimensions are normalized
+and fonts embedded by Chrome when supported. Export-only adapters convert WebGL
+scatters and heatmaps to vector primitives, preserving every point, finite cell,
+missing-cell gap, color scale, significance mark and panel order. Native 3D plots
+necessarily contain rasterized components in SVG/PDF; the dialog identifies this
+mixed output and uses the selected DPI for those components. No screenshot is
+enlarged or resampled.
+Tight layout wraps long titles and widens the export-only 3D camera to keep axis
+labels inside the viewport; disabling tight layout preserves the source camera.
+
+The exporter snapshots the fully built figure, including data, current filters,
+axis transformations, fitted guides, statistics and seeded Plotly jitter. Numeric
+association builders additionally retain exact unrounded statistical results for
+annotation formatting. Pooled/group/both/no-annotation modes never recompute
+correlations or FDR. Analysis scope, group membership, module, tissue, outcome and
+statistical method stay matched to the main plot; group selectors change only
+annotation visibility. Existing confidence intervals can be hidden/shown, but no
+new correlation confidence bands are calculated. Hidden regression guides cannot
+be fitted inside the exporter; enable them on the main plot first.
+
+The common API lives in `app_helpers/figure_export`: `ExportConfig`,
+`PlotContentConfig`, `PlotExportSpec`, `FigureArtifact`, and
+`render_exportable_plot`. A spec can provide a pure
+`build_figure(data, analysis_results, export_config, content_config)` callback;
+the default rebuilds an immutable Plotly JSON snapshot. New charts should pass a
+stable `plot_id` or existing chart key, plus available analysis metadata. Widget
+keys are namespaced per plot and snapshot; only bounded immutable render bytes
+are cached in the current session (three results, up to 48 MB total, plus the last
+prepared download). Main-page rendering remains lazy.
+
+Export dependencies are pinned in `requirements.txt`: Kaleido 1.x, Pillow and
+pypdf. **Chrome or Chromium is required.** Community Cloud installs Chromium,
+DejaVu fonts and fontconfig from `packages.txt`. For a local installation, install
+Chromium with your system package manager, or run `plotly_get_chrome`; ensure
+DejaVu fonts are available. Rendering runs in a separate worker with a 45-second
+timeout including browser startup. Missing browsers and rendering failures show
+actionable messages. Raster exports are limited to 100 million pixels, with a
+warning above 40 million; vector heatmaps warn above 5,000 cells and require a
+raster format above 100,000 cells. Smoothed heatmaps require raster output.
+Large labels may still require larger dimensions, fewer panels or smaller text;
+the dialog warns about constrained layouts rather than dropping content.
+
+Run ordinary checks with `python -m pytest tests`. Real-browser export tests are
+opt-in because restricted sandboxes may prevent Chrome from starting:
+
+```bash
+LIONESS_EXPORT_INTEGRATION=1 python -m pytest tests/test_figure_export.py -k real_kaleido
+```
+
+These checks exercise PNG, TIFF, SVG and PDF through the actual backend, including
+correlation/eigengene panels, rainclouds, heatmaps, WebGL scatters and 3D plots.
+
 The app includes three explicitly separated module definitions:
 
 - **Full-cohort L4 modules (154)**, including M1918, with Standard and

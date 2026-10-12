@@ -9,6 +9,11 @@ from typing import Any
 import streamlit as st
 
 
+def supports_dialog() -> bool:
+    """Feature detection for publication exports on legacy Streamlit runtimes."""
+    return callable(getattr(st, "dialog", None))
+
+
 @lru_cache(maxsize=1)
 def uses_modern_width_api() -> bool:
     """Return whether charts use ``width=`` instead of ``use_container_width``."""

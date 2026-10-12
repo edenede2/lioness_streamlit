@@ -1,3 +1,5 @@
 -r requirements.txt
 pytest>=8,<9
 google-auth-oauthlib>=1.2,<2
+# Existing KEGG builder tests compare corrections against statsmodels.
+statsmodels>=0.14,<0.16

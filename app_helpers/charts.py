@@ -10,6 +10,7 @@ from collections.abc import Iterable
 
 import numpy as np
 import pandas as pd
+import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from scipy.cluster.hierarchy import leaves_list, linkage
@@ -20,6 +21,7 @@ from sklearn.metrics import precision_recall_curve, roc_curve
 
 
 PREDICTION_BLOCK_ORDERING_API_VERSION = 1
+PUBLICATION_EXPORT_API_VERSION = 1
 DISTRIBUTION_GROUPING_API_VERSION = 3
 COEFFICIENT_ANNOTATION_API_VERSION = 3
 ASSOCIATION_STYLE_API_VERSION = 1
@@ -737,8 +739,9 @@ def _association_vertical_spacing(nrows: int, annotation_lines: int) -> float:
 def _format_association_subplot_title_annotations(figure: go.Figure) -> None:
     """Keep multi-line subplot titles above, rather than inside, plot domains."""
 
-    for annotation in figure.layout.annotations:
+    for index, annotation in enumerate(figure.layout.annotations):
         annotation.update(
+            name=f"publication-panel-title-{index}",
             font={"size": 12, "color": "#27364B"},
             yanchor="bottom",
             yshift=5,
@@ -776,6 +779,7 @@ def _place_association_statistics_above_panel(
         yshift=11 + 12 * line_count,
     )
     annotation: dict[str, object] = {
+        "name": f"publication-statistics-{panel_index}",
         "x": 0.01,
         "y": 1.0,
         "xref": xref,
@@ -1453,6 +1457,27 @@ def grouped_association_figure(
             "reversescale": bool(reverse_colorscale),
             "colorbar": {"title": {"text": color_label}, "thickness": 16},
         })
+    export_columns = [column for column in statistics.columns if column in {
+        "component", "grouping_level", "n", "eligible", "unavailable_reason",
+        "pearson_r", "pearson_p", "pearson_fdr_across_modules",
+        "spearman_rho", "spearman_p", "spearman_fdr_across_modules",
+    }]
+    records = [
+        {key: (None if pd.isna(value) else value.item() if isinstance(value, np.generic) else value)
+         for key, value in row.items()}
+        for row in statistics[export_columns].to_dict(orient="records")
+    ]
+    figure.update_layout(meta={"figure_export": {
+        "correlation_records": records,
+        "correlation_method": correlation_method.lower(),
+        "components": [str(component) for component, _ in component_pairs],
+        "grouping_levels": [str(level) for level in levels],
+        "grouping_labels": grouping_labels,
+        "pooled_label": pooled_label,
+        "show_pooled": show_pooled,
+        "minimum_group_n": minimum_group_n,
+        "annotation_fields": list(annotation_fields),
+    }})
     return figure
 
 
@@ -4994,4 +5019,460 @@ def prediction_coefficient_figure(
             showarrow=False, xanchor="left", yanchor="top", align="left",
             font={"size": 12, "color": "#374151"},
         )
+    return figure
+
+def expression_residual_figure(residuals) -> go.Figure:
+    """Build the original application figure from explicit inputs."""
+    residual_figure = px.scatter(
+        residuals,
+        x="ols_fitted",
+        y="ols_residual",
+        color="fit_group",
+        hover_name="sample_id" if "sample_id" in residuals else None,
+        labels={
+            "ols_fitted": "OLS fitted expression (Z-score)",
+            "ols_residual": "Expression residual (observed − fitted)",
+            "fit_group": "OLS fit",
+        },
+        title="OLS residuals versus fitted values",
+    )
+    residual_figure.add_hline(y=0, line_dash="dash", line_color="#65727E")
+    residual_figure.update_traces(marker={"size": 7, "opacity": 0.72})
+    return residual_figure
+
+
+def donor_edge_scatter_figure(
+    active_feature_labels,
+    candidates,
+    component_labels,
+    explorer_component,
+    feature,
+    module,
+    phenotype,
+    selected_pair,
+) -> go.Figure:
+    """Build the original application figure from explicit inputs."""
+    explorer_scatter = px.scatter(
+        candidates,
+        x="metric_value",
+        y=phenotype,
+        color="diagnosis_group",
+        hover_name="sample_id",
+        labels={"metric_value": active_feature_labels.get(feature, feature)},
+        title=f"M{module} {component_labels.get(explorer_component, explorer_component)}",
+        color_discrete_map={"Control": "#2878B5", "MCI": "#D5A021", "AD": "#E87532"},
+    )
+    if selected_pair:
+        highlighted = candidates.loc[candidates["sample_id"].isin(selected_pair)]
+        explorer_scatter.add_scatter(
+            x=highlighted["metric_value"],
+            y=highlighted[phenotype],
+            mode="markers+text",
+            text=highlighted["sample_id"],
+            textposition="top center",
+            marker={"size": 15, "symbol": "circle-open", "color": "black", "line": {"width": 3}},
+            name="Selected donors",
+        )
+    return explorer_scatter
+
+
+def partition_overlap_figure(selected_mapping) -> go.Figure:
+    """Build the original application figure from explicit inputs."""
+    figure = px.histogram(
+        selected_mapping,
+        x="jaccard",
+        nbins=30,
+        title="Distribution of module-overlap Jaccard values",
+        labels={"jaccard": "Tissue–gene Jaccard", "count": "Module pairs"},
+    )
+    return figure
+
+
+def donor_edge_composition_figure(component_chart) -> go.Figure:
+    """Build the original application figure from explicit inputs."""
+    composition_figure = px.bar(
+        component_chart,
+        x="scope_label",
+        y="weight_sum",
+        color="edge_sign",
+        facet_row="sample_id",
+        barmode="relative",
+        color_discrete_map={"Positive": "#2878B5", "Negative": "#D95F4A"},
+        title="Positive and negative component contributions",
+    )
+    composition_figure.update_layout(height=620)
+    return composition_figure
+
+
+def partition_size_figure(frame: pd.DataFrame, **kwargs) -> go.Figure:
+    """Build the original application figure from explicit inputs."""
+    return px.histogram(frame, **kwargs)
+
+
+def partition_entropy_figure(frame: pd.DataFrame, **kwargs) -> go.Figure:
+    """Build the original application figure from explicit inputs."""
+    return px.histogram(frame, **kwargs)
+
+
+def partition_proportion_figure(frame: pd.DataFrame, **kwargs) -> go.Figure:
+    """Build the original application figure from explicit inputs."""
+    return px.bar(frame, **kwargs)
+
+
+def donor_edge_difference_figure(delta_plot, selected_pair) -> go.Figure:
+    """Build the original application figure from explicit inputs."""
+    difference_figure = px.bar(
+        delta_plot,
+        x="scope_label",
+        y="difference",
+        color="difference",
+        color_continuous_scale="RdBu_r",
+        color_continuous_midpoint=0,
+        title=f"Component differences: {selected_pair[1]} minus {selected_pair[0]}",
+    )
+    return difference_figure
+
+
+def donor_edge_driver_figure(drivers) -> go.Figure:
+    """Build the original application figure from explicit inputs."""
+    driver_figure = px.bar(
+        drivers.sort_values("driver_absolute_deviation"),
+        x="driver_absolute_deviation",
+        y="edge",
+        color="sample_id",
+        orientation="h",
+        facet_col="sample_id",
+        title="Top donor-specific deviations from the discovery-Control edge mean",
+    )
+    driver_figure.update_layout(height=max(520, 24 * len(drivers)))
+    return driver_figure
+
+
+def partition_association_concordance_figure(view) -> go.Figure:
+    """Build the original application figure from explicit inputs."""
+    figure = px.scatter(
+        view,
+        x="matched_effect",
+        y="new_effect",
+        color="component" if "component" in view else None,
+        hover_data=[
+            column
+            for column in ("new_module", "matched_module", "jaccard", "new_fdr", "matched_fdr")
+            if column in view
+        ],
+        title="Matched-module association effects",
+    )
+    low = min(view["matched_effect"].min(), view["new_effect"].min())
+    high = max(view["matched_effect"].max(), view["new_effect"].max())
+    figure.add_shape(
+        type="line", x0=low, y0=low, x1=high, y1=high, line=dict(color="gray", dash="dash")
+    )
+    return figure
+
+
+def partition_mdc_concordance_figure(mdc) -> go.Figure:
+    """Build the original application figure from explicit inputs."""
+    figure = px.scatter(
+        mdc,
+        x="matched_log2_mdc",
+        y="new_log2_mdc",
+        color="component" if "component" in mdc else None,
+        hover_data=[
+            column
+            for column in (
+                "new_module",
+                "matched_module",
+                "jaccard",
+                "new_directional_fdr",
+                "matched_directional_fdr",
+            )
+            if column in mdc
+        ],
+        title="Matched-module MDC concordance",
+    )
+    return figure
+
+
+def endpoint_expression_2d_figure(
+    COLOR_LABELS,
+    _edge_expression_color_kwargs,
+    color_by,
+    continuous_colorscale,
+    expression_2d,
+    fits_2d,
+    hover_columns,
+    left_column,
+    left_label,
+    module,
+    reverse_colorscale,
+    right_column,
+    right_label,
+    selected_pair,
+) -> go.Figure:
+    """Build the original application figure from explicit inputs."""
+    point_figure_2d = px.scatter(
+        expression_2d,
+        x=left_column,
+        y=right_column,
+        color="plot_color",
+        symbol="diagnosis_group",
+        hover_name="sample_id",
+        hover_data=hover_columns,
+        labels={
+            left_column: f"{left_label} expression (Z-score)",
+            right_column: f"{right_label} expression (Z-score)",
+            "plot_color": COLOR_LABELS[color_by],
+            "diagnosis_group": "Diagnosis",
+        },
+        title=f"M{module} endpoint expression: {left_label} ↔ {right_label}",
+        **_edge_expression_color_kwargs(
+            expression_2d, color_by, continuous_colorscale, reverse_colorscale
+        ),
+    )
+    fit_colors = {
+        "All displayed donors": "#20262E",
+        "Control": "#2C7FB8",
+        "MCI": "#D8A500",
+        "AD": "#E66101",
+    }
+    for fit_label, ols_fit in fits_2d.items():
+        coefficient = ols_fit.coefficients.set_index("term")["estimate"]
+        x_min = float(ols_fit.diagnostics[left_column].min())
+        x_max = float(ols_fit.diagnostics[left_column].max())
+        x_line = np.linspace(x_min, x_max, 100)
+        y_line = coefficient["Intercept"] + coefficient[left_column] * x_line
+        point_figure_2d.add_trace(
+            go.Scatter(
+                x=x_line,
+                y=y_line,
+                mode="lines",
+                name=f"OLS: {fit_label}",
+                line={"color": fit_colors.get(fit_label, "#65727E"), "width": 3},
+                hovertemplate=f"OLS: {fit_label}<br>{right_label} fitted=%{{y:.3f}}<extra></extra>",
+            )
+        )
+    if selected_pair:
+        highlighted = expression_2d.loc[expression_2d["sample_id"].isin(selected_pair)]
+        point_figure_2d.add_trace(
+            go.Scatter(
+                x=highlighted[left_column],
+                y=highlighted[right_column],
+                mode="markers+text",
+                text=highlighted["sample_id"],
+                textposition="top center",
+                name="Selected donor pair",
+                marker={
+                    "size": 14,
+                    "symbol": "circle-open",
+                    "color": "black",
+                    "line": {"width": 3, "color": "black"},
+                },
+            )
+        )
+    point_figure_2d.update_layout(legend={"orientation": "h", "y": 1.12})
+    return point_figure_2d
+
+
+def endpoint_expression_3d_figure(
+    COLOR_LABELS,
+    _edge_expression_color_kwargs,
+    color_by,
+    continuous_colorscale,
+    expression_3d,
+    fits_3d,
+    module,
+    phenotype,
+    predictor_columns,
+    predictor_nodes,
+    response_column,
+    response_node,
+    reverse_colorscale,
+    selected_pair,
+    triangle_labels,
+) -> go.Figure:
+    """Build the original application figure from explicit inputs."""
+    point_figure_3d = px.scatter_3d(
+        expression_3d,
+        x=predictor_columns[0],
+        y=predictor_columns[1],
+        z=response_column,
+        color="plot_color",
+        symbol="diagnosis_group",
+        hover_name="sample_id",
+        hover_data=[
+            column
+            for column in (
+                "diagnosis_group",
+                phenotype,
+                "clusters",
+                "cogdx",
+                "braak_stage",
+                "cerad_score",
+                "adnc",
+                "parkinsonism",
+            )
+            if column in expression_3d
+        ],
+        labels={
+            predictor_columns[0]: f"{triangle_labels[predictor_nodes[0]]} expression",
+            predictor_columns[1]: f"{triangle_labels[predictor_nodes[1]]} expression",
+            response_column: f"{triangle_labels[response_node]} expression",
+            "plot_color": COLOR_LABELS[color_by],
+        },
+        title=f"M{module} three-gene expression triangle with OLS plane",
+        **_edge_expression_color_kwargs(
+            expression_3d, color_by, continuous_colorscale, reverse_colorscale
+        ),
+    )
+    plane_colors = {
+        "All displayed donors": "#65727E",
+        "Control": "#2C7FB8",
+        "MCI": "#D8A500",
+        "AD": "#E66101",
+    }
+    for fit_label, ols_fit in fits_3d.items():
+        coefficients = ols_fit.coefficients.set_index("term")["estimate"]
+        x_grid = np.linspace(
+            ols_fit.diagnostics[predictor_columns[0]].min(),
+            ols_fit.diagnostics[predictor_columns[0]].max(),
+            12,
+        )
+        y_grid = np.linspace(
+            ols_fit.diagnostics[predictor_columns[1]].min(),
+            ols_fit.diagnostics[predictor_columns[1]].max(),
+            12,
+        )
+        grid_x, grid_y = np.meshgrid(x_grid, y_grid)
+        grid_z = (
+            coefficients["Intercept"]
+            + coefficients[predictor_columns[0]] * grid_x
+            + coefficients[predictor_columns[1]] * grid_y
+        )
+        plane_color = plane_colors.get(fit_label, "#65727E")
+        point_figure_3d.add_trace(
+            go.Surface(
+                x=grid_x,
+                y=grid_y,
+                z=grid_z,
+                name=f"OLS plane: {fit_label}",
+                colorscale=[[0, plane_color], [1, plane_color]],
+                opacity=0.27,
+                showscale=False,
+                hovertemplate=f"OLS plane: {fit_label}<br>fitted expression=%{{z:.3f}}<extra></extra>",
+            )
+        )
+    if selected_pair:
+        highlighted_3d = expression_3d.loc[expression_3d["sample_id"].isin(selected_pair)]
+        point_figure_3d.add_trace(
+            go.Scatter3d(
+                x=highlighted_3d[predictor_columns[0]],
+                y=highlighted_3d[predictor_columns[1]],
+                z=highlighted_3d[response_column],
+                mode="markers+text",
+                text=highlighted_3d["sample_id"],
+                name="Selected donor pair",
+                marker={"size": 8, "symbol": "circle-open", "color": "black"},
+            )
+        )
+    point_figure_3d.update_layout(
+        height=760,
+        legend={"orientation": "h", "y": 1.08},
+        scene={
+            "xaxis_title": f"{triangle_labels[predictor_nodes[0]]}<br>expression Z-score",
+            "yaxis_title": f"{triangle_labels[predictor_nodes[1]]}<br>expression Z-score",
+            "zaxis_title": f"{triangle_labels[response_node]}<br>expression Z-score",
+        },
+    )
+    return point_figure_3d
+
+
+def regional_distribution_ranking_figure(ranked) -> go.Figure:
+    """Build the original application figure from explicit inputs."""
+    figure = px.bar(
+        ranked.iloc[::-1],
+        x="epsilon_squared",
+        y="ranking_label",
+        orientation="h",
+        color="tissue",
+        hover_data={
+            "categorical_p": ":.3g",
+            "categorical_fdr_across_modules": ":.3g",
+            "categorical_fdr_module_family_n": True,
+        },
+        title="Most differentiated independent regional modules",
+        labels={"epsilon_squared": "Kruskal–Wallis epsilon-squared", "ranking_label": ""},
+    )
+    figure.update_layout(template="plotly_white", height=max(480, 170 + 28 * len(ranked)))
+    return figure
+
+
+def regional_distribution_omnibus_figure(selected_omnibus) -> go.Figure:
+    """Build the original application figure from explicit inputs."""
+    figure = px.bar(
+        selected_omnibus.sort_values("epsilon_squared"),
+        x="epsilon_squared",
+        y="display_label",
+        orientation="h",
+        hover_data={
+            "categorical_p": ":.3g",
+            "categorical_fdr_across_modules": ":.3g",
+            "categorical_fdr_module_family_n": True,
+            "n_tested": True,
+        },
+        title="Overall regional-module group differentiation",
+        labels={"epsilon_squared": "Kruskal–Wallis epsilon-squared", "display_label": ""},
+    )
+    figure.update_traces(marker_color="#2C7FB8")
+    figure.update_layout(template="plotly_white", height=430)
+    return figure
+
+
+def regional_distribution_pairwise_figure(pairwise) -> go.Figure:
+    """Build the original application figure from explicit inputs."""
+    figure = px.scatter(
+        pairwise,
+        x="cliffs_delta",
+        y="display_label",
+        error_x=pairwise["cliffs_delta_ci_high"] - pairwise["cliffs_delta"],
+        error_x_minus=pairwise["cliffs_delta"] - pairwise["cliffs_delta_ci_low"],
+        color="tissue",
+        hover_data={
+            "mann_whitney_p": ":.3g",
+            "mann_whitney_fdr_across_modules": ":.3g",
+            "probability_superiority": ":.3f",
+            "median_difference": ":.3f",
+        },
+        title="Pairwise regional-module distribution effects",
+        labels={"cliffs_delta": "Cliff's delta (comparison − reference)", "display_label": ""},
+    )
+    figure.add_vline(x=0, line_dash="dash", line_color="#65727E")
+    figure.update_layout(template="plotly_white", height=max(440, 120 + 38 * len(pairwise)))
+    return figure
+
+
+def protocol_performance_figure(selected) -> go.Figure:
+    """Build the original application figure from explicit inputs."""
+    figure = px.bar(
+        selected,
+        x="representation",
+        y="value",
+        color="model_variant" if "model_variant" in selected else None,
+        facet_col="metric",
+        title="Protocol v1.1 validated performance",
+    )
+    return figure
+
+
+def protocol_eligibility_figure(counts) -> go.Figure:
+    """Build the original application figure from explicit inputs."""
+    figure = px.bar(
+        counts,
+        x="outcome",
+        y="n",
+        color="reason",
+        barmode="stack",
+        labels={"outcome": "Outcome", "n": "Donors", "reason": "Eligibility"},
+        title="Outcome-specific eligibility and missingness",
+    )
+    figure.update_layout(legend={"orientation": "h", "y": 1.12})
     return figure

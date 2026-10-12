@@ -9,3 +9,7 @@ scipy==1.15.3
 google-auth==2.36.0
 requests==2.32.3
 scikit-learn==1.7.2
+# Publication figure rendering. Chrome/Chromium is supplied through packages.txt.
+kaleido==1.5.0
+Pillow==12.3.0
+pypdf==6.19.0

@@ -2,17 +2,22 @@
 
 from __future__ import annotations
 
+from app_helpers.figure_export import render_exportable_plot as render_plotly_chart
+
+from app_helpers.charts import (
+    protocol_eligibility_figure,
+    protocol_performance_figure,
+)
+
 import json
 from pathlib import Path
 
 import pandas as pd
-import plotly.express as px
 import streamlit as st
 
 from app_helpers.drive_data import DATA_DIR, data_path_available, ensure_data_path
 from app_helpers.streamlit_compat import (
     normalize_width_kwargs,
-    plotly_chart,
     stateful_tabs,
     tab_is_open,
 )
@@ -144,17 +149,8 @@ def _render_outcomes() -> None:
             )
         ].copy()
         if not counts.empty:
-            figure = px.bar(
-                counts,
-                x="outcome",
-                y="n",
-                color="reason",
-                barmode="stack",
-                labels={"outcome": "Outcome", "n": "Donors", "reason": "Eligibility"},
-                title="Outcome-specific eligibility and missingness",
-            )
-            figure.update_layout(legend={"orientation": "h", "y": 1.12})
-            plotly_chart(figure, key="protocol_v11_outcome_eligibility")
+            figure = protocol_eligibility_figure(counts)
+            render_plotly_chart(figure, key="protocol_v11_outcome_eligibility")
     if not splits.empty:
         filterable_dataframe(
             splits,
@@ -204,15 +200,8 @@ def _render_results(manifest: dict[str, object]) -> None:
                 "the table for the fold-level summary coverage."
             )
     if {"metric", "value", "representation"}.issubset(selected.columns):
-        figure = px.bar(
-            selected,
-            x="representation",
-            y="value",
-            color="model_variant" if "model_variant" in selected else None,
-            facet_col="metric",
-            title="Protocol v1.1 validated performance",
-        )
-        plotly_chart(figure, key="protocol_v11_performance")
+        figure = protocol_performance_figure(selected)
+        render_plotly_chart(figure, key="protocol_v11_performance")
     filterable_dataframe(
         selected,
         table_key="protocol_v11_performance_table",

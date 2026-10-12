@@ -7,6 +7,14 @@ and tissue, so every public row carries a namespaced ``module_key``.
 
 from __future__ import annotations
 
+from app_helpers.figure_export import render_exportable_plot as render_plotly_chart
+
+from app_helpers.charts import (
+    regional_distribution_omnibus_figure,
+    regional_distribution_pairwise_figure,
+    regional_distribution_ranking_figure,
+)
+
 import json
 import re
 from collections.abc import Iterable
@@ -14,7 +22,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import plotly.express as px
 import pyarrow.parquet as pq
 import streamlit as st
 
@@ -56,7 +63,6 @@ from app_helpers.distributions import (
     distribution_contrasts,
 )
 from app_helpers.drive_data import DATA_DIR, data_path_available, ensure_data_path
-from app_helpers.streamlit_compat import plotly_chart as render_plotly_chart
 from app_helpers.table_controls import filterable_dataframe
 
 
@@ -909,20 +915,7 @@ def _render_distributions(
 
     if analysis == "Overall differentiation":
         selected_omnibus["display_label"] = selected_omnibus["component_label"]
-        figure = px.bar(
-            selected_omnibus.sort_values("epsilon_squared"),
-            x="epsilon_squared", y="display_label", orientation="h",
-            hover_data={
-                "categorical_p": ":.3g",
-                "categorical_fdr_across_modules": ":.3g",
-                "categorical_fdr_module_family_n": True,
-                "n_tested": True,
-            },
-            title="Overall regional-module group differentiation",
-            labels={"epsilon_squared": "Kruskal–Wallis epsilon-squared", "display_label": ""},
-        )
-        figure.update_traces(marker_color="#2C7FB8")
-        figure.update_layout(template="plotly_white", height=430)
+        figure = regional_distribution_omnibus_figure(selected_omnibus)
         render_plotly_chart(figure, key="regional_distribution_omnibus")
         filterable_dataframe(
             selected_omnibus,
@@ -1021,23 +1014,7 @@ def _render_distributions(
             pairwise["comparison_label"] + " vs " + pairwise["reference_label"]
         )
         pairwise["display_label"] = pairwise["component_label"] + " · " + pairwise["contrast"]
-        figure = px.scatter(
-            pairwise,
-            x="cliffs_delta", y="display_label",
-            error_x=pairwise["cliffs_delta_ci_high"] - pairwise["cliffs_delta"],
-            error_x_minus=pairwise["cliffs_delta"] - pairwise["cliffs_delta_ci_low"],
-            color="tissue",
-            hover_data={
-                "mann_whitney_p": ":.3g",
-                "mann_whitney_fdr_across_modules": ":.3g",
-                "probability_superiority": ":.3f",
-                "median_difference": ":.3f",
-            },
-            title="Pairwise regional-module distribution effects",
-            labels={"cliffs_delta": "Cliff's delta (comparison − reference)", "display_label": ""},
-        )
-        figure.add_vline(x=0, line_dash="dash", line_color="#65727E")
-        figure.update_layout(template="plotly_white", height=max(440, 120 + 38 * len(pairwise)))
+        figure = regional_distribution_pairwise_figure(pairwise)
         render_plotly_chart(figure, key="regional_distribution_pairwise")
         filterable_dataframe(
             pairwise,
@@ -1114,17 +1091,7 @@ def _render_distributions(
     ranked["ranking_label"] = ranked.apply(
         lambda row: f"{row['tissue']} regional M{int(row['module'])}", axis=1
     )
-    figure = px.bar(
-        ranked.iloc[::-1], x="epsilon_squared", y="ranking_label",
-        orientation="h", color="tissue",
-        hover_data={
-            "categorical_p": ":.3g", "categorical_fdr_across_modules": ":.3g",
-            "categorical_fdr_module_family_n": True,
-        },
-        title="Most differentiated independent regional modules",
-        labels={"epsilon_squared": "Kruskal–Wallis epsilon-squared", "ranking_label": ""},
-    )
-    figure.update_layout(template="plotly_white", height=max(480, 170 + 28 * len(ranked)))
+    figure = regional_distribution_ranking_figure(ranked)
     render_plotly_chart(figure, key="regional_distribution_ranking")
     filterable_dataframe(
         ranked,
