@@ -3,9 +3,10 @@
   "capabilities": {
     "bonobo": false,
     "descriptive_eigengenes": true,
-    "differential_edges": false,
+    "differential_edges": true,
     "edge_expression": false,
-    "edge_summaries": false,
+    "edge_summaries": true,
+    "effect_size_edges": true,
     "expanded_components": false,
     "prediction": false
   },
@@ -17,44 +18,1835 @@
     "TS_SMA",
     "TS_QUAD"
   ],
-  "created_utc": "2026-10-12T11:56:43.067621+00:00",
+  "created_utc": "2026-10-12T14:17:15.899858+00:00",
   "diagnosis_counts": {
     "AD": 155,
     "Control": 120,
     "MCI": 82
   },
   "donors": 357,
+  "effect_size_edges": {
+    "cutoff": 0.4,
+    "directions": [
+      "either",
+      "ad_higher",
+      "control_higher"
+    ],
+    "mask_learning": "diagnosis-by-sex stratified discovery AD/Control donors only",
+    "statistic": "Hedges g (AD minus Control)",
+    "status": "complete"
+  },
   "estimators": [
     "lioness"
   ],
   "files": {
     "aggregate_plot_data.parquet": {
-      "bytes": 26016197,
-      "sha256": "9610b29de25eee2bb4d5f84f14f31050d3ed2f010b8b66af507859ca4fa8a81f"
+      "bytes": 11529342,
+      "sha256": "e1b76fd91e684eb7ca85434f9c49a8bef4368086fccbf1d1f34eab8621a59d65"
     },
     "aggregate_statistics.parquet": {
-      "bytes": 27764486,
-      "sha256": "4bbb7ce5648e729ddbfbc59a3ea3a607083dd82b58921200b1e40861e16c69ef"
+      "bytes": 13420478,
+      "sha256": "2b9853062679da9d97ad5ac5314b5f7dbc1707bf72daedfb71c12197b4204fa6"
     },
     "cluster_association_statistics.parquet": {
-      "bytes": 3613839,
-      "sha256": "ed2f1bbab5cc48531df5479693bebb97580fa14420fb0e5db6cf6d5019dababc"
+      "bytes": 1740732,
+      "sha256": "1555948215ba90ab90d7650c43ec76280402a73dc454ccbabb35a221f65136ea"
+    },
+    "edge_summaries/lioness__control_anchored.parquet": {
+      "bytes": 18388232,
+      "sha256": "511e4845ffa269f1f798844046ae0094a9e4a8c9c3752d03242c78bbe9196b0b"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M0.parquet": {
+      "bytes": 429764,
+      "sha256": "f6483ba7fe8dd33221ff4b895fca6966ea07fe7a76dc619832f83ffbf6aed6af"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1003.parquet": {
+      "bytes": 240548,
+      "sha256": "899b73b0e7ef27bde55ab6e652a3c6d4fb52bac79a5ac0e10f3c33227f20bc4f"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1011.parquet": {
+      "bytes": 227415,
+      "sha256": "f16a926d74fe8e3ffd39b4d1cf73a77c7bf2c250fd50c4e43013dce2805931f3"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1015.parquet": {
+      "bytes": 34606,
+      "sha256": "a60b42a6d59b4f8cc28d5857fe646ada4dbb1b584206339228c213b9e6b35075"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1018.parquet": {
+      "bytes": 12766,
+      "sha256": "a99a015906895656ad071f445a89169d25ca80e54ca7549171dfc834053191e8"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1019.parquet": {
+      "bytes": 208878,
+      "sha256": "af367ac00c043c83619cc58632a738763b41c84702f64579833a4957cbf8cf04"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1021.parquet": {
+      "bytes": 26685,
+      "sha256": "bd3da17bc63c5182bc2f1da427db58cd726dada51847b80d9563034cce657fac"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1023.parquet": {
+      "bytes": 43703,
+      "sha256": "570c7311a4c56333784847e1ad0ce88040d74db99229f169695535c2b2739dea"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1031.parquet": {
+      "bytes": 220648,
+      "sha256": "f3025a14028e5bfa16db185cbf991c5360c4fab6dcfe7023e0cba0b630702c10"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1032.parquet": {
+      "bytes": 159997,
+      "sha256": "a265e5f845d68cac736c3771980d260477c9cb39ee981717ac2e930f232c7d8b"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1033.parquet": {
+      "bytes": 209798,
+      "sha256": "c1faa7ac2d3a4070c8f0e7a682c0ba12ced794e63147a58acef78e12893ffbd4"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1053.parquet": {
+      "bytes": 96205,
+      "sha256": "579b8f612afe83385529c8e02769faee48bfa0e4ee1ff7c4cc6b8d9c878a99a5"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1060.parquet": {
+      "bytes": 118976,
+      "sha256": "013f45226fb68487dfbcdac56efa6aa13688ae379b16291f5e8aa9981f141d43"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1093.parquet": {
+      "bytes": 113358,
+      "sha256": "a43663917fa35894f8d398becd4604a32d3c4e9eb4bdff83d17b46409581cf07"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1095.parquet": {
+      "bytes": 208274,
+      "sha256": "c575831382db5e47fbd29195b815c65626e8251a8f5d7fefd214cdc567405fe9"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1097.parquet": {
+      "bytes": 207637,
+      "sha256": "13d70e716d12e3abe10baa42b9029d69870fc03edd908e37667cc5b471a9ef1b"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1161.parquet": {
+      "bytes": 201916,
+      "sha256": "80df62e249ab249d66600241bea79dd408abac1617a7fd631cb68adc1d9ad191"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1169.parquet": {
+      "bytes": 201393,
+      "sha256": "82a85657032e989a0388f195b172a2153af582726cc4d7c1cad4e8b09e30d921"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1171.parquet": {
+      "bytes": 330858,
+      "sha256": "a785bff0824615a9360a9672a1963236ab2c7ddc88740ee74272f1b02d3328d4"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1187.parquet": {
+      "bytes": 67302,
+      "sha256": "5ebd0ff000ddba456dc403b25b52db2325c6ad975f7139dc6d9604965ae4516e"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1188.parquet": {
+      "bytes": 202025,
+      "sha256": "0556dfd8487ac0452d36a803e9c2d0dd43d850c3e4a557d0b34c6174398541ee"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1202.parquet": {
+      "bytes": 102078,
+      "sha256": "403419919ceba0f2d303dfa0720d25a5603acc081b17a634721aa6bb6e39eeea"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M1204.parquet": {
+      "bytes": 203921,
+      "sha256": "2cfc19cf8e4b2dfac4656260932b04f81595991967db6d4c51499cc0927b71b4"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M137.parquet": {
+      "bytes": 469910,
+      "sha256": "0f6ccc3f584267e8f074d2470f23a8cf58be3ab4cb38f65adbea0c4d75db5575"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M138.parquet": {
+      "bytes": 100740,
+      "sha256": "dc60f2feaa8f5e3c595ca7d52c720220067aad72aad9f2dfaa6e3722cd995334"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M140.parquet": {
+      "bytes": 469294,
+      "sha256": "7514dcd94aae917a7b4dffb2972052928fecc10bc6b27c8cd511d32208546267"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M145.parquet": {
+      "bytes": 443755,
+      "sha256": "1bb5952b114bb6f2f15297e1a8f231428dc6e9d412f4aff5081c2e617826205e"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M159.parquet": {
+      "bytes": 480446,
+      "sha256": "c609ad6fcac8ea04c0f82dfdd31f5d7492bd51176216ad054f28f4456ae2cff7"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M160.parquet": {
+      "bytes": 482635,
+      "sha256": "477c0a8ec21daae024c5c80b04e45da2153027d4963cd3186d452b570df49748"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M233.parquet": {
+      "bytes": 404564,
+      "sha256": "3bccb0ab1b4f1d51ab7300b32cc71be170f7fc79f336deb18622d49ffe1543c1"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M241.parquet": {
+      "bytes": 411850,
+      "sha256": "d42f5e6d589b1ee3bf93bf3fc0805fc2f68adeafca65a0f96d3b0a9a07163b3f"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M250.parquet": {
+      "bytes": 415926,
+      "sha256": "9431a81740a164f93bf5a42cf2f99d8710b15abda6d4900c8a318f292e03e6f6"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M268.parquet": {
+      "bytes": 411093,
+      "sha256": "4c10e80b89b7117d127ad62f7b65ccd1cb609ed34147f0924706d591c7b600fb"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M269.parquet": {
+      "bytes": 419558,
+      "sha256": "692986b3b1b99f332f8da287894284b5102d104197aa9061227638343d9ee6d6"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M270.parquet": {
+      "bytes": 153502,
+      "sha256": "5a25410522fc3cb9b9cab06d9c287788994ab25503ef6daa397d2ffed2ee8874"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M272.parquet": {
+      "bytes": 414051,
+      "sha256": "6e0992f2cbae68d781b81406248008b3ce9c831208975a88d4852bb10f03df52"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M273.parquet": {
+      "bytes": 413756,
+      "sha256": "57999edcce45527fac222d70a0b9efb906976733746304ee750bfa72eb3ac413"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M275.parquet": {
+      "bytes": 296062,
+      "sha256": "8f857f8ec99eae93dca4407ad424e7770ec895f3ed29ef9356f09e458642918e"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M276.parquet": {
+      "bytes": 300796,
+      "sha256": "5e0dc815f74e29b8da16f73c69fe61a4a49179abcac38e1e5c1f5fb233956083"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M282.parquet": {
+      "bytes": 402363,
+      "sha256": "5bd26d641356ae4e2882ac2c28fd1542b3ec15f4b33a34f5a48b34003f82367a"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M283.parquet": {
+      "bytes": 414742,
+      "sha256": "386e9fbdb157793a12a96ceb87225b94b895d590dbdf676349e8858346247093"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M286.parquet": {
+      "bytes": 433455,
+      "sha256": "fff580f82bc958b0f2ce8a770c56a09ac121baa807554406f02c000f0f985c24"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M311.parquet": {
+      "bytes": 411597,
+      "sha256": "31c4480ea35ba5e23275b472ee0034637ebdd395ccf4ce49c5631e52993205d2"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M312.parquet": {
+      "bytes": 404882,
+      "sha256": "868a31ece945497bcd864566280fb262a92fecb37c21f1a8e870babf6a64d0c4"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M313.parquet": {
+      "bytes": 399850,
+      "sha256": "6578c1ef71f352415c5fb495778c05bc9744d7287ab6eb25cdfd1f190e35e370"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M314.parquet": {
+      "bytes": 292273,
+      "sha256": "e025832c4a922c035dba885b0541c5d0c7ffa26a35fcb774f0c5a6a47600b04e"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M315.parquet": {
+      "bytes": 273325,
+      "sha256": "a23742421c63e21a55ef79d458281106436df4f81017ef65079a8cd1b00a251e"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M317.parquet": {
+      "bytes": 260843,
+      "sha256": "959f2ac98791937841dc359b0a6dec8c23aca5aa471e9329b5b03eca45d7d396"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M318.parquet": {
+      "bytes": 98953,
+      "sha256": "619ad33afe8083799115d6a43b17cdd4a66fe4314a77e542deb8202058b6e7bc"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M321.parquet": {
+      "bytes": 422015,
+      "sha256": "8d20f49bc21f60f77a4d7137acea8979a0950c793617d3ef7ed2f3a7763a9ff1"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M323.parquet": {
+      "bytes": 428663,
+      "sha256": "d2df07127133123a4294bcb12c878172806549478429e285e7f0bf8b24340cb7"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M324.parquet": {
+      "bytes": 416758,
+      "sha256": "de4586a06372eb582eb37d02166c83b65f71b88ee7464a326e315428e70b7ec8"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M325.parquet": {
+      "bytes": 423176,
+      "sha256": "394d0a1b6fe42aa1adfe22ca0e82e4640b91e6e704f0bbc0c281ceb666fe8f6d"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M327.parquet": {
+      "bytes": 189088,
+      "sha256": "8b2bc05bb0c5d365b57383f8ddc210f1408486a0830ec0bc5ec4609e159381d4"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M328.parquet": {
+      "bytes": 154609,
+      "sha256": "24062234aa238a26d6ea8faaa2bf0cd3d6e1fc49e1f41c5e64260f2118909ca5"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M330.parquet": {
+      "bytes": 410243,
+      "sha256": "09d31da9a8b05fbc81c5c7ff8d11c8069bf6502d42cef6a743f0bbdcd9022473"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M331.parquet": {
+      "bytes": 342011,
+      "sha256": "214057bb32268332175672d50de5fe9bcc217daa781496f7d0bf8db27ba8bda7"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M338.parquet": {
+      "bytes": 420933,
+      "sha256": "604d88beeb1f9a9f565ca79dd6ac00d2ee1436d3e177e59f68662b86d159b9d1"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M341.parquet": {
+      "bytes": 411707,
+      "sha256": "43467a8163f99c5ca9b6b45381988659784537cc79c6db98be5a48458ec3db15"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M345.parquet": {
+      "bytes": 427646,
+      "sha256": "bb40008416a2fc4969a0577e5faf116a54a0ea2921ac60d13bf2d8b336d7fdb9"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M346.parquet": {
+      "bytes": 365856,
+      "sha256": "340e4c43d4cfb5ade9f324d2b71ba0e0f3155eb5e7630d3a1c37087415e960fe"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M35.parquet": {
+      "bytes": 331833,
+      "sha256": "de2543c019128092e2995c2a58b3b5801da86bd5240ad09719a085abd0ede666"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M351.parquet": {
+      "bytes": 447390,
+      "sha256": "8a8e8605b42b013dd5bac9a2ed55307061d5ecd1497c6fca3d76db1258e22d8e"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M354.parquet": {
+      "bytes": 428631,
+      "sha256": "c9c7ad6b567fdcb11f30109b009a1560c61f43e0aa7f185cd1f108b5059b7f17"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M355.parquet": {
+      "bytes": 453292,
+      "sha256": "5cda720140dba12835fa073353e7b5be3abf88f9a1351c16f1dc8b7080658eef"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M36.parquet": {
+      "bytes": 459344,
+      "sha256": "0c3683088358cce67c9ea71a8196ae193e97bc18cb8e1ed162ab3d59c78da2d9"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M365.parquet": {
+      "bytes": 427324,
+      "sha256": "9097d7a277e9e7729ed19f61c96cf412c97c46f71fd7b91857cea6ece090c71b"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M366.parquet": {
+      "bytes": 445238,
+      "sha256": "8f528af41693a5a3e0c62ff909bbf2e9451888029c638abb98f7d40116f74c80"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M367.parquet": {
+      "bytes": 458917,
+      "sha256": "d0851f0a7008e98852ace165dd4b6c1d5b8cab76a799a4ccb973c823a7a2efe8"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M37.parquet": {
+      "bytes": 462723,
+      "sha256": "702cce1e6fa6ef2b6eeb2622a1a1efdaa92802120260af6f39778d40433a9a73"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M370.parquet": {
+      "bytes": 247365,
+      "sha256": "781d1e0b22e9adebef86e1dd191a9334ff4980e9a877d9163e1849418fd0ee83"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M371.parquet": {
+      "bytes": 232689,
+      "sha256": "e66455da47bdf6de13a038913142d156babd6926843bfb204a90f49164daa2b4"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M43.parquet": {
+      "bytes": 121630,
+      "sha256": "1569a606b57a369959b34b2fde75d85da443615e6a1d83f3e0a716d175570a0c"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M432.parquet": {
+      "bytes": 70798,
+      "sha256": "a0f8a952da9ccbe45a57b26aaeb25cc59744958488adf655ca3352ef46748ed3"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M44.parquet": {
+      "bytes": 331002,
+      "sha256": "efe0fd88294c6d61621a7b9bc9e8b89779f827e986a219ee168a99cd00100514"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M449.parquet": {
+      "bytes": 447019,
+      "sha256": "05221e7b9225882f67e47ec9de8bc01b786c1689a0f0ba8aef45bd00a8f4dfb0"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M45.parquet": {
+      "bytes": 353524,
+      "sha256": "128b92e88e8c518ecd4ba71a42ad30bb8b5e85d740546e94854aa2edbaf677b8"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M454.parquet": {
+      "bytes": 425878,
+      "sha256": "b7eadcc5e1a10622f25ca75031c25a9f0306082681c396e6f7d122594a74db2a"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M455.parquet": {
+      "bytes": 430185,
+      "sha256": "f5fa6df8272d7abbf75e5d2d14f9712295f5aefbe3959c2597c0b326e3b01bb9"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M466.parquet": {
+      "bytes": 445321,
+      "sha256": "325a79af4ace23f41d1fa391755becf3fc876704d4727907068268f606a3f3b7"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M468.parquet": {
+      "bytes": 205722,
+      "sha256": "678f90525eeec9e10003c87a334c6d8d9a96d6854700d1cb6b11a291ccb81821"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M470.parquet": {
+      "bytes": 216913,
+      "sha256": "2f20c4503f1db7aee08a49766f8977a24d9585790424018841923c76e539b774"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M474.parquet": {
+      "bytes": 415612,
+      "sha256": "09efa4c18fefff320b0476830bc4bd2d958bcd754b67415d26d41a1b1f800316"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M478.parquet": {
+      "bytes": 404362,
+      "sha256": "0387934251446a54f14cdfb1b952ef4ccc06faa9f627232da24583873b89680c"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M479.parquet": {
+      "bytes": 422159,
+      "sha256": "42eb9548e8a2619bb110efabdf38bc433f3b921446022c222fc6520519597a91"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M484.parquet": {
+      "bytes": 257668,
+      "sha256": "69ba9461a6305c6d02e726253ccac5fe0f1d9f475a5d6bc07f06090a09f26d56"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M486.parquet": {
+      "bytes": 452121,
+      "sha256": "7215feba73c0317a15df24f2dbe271fda177adb3f5430ae99ada939fd59181fe"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M487.parquet": {
+      "bytes": 457048,
+      "sha256": "a9f36b084cf540cc22b6828906ff1ac9b4eb58460ed54c05ccc2451d761a9231"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M488.parquet": {
+      "bytes": 418828,
+      "sha256": "8970e975f8a61a7dce75ad2d2abe75372d8f35eb90ef4166f03e00921214407b"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M489.parquet": {
+      "bytes": 420856,
+      "sha256": "20cda9f838b0d3ef13e759382809dd16ec719f16edaa33b6095922f652a4df7d"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M49.parquet": {
+      "bytes": 70428,
+      "sha256": "6c16902019ac36591c4604b34df750b60724c4f67b01240b6d75187e042188e0"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M490.parquet": {
+      "bytes": 417225,
+      "sha256": "082469533c1d96fcb14d26925acf8635c9a6799b9dce589a9029420d6fa4b1e6"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M492.parquet": {
+      "bytes": 409756,
+      "sha256": "030a56050a8b0b0a210d1198fb783b942d7110913f7f03cafa40eeb7507070a7"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M5.parquet": {
+      "bytes": 254676,
+      "sha256": "98737099d81af7dbf605ded9465cab5b4f760b5c45101d8b26a76bc52f4d2d76"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M507.parquet": {
+      "bytes": 420264,
+      "sha256": "a4401d133f6c9c1f87c5e1018949fc9759ab1cdf8dddaac27bcb439b98332694"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M508.parquet": {
+      "bytes": 431469,
+      "sha256": "1b98f92533e187966bc55a0e66c91c879d9f12d4bd569d58cbbe4f192bf657cb"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M513.parquet": {
+      "bytes": 425128,
+      "sha256": "2dc1a33366ef8c881e16dfc4701a0fb8f547dd0a9073f7c094f71f34079d3538"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M515.parquet": {
+      "bytes": 423999,
+      "sha256": "b84bbe342fc1dffb04ca752b88b1cbbbbbd7732a33d3d970ce6eacaf6a34ebe8"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M526.parquet": {
+      "bytes": 420163,
+      "sha256": "01a4739bd657deb5831429c5635ac2ea5805f135b797365659814d642cbccd14"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M530.parquet": {
+      "bytes": 421001,
+      "sha256": "87488060c1b24958bf1a74a8e525e7001ae243cd7fa90184cff12a0619c60b25"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M542.parquet": {
+      "bytes": 212062,
+      "sha256": "80609d1e0b25b000f08a35292a04be2aa307bc198bccc5ef60b95a80016f8bc2"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M544.parquet": {
+      "bytes": 429645,
+      "sha256": "30cc03afb3a39c6f05defa736b708a58061917b5750b050703bd8e36636fbc9e"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M551.parquet": {
+      "bytes": 425465,
+      "sha256": "d6f7109946f9ec28ae204f1a0ecfaa7f688ad6dbbebf17d89ac09ffaa1d07a8a"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M553.parquet": {
+      "bytes": 302069,
+      "sha256": "bfc9d48ed241ee9c0cd970e5cea7526f8ec6838848798d7516e41deb1bd6eb6f"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M558.parquet": {
+      "bytes": 263519,
+      "sha256": "7218183ee1dca58ff600f382f62624da1a104be68f85325dff31a72067af9d6b"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M56.parquet": {
+      "bytes": 416756,
+      "sha256": "170c0946a2803466728d7de9163c3e9e18081c1950a9736f1aa7d7a370b3c7ed"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M565.parquet": {
+      "bytes": 454452,
+      "sha256": "4bb8dc9911070b6492cdc8de61422a8b8e243bcbebc7ab2e83431b7d958a60e7"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M57.parquet": {
+      "bytes": 282303,
+      "sha256": "29a0b002a9bf344c38fa81e5cc4470e0bc89acb1784f99977e4f189cf38c972a"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M6.parquet": {
+      "bytes": 433627,
+      "sha256": "9f7e29b88c83effb5220fd7d79cd61f3d6847fdfc68702420de72f1dfac74146"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M604.parquet": {
+      "bytes": 222176,
+      "sha256": "46196d706ded82c25f5f577f1c1bdb1564b1e132b8b7a9a24a8dbc85aae1b55c"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M606.parquet": {
+      "bytes": 220446,
+      "sha256": "690fb6352056f7c02db1352d17f173ee5795baff7865388face516a6494e00ab"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M607.parquet": {
+      "bytes": 223439,
+      "sha256": "b45e23e709dd00d36c9a0d554f2e34d9066feeec6f6197308d5db45ee4224638"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M61.parquet": {
+      "bytes": 213572,
+      "sha256": "3d7339e152d68b8fc916c109223205881bf35c8092a3aba74c7ef59b3a8716df"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M614.parquet": {
+      "bytes": 225795,
+      "sha256": "f0fc8b3e81086675acf5643bc2da190a64a425bbf6b6b1c07a76cf68dc7d4966"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M615.parquet": {
+      "bytes": 306103,
+      "sha256": "9cef13fb395fd80527223b4051b4c187027025994de74e099d45469e03e359a5"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M616.parquet": {
+      "bytes": 250661,
+      "sha256": "3869961a133cbcd7560f34b92dbdb9dac8b6ef844ec82ccef56d1da3f1e6b6a6"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M618.parquet": {
+      "bytes": 210630,
+      "sha256": "cb99189034b84287690abaae0dfd581c04509e7056232fd36c3b9406e933b06a"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M624.parquet": {
+      "bytes": 313343,
+      "sha256": "aa0ca4026742bc1c998e8fe77f61bd4622c0ce721805133985c474a70c0d8a9e"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M635.parquet": {
+      "bytes": 235408,
+      "sha256": "80da3dc88b3fdf549b7eaefa0648430438af5dd762a9a2197fb1f1b72bd5a0ea"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M662.parquet": {
+      "bytes": 92312,
+      "sha256": "d1e83d6dd8260a26f8f0addf5372bd617298679be2b10c67198b4a3142a73f19"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M666.parquet": {
+      "bytes": 43266,
+      "sha256": "f97d5cada065843d5bfd02094fee3c2d542553c8af8b9d09e8953f01a99598a6"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M670.parquet": {
+      "bytes": 179933,
+      "sha256": "bf2569e4f037f25ffcb27f20b1fc81a178390d15c5e17c5ff09c44f779b8f850"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M684.parquet": {
+      "bytes": 206431,
+      "sha256": "89f9f6b7f284e3312f07ef57b8f8b37d474cfea7f336d2d4d3cf54ae6b736a71"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M685.parquet": {
+      "bytes": 230861,
+      "sha256": "5b112773533e9f3e82a8cbb01b7ae8516f410f0a10b45cf6362956f0c4eaed1c"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M687.parquet": {
+      "bytes": 213159,
+      "sha256": "360ac30e26fe5e50d98723c06b6a1bf11d5e8244509b688a7c63b3e0a8e1a70d"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M692.parquet": {
+      "bytes": 323493,
+      "sha256": "7bd8458720e29a4fba13958763612807864f2a4686a1c01ffda609690bef861e"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M694.parquet": {
+      "bytes": 292441,
+      "sha256": "8b94cb0c9d2fb0a4e122a19b9d33ffdf3d32a2b936aacfc883bd93b3f2617d7f"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M700.parquet": {
+      "bytes": 323431,
+      "sha256": "faf33fd41e2c69a81e56279273035c25f1670c57ad22593deb59bffc84d5f164"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M702.parquet": {
+      "bytes": 227079,
+      "sha256": "904d505b4eb93299c0cc8a8ba3993b2ac19f67ee48e858d599a9cdd263bf0a11"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M708.parquet": {
+      "bytes": 371959,
+      "sha256": "144c43dfbe374aaf0f1859e983c1557dbff41dea5a949db7d3589ea100a9b511"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M721.parquet": {
+      "bytes": 364616,
+      "sha256": "9fe6e619e3b7e33a5358a99306468475ac1462d9bb7fe6372708d82ecab04482"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M723.parquet": {
+      "bytes": 260669,
+      "sha256": "15c110065200e6cc9d1807178f97409f93d2a063ad82d07e6937c778884cb297"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M725.parquet": {
+      "bytes": 119734,
+      "sha256": "cd364f9f6c51ca388fc03c1f73c524029367a246066efae13e4a115fa05d3bd7"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M726.parquet": {
+      "bytes": 223236,
+      "sha256": "8038e6fff67653c3c3882a3eb6237a9837833ee3d85eb0aa2cc1ff6117cd7a9c"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M749.parquet": {
+      "bytes": 417226,
+      "sha256": "13c45f3df8cfc0e4a2f93f76e7a6ba872cec7911d43731b837266d54378065dc"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M750.parquet": {
+      "bytes": 422196,
+      "sha256": "9d59ced0c0f8cbcee7b88295cf59cf599f68f1207b3fe79c7a9ca12c956d2f84"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M768.parquet": {
+      "bytes": 128273,
+      "sha256": "a41abe926054e0abe812ec7dd07bfa97463d253a5b67da7f3725b40042a8e626"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M770.parquet": {
+      "bytes": 61211,
+      "sha256": "1082ee27b83ed201bae2280aa08643fe0711f00f35682cd6a1047bf3b7b69fc0"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M778.parquet": {
+      "bytes": 367732,
+      "sha256": "e5630dcdbb956339f005d05616e9b87b2a75178c61d34b6c5e3586875ec8766e"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M8.parquet": {
+      "bytes": 410227,
+      "sha256": "aac54c84fdb989c5976ca0fdec8b3f92e0174ababcbfef5dd977f215e3cc803b"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M9.parquet": {
+      "bytes": 428330,
+      "sha256": "bc37fb70810f3f01cdea501b4c1c29a6af2ee08a257f447f4f77ef512950b911"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M938.parquet": {
+      "bytes": 223368,
+      "sha256": "e4d8edf032f4b1b44c6fdb4c603d881b8e4771d10ee3214161c1ac725d363352"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M941.parquet": {
+      "bytes": 83408,
+      "sha256": "b25b037fa365c92e80f380d7fc6fd31d856d8b43c1f02bd2bed49850900c0670"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M942.parquet": {
+      "bytes": 199822,
+      "sha256": "397bbda9fc5bccdd0c7e6c481929a676bccecff1832cc067ad5d0b0377d15252"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M946.parquet": {
+      "bytes": 206338,
+      "sha256": "af2cdee62dbc2368048c1eb7747799fc48944e29bcc9c2dc70ececeef7ff4116"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M951.parquet": {
+      "bytes": 201673,
+      "sha256": "3ab378bad0abfec654a907a2b74af7cb8f65bca5336683805880fbbd6df6b5d1"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M954.parquet": {
+      "bytes": 209343,
+      "sha256": "1963f04708bc3f83fb72bd56e3a05847bd826ebea177a0c2e71e374cd56cdbb9"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M955.parquet": {
+      "bytes": 141823,
+      "sha256": "c7fc6bf36be724df535cbde40860d26bbfa71042d93c270e15ae4e819198722b"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M966.parquet": {
+      "bytes": 70436,
+      "sha256": "a635af9e8dd2c4a0a656b9c962a39ecd81d22bcfa2704b4e3dafe3dd639d9c69"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M967.parquet": {
+      "bytes": 100285,
+      "sha256": "d337b1418acd9f6f89a127869ee9434d136a21888a1bf5170a26f345ed96180f"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M971.parquet": {
+      "bytes": 209398,
+      "sha256": "f3efbde0bc826a88ae5e947998b805f1af3d8bc433a7e70d5bbf80512a3ec6b1"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M972.parquet": {
+      "bytes": 226268,
+      "sha256": "fbde0239ae58a1bbf25ebd1b8f97af6006130f860b9622a7c0d92f76dd1355a0"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M985.parquet": {
+      "bytes": 406338,
+      "sha256": "c0074016c4cb90520aa4159553771a980d2847e3a3fe7dc6e7ea3d7b80f99ec8"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M987.parquet": {
+      "bytes": 392994,
+      "sha256": "62a4caba3a439848fbec5abac247bf6d957c94378aee3a4b56ee25e6dad37a5b"
+    },
+    "effect_size/drivers/lioness/control_anchored/hedges_g__fixed_0.40/all/M999.parquet": {
+      "bytes": 214626,
+      "sha256": "6d1b79280395db883b3be0fc32be761804a00934ccef298e23c61002a258467c"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all.parquet/part-00000.parquet": {
+      "bytes": 6240259,
+      "sha256": "e836ca77a14100116ef19f51daa42f75326584849e3c77dbeef4e50111020cad"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all.parquet/part-00001.parquet": {
+      "bytes": 6795627,
+      "sha256": "72d4ab9c3ae23c4b21f997e46356f80a6a364a91ea4e9af1b27e9059addf4634"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all.parquet/part-00002.parquet": {
+      "bytes": 6351338,
+      "sha256": "096932578d57d8c77c3dc478ef4cec2d32126011ead4e5d4de01adebc35168fa"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all.parquet/part-00003.parquet": {
+      "bytes": 6926413,
+      "sha256": "f751266a0bb373aa9b53c68deb97851a16f453be87bd3ad8feb83fa68837ea41"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all.parquet/part-00004.parquet": {
+      "bytes": 6250534,
+      "sha256": "ce696d2e26a3568c3ffb23d05bbc6c3de27966315a8d15740fed140804bb2986"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all.parquet/part-00005.parquet": {
+      "bytes": 5099665,
+      "sha256": "f96f408e3b553f1046cb0f7f11c932caaab822edda6bd57f17a952fd2a444d49"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all.parquet/part-00006.parquet": {
+      "bytes": 693353,
+      "sha256": "0193964eb11f57fc6202afbbfc5deed6e38759574f38fff1465b6996614313e2"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all.parquet/part-00007.parquet": {
+      "bytes": 1646664,
+      "sha256": "8bcbac75c56eb10e00021767e3e0e5cd4f961fdf4c77ff0787daaa2baee0bacd"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all.parquet/part-00000.parquet": {
+      "bytes": 5339393,
+      "sha256": "7f917c2baab24928e25e5d1e2ed4f6d510904c673d4e1c6a6b746ab74b6fca47"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all.parquet/part-00001.parquet": {
+      "bytes": 5119730,
+      "sha256": "47daa66eb546be4bdc536696631b2e9c7d7d4d6e9f1d78e1978bca30379d0aaf"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all.parquet/part-00002.parquet": {
+      "bytes": 5850001,
+      "sha256": "d903ad8ff7fa500fd36c1f818f421a2b82ac83091a2b416f1341713cdcbed960"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all.parquet/part-00003.parquet": {
+      "bytes": 5832952,
+      "sha256": "a9cc52a660a42f6d9bb7de57d22de7fc07b74f0f74f58fa096256198c0c30148"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all.parquet/part-00004.parquet": {
+      "bytes": 4364669,
+      "sha256": "fee6dca391208bc62f8bfcbb05668451c0b63a4f8aa18084eea75788ce5595a7"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all.parquet/part-00005.parquet": {
+      "bytes": 2507257,
+      "sha256": "03d9f60fb15e0dc2ed8bc73d0bda88d24f780084f411d721b48a770f2623e275"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all.parquet/part-00006.parquet": {
+      "bytes": 1418737,
+      "sha256": "248960c6633ca7b53971e5c698089924a463d8dded04bebc1d428dd0ace3fcc8"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all.parquet/part-00007.parquet": {
+      "bytes": 612716,
+      "sha256": "6f6def2f1ad3b478700060aacb217ecb833df65723a7d7f52b939a9c5f074579"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all.parquet/part-00000.parquet": {
+      "bytes": 6602857,
+      "sha256": "1bb49b36e6dce90e4c938027a0bbeeea62fe89837c65b7c4a133d4c9e3937f8a"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all.parquet/part-00001.parquet": {
+      "bytes": 6993800,
+      "sha256": "cd2cc37da82002df5d1d2d463422cc65050c0eda19f4ed11ba7a36b7b595a3df"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all.parquet/part-00002.parquet": {
+      "bytes": 6483577,
+      "sha256": "c78e190396b15f733627593aedeacab5fd3363481e280e5d90634b2554b6e5ba"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all.parquet/part-00003.parquet": {
+      "bytes": 6958236,
+      "sha256": "2a3ed805e21c9799013de635970a4cb7d32727a1741a08eaaf7029e03981392e"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all.parquet/part-00004.parquet": {
+      "bytes": 6310221,
+      "sha256": "52bc971fba866817f603e015ae9652ef8749e5f3a4455cda82b37096a6bec890"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all.parquet/part-00005.parquet": {
+      "bytes": 5346161,
+      "sha256": "449680f1f1f0030dea0c81567153c7d5a1789ea00a9b77259d0cf290d0b2b776"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all.parquet/part-00006.parquet": {
+      "bytes": 1919479,
+      "sha256": "b810abbd816fae0cb2e0d712721851c3b7dbf83f6c6ac8ba3ee4dcaa0b15cb25"
+    },
+    "effect_size/edge_summaries/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all.parquet/part-00007.parquet": {
+      "bytes": 2218949,
+      "sha256": "58b749def15c19fff9b21de14512c2abce5f7fff923d2169b34ea55e9d4fa890"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/aggregate_plot_data.parquet/part-00000.parquet": {
+      "bytes": 1617330,
+      "sha256": "171837d9ec823d57b5d75ada53e8655901a3ece96b8050dc7f23682d8f9292ec"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/aggregate_plot_data.parquet/part-00001.parquet": {
+      "bytes": 1772916,
+      "sha256": "599571453ad39adcd5368a8c35882d27e2a29009315007c804e673b9113a30a4"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/aggregate_plot_data.parquet/part-00002.parquet": {
+      "bytes": 1738596,
+      "sha256": "091a41b992bb2e23399f016a1235986df0b9c05728f6d31bbe9a3c0a2ec59adf"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/aggregate_plot_data.parquet/part-00003.parquet": {
+      "bytes": 1734414,
+      "sha256": "7e69f12e8744cc4910f1ed9b924aa099c53b13b5ad4605ac41962535d7a4de27"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/aggregate_plot_data.parquet/part-00004.parquet": {
+      "bytes": 1766512,
+      "sha256": "f5883113aaab99658aaf2c7da0e2c9b3e5d9325e4cddfde093250dff56106ecd"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/aggregate_plot_data.parquet/part-00005.parquet": {
+      "bytes": 1543202,
+      "sha256": "646169a5c592190c0db0a59bb1ba80e8cfc2df313f168c03167be9c89cee20ee"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/aggregate_plot_data.parquet/part-00006.parquet": {
+      "bytes": 393436,
+      "sha256": "407e14143a634c772d7d68d024bc295cbc6e1c62d587af07d77a19c19a5ce002"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/aggregate_plot_data.parquet/part-00007.parquet": {
+      "bytes": 606786,
+      "sha256": "3776be006d41cea362463dcc0a0d3322d8b9d5dd05bc196345cf2db320ce04a3"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/aggregate_statistics.parquet": {
+      "bytes": 31398240,
+      "sha256": "67044f85b00d9d03256b3135c1075ee30e40c0b5d8ab88bc8f70d5863e023a75"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/resolved_plot_data.parquet/part-00000.parquet": {
+      "bytes": 4423507,
+      "sha256": "af7c653473c943d159a1c661ddd0b81d47ec1241d92eb76ad182e267ef1a9c46"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/resolved_plot_data.parquet/part-00001.parquet": {
+      "bytes": 4682430,
+      "sha256": "2b1c46303649472533c6ccdd54be356b837f43bc51a0a09f6975774ca5176bdc"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/resolved_plot_data.parquet/part-00002.parquet": {
+      "bytes": 4492675,
+      "sha256": "ce35746d8a901281b30e85e7609f151d61dea4985c44d3f3e51a7444eb0bda65"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/resolved_plot_data.parquet/part-00003.parquet": {
+      "bytes": 4918238,
+      "sha256": "b7a82625ebcbd556f9e733856f557a250a69a64a9d1812c796d69e88fb8f6c28"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/resolved_plot_data.parquet/part-00004.parquet": {
+      "bytes": 4292354,
+      "sha256": "4e9d8714d8665b52e2caed1899550f0ebd9d355a2037e5a74cd73934c5e67bd2"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/resolved_plot_data.parquet/part-00005.parquet": {
+      "bytes": 3514748,
+      "sha256": "d8d970d409395a96ba42f90f67571041880992c24258bf4833931c4ff5f626bb"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/resolved_plot_data.parquet/part-00006.parquet": {
+      "bytes": 721764,
+      "sha256": "38470d8b4cf333751c1a48a6f67b1165dbf3dadbcdafa5dc2c3529a8883e4251"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/resolved_plot_data.parquet/part-00007.parquet": {
+      "bytes": 1178386,
+      "sha256": "f190447c2b9fee60388fc670a66b007a2ed17a538b9d365a7ad6e90f732da2b3"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/resolved_statistics.parquet": {
+      "bytes": 69874375,
+      "sha256": "d54798e7ba1b8e70beded409500ee557afce1856690bf8b5001b8026a89a9d8d"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/aggregate_plot_data.parquet/part-00000.parquet": {
+      "bytes": 1627195,
+      "sha256": "ded00bb0d7895f8466dc192d79060b9efb994d8635e10ffae033b3e5b4e76c12"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/aggregate_plot_data.parquet/part-00001.parquet": {
+      "bytes": 1778760,
+      "sha256": "27b60ae43393a1717295a9559c661b6152ac1681a58351f7d3bd755852026d41"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/aggregate_plot_data.parquet/part-00002.parquet": {
+      "bytes": 1747723,
+      "sha256": "6f0ba40fd38a19a686a725b8fc1b28fc11e163c8ee05c010125c494dfc2526fd"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/aggregate_plot_data.parquet/part-00003.parquet": {
+      "bytes": 1744308,
+      "sha256": "146b2c2938bed92bd80a5ef08e5557938142a006f3d02a62b2b49c548ae111fb"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/aggregate_plot_data.parquet/part-00004.parquet": {
+      "bytes": 1777497,
+      "sha256": "5d1bd38ab04e2195c90bfc7e20d8dc26a94d9b5ce0279d0ad010829c69cb39a5"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/aggregate_plot_data.parquet/part-00005.parquet": {
+      "bytes": 1570125,
+      "sha256": "990e02facd3678bacecdcc408a9dfa0ea279ffaff2d9d12a554776a1d89c40a2"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/aggregate_plot_data.parquet/part-00006.parquet": {
+      "bytes": 416708,
+      "sha256": "3be72b473d9341651f864892df207a5dc15d023bd9980c70b8401c9106844a83"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/aggregate_plot_data.parquet/part-00007.parquet": {
+      "bytes": 629149,
+      "sha256": "f51a1c9c8ee433eaf71a92957d18e399cf06ebeb8e2cbf20904128adf442a188"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/aggregate_statistics.parquet": {
+      "bytes": 32609610,
+      "sha256": "1b0fa788e8ef815937b88cbaf8ed4554b0b5dc05857acc6b7b7d89ed462b90d3"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/resolved_plot_data.parquet/part-00000.parquet": {
+      "bytes": 4496620,
+      "sha256": "04a74c979e62fdbd24db8afbf323f5f7b623d2e903cbeb65e164ac72dcfad1a4"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/resolved_plot_data.parquet/part-00001.parquet": {
+      "bytes": 4757410,
+      "sha256": "df13e8613e33c2da73538f86a78f2eb1c003df18b940bbbe621593264a60c93d"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/resolved_plot_data.parquet/part-00002.parquet": {
+      "bytes": 4572405,
+      "sha256": "e1c5a7508d699a0a488d3e7616112e26a000445ba5ac0e6b92f32b5352ed616f"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/resolved_plot_data.parquet/part-00003.parquet": {
+      "bytes": 4973052,
+      "sha256": "be2499dc4b559757c5c44ac497c1ac4323d83eb33ef1a49a5636bb61ba632dcd"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/resolved_plot_data.parquet/part-00004.parquet": {
+      "bytes": 4388380,
+      "sha256": "7b33772193f2b6a3c12ba61daad75d780f7a37b6ccb43825b73f8c4712c520fa"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/resolved_plot_data.parquet/part-00005.parquet": {
+      "bytes": 3684396,
+      "sha256": "49958a87319ea8510610d5f767df400989d31acb85688224c5d4bce4948ffdc2"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/resolved_plot_data.parquet/part-00006.parquet": {
+      "bytes": 758668,
+      "sha256": "738c271d51af5247d0d34db4a9a7b4e59529573234ff7be5d21d5ca9bef8a4a9"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/resolved_plot_data.parquet/part-00007.parquet": {
+      "bytes": 1246286,
+      "sha256": "f1f9b036037c523114a56708c2333895cf8e521413df58474e1f11e35977d21e"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/resolved_statistics.parquet": {
+      "bytes": 69903398,
+      "sha256": "7b778331a0b1309da21653074864e7205ace817e03831ec0b38b8612dd46defd"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/aggregate_plot_data.parquet/part-00000.parquet": {
+      "bytes": 1460457,
+      "sha256": "5942cf2dd3d4574a5739e06310d53102fbbef29ed896f73759d5e08a708dc2bd"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/aggregate_plot_data.parquet/part-00001.parquet": {
+      "bytes": 1585756,
+      "sha256": "f9a9a831519275b01d4cb4d0402f6545a34892975ec1bcf0cd7d546ae6f42755"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/aggregate_plot_data.parquet/part-00002.parquet": {
+      "bytes": 1631451,
+      "sha256": "f04ec7349b4c235de81c0614277a83e027563dc8a73952aeb42279e68c8639a0"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/aggregate_plot_data.parquet/part-00003.parquet": {
+      "bytes": 1507347,
+      "sha256": "debe6e6fea1fb8bffed3c14e19421e68ec574299752c08ee70c8d3d8e931f4f5"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/aggregate_plot_data.parquet/part-00004.parquet": {
+      "bytes": 1237412,
+      "sha256": "0e2a6479643ba1166ac52331835a092026b49ad8b53749d7b406256ff2360828"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/aggregate_plot_data.parquet/part-00005.parquet": {
+      "bytes": 900827,
+      "sha256": "a129d769638f8f74ec8bfaa016c0029aa931dcd4f9e9e64c9f36e6ecef157083"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/aggregate_plot_data.parquet/part-00006.parquet": {
+      "bytes": 911370,
+      "sha256": "cb7eb3b8ed567af93286d50a69c18cc9264ae5515b6f8bac01ce6e2fe1968756"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/aggregate_plot_data.parquet/part-00007.parquet": {
+      "bytes": 436409,
+      "sha256": "e74258b4367ac58f678909c1058720884c2fa656b8c104217c755e494cb5ad19"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/aggregate_statistics.parquet": {
+      "bytes": 22879235,
+      "sha256": "ffbf1533d4b2fa331b0923d43c53bcb4f7f38b4785cbd5eb1c7febe4961e2ba5"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/resolved_plot_data.parquet/part-00000.parquet": {
+      "bytes": 3719121,
+      "sha256": "116893a8c75490d058e840afc7f2c691a9685fbe70e6b25d4234d825c3fa731e"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/resolved_plot_data.parquet/part-00001.parquet": {
+      "bytes": 3351379,
+      "sha256": "1a7be36d50e4335156810f2dc9e8870d4afa8c8f8176035b3c50ef55fd744659"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/resolved_plot_data.parquet/part-00002.parquet": {
+      "bytes": 4135953,
+      "sha256": "f478be0f1c303147b52526029084c1466243e86f3581da9787fc9d14fedce965"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/resolved_plot_data.parquet/part-00003.parquet": {
+      "bytes": 4226454,
+      "sha256": "cdf5e23363d730beeea75603b5140c7df9aacf90432811650a1547665d1eb73a"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/resolved_plot_data.parquet/part-00004.parquet": {
+      "bytes": 3020307,
+      "sha256": "51d9804a4799e64629ae7a262f0e40e637c4fcaaa53eebb238d4293277a2182f"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/resolved_plot_data.parquet/part-00005.parquet": {
+      "bytes": 1805121,
+      "sha256": "acedfdf009b31a989662d230050a76eb20415c7e03e391cd2edd799b34bdd028"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/resolved_plot_data.parquet/part-00006.parquet": {
+      "bytes": 1238176,
+      "sha256": "686993e38191fc5b9916bb33b1b1a30635fd761ed24bda87e82dd0424a23208e"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/resolved_plot_data.parquet/part-00007.parquet": {
+      "bytes": 624213,
+      "sha256": "b4f832d2fde252ff84a262ecc11b55dbf80af08b2c58ae61698be5896313550a"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/resolved_statistics.parquet": {
+      "bytes": 52378576,
+      "sha256": "572176b63bfd1d6444164fb39ab3618b9dc38af04da1880c81d557d82a8b5a49"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/aggregate_plot_data.parquet/part-00000.parquet": {
+      "bytes": 1480020,
+      "sha256": "368dbb1080e44f0c6107cdc319edf2686521851d79eb2b455f2eed7d701f6272"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/aggregate_plot_data.parquet/part-00001.parquet": {
+      "bytes": 1609325,
+      "sha256": "82939f0bbdec67d31275c6cb80c6bd1fb7fc7a0148bb36a1e179f8b95ed7b2e8"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/aggregate_plot_data.parquet/part-00002.parquet": {
+      "bytes": 1647482,
+      "sha256": "08b80d5f1f468231ac44740c4f39fffd88c00bcb1aae59a9df0cc2cf216c4dba"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/aggregate_plot_data.parquet/part-00003.parquet": {
+      "bytes": 1525828,
+      "sha256": "663156a7afa527d7c6d2ae26dac5bbb0dd34380e191587ea0fdae82c306d3a01"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/aggregate_plot_data.parquet/part-00004.parquet": {
+      "bytes": 1277348,
+      "sha256": "ed6e3c9254366c8f198da119590c7ceb96883f13e63a8bf7902178d58233d236"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/aggregate_plot_data.parquet/part-00005.parquet": {
+      "bytes": 941861,
+      "sha256": "0898109aa0b09198d1dd483eba317806a2b60b80d9dd483a4ab1488ec857de33"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/aggregate_plot_data.parquet/part-00006.parquet": {
+      "bytes": 924396,
+      "sha256": "779a38950f28fa8a4357f6d1277f31f270a4f9be019e7329949edd5b6e5195e1"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/aggregate_plot_data.parquet/part-00007.parquet": {
+      "bytes": 447121,
+      "sha256": "fada45c7fc2b8bc35d797ec1a3c8613f9c89f3c13c77ebf8da5793a37001f5b9"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/aggregate_statistics.parquet": {
+      "bytes": 27010645,
+      "sha256": "d869681883753da4b2a21465fd1f60edd08efb2d4c6eb857d22d181b49e588ed"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/resolved_plot_data.parquet/part-00000.parquet": {
+      "bytes": 3817186,
+      "sha256": "1111d11a2ce3c93a761ac0a7dacc3498e5d94c826a05b4bc2d917d9038a36dd1"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/resolved_plot_data.parquet/part-00001.parquet": {
+      "bytes": 3518791,
+      "sha256": "a14424a70ee64b1e60a3e7f80c30eb5a7d6832a3cff2ca3dcdb865dacfff4cf1"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/resolved_plot_data.parquet/part-00002.parquet": {
+      "bytes": 4205706,
+      "sha256": "d95c9c8277282d68603fd92717e25d0527e84499c270aec2e13dbe92fbfb8446"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/resolved_plot_data.parquet/part-00003.parquet": {
+      "bytes": 4267444,
+      "sha256": "ac252f1e0f81b732d60f4751abc6ccce467a9763327731dfb0ab97f86f23cd4e"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/resolved_plot_data.parquet/part-00004.parquet": {
+      "bytes": 3136545,
+      "sha256": "4125a112764fd26ab5b8e6d092afa26b62e60f614f18842905223173b3019091"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/resolved_plot_data.parquet/part-00005.parquet": {
+      "bytes": 1914807,
+      "sha256": "0b0f27248f188322eed0f6b15e33ca24a0eedbc7fcc2cee16f32f200d0e83704"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/resolved_plot_data.parquet/part-00006.parquet": {
+      "bytes": 1308612,
+      "sha256": "a0c7f7beb8bc037a777c2ddc4ffbe2a805705fe64630792145aafc8fa5af95ff"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/resolved_plot_data.parquet/part-00007.parquet": {
+      "bytes": 661948,
+      "sha256": "2fb677472bb3939a0c66d530a05aa08127af8b2e6fb34710ae7ed5226f4598fc"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/resolved_statistics.parquet": {
+      "bytes": 52393007,
+      "sha256": "1cdb61da3594d066b255521e39ee5a887ee633eaae56047a7f8600b627663623"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/aggregate_plot_data.parquet/part-00000.parquet": {
+      "bytes": 1737209,
+      "sha256": "91afa9f63cd432fee25a27d0c810a063a1ae82b97bbbdbe5025166204d08a713"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/aggregate_plot_data.parquet/part-00001.parquet": {
+      "bytes": 1799246,
+      "sha256": "1cb49ec73b98c5b645c327e9365d373d7777a4a46c643186df8ee10207424509"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/aggregate_plot_data.parquet/part-00002.parquet": {
+      "bytes": 1780373,
+      "sha256": "4ee514ddf2ebf3555cef8869bbb022bdbe2d9600a0e944b424e22aae7d0032e6"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/aggregate_plot_data.parquet/part-00003.parquet": {
+      "bytes": 1753242,
+      "sha256": "b961745a72ef055d4a8b6cdcdc084c5a70cd9c6d268f162dadd804ea0f08babe"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/aggregate_plot_data.parquet/part-00004.parquet": {
+      "bytes": 1775891,
+      "sha256": "673568e6ae5d9c09d503b413f7a6141bdbf0ee3b9ab8ad1a7b87f4068c07b89d"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/aggregate_plot_data.parquet/part-00005.parquet": {
+      "bytes": 1644380,
+      "sha256": "ebadfb7fc611a11c83ad2d1d0ee9d8bfa923fdff97664f8e52f82932bcc6f1e7"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/aggregate_plot_data.parquet/part-00006.parquet": {
+      "bytes": 1042266,
+      "sha256": "8174ba85ff4bfa553cdb22c823fba65ae1820e8c211a3a4b34d03b46f8c71a7d"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/aggregate_plot_data.parquet/part-00007.parquet": {
+      "bytes": 946634,
+      "sha256": "c59773ea3948a2efb87b4d6fad4ccb9dad15f88b07f23b34725756d583e2265e"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/aggregate_statistics.parquet": {
+      "bytes": 33568986,
+      "sha256": "b36699e85351386d33c883c94a52f8327f4f187f243ef8ab5079be14403ac085"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/resolved_plot_data.parquet/part-00000.parquet": {
+      "bytes": 4631100,
+      "sha256": "f406f683c7e8162b123dd015407e2a463f7b8a44401fb6f453755f4651715238"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/resolved_plot_data.parquet/part-00001.parquet": {
+      "bytes": 4856027,
+      "sha256": "5114470237fd8742bfabe22ede34c30cabe9b3e5999ffb27c33426f644ee48b1"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/resolved_plot_data.parquet/part-00002.parquet": {
+      "bytes": 4591591,
+      "sha256": "788d263f79f56db66c21dd3c103030147ef7303c524a153921196d3f0ba66d1d"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/resolved_plot_data.parquet/part-00003.parquet": {
+      "bytes": 4946013,
+      "sha256": "75ef94660557f6aaed3a8ba19635afe58fc20d6a064e11d56ff305692e7441c7"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/resolved_plot_data.parquet/part-00004.parquet": {
+      "bytes": 4351333,
+      "sha256": "8d1addb90d0542af2d75524e92eda55f1c8c7487bd0fe332e4234b503614cc42"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/resolved_plot_data.parquet/part-00005.parquet": {
+      "bytes": 3695617,
+      "sha256": "96c71d637565ac11b2b96c4bf7cbe4d4dbe5bbfcae2872850fa9c51ed414c7c1"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/resolved_plot_data.parquet/part-00006.parquet": {
+      "bytes": 1513267,
+      "sha256": "a5697b7a6f85d9f4f4b729d58ccbfaa38c2e4d0e71ef096de5c8c1f054a48db3"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/resolved_plot_data.parquet/part-00007.parquet": {
+      "bytes": 1531749,
+      "sha256": "626c3949788796006d9e0c5aab23de3238808a6555f2d0112ee9bc155d4d33f0"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/resolved_statistics.parquet": {
+      "bytes": 74564855,
+      "sha256": "110ebffc02f193be283bff7f9f6e135aca21777c716e606e512fd84f68217533"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/aggregate_plot_data.parquet/part-00000.parquet": {
+      "bytes": 1742200,
+      "sha256": "d7c3daf045662d9ae84e06e67c469ee3047f82df89e4e652bde815597f31bba6"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/aggregate_plot_data.parquet/part-00001.parquet": {
+      "bytes": 1804596,
+      "sha256": "ad84f6a2ccfaf645045182ed52210bc09fdc0100128a593483fc303990da47f7"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/aggregate_plot_data.parquet/part-00002.parquet": {
+      "bytes": 1786884,
+      "sha256": "9696abbf3aa10c7b4031e0d39d3f46407d0f5d8ccb7d93cb3cd6bac2c1eca038"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/aggregate_plot_data.parquet/part-00003.parquet": {
+      "bytes": 1760623,
+      "sha256": "886294dfa2d231b1ebeefca2df7f9d556dc66b987dc0dc1f7391f8057638f836"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/aggregate_plot_data.parquet/part-00004.parquet": {
+      "bytes": 1784519,
+      "sha256": "fa9e878c959a662b47c421978120039607193aa127432fd27eec7b78de781217"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/aggregate_plot_data.parquet/part-00005.parquet": {
+      "bytes": 1668067,
+      "sha256": "d45666e60fcc9fec27b1ed586e2b14da5dc47964236540061a4ac15b33ba90ef"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/aggregate_plot_data.parquet/part-00006.parquet": {
+      "bytes": 1068360,
+      "sha256": "b282a62586e494fc7ec1fa720a347538d8aec80142ab3282ff152d13b0cd33c2"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/aggregate_plot_data.parquet/part-00007.parquet": {
+      "bytes": 963901,
+      "sha256": "dfb9038f16eb414250a6941e4b01e3ffee74c327628e32466045f3a44cdbb223"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/aggregate_statistics.parquet": {
+      "bytes": 34640252,
+      "sha256": "d55ab2151b93e99a1df4b7a45bfc457f7c19a476954c936c5449b0db4e24fdae"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/resolved_plot_data.parquet/part-00000.parquet": {
+      "bytes": 4703812,
+      "sha256": "a96848c500e1a8a6c0308dd7e8b084ac54fb68399e439a420edcd855e4b14324"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/resolved_plot_data.parquet/part-00001.parquet": {
+      "bytes": 4924305,
+      "sha256": "33f0cb4dba5d3084e9639c4e653f3a3e0441f6b54494931f0ae8db978275dccd"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/resolved_plot_data.parquet/part-00002.parquet": {
+      "bytes": 4667659,
+      "sha256": "f6194e3fa93f70d06ec1eb970d792de4042cd6c874609aed7764fa47b2e9e090"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/resolved_plot_data.parquet/part-00003.parquet": {
+      "bytes": 5002665,
+      "sha256": "cf830d91c7265fb2e6edacfb9581c03c7e59018a0a38fc4addd67b68d4ea3dd6"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/resolved_plot_data.parquet/part-00004.parquet": {
+      "bytes": 4445531,
+      "sha256": "2b4b7be5abdd085a35aab823bf66ff172b6ea7db1bc55aaf954acece92bff33f"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/resolved_plot_data.parquet/part-00005.parquet": {
+      "bytes": 3835310,
+      "sha256": "5ec8eea8afd4ed4f5b21c3ad41175c9ef5b3e88e4764e1e15a23598347dc626f"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/resolved_plot_data.parquet/part-00006.parquet": {
+      "bytes": 1572282,
+      "sha256": "72a5dffb1bc088b0dd8aba7940763053e3ab4830b34840af24385a148a38df57"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/resolved_plot_data.parquet/part-00007.parquet": {
+      "bytes": 1627948,
+      "sha256": "ca7076008ec6874d2fde95afbe7209ad426659e6d738bf400bb568224e371673"
+    },
+    "effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/resolved_statistics.parquet": {
+      "bytes": 74567102,
+      "sha256": "9aceebff1f0933c288e80d43dfbe024587e7309bc74efc61c08332ae4d81b02c"
+    },
+    "effect_size/manifest.json": {
+      "bytes": 96672,
+      "sha256": "a0f35b8d221029230161dfde0879c5d3b274ac3f67c3aefb7b5b2e255e8e6401"
+    },
+    "effect_size/mask_retention_summary.parquet": {
+      "bytes": 14240,
+      "sha256": "dee34f99a5b1269f2a81fa24445e043cd3ee8c8913e02de1bc824b46849570f6"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M0.parquet": {
+      "bytes": 5986596,
+      "sha256": "21b4830616c6d8df9077f89c420424d186d831cf5f221a912871b7bc4961ed1c"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1003.parquet": {
+      "bytes": 31954,
+      "sha256": "0ee9b0fb435e404270e784d6fb00035aea2bf1f6bf335b4e9fccc988fd40974f"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1011.parquet": {
+      "bytes": 52610,
+      "sha256": "3791bc679e634bb84bc6dd18ebba35dc7e5d9564663b349877898006a0508758"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1015.parquet": {
+      "bytes": 24962,
+      "sha256": "5cedd55454be340b5d59f315904d9122d0b8cb06261473db5bd383dfb7a4c600"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1018.parquet": {
+      "bytes": 20023,
+      "sha256": "4ad2ea2ea1dbc56a2b9d074012271f6c75e01c24c619795d23a423f648fa672b"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1019.parquet": {
+      "bytes": 31468,
+      "sha256": "afecc0e45247496b0577941e53bb22435e3b7ca23e6e091f03903d5cb475123b"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1021.parquet": {
+      "bytes": 24823,
+      "sha256": "306a6f40ee84e2282e7e1637053f6caad24b4f8611385d09ceb4736adaef1851"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1023.parquet": {
+      "bytes": 25142,
+      "sha256": "da9a9ec29d2b29f815123d15f1e262a8686e98534089935f89b8d30a35e6c459"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1031.parquet": {
+      "bytes": 34112,
+      "sha256": "47c0efbf7b98c47c32c76685a90f7a50727ee15a0e87cc12d5facaf81e6f6b5b"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1032.parquet": {
+      "bytes": 27101,
+      "sha256": "26155bd465866d3ac6244654c2fd03e408f584bd4c3ff4823430a6bff5993867"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1033.parquet": {
+      "bytes": 32983,
+      "sha256": "717f9e5fe2d6614b8f3bbcaf48ffedb40bc66a51727f5ba3a76367562636c229"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1053.parquet": {
+      "bytes": 26157,
+      "sha256": "ba5934c1236436dd30e9b9296142dd7a566fe992526caca8d3b511502bf1ccc7"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1060.parquet": {
+      "bytes": 26608,
+      "sha256": "d5da881324cd57be7a3ea6fdf0a8f121b5d814058cbc18a494251625efb4cf6b"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1093.parquet": {
+      "bytes": 26360,
+      "sha256": "1d4f3a82461f7cb577db00f8cc85bce3becb292745cfd4d37fc4875510e73635"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1095.parquet": {
+      "bytes": 32293,
+      "sha256": "317042f2fec6c4d0e80dfa3efb9f81f7c51869aee37b3b89fcb93770e6f24dcc"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1097.parquet": {
+      "bytes": 30247,
+      "sha256": "337b686b191146a6229838f32fa8ace660180ec247427c28ca0da7a757e7b108"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1161.parquet": {
+      "bytes": 29968,
+      "sha256": "f75b012ca8d08cba31dd3907f208564bb1afec20883c78650f124646551c968a"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1169.parquet": {
+      "bytes": 30191,
+      "sha256": "0ac88ffe0f6741b4e480efc0e139a8c7f0282f25c30dd279dab2a5c7cab13300"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1171.parquet": {
+      "bytes": 30644,
+      "sha256": "05b3b8ff23290b43504181766dfb48ef3dd8c66d88d4dffa8e362967c24edc86"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1187.parquet": {
+      "bytes": 25652,
+      "sha256": "55de094fbcb16754ef88f19f7600b4ddeb469a8de4b7e0284310cba17c18ed4c"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1188.parquet": {
+      "bytes": 28119,
+      "sha256": "6c8a590971bfb025815d4d7b4f8bb40c69d352a4d633389d1e24ae098a52721f"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1202.parquet": {
+      "bytes": 26256,
+      "sha256": "1d12a20f17e8c96d973802dcf7423382742f586b68afe2334f0ee16c1537702f"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M1204.parquet": {
+      "bytes": 34090,
+      "sha256": "05d3c50d0af71ed4f575da04f5c56479b5d30d3193ba118db837c07b243b9137"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M137.parquet": {
+      "bytes": 865389,
+      "sha256": "9a93e8c8501251650b908ebf85bf32f969325ca915690931882635e0f0970354"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M138.parquet": {
+      "bytes": 26327,
+      "sha256": "12dee2e3efad2aa50fe00579cde8de3e577c47116c3c684785b73ff7b86074e4"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M140.parquet": {
+      "bytes": 806165,
+      "sha256": "b423a862e62b52b6d624b073c1a8d993fa74cecb91ea7f1803de93512408cbb3"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M145.parquet": {
+      "bytes": 73031,
+      "sha256": "43e20735918869a26260361d42a140e34157ee00ced2702b09f6a9b06c450057"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M159.parquet": {
+      "bytes": 1193463,
+      "sha256": "be32c3650f355895ab6a3f7d166f28516f74efb47112138abb95c66f5a33d95d"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M160.parquet": {
+      "bytes": 2233483,
+      "sha256": "571957930505ec7cbad4c724cbe85a72af7e2bb4edd961e90b4ced0bacf48c92"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M233.parquet": {
+      "bytes": 136138,
+      "sha256": "f8414a0800c8b70a24e9a2edcb9ec972f26df5cfc03b37f91c3371dc6009b38a"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M241.parquet": {
+      "bytes": 101020,
+      "sha256": "2272e6c06a0e69cead0aa040b404aa710ce3e1604b45b56c62b25486fb222d1a"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M250.parquet": {
+      "bytes": 166454,
+      "sha256": "4a462fc043d87b2414cb81f5f853f2a336e38e16eb3bef3201536acfee50aa08"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M268.parquet": {
+      "bytes": 49493,
+      "sha256": "0742b96e467b5c48b21547618ee79a9c6879502fc38ef80b0e8fe07f530176f5"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M269.parquet": {
+      "bytes": 148818,
+      "sha256": "0bc67f1fd6681140042685be621dac4af6226a0d5ef3222ee48da2a0507d3643"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M270.parquet": {
+      "bytes": 27048,
+      "sha256": "6f5660ae2d16b8fdeac035cca5c2ca6a2e519489dfe290a2f809e29b6bc75f47"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M272.parquet": {
+      "bytes": 40567,
+      "sha256": "6fec8a000479f7a4427d99e13904d428f5c56bc9f97f49fdbb10d3876d65fbdf"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M273.parquet": {
+      "bytes": 63149,
+      "sha256": "ff6f9159246a65344baef7be4f19aaf709ce3f9571a243a548f292e1ec08f964"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M275.parquet": {
+      "bytes": 45497,
+      "sha256": "44998aa44deac2aac75d46a2aab41aff6d071efb0cc62a64e84af454f726569c"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M276.parquet": {
+      "bytes": 54099,
+      "sha256": "5209268c63afb2d4d928f28f3e00927124a15fce30ae4a5cb426e16cfb685923"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M282.parquet": {
+      "bytes": 87543,
+      "sha256": "34f476508165ba07165891a415286d6aa4be8add2463126e8e5ebd1c503c88fc"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M283.parquet": {
+      "bytes": 56791,
+      "sha256": "673aa4b79358b440cc2802c16e073396160d53490e4cbe24afdf732182878ff8"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M286.parquet": {
+      "bytes": 121556,
+      "sha256": "fcb815e165d90a2d5c6bf3d818a251bf3363e2e1e62863a9f933fb42cca4c38d"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M311.parquet": {
+      "bytes": 54107,
+      "sha256": "b7ba57456d2803def4ef84f3b7fd82419cdaa7eda78afd0ed56d2917cc8199b2"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M312.parquet": {
+      "bytes": 114486,
+      "sha256": "99029af591bd43aa5ad9a371c6b6feae6e70f87673e5b3bc61431268032de388"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M313.parquet": {
+      "bytes": 32561,
+      "sha256": "e48543e4942681008e6e677a52797cb17c7913193acdb5337b0a08a4a739be44"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M314.parquet": {
+      "bytes": 29305,
+      "sha256": "98f9fdd063cd93977829bcbd99c0b78227989b1810e3cc4e61c3002984b13fc1"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M315.parquet": {
+      "bytes": 40502,
+      "sha256": "5b6141963f9e86b924184c9c19c55cebe33d805eebcd765772c9301ad963e579"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M317.parquet": {
+      "bytes": 43162,
+      "sha256": "1cf22a42399e1f673b1a198bef2c7a0298ec2121a23e9abf352f82dfcad79658"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M318.parquet": {
+      "bytes": 26288,
+      "sha256": "6a9b9f9b8c1576567dcbf1024ab2d09e729816a1b4f015f2fc8490db808fef09"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M321.parquet": {
+      "bytes": 379699,
+      "sha256": "1ec929c1ad2b4d74f8fd89ec8762b29efe0b10d9ce0b1691ea1c0e048eed8c6f"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M323.parquet": {
+      "bytes": 782549,
+      "sha256": "e9746e50b21ea3dc4d95897f93dbc0650f025ca14f074d1d7d3c2927223ca2fd"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M324.parquet": {
+      "bytes": 396764,
+      "sha256": "77478030d67389f96792b15804557c5b11324d92380e645745d1e670ad39f9bc"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M325.parquet": {
+      "bytes": 176568,
+      "sha256": "3e0c60cd5240b977eb1f92193e18f80575e6d00d7be1d3df3370fee248ae44f6"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M327.parquet": {
+      "bytes": 27649,
+      "sha256": "ed7c0398875506308dc476fda2e66fc5233eb6441f3fccee960997091b13ca9f"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M328.parquet": {
+      "bytes": 26996,
+      "sha256": "c687a4a0b595c2c152fa609148f032364d6b3f3cbdab134b4c7ea345b02df6fe"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M330.parquet": {
+      "bytes": 100783,
+      "sha256": "253e4967b3c60b3e3070ac346ef267854b1aa8930de40bdd720ed51998176e53"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M331.parquet": {
+      "bytes": 136549,
+      "sha256": "2a3ef10caf4f8f0b7a917cdaffc551c60b6d765e2ac1b91386efda8ba4cb30cd"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M338.parquet": {
+      "bytes": 155316,
+      "sha256": "7ab9398603be3582ce0c9182a9811a409c374aef56547a7434ba2b098889e9f4"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M341.parquet": {
+      "bytes": 205010,
+      "sha256": "1d773c34fb0855fa65434eaf145fd4c488137513b5d3f3cb17ea1b698bbb7767"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M345.parquet": {
+      "bytes": 440016,
+      "sha256": "c653d0b5d0424772472b1230c4a6df3426588a3d4146d356a900ccbcaf038a0e"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M346.parquet": {
+      "bytes": 261196,
+      "sha256": "dcb39de838cc1f5ab22990e892793b8915fb5c9542281b8164f91f9df4d5b207"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M35.parquet": {
+      "bytes": 52879,
+      "sha256": "4dbb98f36d279c60cacf937ea45539ae5ac8154f1ff6620b9964af763adc4025"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M351.parquet": {
+      "bytes": 918733,
+      "sha256": "679aa292e99d1fa9352f2300d0c4808ff1713ec3e9c8f55d15f6c4493b83c197"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M354.parquet": {
+      "bytes": 93050,
+      "sha256": "81aa2dfd9ade35daaf4ad5076c10a38c6180161d1323b7f179806c3c27962f29"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M355.parquet": {
+      "bytes": 940686,
+      "sha256": "8c576aea0fc95271bac5059c98f24b780019a5bdc53089af4c7b277947d03a13"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M36.parquet": {
+      "bytes": 25021344,
+      "sha256": "3c56ef3e323307862036b21ce8a78bede95fc598fc4fe85b9e5324b5e6a1ada0"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M365.parquet": {
+      "bytes": 181399,
+      "sha256": "aa4c28a810e1edfff4f09b93d4ecada45a22e3b099b4c187588390534aa95c8a"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M366.parquet": {
+      "bytes": 143954,
+      "sha256": "82c6885d91552444717a265d21c1e890880822f690a7ac51888b3f2bbc718415"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M367.parquet": {
+      "bytes": 1080544,
+      "sha256": "fd07a06e11b81db83236debe55a534e2630a7d3081520479c515ef89083cb8ea"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M37.parquet": {
+      "bytes": 11027542,
+      "sha256": "3718942b1dd957e4c99e0c6c94aa986a360bd4129181cd23e118b175fc8e1b2b"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M370.parquet": {
+      "bytes": 29668,
+      "sha256": "957fccea6d95e079dff70f55c7f1f9e3d9aed28b2a60187f4334bed0498d80e8"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M371.parquet": {
+      "bytes": 28225,
+      "sha256": "8bb2b8ea83459f6f04e540f6038949a344455abca43a711679e23d152f616c11"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M43.parquet": {
+      "bytes": 26492,
+      "sha256": "8019569524572cc0a2b186fe12a0836d4cad561b94a0cb30376d9815bfb888ea"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M432.parquet": {
+      "bytes": 25535,
+      "sha256": "94d6ab64e318151aa75136bfe87b50427c4fd5c920fd54fda8db6c5cfcb43264"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M44.parquet": {
+      "bytes": 39179,
+      "sha256": "ec5f317456f5bae9cc30e033da007435d6b0a8d91ac3bc01640f46bc01577b8b"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M449.parquet": {
+      "bytes": 472502,
+      "sha256": "07fab567789eaab68d98c94f1f35ca0a31a73a15c3a9c0ba12b9fbf1072dab81"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M45.parquet": {
+      "bytes": 32433,
+      "sha256": "df5e0f6e4bb342463df36304265958d00cdc871d8abf2c0f0ff58a95cb3c0731"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M454.parquet": {
+      "bytes": 485858,
+      "sha256": "161320f7579d8bcd677a4fa5f67c85e78bbca23b6dfc1629138fb4697d667235"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M455.parquet": {
+      "bytes": 2111922,
+      "sha256": "c6da313e46357a25f7fd3c233188fcbb34de3ebfc6a01b6de222aeec5246f2d8"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M466.parquet": {
+      "bytes": 4605474,
+      "sha256": "052aef8062a4cd8045fd82f9fb5c522589bab9db1952fb8dae88f1246f859af9"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M468.parquet": {
+      "bytes": 31944,
+      "sha256": "d7a490d0355e530977e30eb83bcaf506b8275e08bdb65ab1b8187a769e456437"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M470.parquet": {
+      "bytes": 30868,
+      "sha256": "156b35607100e258217e926b9127a49437d63024fb814a98e2bdb0fb150fd68c"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M474.parquet": {
+      "bytes": 71271,
+      "sha256": "b0524768cabe5d376a5085565653d4026128143908470450d01765d72543089b"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M478.parquet": {
+      "bytes": 94544,
+      "sha256": "1d36ad7a131b536b42ff94ebce73287497cdc0612262b63fb8af50c056780ae7"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M479.parquet": {
+      "bytes": 1141185,
+      "sha256": "0d005f7269228775a3a3e4ca34472e1a816489cc0b7d1f740ea5f87f826d28dc"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M484.parquet": {
+      "bytes": 40970,
+      "sha256": "ea392ab4ecad42666f7556c01b82809b833f32a789e733f52f7a21903f57fb69"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M486.parquet": {
+      "bytes": 10512701,
+      "sha256": "585d937edffaf87a283c7f604e6694aafe0e847e9141d57b6320087dcd08151a"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M487.parquet": {
+      "bytes": 18014552,
+      "sha256": "4dd35d2c2c65267b968eca1a6a5ad58e34f9d0ca00ead57fed3eb1bbf18b6a81"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M488.parquet": {
+      "bytes": 98157,
+      "sha256": "df57451e7ff143ead114a19e367310f06f83922385818f17385c207f1669a94b"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M489.parquet": {
+      "bytes": 86874,
+      "sha256": "1c1217d7c45a887c2df2342799ad6a2d9b933a3275efdc775d01392f8ec9d5f1"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M49.parquet": {
+      "bytes": 25527,
+      "sha256": "949a265434d11bca4bd5eaea47e8b8302f489cff128c03cdc428c6b527000ee2"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M490.parquet": {
+      "bytes": 112349,
+      "sha256": "8c31ed30ebc8a0443803538b819650c7a94ba05a613c89e15d9f243d16c6e62c"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M492.parquet": {
+      "bytes": 85072,
+      "sha256": "3cf0c8288cbffc60e08f349c83e6cd8c31673a5542b0b6fb3bf4cf36a427fbd1"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M5.parquet": {
+      "bytes": 30068,
+      "sha256": "a517879e71bd7442e078923d438e5ee6e2e53b4d700052dbf0911fac50d3696f"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M507.parquet": {
+      "bytes": 1097426,
+      "sha256": "2b6431e77a754d40575c91714ffb48a37c46d3329b5a2695c7111bd8e55bb7b6"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M508.parquet": {
+      "bytes": 1549815,
+      "sha256": "85409abb9369d3919aec01aedd75bf339ad2966e9517a7ab7697d24d4d1220cf"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M513.parquet": {
+      "bytes": 911653,
+      "sha256": "79d04c802497871ef6928ecaac8c64fb07ae4f84d26c053a908584617166bedf"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M515.parquet": {
+      "bytes": 971273,
+      "sha256": "1cd79d5b783b16f0d2dcbfc4c54ccad65739d98d81cfe57b4f575fddeac98c30"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M526.parquet": {
+      "bytes": 131952,
+      "sha256": "1c3f54126ee8bee5b72a8caee289810c02eeb0b51fa0b44352cf8e2086280534"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M530.parquet": {
+      "bytes": 201357,
+      "sha256": "ee466ad4e153099c4aeadbb88787a824635831237d37d7e66e7f69efab43102d"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M542.parquet": {
+      "bytes": 28083,
+      "sha256": "c0a8cc5c52c228e5f0d448d264d1876090478075e48a07c5c05f3f9a816778b1"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M544.parquet": {
+      "bytes": 4515104,
+      "sha256": "eda75b784e515f6c85ffa3e11273783b997f72e2640054e659329de4d2b66353"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M551.parquet": {
+      "bytes": 2845640,
+      "sha256": "06b3d2fe405f5331ec363be23947e98f988d1ae27b9ffc06cd550b80b890e856"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M553.parquet": {
+      "bytes": 37246,
+      "sha256": "117532141338577f974d37b04c6adefd03f70a00cf515e553e4c79e93b1b859a"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M558.parquet": {
+      "bytes": 33730,
+      "sha256": "cb5da224170c65fa2b36eaa61fdbb65cbd421f363ef52a09a4704c3096447bf8"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M56.parquet": {
+      "bytes": 94936,
+      "sha256": "613ae3ec75743f6de54dbe705e10ab0524f32668f688f53d1e9bac4a8899f05b"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M565.parquet": {
+      "bytes": 5106250,
+      "sha256": "1caa7918d7c11a118bbe6435477941d71d3695a9cd811d9fd341f3708994e20e"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M57.parquet": {
+      "bytes": 94053,
+      "sha256": "4a00515c7c2d6ebb8c69a2132afd592be5b95d961c32b89c40c8b7e4fb1ea3b0"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M6.parquet": {
+      "bytes": 2384085,
+      "sha256": "f02c460cea084d552832585b4b81d673a19ccdffa1bce6520bb784c49e8c5d50"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M604.parquet": {
+      "bytes": 53721,
+      "sha256": "d73d26268123ebeffa4dc1d5ef89d8d0daa77ec1eef847480cbfa96affaa1f16"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M606.parquet": {
+      "bytes": 39205,
+      "sha256": "328417988a774ae54eb91d90825e82726f5cc72624d0c38403534028b95cd742"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M607.parquet": {
+      "bytes": 38350,
+      "sha256": "1ef2e4388a8b8ad85a56d7c9272e22fb48d1c9f1c34bf7ac0469dd0f093e78a3"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M61.parquet": {
+      "bytes": 30139,
+      "sha256": "03cd22ac46bcd468814b84f26ee5eaf3945f7a835fc7eb0f9ba278c90d708296"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M614.parquet": {
+      "bytes": 43536,
+      "sha256": "175133530c7b4bf8dd1b2548b23ff47c70fc31c3d4575721cf4cdadaa0d735a0"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M615.parquet": {
+      "bytes": 71752,
+      "sha256": "2d4246ccc7421831fff1b68b75d5d168dcfa739c1a9bc0506ff6f6609470bc54"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M616.parquet": {
+      "bytes": 56898,
+      "sha256": "fff8c8a73d91a652918b25c70a696bb9e2a4fab6705d6cbc78f93f7ebad837d3"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M618.parquet": {
+      "bytes": 28728,
+      "sha256": "bee71ce54bfeefa4543ccb3a8016066fce05414db88c73a183a40c489c5c1d4e"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M624.parquet": {
+      "bytes": 37516,
+      "sha256": "76aabbf38e3adab6fdf2d74ef5acec094ee639a43e11ff303bd8e808ab9edb7f"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M635.parquet": {
+      "bytes": 28647,
+      "sha256": "835d62be79f54511ec00ef9d52529070add167400e14b707e38ed59f8763a003"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M662.parquet": {
+      "bytes": 26132,
+      "sha256": "87441292709ffc1fc7515f2f8eda61ea7a3ba6858d21757a693fc76716a78e4b"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M666.parquet": {
+      "bytes": 25170,
+      "sha256": "b0641052e3d4d8df5055bac47eee1e32e88d74341582bf429e24dff85fc467e2"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M670.parquet": {
+      "bytes": 27473,
+      "sha256": "19c54118bc671f7d18030d0a2b2f0583067c4d087394bb641f115c3d3369dddc"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M684.parquet": {
+      "bytes": 29063,
+      "sha256": "e6dd299c0e4857420b624931c0c054a1e21e6bf025e6b5a6e523137a73be6aeb"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M685.parquet": {
+      "bytes": 28810,
+      "sha256": "40e4d84ed03870ff1ec88acd8a912c0d0532fb12e76b5bfd9179a8aa086df934"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M687.parquet": {
+      "bytes": 29742,
+      "sha256": "e48a8e91be11f679db212dd1e09df85adf1a33ee1620d5287200aa7de7cc7291"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M692.parquet": {
+      "bytes": 32882,
+      "sha256": "e2ffc1390dea1cd70d49aef7b218b78c736a6a284ba74658bdf727d7ea5007fd"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M694.parquet": {
+      "bytes": 30753,
+      "sha256": "bb974fccd403983f00399112d897089301a38069d8a0de4a8ae6dd659acacf48"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M700.parquet": {
+      "bytes": 36264,
+      "sha256": "62129ad6e8e788d3666db55f01824ee1452f2f57844d73b735574875bec95237"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M702.parquet": {
+      "bytes": 31011,
+      "sha256": "6a3ace310ebb89a970ff55851953c187ae984c1f592f011d15f69a8ac7afb263"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M708.parquet": {
+      "bytes": 60652,
+      "sha256": "f433e8de6c7c96e05c86b230162e5b06115bf4bb4f873420770c7a44bd2452dd"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M721.parquet": {
+      "bytes": 57189,
+      "sha256": "567632de92353ff251be2742ad712282bffe46c0c48e6eb09b382f09410f9494"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M723.parquet": {
+      "bytes": 42810,
+      "sha256": "a0bb2afae9b16f9aef2b11c96e5e751c6fa3dfcdfd673ed2ecdd09936c1a9adc"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M725.parquet": {
+      "bytes": 26621,
+      "sha256": "f5765e60a94b6c2c5e2ee15f22da06add26f5746987e1ec8396a75f9729320f1"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M726.parquet": {
+      "bytes": 29496,
+      "sha256": "3f8dd6acee48905b7fdad36a9b3e7a9cba5f72fe9cf61b8374193e2e4839e8a2"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M749.parquet": {
+      "bytes": 74750,
+      "sha256": "d90e2fe8f9ccc77d65509f5698aaf47d2fc3070a11b76002ae15cf24280e0739"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M750.parquet": {
+      "bytes": 105017,
+      "sha256": "47d04122f5330096e89e8e59a733fca6e2a2ca472cb584751445b60faba25ee6"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M768.parquet": {
+      "bytes": 26660,
+      "sha256": "e28f1107a682d506411dc817d737e0958cedbef52557cc489a62c67c21b094b5"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M770.parquet": {
+      "bytes": 25463,
+      "sha256": "e9ebf33415e928f2f57164e997b544005993c7bd126805b51fb48fabe1d5c1ae"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M778.parquet": {
+      "bytes": 30734,
+      "sha256": "4178a594ec78eccd3ed3879712d05ff16fb5129ab9204ae07f46ace4782aad30"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M8.parquet": {
+      "bytes": 41784,
+      "sha256": "c00b8e306e05e7e646e0bf22acfe8bdde1c84cc10b22e0904ab8f3c214a05cc6"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M9.parquet": {
+      "bytes": 5378943,
+      "sha256": "8c27d11661e3ff6716aaaa6a07fbeb4ee88c5ba0a69068be49cc71707a2a1f03"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M938.parquet": {
+      "bytes": 48410,
+      "sha256": "26793cb96f9269b01af056b0637cc8bec7e5f8c64d67ff2cb6562deacd340f21"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M941.parquet": {
+      "bytes": 25866,
+      "sha256": "67210d3108fadb9f9f609c5b534005a44ee94a5f68e480df2d66a1fd0a848821"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M942.parquet": {
+      "bytes": 27688,
+      "sha256": "9c3cccf821cb00880aa940e9d5d7ad89af0f5738616fddc7c966cb43853ea821"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M946.parquet": {
+      "bytes": 29850,
+      "sha256": "32b99b22282448e7f2b6da551d07af1ff3ae7afb566ad87b3f39b0b61ef9d237"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M951.parquet": {
+      "bytes": 29083,
+      "sha256": "5c4f068b0318e04a27aaf2841bf63355fcdde8ee987e34d6adef2afa4c3cad70"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M954.parquet": {
+      "bytes": 31559,
+      "sha256": "b96ec284701a3f75821308082c1cc3e0fe818c6d315a8f5baa089cb206c194bc"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M955.parquet": {
+      "bytes": 26708,
+      "sha256": "763340a414b126debf5c3912151ac40ff5d9ef7dadfc4f8ebf4f8293da31b8e6"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M966.parquet": {
+      "bytes": 25644,
+      "sha256": "ac2973a22cd43edcba2451e2440f5c83976198e0e8c5c0b5fb82f97a3c59492d"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M967.parquet": {
+      "bytes": 26350,
+      "sha256": "1b22b8a9b34e400792b5afa7a25a28348e6eed63129f0a24e1e735a5f423a130"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M971.parquet": {
+      "bytes": 31927,
+      "sha256": "b7e4b202994b81d91a16be86308505c05c637d8faf46b97fbc740481f333b033"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M972.parquet": {
+      "bytes": 29592,
+      "sha256": "d33ff6cf7530a194b8ada920350560705474a42e095b55b1ade638812521df52"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M985.parquet": {
+      "bytes": 32893,
+      "sha256": "6b2afc37ba5ff57a529170a0dd5757c60a79eb5551e1d9b0fdb0a7ec92ceb6f5"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M987.parquet": {
+      "bytes": 31302,
+      "sha256": "bf320773f425c7aef6acb163ee310c691db5e7bb70444a6f52c82e8eb0763c1c"
+    },
+    "effect_size/volcano_candidates/lioness/control_anchored/M999.parquet": {
+      "bytes": 34656,
+      "sha256": "5a4e7c72b487909ea3a9b983528a420fb9cb99e727d47215c1098e83d3ff0722"
     },
     "kegg_tissue_expanded_full.parquet": {
-      "bytes": 621209,
-      "sha256": "c350db22624ad6dc0aea02bccc8a3aff12d2769d6609c84b74144924ca701cd4"
+      "bytes": 504808,
+      "sha256": "016555b9557d31adf45236add37ac4f0781fa7b94190c765c996c33d45184b97"
     },
     "kegg_tissue_expanded_full.tsv": {
-      "bytes": 11026661,
-      "sha256": "4d2579ccf29a344fede4f8f12bcae47d7c7ae929584fe0bdfc21d2fd6017cfc4"
+      "bytes": 2779440,
+      "sha256": "121832b2441165c37e8e30c3c0164af25787e69695ebbcc3b96759281d7a3d53"
     },
     "mdc_ad_vs_control_summary.tsv": {
-      "bytes": 39628,
-      "sha256": "cc51053601c17e7a290264dfc4eac19cdf09a3af7fd682d68a4e94034ad6d385"
+      "bytes": 87223,
+      "sha256": "224c7503926be0c9647cf30619a7a9c01205ddbc8c2d2ead84870063eb2f638d"
     },
     "mdc_resolved_ad_vs_control.tsv": {
-      "bytes": 117873,
-      "sha256": "d95f8dff77442f31ae2922424cd8fd233067d90d38405e9dc38bbc944c0478f0"
+      "bytes": 213660,
+      "sha256": "6a1675300e5dd6246edbeadc3c9ff4fda878fc345eb9108b0b1ede24292fdf0f"
     },
     "mdc_split_heatmaps/all_edges/M0.png": {
       "bytes": 473970,
@@ -693,20 +2485,20 @@
       "sha256": "6acb725bb1c47f004751a311d4588cc17853a3459442bb69428c0396dfd83974"
     },
     "module_kegg_annotations.tsv": {
-      "bytes": 79319,
-      "sha256": "dfd318ab23e2cd1a536091f4ec5c063346aea9582c1d19253ca4790e32af4399"
+      "bytes": 78920,
+      "sha256": "566b4e13602729fc29818fd297826726d56b40f81d65a5fbe7372b43d993af2e"
     },
     "resolved_plot_data.parquet": {
-      "bytes": 67605304,
-      "sha256": "d10a0dd72766c475332c4e21b566cd5bebe225e3268a0d8c943ae7d4d168444a"
+      "bytes": 27294597,
+      "sha256": "6070bae826dbefecc0fc3f2f1c9823b9f810eb1bd4abdc2600a6257d78ce8b31"
     },
     "resolved_statistics.parquet": {
-      "bytes": 57964580,
-      "sha256": "6da531682d76ad1585e602ab5c4f6c734bda068e39dcef481c46f08fff35a4c7"
+      "bytes": 20832669,
+      "sha256": "739a89b08aba2ec94b391764a6e9be34dcc280c276269effb19bb10bd0889900"
     },
     "sample_metadata.parquet": {
-      "bytes": 29368,
-      "sha256": "17f72387e075378f0b4208d56c5a3f9660b39b6017a9a59bf9feb4f562a0d340"
+      "bytes": 29562,
+      "sha256": "544a57e7de9fa972ef50b76c33d785bdd4020639d35afe206d1aaeb0e313766c"
     }
   },
   "lioness_network": {
@@ -715,12 +2507,15 @@
   },
   "mdc": {
     "functional": "M5 extended SFN recovered-module subnetwork",
-    "note": "Directional FDR remains unavailable until a full-M5 null is validated.",
+    "gene_permutations": 200,
+    "minimum_group_mean_absolute_weight": 1e-08,
+    "minimum_inference_edges": 10,
+    "note": "Directional FDR is unavailable until the full-M5 null run completes.",
     "observed_complete": true,
-    "permutation_significance_complete": false
+    "permutation_significance_complete": false,
+    "sample_permutations": 200
   },
   "methods": [
-    "standard",
     "control_anchored"
   ],
   "module_definition": "Control-derived VH/SMA/QUAD Method-5 biological L4",

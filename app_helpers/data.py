@@ -36,7 +36,9 @@ MODULE_SET_METHODS = {
     "full_cohort": ("standard", "control_anchored"),
     "control_derived": ("control_anchored",),
     "all_donor_corrshrink_l4": ("standard", "control_anchored"),
-    "muscle_control_l4": ("standard", "control_anchored"),
+    # This partition was learned in Controls; only the Control-referenced
+    # LIONESS analysis is a supported public method for this module set.
+    "muscle_control_l4": ("control_anchored",),
 }
 MODULE_SET_TISSUES = {
     "full_cohort": ("AC", "DLPFC", "PCG"),

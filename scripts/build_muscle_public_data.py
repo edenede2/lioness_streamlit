@@ -54,9 +54,12 @@ MUSCLE_METADATA = (
 MUSCLE_EXPRESSION_ROOT = REPO_ROOT / "data/raw/ROSMAP_muscle_split"
 KEGG_ROOT = REPO_ROOT / "out/kegg_enrichment_muscle_control_l4_table3"
 MDC_ROOT = REPO_ROOT / "out/mdc_muscle_control_l4/20261012_m5_ad_vs_control"
+MDC_SIGNIFICANCE_ROOT = MDC_ROOT / "significance_200perms"
 OUTPUT = APP_ROOT / "data/muscle_control_l4"
 PRIVATE_MAP = REPO_ROOT / "out/muscle_control_l4/private_public_sample_mapping.tsv"
-METHODS = ("standard", "control_anchored")
+# This partition was learned in Controls. Only Control-referenced LIONESS is a
+# supported analysis or public method for this module definition.
+METHODS = ("control_anchored",)
 FEATURES = (
     "connectivity",
     "positive_density",
@@ -1123,7 +1126,12 @@ def kegg_tables(modules: set[int]) -> tuple[pd.DataFrame, pd.DataFrame]:
 
 
 def mdc_tables(details: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    source_path = MDC_ROOT / "mdc_observed.parquet"
+    significance_path = MDC_SIGNIFICANCE_ROOT / "mdc_significance.parquet"
+    source_path = (
+        significance_path
+        if significance_path.exists()
+        else MDC_ROOT / "mdc_observed.parquet"
+    )
     modules = details["module"].astype(int)
     if not source_path.exists():
         summary = pd.DataFrame({"module": modules, "module_size_mapped": details["module_size"]})
@@ -1150,6 +1158,27 @@ def mdc_tables(details: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         )
         return summary, resolved
     observed = pd.read_parquet(source_path)
+    significance_available = "directional_fdr" in observed.columns
+    observed["mdc_stable_for_inference"] = (
+        pd.to_numeric(observed["n_edges"], errors="coerce").ge(10)
+        & pd.to_numeric(observed["mean_abs_ad"], errors="coerce").gt(1e-8)
+        & pd.to_numeric(observed["mean_abs_control"], errors="coerce").gt(1e-8)
+        & pd.to_numeric(observed["mdc_raw"], errors="coerce").notna()
+    )
+    observed["mdc_stability_reason"] = ""
+    observed.loc[
+        pd.to_numeric(observed["n_edges"], errors="coerce").lt(10),
+        "mdc_stability_reason",
+    ] = "fewer than 10 edges"
+    observed.loc[
+        pd.to_numeric(observed["mean_abs_ad"], errors="coerce").le(1e-8)
+        | pd.to_numeric(observed["mean_abs_control"], errors="coerce").le(1e-8),
+        "mdc_stability_reason",
+    ] = "near-zero AD or Control mean absolute weight"
+    observed.loc[
+        pd.to_numeric(observed["mdc_raw"], errors="coerce").isna(),
+        "mdc_stability_reason",
+    ] = "structurally unavailable or zero denominator"
     aggregate = observed.loc[observed["scope"].isin(["total", "TS", "CT"])].copy()
     pivot = aggregate.pivot(index="module", columns="scope")
     summary = pd.DataFrame({"module": sorted(modules)})
@@ -1160,26 +1189,71 @@ def mdc_tables(details: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         summary[f"n_{name}_edges"] = summary["module"].map(lookup["n_edges"])
         summary[f"mdc_{name}"] = summary["module"].map(lookup["mdc_raw"])
         summary[f"log2_mdc_{name}"] = summary["module"].map(lookup["mdc_log2"])
+        summary[f"mean_abs_ad_{name}"] = summary["module"].map(lookup["mean_abs_ad"])
+        summary[f"mean_abs_control_{name}"] = summary["module"].map(
+            lookup["mean_abs_control"]
+        )
         summary[f"direction_{name}"] = np.where(
             summary[f"mdc_{name}"].ge(1), "Higher in AD", "Higher in Control"
         )
-        summary[f"directional_fdr_{name}"] = np.nan
-        summary[f"significant_{name}_fdr05"] = False
-        summary[f"significant_{name}_fdr10"] = False
+        if significance_available:
+            for statistic in (
+                "directional_p_sample",
+                "directional_p_gene",
+                "directional_fdr",
+            ):
+                summary[f"{statistic}_{name}"] = summary["module"].map(
+                    lookup[statistic]
+                )
+            summary[f"inference_available_{name}"] = summary["module"].map(
+                lookup["inference_available"]
+            ).fillna(False)
+            summary[f"inference_unavailable_reason_{name}"] = summary["module"].map(
+                lookup["inference_unavailable_reason"]
+            ).fillna("")
+        else:
+            summary[f"directional_p_sample_{name}"] = np.nan
+            summary[f"directional_p_gene_{name}"] = np.nan
+            summary[f"directional_fdr_{name}"] = np.nan
+            summary[f"inference_available_{name}"] = False
+            summary[f"inference_unavailable_reason_{name}"] = (
+                "directional permutation inference not evaluated"
+            )
+        summary[f"mdc_stable_for_inference_{name}"] = summary["module"].map(
+            lookup["mdc_stable_for_inference"]
+        ).fillna(False)
+        summary[f"mdc_stability_reason_{name}"] = summary["module"].map(
+            lookup["mdc_stability_reason"]
+        ).fillna("")
+        summary[f"significant_{name}_fdr05"] = summary[
+            f"directional_fdr_{name}"
+        ].lt(0.05)
+        summary[f"significant_{name}_fdr10"] = summary[
+            f"directional_fdr_{name}"
+        ].lt(0.10)
     summary["n_ts_edges"] = summary.pop("n_ts_edges")
     summary["n_ct_edges"] = summary.pop("n_ct_edges")
     summary["ts_minus_ct_log2_mdc"] = summary["log2_mdc_ts"] - summary["log2_mdc_ct"]
-    summary["any_significant_fdr05"] = False
-    summary["any_significant_fdr10"] = False
+    summary["any_significant_fdr05"] = summary[
+        ["significant_total_fdr05", "significant_ts_fdr05", "significant_ct_fdr05"]
+    ].any(axis=1)
+    summary["any_significant_fdr10"] = summary[
+        ["significant_total_fdr10", "significant_ts_fdr10", "significant_ct_fdr10"]
+    ].any(axis=1)
     selected = observed.loc[observed["scope"].isin(COMPONENTS)].copy()
     selected = selected.rename(columns={"scope": "component", "mdc_raw": "mdc", "mdc_log2": "log2_mdc"})
     selected.insert(0, "module_definition", "muscle_control_l4")
     selected["component_class"] = selected["component"].str.split("_", n=1).str[0]
     selected["n_features"] = selected["module"].map(size_lookup)
     selected["direction"] = np.where(selected["mdc"].ge(1), "Higher in AD", "Higher in Control")
-    selected["directional_fdr"] = np.nan
-    selected["significant_fdr_05"] = False
-    selected["significant_fdr_10"] = False
+    if not significance_available:
+        selected["directional_fdr"] = np.nan
+        selected["significant_fdr_05"] = False
+        selected["significant_fdr_10"] = False
+        selected["inference_available"] = False
+        selected["inference_unavailable_reason"] = (
+            "directional permutation inference not evaluated"
+        )
     selected["component_label"] = selected["component"].map(COMPONENT_LABELS)
     for column in (
         "p_loss_sample", "p_loss_gene", "q_loss_sample", "q_loss_gene", "q_loss_max",
@@ -1193,9 +1267,55 @@ def mdc_tables(details: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         "q_loss_sample", "q_loss_gene", "q_loss_max", "p_gain_sample", "p_gain_gene",
         "q_gain_sample", "q_gain_gene", "q_gain_max", "directional_p_sample",
         "directional_p_gene", "directional_fdr", "significant_fdr_05",
-        "significant_fdr_10", "component_label",
+        "significant_fdr_10", "mean_abs_ad", "mean_abs_control",
+        "inference_available", "inference_unavailable_reason",
+        "mdc_stable_for_inference", "mdc_stability_reason", "component_label",
     ]
+    for optional in (
+        "sample_permutations",
+        "gene_permutations",
+        "sample_null_finite_n",
+        "gene_null_finite_n",
+    ):
+        if optional in selected.columns:
+            columns.append(optional)
     return summary, selected[columns]
+
+
+def mdc_manifest() -> dict[str, object]:
+    significance_path = MDC_SIGNIFICANCE_ROOT / "mdc_significance.parquet"
+    run_manifest_path = MDC_SIGNIFICANCE_ROOT / "run_manifest.json"
+    run_manifest = (
+        json.loads(run_manifest_path.read_text(encoding="utf-8"))
+        if run_manifest_path.exists()
+        else {}
+    )
+    complete = significance_path.exists() and run_manifest.get("status") == "complete"
+    return {
+        "functional": "M5 extended SFN recovered-module subnetwork",
+        "observed_complete": (MDC_ROOT / "mdc_observed.parquet").exists(),
+        "permutation_significance_complete": complete,
+        "sample_permutations": int(run_manifest.get("sample_permutations", 0)),
+        "gene_permutations": int(run_manifest.get("gene_permutations", 0)),
+        "completed_sample_permutations": int(
+            run_manifest.get("completed_sample_checkpoints", 0)
+        ),
+        "completed_gene_permutations": int(
+            run_manifest.get("completed_gene_checkpoints", 0)
+        ),
+        "minimum_inference_edges": int(
+            run_manifest.get("minimum_inference_edges", 10)
+        ),
+        "minimum_group_mean_absolute_weight": float(
+            run_manifest.get("minimum_group_mean_absolute_weight", 1e-8)
+        ),
+        "note": (
+            "Directional FDR is the conservative maximum of component- and direction-"
+            "specific BH values from the sample and tissue-count-preserving gene nulls."
+            if complete
+            else "Directional FDR is unavailable until the full-M5 null run completes."
+        ),
+    }
 
 
 def parse_args() -> argparse.Namespace:
@@ -1253,9 +1373,7 @@ def refresh_existing_manifest(output: Path) -> dict[str, object]:
         and (output / "resolved_statistics.parquet").exists()
         else "partial"
     )
-    manifest.setdefault("mdc", {})["observed_complete"] = (
-        MDC_ROOT / "mdc_observed.parquet"
-    ).exists()
+    manifest["mdc"] = mdc_manifest()
     manifest.setdefault("capabilities", {})["descriptive_eigengenes"] = (
         output / "module_eigengenes.parquet"
     ).exists()
@@ -1324,7 +1442,8 @@ def update_app_manifest(module_manifest: dict[str, object], output: Path) -> Non
         "resolved_components": list(COMPONENTS),
         "donors_per_method": {method: 357 for method in METHODS},
         "diagnosis_counts_per_method": {
-            method: {"Control": 120, "MCI": 82, "AD": 155} for method in METHODS
+            method: {"Control": 120, "MCI": 82, "AD": 155}
+            for method in METHODS
         },
         "fdr_test_families": (
             "Association BH is calculated across the 155 modules only within each "
@@ -1479,9 +1598,9 @@ def main() -> None:
     atomic_parquet(metadata, args.output / "sample_metadata.parquet")
 
     aggregate, resolved = transformed_tables(source, metadata, mapping)
-    if len(aggregate) != 155 * 357 * 6 * 2:
+    if len(aggregate) != 155 * 357 * 6 * len(METHODS):
         raise AssertionError("Unexpected aggregate row count")
-    if len(resolved) != 155 * 357 * 6 * 6 * 2:
+    if len(resolved) != 155 * 357 * 6 * 6 * len(METHODS):
         raise AssertionError("Unexpected resolved row count")
     atomic_parquet(aggregate, args.output / "aggregate_plot_data.parquet")
     atomic_parquet(resolved, args.output / "resolved_plot_data.parquet")
@@ -1545,12 +1664,7 @@ def main() -> None:
             "functional": "Pearson signedAlt with frozen block-specific powers",
             "note": "LIONESS is distinct from the M5 partition and M5 group-MDC functional.",
         },
-        "mdc": {
-            "functional": "M5 extended SFN recovered-module subnetwork",
-            "observed_complete": (MDC_ROOT / "mdc_observed.parquet").exists(),
-            "permutation_significance_complete": False,
-            "note": "Directional FDR remains unavailable until a full-M5 null is validated.",
-        },
+        "mdc": mdc_manifest(),
         "capabilities": {
             "prediction": False,
             "bonobo": False,

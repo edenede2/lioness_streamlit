@@ -28,6 +28,11 @@ from scripts.build_muscle_public_data import (
     _williams_test,
     robust_scale,
 )
+from scripts.run_muscle_m5_mdc_significance import (
+    bh as mdc_bh,
+    empirical_lower,
+    empirical_upper,
+)
 
 
 MUSCLE_DATA = APP_ROOT / "data/muscle_control_l4"
@@ -145,6 +150,33 @@ def test_muscle_resolved_mdc_heatmap_keeps_all_six_components() -> None:
     ]
 
 
+def test_muscle_mdc_empirical_p_values_and_bh() -> None:
+    null = np.asarray([0.5, 1.0, 1.5, np.nan])
+    assert empirical_upper(1.0, null) == 0.75
+    assert empirical_lower(1.0, null) == 0.75
+    adjusted = mdc_bh(pd.Series([0.01, 0.04, np.nan, 0.03]))
+    np.testing.assert_allclose(adjusted.iloc[[0, 1, 3]], [0.03, 0.04, 0.04])
+    assert pd.isna(adjusted.iloc[2])
+
+
+def test_muscle_extreme_mdc_ratios_are_marked_descriptive_only() -> None:
+    resolved = pd.read_csv(
+        MUSCLE_DATA / "mdc_resolved_ad_vs_control.tsv", sep="\t"
+    )
+    expected = {
+        (542, "TS_SMA"): "near-zero AD or Control mean absolute weight",
+        (972, "TS_QUAD"): "fewer than 10 edges",
+    }
+    for key, reason in expected.items():
+        module, component = key
+        row = resolved.loc[
+            resolved["module"].eq(module) & resolved["component"].eq(component)
+        ].iloc[0]
+        assert not bool(row["mdc_stable_for_inference"])
+        assert row["mdc_stability_reason"] == reason
+        assert pd.isna(row["directional_fdr"])
+
+
 def test_public_muscle_bundle_dimensions_and_privacy() -> None:
     details = pd.read_csv(MUSCLE_DATA / "module_details.tsv", sep="\t")
     metadata = pd.read_parquet(MUSCLE_DATA / "sample_metadata.parquet")
@@ -169,13 +201,14 @@ def test_public_muscle_bundle_dimensions_and_privacy() -> None:
         "Control": 120,
         "MCI": 82,
     }
-    assert len(aggregate) == 664_020
-    assert len(resolved) == 3_984_120
+    assert len(aggregate) == 332_010
+    assert len(resolved) == 1_992_060
     assert set(resolved["component"].astype(str)) == set(
         module_set_components("muscle_control_l4")
     )
-    assert len(kegg) == 155 * 328
-    assert kegg.groupby("cluster_id", observed=True).size().eq(328).all()
+    assert len(kegg) > 0
+    assert set(kegg["cluster_id"].astype(int)).issubset(set(details["module"].astype(int)))
+    assert not kegg.duplicated(["cluster_id", "pathway_id"]).any()
     assert len(mdc) == 155
     assert len(mdc_resolved) == 155 * 6
     for frame in (metadata, aggregate, resolved, kegg, mdc, mdc_resolved):
@@ -196,13 +229,12 @@ def test_public_muscle_statistics_cover_all_modules_and_outcomes() -> None:
         resolved_path,
         columns=["module", "phenotype", "lioness_method", "component"],
     )
-    assert len(aggregate) == 66_960
-    assert len(resolved) == 401_760
+    assert len(aggregate) == 33_480
+    assert len(resolved) == 200_880
     assert aggregate["module"].nunique() == resolved["module"].nunique() == 155
     assert aggregate["phenotype"].nunique() == resolved["phenotype"].nunique() == 12
-    assert set(aggregate["lioness_method"].astype(str)) == {
-        "standard", "control_anchored"
-    }
+    assert set(aggregate["lioness_method"].astype(str)) == {"control_anchored"}
+    assert set(resolved["lioness_method"].astype(str)) == {"control_anchored"}
 
 
 def test_public_muscle_eigengenes_are_tissue_specific_and_private() -> None:

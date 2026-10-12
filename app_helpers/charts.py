@@ -3387,12 +3387,25 @@ def mdc_resolved_module_figure(
 
     data = frame.copy()
     value_column, axis_title, reference = _mdc_scale_settings(scale)
+    if "mdc_stable_for_inference" not in data:
+        data["mdc_stable_for_inference"] = True
+    if "mdc_stability_reason" not in data:
+        data["mdc_stability_reason"] = ""
+    for column in ("mean_abs_ad", "mean_abs_control"):
+        if column not in data:
+            data[column] = np.nan
     data["significant"] = pd.to_numeric(
         data["directional_fdr"], errors="coerce"
     ).lt(threshold)
     colors = [
-        MDC_DIRECTION_COLORS.get(str(direction), "#7A8793")
-        for direction in data["direction"]
+        (
+            MDC_DIRECTION_COLORS.get(str(direction), "#7A8793")
+            if bool(stable)
+            else "#9AA0A6"
+        )
+        for direction, stable in zip(
+            data["direction"], data["mdc_stable_for_inference"], strict=True
+        )
     ]
     figure = go.Figure(
         go.Bar(
@@ -3402,8 +3415,10 @@ def mdc_resolved_module_figure(
             text=[
                 ("NA" if pd.isna(value) else f"{float(value):.3f}")
                 + (" ★" if significant else "")
-                for value, significant in zip(
-                    data["mdc"], data["significant"], strict=True
+                + (" †" if not bool(stable) else "")
+                for value, significant, stable in zip(
+                    data["mdc"], data["significant"],
+                    data["mdc_stable_for_inference"], strict=True
                 )
             ],
             textposition="outside",
@@ -3414,12 +3429,20 @@ def mdc_resolved_module_figure(
                     data["directional_fdr"],
                     data["direction"],
                     data["n_edges"],
+                    data["mean_abs_ad"],
+                    data["mean_abs_control"],
+                    data["mdc_stable_for_inference"],
+                    data["mdc_stability_reason"],
                 ]
             ),
             hovertemplate=(
                 "Component: %{x}<br>MDC: %{customdata[0]:.4f}<br>"
                 "log2 MDC: %{customdata[1]:.4f}<br>Direction: %{customdata[3]}<br>"
                 "Directional FDR: %{customdata[2]:.4g}<br>Edges: %{customdata[4]:,}"
+                "<br>AD mean |weight|: %{customdata[5]:.4g}"
+                "<br>Control mean |weight|: %{customdata[6]:.4g}"
+                "<br>Stable for inference: %{customdata[7]}"
+                "<br>Stability note: %{customdata[8]}"
                 "<extra></extra>"
             ),
         )
@@ -3454,10 +3477,26 @@ def mdc_resolved_heatmap_figure(
 
     data = frame.copy()
     value_column, _, _ = _mdc_scale_settings(scale)
+    if "mdc_stable_for_inference" not in data:
+        data["mdc_stable_for_inference"] = True
+    if "mdc_stability_reason" not in data:
+        data["mdc_stability_reason"] = ""
+    for column in ("mean_abs_ad", "mean_abs_control", "n_edges"):
+        if column not in data:
+            data[column] = np.nan
     pivot = data.pivot(index="module", columns="component_label", values=value_column)
     raw = data.pivot(index="module", columns="component_label", values="mdc")
     log2 = data.pivot(index="module", columns="component_label", values="log2_mdc")
     fdr = data.pivot(index="module", columns="component_label", values="directional_fdr")
+    n_edges = data.pivot(index="module", columns="component_label", values="n_edges")
+    mean_ad = data.pivot(index="module", columns="component_label", values="mean_abs_ad")
+    mean_control = data.pivot(index="module", columns="component_label", values="mean_abs_control")
+    stable = data.pivot(
+        index="module", columns="component_label", values="mdc_stable_for_inference"
+    )
+    stability_reason = data.pivot(
+        index="module", columns="component_label", values="mdc_stability_reason"
+    )
     module_order = (
         log2.abs().max(axis=1).sort_values(ascending=False).index.astype(int).tolist()
     )
@@ -3471,6 +3510,11 @@ def mdc_resolved_heatmap_figure(
     raw = raw.reindex(index=module_order, columns=component_order)
     log2 = log2.reindex(index=module_order, columns=component_order)
     fdr = fdr.reindex(index=module_order, columns=component_order)
+    n_edges = n_edges.reindex(index=module_order, columns=component_order)
+    mean_ad = mean_ad.reindex(index=module_order, columns=component_order)
+    mean_control = mean_control.reindex(index=module_order, columns=component_order)
+    stable = stable.reindex(index=module_order, columns=component_order)
+    stability_reason = stability_reason.reindex(index=module_order, columns=component_order)
     text = np.empty(pivot.shape, dtype=object)
     for row in range(pivot.shape[0]):
         for column in range(pivot.shape[1]):
@@ -3479,7 +3523,16 @@ def mdc_resolved_heatmap_figure(
             text[row, column] = (
                 "NA"
                 if pd.isna(value)
-                else f"{float(value):.2f}" + (" ★" if pd.notna(q) and q < threshold else "")
+                else (
+                    f"{float(value):.2f}"
+                    + (" ★" if pd.notna(q) and q < threshold else "")
+                    + (
+                        " †"
+                        if pd.notna(stable.iat[row, column])
+                        and not bool(stable.iat[row, column])
+                        else ""
+                    )
+                )
             )
     color_settings = _mdc_heatmap_color_settings(
         log2.to_numpy(),
@@ -3495,19 +3548,34 @@ def mdc_resolved_heatmap_figure(
             text=text,
             texttemplate="%{text}",
             customdata=np.stack(
-                [raw.to_numpy(), log2.to_numpy(), fdr.to_numpy()], axis=-1
+                [
+                    raw.to_numpy(),
+                    log2.to_numpy(),
+                    fdr.to_numpy(),
+                    n_edges.to_numpy(),
+                    mean_ad.to_numpy(),
+                    mean_control.to_numpy(),
+                    stable.to_numpy(),
+                    stability_reason.to_numpy(),
+                ],
+                axis=-1,
             ),
             hovertemplate=(
                 "Module: %{y}<br>Component: %{x}<br>MDC: %{customdata[0]:.4f}<br>"
                 "log2 MDC: %{customdata[1]:.4f}<br>"
-                "Directional FDR: %{customdata[2]:.4g}<extra></extra>"
+                "Directional FDR: %{customdata[2]:.4g}"
+                "<br>Edges: %{customdata[3]:,}"
+                "<br>AD mean |weight|: %{customdata[4]:.4g}"
+                "<br>Control mean |weight|: %{customdata[5]:.4g}"
+                "<br>Stable for inference: %{customdata[6]}"
+                "<br>Stability note: %{customdata[7]}<extra></extra>"
             ),
             hoverongaps=False,
             **color_settings,
         )
     )
     title = "Resolved MDC across modules"
-    subtitle_parts = [f"★ FDR &lt; {threshold:.2f}"]
+    subtitle_parts = [f"★ FDR &lt; {threshold:.2f}", "† descriptive-only unstable ratio"]
     if scale == "raw":
         subtitle_parts.append("raw MDC labels · log-symmetric colors centered at MDC=1")
     if module_definition:
