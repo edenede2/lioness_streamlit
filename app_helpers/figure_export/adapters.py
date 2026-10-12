@@ -217,8 +217,8 @@ def _select_panels(
         for i, panel in enumerate(selected):
             col, row = i % columns, i // columns
             dx, dy = (1 - gap_x * (columns - 1)) / columns, (1 - gap_y * (rows - 1)) / rows
-            xd = [col * (dx + gap_x), col * (dx + gap_x) + dx]
-            yd = [1 - row * (dy + gap_y) - dy, 1 - row * (dy + gap_y)]
+            xd = [max(0, min(1, v)) for v in (col * (dx + gap_x), col * (dx + gap_x) + dx)]
+            yd = [max(0, min(1, v)) for v in (1 - row * (dy + gap_y) - dy, 1 - row * (dy + gap_y))]
             figure.layout[_axis_key(panel.xaxis)].domain = xd
             figure.layout[_axis_key(panel.yaxis)].domain = yd
             for annotation_index, a in enumerate(figure.layout.annotations):
@@ -301,21 +301,428 @@ def _stat_text(record: dict, method: str, content: PlotContentConfig, minimum_n:
     return "; ".join(parts)
 
 
-def _wrap_annotation(text: str, available_pixels: float, font_pixels: float) -> str:
-    """Wrap display text without altering values or HTML emphasis."""
-    limit = max(12, int(available_pixels / max(1, font_pixels * 0.56)))
+@lru_cache(maxsize=128)
+def _measurement_font(family: str, font_pixels: float):
+    """Use the export font's actual metrics, including proportional glyph widths."""
+    from PIL import ImageFont
+
+    try:
+        match = subprocess.run(
+            ["fc-match", "-f", "%{file}", family],
+            capture_output=True,
+            text=True,
+            timeout=3,
+            check=False,
+        )
+        path = match.stdout.strip() if match.returncode == 0 else "DejaVuSans.ttf"
+        return ImageFont.truetype(path, max(1, round(font_pixels * 4)))
+    except (OSError, subprocess.TimeoutExpired):
+        try:
+            return ImageFont.truetype("DejaVuSans.ttf", max(1, round(font_pixels * 4)))
+        except OSError:
+            return None
+
+
+def _text_width(text: str, font_pixels: float, family: str) -> float:
+    plain = html.unescape(re.sub("<[^>]+>", "", str(text)))
+    font = _measurement_font(family, font_pixels)
+    width = font.getlength(plain) / 4 if font else len(plain) * font_pixels * 0.6
+    return width * (1.08 if "<b>" in str(text) else 1)
+
+
+def _wrap_annotation(
+    text: str, available_pixels: float, font_pixels: float, family: str = "DejaVu Sans"
+) -> str:
+    """Wrap display text at physical panel width, preserving HTML and all words."""
+    available_pixels = max(font_pixels * 1.5, available_pixels)
     lines = []
-    for line in str(text).split("<br>"):
-        words, current, count = line.split(" "), [], 0
+    for line in re.split(r"<br\s*/?>", str(text), flags=re.I):
+        # Spaces inside a span's style attribute are not word boundaries.
+        words, word = [], ""
+        for token in re.findall(r"<[^>]+>|[^\s<]+|\s+", line):
+            if token.isspace():
+                if word:
+                    words.append(word)
+                    word = ""
+            else:
+                word += token
+        if word:
+            words.append(word)
+        current = []
         for word in words:
-            length = len(html.unescape(re.sub("<[^>]+>", "", word)))
-            if current and count + length + 1 > limit:
+            if (
+                current
+                and _text_width(" ".join([*current, word]), font_pixels, family) > available_pixels
+            ):
                 lines.append(" ".join(current))
-                current, count = [], 0
+                current = []
+            if _text_width(word, font_pixels, family) > available_pixels:
+                # Long pathway names and axis-label tokens must also fit. This
+                # changes line breaks only, never the underlying label/value.
+                tags = re.findall(r"<[^>]+>", word)
+                opening = "".join(t for t in tags if not t.startswith("</"))
+                closing = "".join(t for t in tags if t.startswith("</"))
+                measured_font = font_pixels * (1.08 if any("b>" in t for t in tags) else 1)
+                chunk = ""
+                first = True
+                for char in html.unescape(re.sub(r"<[^>]+>", "", word)):
+                    if (
+                        chunk
+                        and _text_width(chunk + char, measured_font, family) > available_pixels
+                    ):
+                        lines.append((opening if first else "") + html.escape(chunk))
+                        first = False
+                        chunk = ""
+                    chunk += char
+                word = (opening if first else "") + html.escape(chunk) + closing
             current.append(word)
-            count += length + 1
         lines.append(" ".join(current))
     return "<br>".join(lines)
+
+
+def panel_title_annotations(figure: go.Figure, panels: tuple[Panel, ...] | None = None) -> tuple:
+    """Identify builder-tagged headings and native make_subplots titles."""
+    panels = figure_panels(figure) if panels is None else panels
+    layout = figure.layout.to_plotly_json()
+    return tuple(
+        a
+        for a in figure.layout.annotations
+        if (a.name or "").startswith("publication-panel-title")
+        or (
+            a.xref == a.yref == "paper"
+            and not a.showarrow
+            and not (a.name or "").startswith(("publication-statistics", "publication-panel-label"))
+            and _annotation_panel(a.to_plotly_json(), panels, layout) is not None
+        )
+    )
+
+
+def _physical_panel_layout(
+    figure: go.Figure,
+    panels: tuple[Panel, ...],
+    config: ExportConfig,
+    content: PlotContentConfig,
+    title_height: float,
+    legend_height: float,
+    bottom_legend_height: float,
+    warnings: list[str],
+) -> float:
+    """Reserve physical text bands for every row and column of a Cartesian grid.
+
+    Plotly's automargin only protects the outside of a figure. Internal subplot
+    gaps must explicitly include the lower row's header and the upper row's
+    axis labels. Unequal panel sizes keep their relative proportions.
+    """
+    if not config.style.tight or not panels or any(p.scene for p in panels):
+        return 0
+    layout = figure.layout.to_plotly_json()
+    xdomains = sorted(
+        {tuple(layout.get(_axis_key(p.xaxis), {}).get("domain", (0, 1))) for p in panels}
+    )
+    ydomains = sorted(
+        {tuple(layout.get(_axis_key(p.yaxis), {}).get("domain", (0, 1))) for p in panels},
+        reverse=True,
+    )
+    # Inset/overlaid plots are not a regular subplot grid; retain their domains.
+    if any(a[1] > b[0] + 1e-6 for a, b in zip(xdomains, xdomains[1:])) or any(
+        lower[1] > upper[0] + 1e-6 for upper, lower in zip(ydomains, ydomains[1:])
+    ):
+        return 0
+    fonts, pt = config.typography, CSS_DPI / POINTS_PER_INCH
+    family = resolve_font(fonts.family)
+    width, height = figure.layout.width, figure.layout.height
+    margin = figure.layout.margin.to_plotly_json()
+    owners = [
+        _annotation_panel(a.to_plotly_json(), panels, layout) for a in figure.layout.annotations
+    ]
+    headings = panel_title_annotations(figure, panels)
+    axis_line = fonts.axis_title * pt * 1.3
+    stat_line = max(fonts.annotation * 1.3, fonts.annotation + fonts.annotation_spacing) * pt
+    subtitle_line = fonts.subtitle * pt * 1.3
+    panel_minimum = max(fonts.axis_title * pt * 8, width * 0.15)
+    shared_titles = {}
+    if content.shared_axis_titles and len(panels) > 1:
+        for direction in ("x", "y"):
+            texts = {
+                str(figure.layout[_axis_key(getattr(p, direction + "axis"))].title.text or "")
+                for p in panels
+            }
+            if len(texts) == 1 and next(iter(texts)):
+                shared_titles[direction] = next(iter(texts))
+                for p in panels:
+                    figure.layout[_axis_key(getattr(p, direction + "axis"))].title.text = ""
+    shared_y = _wrap_annotation(
+        shared_titles.get("y", ""),
+        panel_minimum * max(1, len(ydomains)),
+        fonts.axis_title * pt,
+        family,
+    )
+    shared_y_band = axis_line * (shared_y.count("<br>") + 1) + 4 * pt if shared_y else 0
+    # Two lines of a vertical title must fit alongside each data panel.
+    panel_minimum = max(
+        panel_minimum,
+        *(
+            _text_width(
+                figure.layout[_axis_key(p.yaxis)].title.text or "", fonts.axis_title * pt, family
+            )
+            / 2
+            + 8 * pt
+            for p in panels
+        ),
+    )
+    left_bands, right_bands = [0.0] * len(xdomains), [0.0] * len(xdomains)
+    for p in panels:
+        axis = figure.layout[_axis_key(p.yaxis)]
+        axis.title.text = _wrap_annotation(
+            axis.title.text or "", panel_minimum, fonts.axis_title * pt, family
+        )
+        axis.title.standoff = 4 * pt
+        tick_width = 0.0
+        if axis.showticklabels is not False:
+            labels = list(axis.ticktext) if axis.ticktext is not None else []
+            if not labels:
+                values = [
+                    v
+                    for t in figure.data
+                    if (getattr(t, "yaxis", None) or "y") == p.yaxis
+                    for v in (getattr(t, "y", None) if getattr(t, "y", None) is not None else [])
+                    if v is not None
+                ]
+                numeric = [
+                    float(v)
+                    for v in values
+                    if isinstance(v, (int, float, np.number)) and np.isfinite(v)
+                ]
+                if numeric:
+                    extremes = (min(numeric), max(numeric), 0)
+                    fmt = axis.tickformat or ".3g"
+                    try:
+                        labels = [format(v, fmt) for v in extremes]
+                    except ValueError:
+                        labels = [format(v, ".3g") for v in extremes]
+                else:
+                    labels = [str(v) for v in values] or ["0.00"]
+            tick_width = (
+                max((_text_width(str(v), fonts.tick * pt, family) for v in labels), default=0)
+                + 6 * pt
+            )
+        title_band = (
+            axis_line * (str(axis.title.text).count("<br>") + 1) + 4 * pt if axis.title.text else 0
+        )
+        col = xdomains.index(tuple(layout.get(_axis_key(p.xaxis), {}).get("domain", (0, 1))))
+        bands = right_bands if axis.side == "right" else left_bands
+        bands[col] = max(bands[col], tick_width + title_band)
+    margin["l"] = max(margin.get("l", 0), left_bands[0] + shared_y_band + 6 * pt)
+    margin["r"] = max(margin.get("r", 0), right_bands[-1] + 6 * pt)
+    canvas_width = max(20, width - margin["l"] - margin["r"])
+    shared_x = _wrap_annotation(
+        shared_titles.get("x", ""), canvas_width, fonts.axis_title * pt, family
+    )
+    shared_x_band = axis_line * (shared_x.count("<br>") + 1) + 8 * pt if shared_x else 0
+    gaps_x = [
+        max(
+            right_bands[i] + left_bands[i + 1] + 8 * pt,
+            (config.style.panel_spacing or 0) * canvas_width,
+        )
+        for i in range(len(xdomains) - 1)
+    ]
+    if sum(gaps_x) > canvas_width * 0.75:
+        warnings.append(
+            "The panels are too narrow for these labels. Increase width or use fewer panel columns."
+        )
+        scale = canvas_width * 0.75 / sum(gaps_x)
+        gaps_x = [g * scale for g in gaps_x]
+    weights_x = [d[1] - d[0] for d in xdomains]
+    available_x = canvas_width - sum(gaps_x)
+    minimum_width = fonts.base * pt * 6
+    if (
+        config.style.panel_columns == 0
+        and len(xdomains) > 1
+        and max(weights_x) - min(weights_x) < 1e-6
+        and available_x / len(xdomains) < minimum_width
+    ):
+        gap = max(gaps_x, default=0)
+        columns = max(1, min(len(xdomains) - 1, int((canvas_width + gap) / (minimum_width + gap))))
+        # Keep observations, panel order and statistics; only the grid changes.
+        for p in panels:
+            for direction in ("x", "y"):
+                key = _axis_key(getattr(p, direction + "axis"))
+                figure.layout[key].title.text = layout.get(key, {}).get("title", {}).get("text", "")
+        fitted_layout = replace(config, style=replace(config.style, panel_columns=columns))
+        _select_panels(figure, panels, replace(content, panel_labels=False), fitted_layout)
+        warnings.append(
+            f"Using {columns} panel column(s) at this width to keep text legible. Customize panel layout to set the columns explicitly."
+        )
+        return _physical_panel_layout(
+            figure,
+            panels,
+            fitted_layout,
+            content,
+            title_height,
+            legend_height,
+            bottom_legend_height,
+            warnings,
+        )
+    new_x, position = {}, 0.0
+    for i, domain in enumerate(xdomains):
+        length = available_x * weights_x[i] / sum(weights_x)
+        new_x[domain] = (
+            max(0, min(1, position / canvas_width)),
+            max(0, min(1, (position + length) / canvas_width)),
+        )
+        position += length + (gaps_x[i] if i < len(gaps_x) else 0)
+    headers, footers = [0.0] * len(ydomains), [0.0] * len(ydomains)
+    for p in panels:
+        xd = tuple(layout.get(_axis_key(p.xaxis), {}).get("domain", (0, 1)))
+        yd = tuple(layout.get(_axis_key(p.yaxis), {}).get("domain", (0, 1)))
+        row = ydomains.index(yd)
+        panel_width = (new_x[xd][1] - new_x[xd][0]) * canvas_width
+        axis = figure.layout[_axis_key(p.xaxis)]
+        axis.title.text = _wrap_annotation(
+            axis.title.text or "", max(20, panel_width - 8 * pt), fonts.axis_title * pt, family
+        )
+        axis.title.standoff = 4 * pt
+        ticks = fonts.tick * pt * 1.6 + 6 * pt if axis.showticklabels is not False else 0
+        axis_band = (
+            axis_line * (str(axis.title.text).count("<br>") + 1) + 8 * pt if axis.title.text else 0
+        )
+        if axis.tickangle:
+            labels = list(axis.ticktext) if axis.ticktext is not None else []
+            tick_extent = max(
+                (_text_width(str(v), fonts.tick * pt, family) for v in labels), default=ticks
+            )
+            ticks = max(
+                ticks, abs(math.sin(math.radians(axis.tickangle))) * tick_extent + fonts.tick * pt
+            )
+        panel_footer = ticks + axis_band
+        owned = [a for a, owner in zip(figure.layout.annotations, owners) if owner == p.identifier]
+        stats = [
+            a
+            for a in owned
+            if (a.name or "").startswith("publication-statistics") and a.visible is not False
+        ]
+        stat_height = 0.0
+        for a in stats:
+            a.text = _wrap_annotation(
+                a.text, max(20, panel_width - 8 * pt), fonts.annotation * pt, family
+            )
+            block = (str(a.text).count("<br>") + 1) * stat_line + 6 * pt
+            if content.statistic_position == "Original":
+                a.yshift = fonts.annotation_spacing * pt + stat_height
+                stat_height += block
+            elif content.statistic_position == "Below panel":
+                a.yshift = -panel_footer - 4 * pt
+                panel_footer += block
+        footers[row] = max(footers[row], panel_footer)
+        heading_height = 0.0
+        for a in owned:
+            if any(a is heading for heading in headings) and a.visible is not False:
+                a.text = _wrap_annotation(
+                    a.text, max(20, panel_width - 8 * pt), fonts.subtitle * pt, family
+                )
+                a.yanchor = "bottom"
+                a.yshift = stat_height + 6 * pt
+                heading_height = max(
+                    heading_height, (str(a.text).count("<br>") + 1) * subtitle_line + 8 * pt
+                )
+        labels = [a for a in owned if a.name == "publication-panel-label"]
+        for a in labels:
+            a.yshift = stat_height + heading_height + 6 * pt
+            a.yanchor = "bottom"
+        label_height = subtitle_line + 6 * pt if labels else 0
+        headers[row] = max(headers[row], stat_height + heading_height + label_height)
+    for annotation, owner in zip(figure.layout.annotations, owners):
+        if annotation.name == "publication-panel-label" and owner is not None:
+            panel = next(p for p in panels if p.identifier == owner)
+            row = ydomains.index(
+                tuple(layout.get(_axis_key(panel.yaxis), {}).get("domain", (0, 1)))
+            )
+            annotation.yshift = headers[row] - subtitle_line
+    margin["t"] = max(
+        config.style.margin_top * pt, title_height + legend_height + headers[0] + 12 * pt
+    )
+    caption_height = (
+        (str(content.caption).count("\n") + 1) * stat_line + 8 * pt if content.caption else 0
+    )
+    margin["b"] = max(
+        config.style.margin_bottom * pt,
+        footers[-1] + shared_x_band + bottom_legend_height + caption_height + 12 * pt,
+    )
+    if content.caption:
+        caption = figure.layout.annotations[-1]  # Added after the source annotations.
+        caption.yshift = -footers[-1] - shared_x_band - bottom_legend_height - 8 * pt
+    if bottom_legend_height:
+        figure.layout.legend.y = -(footers[-1] + shared_x_band + 6 * pt) / max(
+            20, height - margin["t"] - margin["b"]
+        )
+    gaps_y = [footers[i] + headers[i + 1] + 12 * pt for i in range(len(ydomains) - 1)]
+    weights_y = [d[1] - d[0] for d in ydomains]
+    required_height = (
+        margin["t"] + margin["b"] + sum(gaps_y) + panel_minimum * sum(weights_y) / min(weights_y)
+    )
+    canvas_height = max(20, height - margin["t"] - margin["b"])
+    gaps_y = [max(g, (config.style.panel_spacing or 0) * canvas_height) for g in gaps_y]
+    required_height = max(
+        required_height,
+        margin["t"] + margin["b"] + sum(gaps_y) + panel_minimum * sum(weights_y) / min(weights_y),
+    )
+    if height + 1 < required_height and config.height is not None:
+        warnings.append(
+            "This manual height cannot fit the panel titles and axis labels without crowding. Use automatic height, increase height, or hide unwanted titles/subtitles."
+        )
+    # An initial automatic-size pass may be too short. Leave a positive data
+    # domain while reporting the full required height to fit_automatic_config.
+    gap_scale = min(1, canvas_height * 0.85 / max(1, sum(gaps_y)))
+    actual_gaps_y = [g * gap_scale for g in gaps_y]
+    available_y = canvas_height - sum(actual_gaps_y)
+    new_y, position = {}, canvas_height
+    for i, domain in enumerate(ydomains):
+        length = available_y * weights_y[i] / sum(weights_y)
+        new_y[domain] = (
+            max(0, min(1, (position - length) / canvas_height)),
+            max(0, min(1, position / canvas_height)),
+        )
+        position -= length + (actual_gaps_y[i] if i < len(actual_gaps_y) else 0)
+    for p in panels:
+        xd = tuple(layout.get(_axis_key(p.xaxis), {}).get("domain", (0, 1)))
+        yd = tuple(layout.get(_axis_key(p.yaxis), {}).get("domain", (0, 1)))
+        figure.layout[_axis_key(p.xaxis)].domain = new_x[xd]
+        figure.layout[_axis_key(p.yaxis)].domain = new_y[yd]
+        for a, owner in zip(figure.layout.annotations, owners):
+            if owner == p.identifier and a.xref == a.yref == "paper":
+                a.x, a.y = sum(new_x[xd]) / 2, new_y[yd][1]
+    figure.update_layout(margin=margin)
+    shared_font = dict(size=fonts.axis_title * pt, family=family, color=fonts.color)
+    if shared_x:
+        figure.add_annotation(
+            name="publication-shared-x-title",
+            text=shared_x,
+            x=0.5,
+            y=0,
+            xref="paper",
+            yref="paper",
+            xanchor="center",
+            yanchor="top",
+            yshift=-footers[-1] - 6 * pt,
+            showarrow=False,
+            font=shared_font,
+        )
+    if shared_y:
+        figure.add_annotation(
+            name="publication-shared-y-title",
+            text=shared_y,
+            x=0,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            xanchor="center",
+            yanchor="middle",
+            xshift=-left_bands[0] - shared_y_band / 2 - 6 * pt,
+            textangle=-90,
+            showarrow=False,
+            font=shared_font,
+        )
+    return required_height
 
 
 def _correlation_annotations(figure: go.Figure, content: PlotContentConfig) -> None:
@@ -406,9 +813,17 @@ def build_figure(
         if content.title is not None
         else str(figure.layout.title.text or "")
     )
+    title_parts = title.split("<br>", 1)
+    title = title_parts[0] if content.show_title else ""
+    if content.show_subtitle and len(title_parts) > 1:
+        title += ("<br>" if title else "") + title_parts[1]
+    if not content.show_subtitle:
+        title = re.sub(r"<sup>.*?</sup>", "", title, flags=re.S)
     title = re.sub(r"</?b>", "", title, flags=re.I)
     if style.tight:
-        title = _wrap_annotation(title, width * 0.94, fonts.title * pt)
+        title = _wrap_annotation(
+            title, width * 0.94, fonts.title * pt * (1.08 if fonts.bold_title else 1), family
+        )
     title = re.sub(
         r"<sup>(.*?)</sup>",
         lambda m: f"<span style='font-size:{fonts.subtitle * pt:g}px'>{m.group(1)}</span>",
@@ -417,11 +832,13 @@ def build_figure(
     )
     if fonts.bold_title and title:
         title = "<b>" + title + "</b>"
-    if content.subtitle:
+    if content.subtitle and content.show_subtitle:
         subtitle = html.escape(content.subtitle)
         if style.tight:
-            subtitle = _wrap_annotation(subtitle, width * 0.94, fonts.subtitle * pt)
-        title += f"<br><span style='font-size:{fonts.subtitle * pt:g}px'>{subtitle}</span>"
+            subtitle = _wrap_annotation(subtitle, width * 0.94, fonts.subtitle * pt, family)
+        title += (
+            "<br>" if title else ""
+        ) + f"<span style='font-size:{fonts.subtitle * pt:g}px'>{subtitle}</span>"
     figure.update_layout(
         width=width,
         height=height,
@@ -433,6 +850,9 @@ def build_figure(
             y=max(0.5, 1 - fonts.title * pt / height),
             yanchor="top",
             yref="container",
+            x=0.02,
+            xanchor="left",
+            xref="container",
             pad=dict(t=0),
             automargin=True,
         ),
@@ -440,6 +860,15 @@ def build_figure(
         plot_bgcolor=background,
         showlegend=style.legend_visible,
     )
+    headings = panel_title_annotations(figure, selected)
+    for annotation in headings:
+        parts = str(annotation.text or "").split("<br>", 1)
+        heading = parts[0] if content.show_panel_titles else ""
+        subtitle = (
+            parts[1].replace("<br>", " ") if content.show_panel_subtitles and len(parts) > 1 else ""
+        )
+        annotation.text = heading + ("<br>" if heading and subtitle else "") + subtitle
+        annotation.visible = bool(annotation.text) and annotation.visible is not False
     margin = {
         "l": style.margin_left * pt,
         "r": style.margin_right * pt,
@@ -487,16 +916,6 @@ def build_figure(
     title_row = fonts.title * (1.35 * (title.count("<br>") + 1) + 1) * pt if title else 0
     legend_row = legend_height if outside_legend else 0
     if style.tight:
-        for annotation in figure.layout.annotations:
-            if (annotation.name or "").startswith("publication-statistics"):
-                reference = (annotation.xref or "x").split(" ")[0]
-                domain = figure.layout[_axis_key(reference)].domain or (0, 1)
-                available = max(
-                    20, (width - margin["l"] - margin["r"]) * (domain[1] - domain[0]) - 8
-                )
-                annotation.text = _wrap_annotation(
-                    annotation.text, available, fonts.annotation * pt
-                )
         max_lines = max(
             (
                 str(a.text).count("<br>") + 1
@@ -590,6 +1009,8 @@ def build_figure(
                     )
                 if value is not None:
                     axis.title.text = html.escape(value)
+                if not getattr(content, "show_" + label + "_title"):
+                    axis.title.text = ""
             continue
         for direction, reference in axis_pairs:
             axis = figure.layout[_axis_key(reference)]
@@ -597,6 +1018,8 @@ def build_figure(
             label = content.x_label if direction == "x" else content.y_label
             if label is not None:
                 axis.title.text = html.escape(label)
+            if not getattr(content, "show_" + direction + "_title"):
+                axis.title.text = ""
             if style.tick_angle is not None:
                 axis.tickangle = style.tick_angle
             if style.number_format != "Original":
@@ -612,8 +1035,12 @@ def build_figure(
     for layout_key in figure.layout:
         if layout_key.startswith("coloraxis") and figure.layout[layout_key].to_plotly_json():
             style_colorbar(figure.layout[layout_key].colorbar)
+            if not content.show_color_scale:
+                figure.layout[layout_key].showscale = False
     for trace in figure.data:
         role = trace_role(trace)
+        if not content.show_color_scale and hasattr(trace, "showscale"):
+            trace.showscale = False
         if role == "observations" and not content.show_observations:
             trace.visible = False
         if role == "regression" and not content.show_regression:
@@ -634,6 +1061,8 @@ def build_figure(
             style_colorbar(trace.colorbar)
         if hasattr(trace, "marker"):
             marker = trace.marker
+            if not content.show_color_scale and hasattr(marker, "showscale"):
+                marker.showscale = False
             if hasattr(marker, "colorbar") and (
                 marker.colorbar.to_plotly_json() or marker.showscale is True
             ):
@@ -721,7 +1150,7 @@ def build_figure(
                 )
             else:
                 annotation.yshift = fonts.annotation_spacing * pt
-        elif annotation.yshift and annotation.yshift > 10:
+        elif any(annotation is heading for heading in headings):
             # Association titles must sit above their statistics block at final font size.
             statistics = next(
                 (
@@ -784,9 +1213,16 @@ def build_figure(
                 xref=panel.xaxis,
                 line=dict(color=fonts.color, width=style.axis_width * pt, dash="dash"),
             )
+    minimum_height = _physical_panel_layout(
+        figure, selected, config, content, title_row, legend_row, bottom_legend_row, warnings
+    )
+    margin = figure.layout.margin.to_plotly_json()
     if min(fonts.tick, fonts.annotation, fonts.legend) < 7:
         warnings.append("Some text is smaller than 7 pt at the final physical size.")
-    if margin["l"] + margin["r"] > width * 0.6 or margin["t"] + margin["b"] > height * 0.65:
+    if margin["l"] + margin["r"] > width * 0.6 or (
+        margin["t"] + margin["b"] > height * 0.65
+        and (not minimum_height or height + 1 < minimum_height)
+    ):
         warnings.append(
             "Labels or annotations may be clipped: increase the figure size, select fewer panels, or reduce margins/text."
         )
@@ -807,7 +1243,7 @@ def build_figure(
         warnings.append(
             "This dense vector heatmap may produce a large file. No cells will be aggregated or omitted."
         )
-    return FigureArtifact(figure, selected, tuple(warnings))
+    return FigureArtifact(figure, selected, tuple(warnings), minimum_height)
 
 
 def _edges(values: list[float]) -> np.ndarray:
@@ -1233,6 +1669,20 @@ def fit_automatic_config(
     artifact = build_artifact(spec, config, content)
     figure = artifact.figure
     margin = figure.layout.margin
+    if artifact.minimum_height:
+        if artifact.minimum_height > figure.layout.height:
+            fitted = replace(
+                config, aspect_ratio=float(figure.layout.width) / artifact.minimum_height
+            )
+            # User-defined fractional panel spacing grows with the canvas. A
+            # bounded second pass covers that dependency before showing sizes.
+            for _ in range(4):
+                required = build_artifact(spec, fitted, content).minimum_height
+                if required <= fitted.inches[1] * CSS_DPI + 0.5:
+                    break
+                fitted = replace(fitted, aspect_ratio=float(figure.layout.width) / required)
+            return fitted
+        return config
     minimum_panel_fraction = min(
         (
             float(

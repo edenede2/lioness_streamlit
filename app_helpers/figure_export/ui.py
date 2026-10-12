@@ -20,6 +20,7 @@ from .adapters import (
     correlation_metadata,
     is_mixed,
     render_figure,
+    panel_title_annotations,
     trace_role,
 )
 from .config import (
@@ -332,9 +333,6 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
             styles["ci_opacity"] = st.slider(
                 "Confidence-band opacity", 0.0, 1.0, 0.2, key=key("ci_opacity")
             )
-        styles["legend_visible"] = st.checkbox(
-            "Show legend", value=source.layout.showlegend is not False, key=key("legend_visible")
-        )
         styles["legend_position"] = st.selectbox(
             "Legend position",
             ["Original", "Top", "Bottom", "Right", "Inside top-right"],
@@ -357,9 +355,50 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
             "Analysis filters and statistical methods stay matched to the main plot. These controls change the exported presentation."
         )
         original_title = _plain(source.layout.title.text)
+        show_title = st.checkbox("Show plot title", value=True, key=key("show_title"))
         title = st.text_input("Plot title", value=original_title, key=key("title"))
+        show_subtitle = st.checkbox("Show plot subtitle", value=True, key=key("show_subtitle"))
         subtitle = st.text_input("Subtitle", key=key("subtitle"))
+        styles["legend_visible"] = st.checkbox(
+            "Show legend", value=source.layout.showlegend is not False, key=key("legend_visible")
+        )
+        has_color_scale = any(
+            k.startswith("coloraxis") and source.layout[k].to_plotly_json() for k in source.layout
+        ) or any(
+            (hasattr(t, "showscale") and t.showscale is not False)
+            or getattr(getattr(t, "marker", None), "showscale", None) is True
+            for t in source.data
+        )
+        show_color_scale = (
+            st.checkbox("Show color scale", value=True, key=key("show_color_scale"))
+            if has_color_scale
+            else True
+        )
+        panel_headings = panel_title_annotations(source, panels)
+        show_panel_titles = (
+            st.checkbox("Show panel titles", value=True, key=key("show_panel_titles"))
+            if panel_headings
+            else True
+        )
+        show_panel_subtitles = (
+            st.checkbox(
+                "Show panel subtitles / enrichment", value=True, key=key("show_panel_subtitles")
+            )
+            if any("<br>" in str(a.text) for a in panel_headings)
+            else True
+        )
         axis_labels = {}
+        axis_visibility = {}
+        shared_axis_titles = (
+            st.checkbox(
+                "Use shared axis titles",
+                value=True,
+                key=key("shared_axis_titles"),
+                help="Show an identical axis title once for the combined figure. Axis values and ranges remain unchanged.",
+            )
+            if len(panels) > 1 and not any(p.scene for p in panels)
+            else True
+        )
         for direction, label in (
             ("x", "X-axis label"),
             ("y", "Y-axis label"),
@@ -382,6 +421,11 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
                 if p.scene or direction != "z"
             ]
             original = originals[0] if originals and len(set(originals)) == 1 else ""
+            axis_visibility["show_" + direction + "_title"] = st.checkbox(
+                f"Show {direction.upper()}-axis title",
+                value=True,
+                key=key("show_" + direction + "_title"),
+            )
             edited = st.text_input(label, value=_plain(original), key=key(direction + "_label"))
             axis_labels[direction + "_label"] = edited if edited != _plain(original) else None
         caption = st.text_area("Caption / footnote", key=key("caption"))
@@ -487,7 +531,12 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
                     key=key("panel_columns"),
                 )
                 styles["panel_spacing"] = st.slider(
-                    "Panel spacing", 0.0, 0.3, 0.08, key=key("panel_spacing")
+                    "Panel spacing",
+                    0.0,
+                    0.3,
+                    0.08,
+                    key=key("panel_spacing"),
+                    help="Minimum gap as a fraction of the plotting area. Tight layout adds room when needed for titles and axis labels.",
                 )
                 axes = st.selectbox(
                     "Panel axes",
@@ -524,6 +573,13 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
     content = PlotContentConfig(
         title=title if title != original_title else None,
         subtitle=subtitle,
+        show_title=show_title,
+        show_subtitle=show_subtitle,
+        show_panel_titles=show_panel_titles,
+        show_panel_subtitles=show_panel_subtitles,
+        show_color_scale=show_color_scale,
+        shared_axis_titles=shared_axis_titles,
+        **axis_visibility,
         caption=caption,
         **axis_labels,
         correlation_mode=mode,

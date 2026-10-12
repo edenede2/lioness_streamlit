@@ -11,6 +11,16 @@ typography, plot-appropriate presentation controls, editable filenames, and a
 reset button. Select **Prepare download**, then **Download figure**. Multi-panel
 figures support panel selection/order, combined exports, or a ZIP containing one
 file per selected panel. Export settings never change the main application plot.
+The **Content** tab includes toggles for the plot title/subtitle, panel titles,
+enrichment subtitles, axis titles, and legend (plus color scales when present).
+Identical axis titles appear once for a combined figure by default; turn off
+**Use shared axis titles** to repeat
+them on each panel. Tight layout wraps text at the exported panel width and
+reserves space between rows for headings, statistical annotations, and axis labels.
+Automatic height grows to fit these text bands. If an exact manual height is too
+small, the dialog warns; increase the size or hide unwanted titles/subtitles.
+At narrow widths, an automatic grid may use fewer columns to keep the configured
+font sizes legible. **Panels → Customize panel layout** fixes the column count.
 On runtimes without dialogs, the popover's **Configure export** checkbox starts
 the workflow without rendering previews while the interface is collapsed.
 

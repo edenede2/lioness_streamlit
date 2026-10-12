@@ -6,6 +6,9 @@ import ast
 import io
 import json
 import os
+import re
+import shutil
+import subprocess
 import xml.etree.ElementTree as ET
 from dataclasses import replace
 from pathlib import Path
@@ -34,9 +37,15 @@ from app_helpers.figure_export.config import (
 )
 
 
-def correlation_figure():
+def correlation_figure(
+    components=("CT", "TS"),
+    *,
+    kegg_subtitles=None,
+    feature_label="Eigengene",
+    phenotype_label="Outcome",
+):
     rows = []
-    for component in ("CT", "TS"):
+    for component in components:
         for group in ("Control", "AD"):
             for i in range(12):
                 rows.append(
@@ -69,8 +78,8 @@ def correlation_figure():
         frame,
         stats,
         phenotype="outcome",
-        phenotype_label="Outcome",
-        feature_label="Eigengene",
+        phenotype_label=phenotype_label,
+        feature_label=feature_label,
         scale_label="Raw",
         grouping_variable="diagnosis_group",
         grouping_levels=["Control", "AD"],
@@ -81,8 +90,23 @@ def correlation_figure():
         hover_fields={},
         categorical_color_fields=["diagnosis_group"],
         minimum_group_n=5,
+        kegg_subtitles=kegg_subtitles,
     )
     return frame, stats, figure
+
+
+def enrichment_figure():
+    components = ("CT DLPFC–PCC", "CT DLPFC–AC", "CT PCC–AC", "TS DLPFC", "TS PCC", "TS AC")
+    return correlation_figure(
+        components,
+        kegg_subtitles={
+            c: "Regional edge enrichment: Organismal Systems / Nervous system / "
+            "Cholinergic synapse and neuroactive ligand receptor interaction (FDR=0.00123)"
+            for c in components
+        },
+        feature_label="Module eigengene expression (residualized and standardized)",
+        phenotype_label="Global cognition score (residualized for age and sex)",
+    )
 
 
 @pytest.mark.parametrize("preset,width,unit,font,dpi", [(k, *v) for k, v in PRESETS.items()])
@@ -302,6 +326,304 @@ def test_automatic_height_keeps_dense_annotations_and_manual_sizes_exact():
     assert artifact.figure.layout.height == pytest.approx(fitted.inches[1] * 96)
 
 
+@pytest.mark.parametrize("columns", [2, 3])
+def test_enrichment_multirow_layout_reserves_headers_and_axis_titles(columns):
+    _, _, source = enrichment_figure()
+    spec = PlotExportSpec.from_figure("enriched", source)
+    config = preset_config("Grant figure", spec.aspect_ratio)
+    config = replace(config, style=replace(config.style, panel_columns=columns, panel_spacing=0))
+    content = PlotContentConfig(panel_labels=True)
+    fitted = adapters.fit_automatic_config(spec, config, content)
+    artifact = adapters.build_artifact(spec, fitted, content)
+    figure = artifact.figure
+    assert figure.layout.height + 0.5 >= artifact.minimum_height
+    assert fitted.actual_height > config.actual_height
+    plot_width = figure.layout.width - figure.layout.margin.l - figure.layout.margin.r
+    plot_height = figure.layout.height - figure.layout.margin.t - figure.layout.margin.b
+    pt = 96 / 72
+    rows = sorted(
+        {tuple(figure.layout[p.yaxis.replace("y", "yaxis", 1)].domain) for p in artifact.panels},
+        reverse=True,
+    )
+    assert len(rows) == int(np.ceil(6 / columns))
+    for p in artifact.panels:
+        xaxis = figure.layout[p.xaxis.replace("x", "xaxis", 1)]
+        yaxis = figure.layout[p.yaxis.replace("y", "yaxis", 1)]
+        heading = next(
+            a
+            for a in adapters.panel_title_annotations(figure)
+            if a.x == pytest.approx(sum(xaxis.domain) / 2) and a.y == pytest.approx(yaxis.domain[1])
+        )
+        available = (xaxis.domain[1] - xaxis.domain[0]) * plot_width
+        assert all(
+            adapters._text_width(line, config.typography.subtitle * pt, "DejaVu Sans") <= available
+            for line in heading.text.split("<br>")
+        )
+        assert "<br>" in heading.text
+        shared_x = next(
+            a for a in figure.layout.annotations if a.name == "publication-shared-x-title"
+        )
+        assert "<br>" in shared_x.text
+        assert not xaxis.title.text
+        header_extent = (
+            heading.yshift
+            + (heading.text.count("<br>") + 1) * config.typography.subtitle * pt * 1.3
+        )
+        row_index = rows.index(tuple(yaxis.domain))
+        if row_index:
+            # The lower header cannot enter the preceding row's plotting area.
+            gap = (rows[row_index - 1][0] - yaxis.domain[1]) * plot_height
+            assert gap > header_extent + config.typography.tick * pt
+        else:
+            assert figure.layout.margin.t > header_extent
+    assert [(list(t.x), list(t.y)) for t in figure.data] == [
+        (list(t.x), list(t.y)) for t in source.data
+    ]
+    assert figure.layout.meta == source.layout.meta
+    manual = replace(config, height=80)
+    assert adapters.fit_automatic_config(spec, manual, content) == manual
+    assert any(
+        "manual height" in w for w in adapters.build_artifact(spec, manual, content).warnings
+    )
+
+
+def test_export_title_axis_and_legend_visibility_preserves_source_and_statistics():
+    _, _, source = enrichment_figure()
+    original = source.to_json()
+    config = preset_config("Grant figure")
+    content = PlotContentConfig(
+        show_title=False,
+        show_subtitle=False,
+        show_panel_titles=False,
+        show_panel_subtitles=False,
+        show_x_title=False,
+        show_y_title=False,
+    )
+    artifact = adapters.build_figure(
+        original, None, replace(config, style=replace(config.style, legend_visible=False)), content
+    )
+    assert not artifact.figure.layout.title.text
+    assert artifact.figure.layout.showlegend is False
+    assert all(a.visible is False for a in adapters.panel_title_annotations(artifact.figure))
+    assert all(
+        not artifact.figure.layout[p.xaxis.replace("x", "xaxis", 1)].title.text
+        and not artifact.figure.layout[p.yaxis.replace("y", "yaxis", 1)].title.text
+        for p in artifact.panels
+    )
+    assert all(
+        a.visible is not False
+        for a in artifact.figure.layout.annotations
+        if (a.name or "").startswith("publication-statistics")
+    )
+    assert artifact.figure.layout.meta == source.layout.meta
+    assert source.to_json() == original
+    headings_only = adapters.build_figure(
+        original, None, config, PlotContentConfig(show_panel_subtitles=False)
+    )
+    assert all(
+        a.visible is not False and "enrichment" not in a.text and "Cholinergic" not in a.text
+        for a in adapters.panel_title_annotations(headings_only.figure)
+    )
+    enrichment_only = adapters.build_figure(
+        original, None, config, PlotContentConfig(show_panel_titles=False)
+    )
+    assert all(
+        "enrichment" in a.text.replace("<br>", "")
+        for a in adapters.panel_title_annotations(enrichment_only.figure)
+    )
+
+
+def test_visibility_for_native_subplot_titles_and_3d_axis_titles():
+    native = make_subplots(rows=1, cols=2, subplot_titles=["First panel", "Second panel"])
+    for col in (1, 2):
+        native.add_trace(go.Scatter(x=[1, 2], y=[2, 3]), row=1, col=col)
+    artifact = adapters.build_figure(
+        native.to_json(), None, ExportConfig(), PlotContentConfig(show_panel_titles=False)
+    )
+    assert all(a.visible is False for a in artifact.figure.layout.annotations)
+    spatial = go.Figure(go.Scatter3d(x=[1], y=[2], z=[3]))
+    spatial.update_layout(scene=dict(xaxis_title="X", yaxis_title="Y", zaxis_title="Z"))
+    artifact = adapters.build_figure(
+        spatial.to_json(),
+        None,
+        ExportConfig(),
+        PlotContentConfig(show_x_title=False, show_y_title=False, show_z_title=False),
+    )
+    assert all(not artifact.figure.layout.scene[d + "axis"].title.text for d in ("x", "y", "z"))
+
+
+def test_shared_axis_titles_can_be_disabled_without_changing_axis_ranges():
+    _, _, source = correlation_figure()
+    source.update_xaxes(range=[-2, 15], type="linear")
+    source.update_yaxes(range=[-1, 8], type="linear")
+    config = preset_config("Grant figure")
+    shared = adapters.build_figure(source.to_json(), None, config, PlotContentConfig())
+    repeated = adapters.build_figure(
+        source.to_json(), None, config, PlotContentConfig(shared_axis_titles=False)
+    )
+    assert (
+        len(
+            [
+                a
+                for a in shared.figure.layout.annotations
+                if (a.name or "").startswith("publication-shared-")
+            ]
+        )
+        == 2
+    )
+    assert not any(
+        (a.name or "").startswith("publication-shared-") for a in repeated.figure.layout.annotations
+    )
+    for p in shared.panels:
+        for direction in ("x", "y"):
+            key = direction + "axis" + getattr(p, direction + "axis")[1:]
+            assert (
+                shared.figure.layout[key].range
+                == repeated.figure.layout[key].range
+                == source.layout[key].range
+            )
+            assert repeated.figure.layout[key].title.text
+            assert not shared.figure.layout[key].title.text
+
+
+def test_narrow_automatic_layout_uses_fewer_columns_without_duplicate_labels():
+    _, _, source = enrichment_figure()
+    spec = PlotExportSpec.from_figure("narrow", source)
+    content = PlotContentConfig(panel_labels=True)
+    config = adapters.fit_automatic_config(
+        spec, preset_config("Manuscript – single column", spec.aspect_ratio), content
+    )
+    artifact = adapters.build_artifact(spec, config, content)
+    domains = {
+        tuple(artifact.figure.layout[p.xaxis.replace("x", "xaxis", 1)].domain)
+        for p in artifact.panels
+    }
+    assert len(domains) < 3
+    assert (
+        len([a for a in artifact.figure.layout.annotations if a.name == "publication-panel-label"])
+        == 6
+    )
+    assert [p.identifier for p in artifact.panels] == [
+        p.identifier for p in adapters.figure_panels(source)
+    ]
+    assert artifact.figure.layout.height + 0.5 >= artifact.minimum_height
+    assert any("column(s)" in w for w in artifact.warnings)
+
+
+def test_wrapping_long_emphasized_words_and_escaped_labels_preserves_text():
+    wrapped = adapters._wrap_annotation("<b>LongComponentIdentifier</b> &amp; pathway", 50, 14)
+    assert "<br>" in wrapped
+    assert "<b>" in wrapped and "</b>" in wrapped and "&amp;" in wrapped
+    assert "LongComponentIdentifier" in wrapped.replace("<br>", "")
+    assert all(
+        adapters._text_width(line, 14, "DejaVu Sans") <= 50 for line in wrapped.split("<br>")
+    )
+
+
+def test_continuous_color_legend_can_be_hidden_in_vector_exports():
+    source = go.Figure(go.Heatmap(z=[[1, 2], [3, 4]], coloraxis="coloraxis"))
+    source.update_layout(coloraxis=dict(colorscale="Viridis", colorbar_title="Effect"))
+    artifact = adapters.build_figure(
+        source.to_json(), None, ExportConfig(), PlotContentConfig(show_color_scale=False)
+    )
+    assert artifact.figure.layout.coloraxis.showscale is False
+    assert artifact.figure.data[0].showscale is False
+    vector = adapters.vectorize_figure(artifact.figure)
+    assert all(
+        getattr(getattr(t, "marker", None), "showscale", None) is not True for t in vector.data
+    )
+    assert list(artifact.figure.data[0].z[0]) == list(source.data[0].z[0])
+    assert source.layout.coloraxis.showscale is None
+
+
+def test_below_panel_statistics_align_across_a_row():
+    _, _, source = correlation_figure()
+    spec = PlotExportSpec.from_figure("below", source)
+    content = PlotContentConfig(statistic_position="Below panel")
+    config = adapters.fit_automatic_config(
+        spec, preset_config("Grant figure", spec.aspect_ratio), content
+    )
+    artifact = adapters.build_artifact(spec, config, content)
+    annotations = [
+        a
+        for a in artifact.figure.layout.annotations
+        if (a.name or "").startswith("publication-statistics")
+    ]
+    assert len(annotations) == 2
+    assert annotations[0].yshift == pytest.approx(annotations[1].yshift)
+
+
+@pytest.mark.skipif(
+    os.environ.get("LIONESS_EXPORT_INTEGRATION") != "1",
+    reason="SVG text geometry requires a working Chrome runtime",
+)
+@pytest.mark.parametrize(
+    "columns,preset", [(0, "Manuscript – single column"), (2, "Grant figure"), (3, "Grant figure")]
+)
+def test_real_multi_panel_svg_text_does_not_overlap_or_clip(columns, preset, tmp_path):
+    browser = (
+        os.environ.get("BROWSER_PATH") or shutil.which("google-chrome") or shutil.which("chromium")
+    )
+    if not browser:
+        pytest.skip("Chrome/Chromium is not available on PATH")
+    _, _, source = enrichment_figure()
+    spec = PlotExportSpec.from_figure("text_geometry", source)
+    content = PlotContentConfig(panel_labels=True)
+    if columns == 0:
+        content = replace(content, panel_order=("x:y", "x2:y2"))
+    config = preset_config(preset, spec.aspect_ratio)
+    config = replace(config, format="svg", style=replace(config.style, panel_columns=columns))
+    config = adapters.fit_automatic_config(spec, config, content)
+    svg, _ = adapters.render_figure(spec, config, content)
+    # Measure the actual rendered glyph bounds, independently of the export
+    # layout's estimates. Include shared axis titles, panel labels and legends.
+    script = """
+<script>
+document.fonts.ready.then(() => {
+ const svg = document.querySelector('svg');
+ const outer = svg.getBoundingClientRect();
+ const boxes = Array.from(svg.querySelectorAll('text.annotation-text, text.gtitle, text.legendtext')).map(node => {
+   const b = node.getBoundingClientRect();
+   return {text:node.textContent, x:b.x-outer.x, y:b.y-outer.y, width:b.width, height:b.height};
+ });
+ const outside = boxes.filter(b => b.x < -1 || b.y < -1 || b.x+b.width > outer.width+1 || b.y+b.height > outer.height+1);
+ const overlaps = [];
+ for(let i=0;i<boxes.length;i++) for(let j=i+1;j<boxes.length;j++) {
+   const a=boxes[i], b=boxes[j];
+   if(Math.min(a.x+a.width,b.x+b.width)-Math.max(a.x,b.x)>1 && Math.min(a.y+a.height,b.y+b.height)-Math.max(a.y,b.y)>1) overlaps.push([a.text,b.text]);
+ }
+ const output=document.createElement('pre'); output.id='report';
+ output.textContent=JSON.stringify({count:boxes.length, outside, overlaps});
+ document.body.append(output);
+});
+</script>
+"""
+    page = tmp_path / "figure.html"
+    page.write_text(svg.decode() + script)
+    result = subprocess.run(
+        [
+            browser,
+            "--headless",
+            "--no-sandbox",
+            "--disable-dev-shm-usage",
+            "--allow-file-access-from-files",
+            "--virtual-time-budget=3000",
+            "--dump-dom",
+            page.as_uri(),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    match = re.search(r'<pre id="report">(.*?)</pre>', result.stdout, re.S)
+    assert match, result.stderr[-1000:]
+    report = json.loads(match.group(1))
+    assert report["count"] >= 10
+    assert not report["outside"]
+    assert not report["overlaps"]
+
+
 @pytest.mark.parametrize(
     "detail,message",
     [
@@ -469,13 +791,17 @@ def test_all_rendering_sites_are_exportable_and_inline_builders_extracted():
     os.environ.get("LIONESS_EXPORT_INTEGRATION") != "1",
     reason="Real Kaleido tests require a working Chrome runtime",
 )
-@pytest.mark.parametrize("kind", ["scatter", "raincloud", "heatmap", "webgl", "3d", "volcano"])
+@pytest.mark.parametrize(
+    "kind", ["scatter", "raincloud", "heatmap", "webgl", "3d", "volcano", "enrichment"]
+)
 def test_real_kaleido_artifacts(kind, tmp_path):
     frame, _, figure = correlation_figure()
     if kind == "raincloud":
         figure = distribution_figure(
             frame, "Eigengene", "Raw", ["Control", "AD"], 1112, "Raincloud"
         )
+    elif kind == "enrichment":
+        _, _, figure = enrichment_figure()
     elif kind == "heatmap":
         figure = go.Figure(
             go.Heatmap(
@@ -517,9 +843,10 @@ def test_real_kaleido_artifacts(kind, tmp_path):
         config = replace(
             preset_config("Grant figure", spec.aspect_ratio),
             dpi=600 if kind == "scatter" else 150,
-            height=None if kind == "3d" else 110,
+            height=None if kind in {"3d", "enrichment"} else 110,
             format=format,
         )
+        config = adapters.fit_automatic_config(spec, config, PlotContentConfig())
         data, _ = adapters.render_figure(spec, config, PlotContentConfig())
         (tmp_path / f"{kind}.{format}").write_bytes(data)
         if format in {"png", "tiff"}:

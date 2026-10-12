@@ -33,10 +33,14 @@ def fixture_app(monkeypatch, native=False):
         """
 import streamlit as st
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from app_helpers.figure_export import render_exportable_plot
 st.session_state.setdefault("analysis_setting", "unchanged")
 for identifier in ("first", "second"):
-    figure = go.Figure(go.Scatter(x=[1,2,3], y=[2,4,3], mode="markers"))
+    figure = make_subplots(rows=1, cols=2, subplot_titles=["First panel<br>Enrichment pathway", "Second panel<br>Enrichment pathway"])
+    for column in (1, 2):
+        figure.add_trace(go.Scatter(x=[1,2,3], y=[2,4,3], mode="markers"), row=1, col=column)
+    figure.update_layout(title="Original plot title<br><sup>Original subtitle</sup>")
     render_exportable_plot(figure, plot_id=identifier)
 if "test_open_spec" in st.session_state:
     from app_helpers.figure_export.ui import export_dialog_body
@@ -102,6 +106,45 @@ def test_prepare_download_and_errors(monkeypatch):
     widget(app.number_input, "Figure width").set_value(90.0).run()
     assert not app.exception
     assert any("Chrome" in e.value for e in app.error)
+
+
+def test_visibility_controls_preview_download_and_reset_are_isolated(monkeypatch):
+    app, calls = fixture_app(monkeypatch)
+    original_plots = [e.proto.spec for e in app.get("plotly_chart")]
+    app.button[0].click().run()
+    for label in (
+        "Show plot title",
+        "Show plot subtitle",
+        "Show panel titles",
+        "Show panel subtitles / enrichment",
+        "Show X-axis title",
+        "Show Y-axis title",
+        "Show legend",
+    ):
+        widget(app.checkbox, label).uncheck().run()
+    assert not app.exception
+    _, preview_config, content = calls[-1]
+    assert not any(
+        (
+            content.show_title,
+            content.show_subtitle,
+            content.show_panel_titles,
+            content.show_panel_subtitles,
+            content.show_x_title,
+            content.show_y_title,
+        )
+    )
+    assert preview_config.style.legend_visible is False
+    widget(app.button, "Prepare download").click().run()
+    assert calls[-1][2] == content
+    assert calls[-1][1].style.legend_visible is False
+    assert app.get("download_button")
+    assert [e.proto.spec for e in app.get("plotly_chart")] == original_plots
+    assert app.session_state["analysis_setting"] == "unchanged"
+    widget(app.button, "Reset to defaults").click().run()
+    assert calls[-1][2].show_title and calls[-1][2].show_panel_subtitles
+    assert calls[-1][1].style.legend_visible
+    assert not app.exception
 
 
 def test_popover_fallback(monkeypatch):

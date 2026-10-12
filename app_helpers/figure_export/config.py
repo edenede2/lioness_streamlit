@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import html
 import json
 import math
 import re
@@ -184,6 +185,15 @@ def preset_config(name: str, aspect_ratio: float = 1.5) -> ExportConfig:
 class PlotContentConfig:
     title: str | None = None
     subtitle: str = ""
+    show_title: bool = True
+    show_subtitle: bool = True
+    show_panel_titles: bool = True
+    show_panel_subtitles: bool = True
+    show_x_title: bool = True
+    show_y_title: bool = True
+    show_z_title: bool = True
+    show_color_scale: bool = True
+    shared_axis_titles: bool = True
     x_label: str | None = None
     y_label: str | None = None
     z_label: str | None = None
@@ -217,6 +227,8 @@ class FigureArtifact:
     figure: go.Figure
     panels: tuple[Panel, ...]
     warnings: tuple[str, ...] = ()
+    # Minimum canvas height in CSS pixels, including physical text and panel gaps.
+    minimum_height: float = 0
 
 
 Builder = Callable[[Any, Any, ExportConfig, PlotContentConfig], FigureArtifact]
@@ -272,7 +284,8 @@ def figure_panels(figure: go.Figure) -> tuple[Panel, ...]:
                         abs(a.get("x", -100) - sum(domain) / 2) < 0.01
                         and abs(a.get("y", -100) - yd[1]) < 0.01
                     ):
-                        label = re.sub("<[^>]+>", " ", str(a.get("text", label))).strip()
+                        heading = str(a.get("text", label)).split("<br>")[0]
+                        label = html.unescape(re.sub("<[^>]+>", " ", heading)).strip()
                         break
         panels.append(Panel(identifier, label, x, y, scene or ""))
     return tuple(panels)
@@ -373,7 +386,7 @@ def render_fingerprint(
     callback_context = id(spec) if spec.builder is not None else None
     payload = json.dumps(
         [
-            "export-v1",
+            "export-v2",
             versions,
             spec.fingerprint,
             callback_context,
