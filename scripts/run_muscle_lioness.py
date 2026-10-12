@@ -553,6 +553,15 @@ def main() -> None:
     ]
     manifest = {
         "analysis": "muscle_control_derived_l4_lioness_nonprediction",
+        "module_partition_network": (
+            "Control-only Method 5 extended SFN (bootstrap stability, CT null "
+            "calibration, and per-block q90 scaling)"
+        ),
+        "lioness_adjacency_functional": (
+            "Pearson signedAlt with frozen Control-derived block powers; the "
+            "Method-5 bootstrap/null/q90 functional is used for MDC group "
+            "networks, not inside donor leave-one-out/add-one scoring"
+        ),
         "status": "running",
         "started_at_utc": utc_now(),
         "assignment_level": "table_3 (zero-indexed; biological subcluster 4)",
