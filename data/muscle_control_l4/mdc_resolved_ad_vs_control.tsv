@@ -1,0 +1,931 @@
+module_definition	module	component	component_class	n_features	n_edges	mdc	log2_mdc	direction	p_loss_sample	p_loss_gene	q_loss_sample	q_loss_gene	q_loss_max	p_gain_sample	p_gain_gene	q_gain_sample	q_gain_gene	q_gain_max	directional_p_sample	directional_p_gene	directional_fdr	significant_fdr_05	significant_fdr_10	component_label
+muscle_control_l4	0	TS_VH	TS	821	7140	0.9471976408805315	-0.07826260713650099	Higher in Control														False	False	TS: VH
+muscle_control_l4	0	TS_SMA	TS	821	31375	0.8901203235513658	-0.16792772683343696	Higher in Control														False	False	TS: SMA
+muscle_control_l4	0	TS_QUAD	TS	821	101025	0.6623264362169138	-0.5943856515167598	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	0	CT_VH__SMA	CT	821	30120	0.609966283116129	-0.7131985973356841	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	0	CT_VH__QUAD	CT	821	54000	0.9430517789988141	-0.08459110950766191	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	0	CT_SMA__QUAD	CT	821	112950	1.0413630123152828	0.05847307034188213	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	5	TS_VH	TS	30	1	0.5830408281903574	-0.7783311813323582	Higher in Control														False	False	TS: VH
+muscle_control_l4	5	TS_SMA	TS	30	210	0.7267262794930474	-0.4605160176434829	Higher in Control														False	False	TS: SMA
+muscle_control_l4	5	TS_QUAD	TS	30	21	0.137069671011563	-2.867018709194565	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	5	CT_VH__SMA	CT	30	42	4.000443969957793	2.0001601194282403	Higher in AD														False	False	CT: VH - SMA
+muscle_control_l4	5	CT_VH__QUAD	CT	30	14	0.06867433760936756	-3.8640850997599308	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	5	CT_SMA__QUAD	CT	30	147	0.9088011811002038	-0.1379633850818497	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	6	TS_VH	TS	552	3321	1.1948663742316419	0.256849285977892	Higher in AD														False	False	TS: VH
+muscle_control_l4	6	TS_SMA	TS	552	22366	0.6059880484800325	-0.7226387542726634	Higher in Control														False	False	TS: SMA
+muscle_control_l4	6	TS_QUAD	TS	552	33153	0.9769559375062674	-0.03363459940271788	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	6	CT_VH__SMA	CT	552	17384	0.7695955468824112	-0.37782764363446064	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	6	CT_VH__QUAD	CT	552	21156	0.37985597520344644	-1.396475579610239	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	6	CT_SMA__QUAD	CT	552	54696	0.7673246383747583	-0.38209101509378735	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	8	TS_VH	TS	41	91	1.1069681410780496	0.14661370145992522	Higher in AD														False	False	TS: VH
+muscle_control_l4	8	TS_SMA	TS	41	21	3.463340922672008	1.7921644098393048	Higher in AD														False	False	TS: SMA
+muscle_control_l4	8	TS_QUAD	TS	41	190	0.3464184619491387	-1.5294122761024125	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	8	CT_VH__SMA	CT	41	98	0.06397583331672115	-3.9663291555745395	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	8	CT_VH__QUAD	CT	41	280	0.47533448901955333	-1.0729850112940154	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	8	CT_SMA__QUAD	CT	41	140	0.12557846030083053	-2.993339066024796	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	9	TS_VH	TS	796	45753	0.7937606953454652	-0.3332239687225565	Higher in Control														False	False	TS: VH
+muscle_control_l4	9	TS_SMA	TS	796	9730	0.5903521243847278	-0.760352366567184	Higher in Control														False	False	TS: SMA
+muscle_control_l4	9	TS_QUAD	TS	796	62128	0.7265899598976012	-0.4607866643197842	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	9	CT_VH__SMA	CT	796	42420	0.7515762316702003	-0.4120086521231914	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	9	CT_VH__QUAD	CT	796	106959	0.8398497037075375	-0.25179692308683327	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	9	CT_SMA__QUAD	CT	796	49420	1.1023248990049357	0.14054950621370393	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	35	TS_VH	TS	54	105	1.0760338462107115	0.10572345799897774	Higher in AD														False	False	TS: VH
+muscle_control_l4	35	TS_SMA	TS	54	406	1.3420743837425313	0.42446463434177295	Higher in AD														False	False	TS: SMA
+muscle_control_l4	35	TS_QUAD	TS	54	45	6.20774615604189	2.6340695647887244	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	35	CT_VH__SMA	CT	54	435	0.8852948995999695	-0.17576998509065747	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	35	CT_VH__QUAD	CT	54	150	0.9527131392767532	-0.06988620902270198	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	35	CT_SMA__QUAD	CT	54	290	3.0755095120978746	1.620825437991665	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	36	TS_VH	TS	1610	178503	0.9568847695201347	-0.06358289269552488	Higher in Control														False	False	TS: VH
+muscle_control_l4	36	TS_SMA	TS	1610	203203	1.4047219743107133	0.4902846172971069	Higher in AD														False	False	TS: SMA
+muscle_control_l4	36	TS_QUAD	TS	1610	69751	2.2962130769277467	1.199256523008258	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	36	CT_VH__SMA	CT	1610	381524	0.7180526100822695	-0.4778385439808161	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	36	CT_VH__QUAD	CT	1610	223652	2.095344498977091	1.0671874592500408	Higher in AD														False	False	CT: VH - QUAD
+muscle_control_l4	36	CT_SMA__QUAD	CT	1610	238612	1.9585862036313153	0.9698126273004044	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	37	TS_VH	TS	1190	85905	1.1384193803870888	0.1870321275448014	Higher in AD														False	False	TS: VH
+muscle_control_l4	37	TS_SMA	TS	1190	99235	1.0864562674254836	0.11963010361428678	Higher in AD														False	False	TS: SMA
+muscle_control_l4	37	TS_QUAD	TS	1190	53956	2.028764806126351	1.0206016237428657	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	37	CT_VH__SMA	CT	1190	185090	0.8243065379766852	-0.27874715726074534	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	37	CT_VH__QUAD	CT	1190	136535	1.0350087449156187	0.04964295728314914	Higher in AD														False	False	CT: VH - QUAD
+muscle_control_l4	37	CT_SMA__QUAD	CT	1190	146734	1.4401334448847531	0.5262025001075765	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	43	TS_VH	TS	34	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	43	TS_SMA	TS	34	528	0.6250547146963993	-0.6779456120467721	Higher in Control														False	False	TS: SMA
+muscle_control_l4	43	TS_QUAD	TS	34	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	43	CT_VH__SMA	CT	34	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	43	CT_VH__QUAD	CT	34	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	43	CT_SMA__QUAD	CT	34	33	0.0610822135357817	-4.033103845399765	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	44	TS_VH	TS	49	36	0.7592789776758921	-0.39729803037965916	Higher in Control														False	False	TS: VH
+muscle_control_l4	44	TS_SMA	TS	49	435	0.7550730084065336	-0.4053119487625818	Higher in Control														False	False	TS: SMA
+muscle_control_l4	44	TS_QUAD	TS	49	45	1.788126862145564	0.8384490949639894	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	44	CT_VH__SMA	CT	49	270	0.04065349591547156	-4.620476770486637	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	44	CT_VH__QUAD	CT	49	90	0.12900243528110822	-2.9545297940852246	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	44	CT_SMA__QUAD	CT	49	300	0.055563135871242474	-4.169728165361426	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	45	TS_VH	TS	43	10	0.35935543306254214	-1.476516596686392	Higher in Control														False	False	TS: VH
+muscle_control_l4	45	TS_SMA	TS	43	496	0.6524120657981177	-0.6161446311911186	Higher in Control														False	False	TS: SMA
+muscle_control_l4	45	TS_QUAD	TS	43	15	1.0228636031702278	0.03261377739079926	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	45	CT_VH__SMA	CT	43	160	0.032863108070501065	-4.927387258304387	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	45	CT_VH__QUAD	CT	43	30	0.001349659400171787	-9.533188909741815	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	45	CT_SMA__QUAD	CT	43	192	0.008574983204592296	-6.865650439111347	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	49	TS_VH	TS	38	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	49	TS_SMA	TS	38	630	0.5969153953165187	-0.7444016314156652	Higher in Control														False	False	TS: SMA
+muscle_control_l4	49	TS_QUAD	TS	38	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	49	CT_VH__SMA	CT	38	36	3.671553012288788e-05	-14.733250043737076	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	49	CT_VH__QUAD	CT	38	1	0.003449454491458536	-8.17941605746516	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	49	CT_SMA__QUAD	CT	38	36	0.20224611159524475	-2.3058161293702266	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	56	TS_VH	TS	165	7750	1.433030195711088	0.5190690092816179	Higher in AD														False	False	TS: VH
+muscle_control_l4	56	TS_SMA	TS	165	21	0.38827218169481864	-1.3648597478485462	Higher in Control														False	False	TS: SMA
+muscle_control_l4	56	TS_QUAD	TS	165	528	1.5189599721920983	0.603083852275256	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	56	CT_VH__SMA	CT	165	875	0.20694457773179842	-2.2726836466667164	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	56	CT_VH__QUAD	CT	165	4125	0.08742136725904864	-3.515870247908019	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	56	CT_SMA__QUAD	CT	165	231	3.8787351765057565	1.9555862781677877	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	57	TS_VH	TS	105	210	1.1380639208419367	0.18658159076562245	Higher in AD														False	False	TS: VH
+muscle_control_l4	57	TS_SMA	TS	105	253	0.6733870134935062	-0.5704921963371538	Higher in Control														False	False	TS: SMA
+muscle_control_l4	57	TS_QUAD	TS	105	1830	1.5494654897853546	0.631770623094526	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	57	CT_VH__SMA	CT	105	483	0.5304794428943115	-0.914631249890715	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	57	CT_VH__QUAD	CT	105	1281	0.005138524525536311	-7.604430120821503	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	57	CT_SMA__QUAD	CT	105	1403	1.5192178394197184	0.603328751550056	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	61	TS_VH	TS	46	325	1.1874473133465968	0.24786350295108225	Higher in AD														False	False	TS: VH
+muscle_control_l4	61	TS_SMA	TS	46	36	0.6964456977563781	-0.5219172253798153	Higher in Control														False	False	TS: SMA
+muscle_control_l4	61	TS_QUAD	TS	46	55	0.6823425601863129	-0.5514318896470312	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	61	CT_VH__SMA	CT	46	234	0.3518168473105217	-1.507103524671638	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	61	CT_VH__QUAD	CT	46	286	0.6586809978856351	-0.6023481640916678	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	61	CT_SMA__QUAD	CT	46	99	3.4738310122436764	1.7965275745066223	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	137	TS_VH	TS	750	1711	0.7383555566149665	-0.43761237855165014	Higher in Control														False	False	TS: VH
+muscle_control_l4	137	TS_SMA	TS	750	227475	1.0019004135781282	0.0027391153424028104	Higher in AD														False	False	TS: SMA
+muscle_control_l4	137	TS_QUAD	TS	750	120	1.4457610501008433	0.5318291288305594	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	137	CT_VH__SMA	CT	750	39825	1.5079520900260726	0.5925905926783285	Higher in AD														False	False	CT: VH - SMA
+muscle_control_l4	137	CT_VH__QUAD	CT	750	944	1.2418685026591727	0.3125124194480413	Higher in AD														False	False	CT: VH - QUAD
+muscle_control_l4	137	CT_SMA__QUAD	CT	750	10800	1.0502374000563772	0.07071547757856346	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	138	TS_VH	TS	54	780	0.7450468230086126	-0.4245969992459531	Higher in Control														False	False	TS: VH
+muscle_control_l4	138	TS_SMA	TS	54	78	0.7136722146364844	-0.48666648968138804	Higher in Control														False	False	TS: SMA
+muscle_control_l4	138	TS_QUAD	TS	54	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	138	CT_VH__SMA	CT	54	520	2.2426500243858767	1.1652044989451544	Higher in AD														False	False	CT: VH - SMA
+muscle_control_l4	138	CT_VH__QUAD	CT	54	40	0.008143510703671876	-6.940133403822222	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	138	CT_SMA__QUAD	CT	54	13	0.07189690603590186	-3.7979265017624813	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	140	TS_VH	TS	615	128778	0.6922187710274853	-0.5307000310189576	Higher in Control														False	False	TS: VH
+muscle_control_l4	140	TS_SMA	TS	615	3003	1.0809476630754207	0.11229667288807417	Higher in AD														False	False	TS: SMA
+muscle_control_l4	140	TS_QUAD	TS	615	406	0.9366103052788581	-0.09447918316587403	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	140	CT_VH__SMA	CT	615	39624	1.0309347503017088	0.04395302485434281	Higher in AD														False	False	CT: VH - SMA
+muscle_control_l4	140	CT_VH__QUAD	CT	615	14732	0.16950733745450067	-2.560580370315678	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	140	CT_SMA__QUAD	CT	615	2262	0.25875129554572035	-1.9503620088060012	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	145	TS_VH	TS	354	54285	0.8219236620563484	-0.28292368819083125	Higher in Control														False	False	TS: VH
+muscle_control_l4	145	TS_SMA	TS	354	253	1.0070436360900978	0.010126197949316622	Higher in AD														False	False	TS: SMA
+muscle_control_l4	145	TS_QUAD	TS	354	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	145	CT_VH__SMA	CT	354	7590	1.8755383395500138	0.9073047547153663	Higher in AD														False	False	CT: VH - SMA
+muscle_control_l4	145	CT_VH__QUAD	CT	354	330	1.2413258694255616	0.3118818974909896	Higher in AD														False	False	CT: VH - QUAD
+muscle_control_l4	145	CT_SMA__QUAD	CT	354	23	20.81597231678295	4.379619043413006	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	159	TS_VH	TS	1010	62481	0.6997312722172839	-0.5151271252232382	Higher in Control														False	False	TS: VH
+muscle_control_l4	159	TS_SMA	TS	1010	204480	1.0395489196071785	0.05595765085049235	Higher in AD														False	False	TS: SMA
+muscle_control_l4	159	TS_QUAD	TS	1010	120	0.5434921234509429	-0.8796689677131697	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	159	CT_VH__SMA	CT	1010	226560	1.9468778810166232	0.961162393058152	Higher in AD														False	False	CT: VH - SMA
+muscle_control_l4	159	CT_VH__QUAD	CT	1010	5664	0.1733087750145514	-2.528583391632916	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	159	CT_SMA__QUAD	CT	1010	10240	0.42598767469844695	-1.231116406005892	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	160	TS_VH	TS	1095	74305	0.8365296887447673	-0.25751135194019725	Higher in Control														False	False	TS: VH
+muscle_control_l4	160	TS_SMA	TS	1095	222778	1.0254476009891014	0.036253773900104896	Higher in AD														False	False	TS: SMA
+muscle_control_l4	160	TS_QUAD	TS	1095	820	1.0068614291496834	0.00986514388613765	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	160	CT_VH__SMA	CT	1095	257848	1.5650842938417597	0.6462403613320291	Higher in AD														False	False	CT: VH - SMA
+muscle_control_l4	160	CT_VH__QUAD	CT	1095	15826	0.4983094255639948	-1.0048862319118204	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	160	CT_SMA__QUAD	CT	1095	27388	1.0644621467212791	0.0901246471049226	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	233	TS_VH	TS	162	10	0.8847480175148361	-0.17666147092939005	Higher in Control														False	False	TS: VH
+muscle_control_l4	233	TS_SMA	TS	162	190	1.214531576229947	0.28039999864250237	Higher in AD														False	False	TS: SMA
+muscle_control_l4	233	TS_QUAD	TS	162	9316	0.9731767855045762	-0.039226188746737056	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	233	CT_VH__SMA	CT	162	100	0.9193716563350227	-0.12127990545140037	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	233	CT_VH__QUAD	CT	162	685	0.3233411620215803	-1.6288709175675773	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	233	CT_SMA__QUAD	CT	162	2740	0.04327109627449486	-4.530452517830677	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	241	TS_VH	TS	136	66	0.5169534161139766	-0.9518938131272703	Higher in Control														False	False	TS: VH
+muscle_control_l4	241	TS_SMA	TS	136	946	1.047477546686588	0.06691931921713921	Higher in AD														False	False	TS: SMA
+muscle_control_l4	241	TS_QUAD	TS	136	3160	0.9987141331863887	-0.0018563074132310774	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	241	CT_VH__SMA	CT	136	528	0.04801407047117844	-4.380398941767116	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	241	CT_VH__QUAD	CT	136	960	0.043397978657470436	-4.526228341776758	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	241	CT_SMA__QUAD	CT	136	3520	0.057350801751192906	-4.12404253484339	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	250	TS_VH	TS	210	21	1.2365909438015144	0.3063683451436927	Higher in AD														False	False	TS: VH
+muscle_control_l4	250	TS_SMA	TS	210	9453	1.1300022931894063	0.1763257004011951	Higher in AD														False	False	TS: SMA
+muscle_control_l4	250	TS_QUAD	TS	210	2080	1.162434503872228	0.21714943140288012	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	250	CT_VH__SMA	CT	210	966	0.04476438854037282	-4.481504709870779	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	250	CT_VH__QUAD	CT	210	455	0.2370880812161428	-2.076504956751418	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	250	CT_SMA__QUAD	CT	210	8970	0.039498300355976526	-4.662065615491577	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	268	TS_VH	TS	137	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	268	TS_SMA	TS	137	7021	1.123527827015377	0.16803585696101164	Higher in AD														False	False	TS: SMA
+muscle_control_l4	268	TS_QUAD	TS	137	153	1.587968198495097	0.6671820205836285	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	268	CT_VH__SMA	CT	137	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	268	CT_VH__QUAD	CT	137	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	268	CT_SMA__QUAD	CT	137	2142	0.07935498558890204	-3.65553532451597	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	269	TS_VH	TS	190	78	1.621529333007686	0.697355121975622	Higher in AD														False	False	TS: VH
+muscle_control_l4	269	TS_SMA	TS	190	5151	0.9700288183485004	-0.043900486277416474	Higher in Control														False	False	TS: SMA
+muscle_control_l4	269	TS_QUAD	TS	190	2775	1.4661837729784342	0.5520659436819646	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	269	CT_VH__SMA	CT	190	1326	0.7917589261678982	-0.33686686782105235	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	269	CT_VH__QUAD	CT	190	975	0.041119214817870293	-4.604043473617934	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	269	CT_SMA__QUAD	CT	190	7650	0.03681045147196554	-4.763740745611797	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	270	TS_VH	TS	103	1	0.21695608622932339	-2.204525036505459	Higher in Control														False	False	TS: VH
+muscle_control_l4	270	TS_SMA	TS	103	4371	1.073417061198829	0.10221072401486643	Higher in AD														False	False	TS: SMA
+muscle_control_l4	270	TS_QUAD	TS	103	21	2.913290790823538	1.5426497116193494	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	270	CT_VH__SMA	CT	103	188	0.5528616612643973	-0.8550095648352815	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	270	CT_VH__QUAD	CT	103	14	0.07565169946734755	-3.724483697741502	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	270	CT_SMA__QUAD	CT	103	658	0.026043974177861817	-5.262906576554697	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	272	TS_VH	TS	186	210	0.4886454274872468	-1.033140103234571	Higher in Control														False	False	TS: VH
+muscle_control_l4	272	TS_SMA	TS	186	12090	0.9612775345487216	-0.05697507709199554	Higher in Control														False	False	TS: SMA
+muscle_control_l4	272	TS_QUAD	TS	186	36	0.22620602882361865	-2.144290714463121	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	272	CT_VH__SMA	CT	186	3276	0.19453735305221415	-2.361880901684894	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	272	CT_VH__QUAD	CT	186	189	23.713393314846435	4.567630217775502	Higher in AD														False	False	CT: VH - QUAD
+muscle_control_l4	272	CT_SMA__QUAD	CT	186	1404	0.6372514647496251	-0.6500653105400944	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	273	TS_VH	TS	274	300	0.5765982998882084	-0.7943615118638848	Higher in Control														False	False	TS: VH
+muscle_control_l4	273	TS_SMA	TS	274	29161	1.0633922026114937	0.08867379292235836	Higher in AD														False	False	TS: SMA
+muscle_control_l4	273	TS_QUAD	TS	274	21	0.12935414237835993	-2.9506018399135914	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	273	CT_VH__SMA	CT	274	6050	0.10060852473252867	-3.31317554254423	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	273	CT_VH__QUAD	CT	274	175	0.5714538136707648	-0.8072911939642956	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	273	CT_SMA__QUAD	CT	274	1694	0.018343269879599854	-5.7686053524452685	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	275	TS_VH	TS	285	990	0.7205475610312128	-0.47283443367643413	Higher in Control														False	False	TS: VH
+muscle_control_l4	275	TS_SMA	TS	285	27028	1.0446833740438872	0.06306575195869184	Higher in AD														False	False	TS: SMA
+muscle_control_l4	275	TS_QUAD	TS	285	21	0.9741046418504706	-0.03785133472576059	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	275	CT_VH__SMA	CT	285	10485	0.29992821130095126	-1.7373108661459293	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	275	CT_VH__QUAD	CT	285	315	0.07590888003036175	-3.719587523812596	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	275	CT_SMA__QUAD	CT	285	1631	0.07622079567463418	-3.713671521143703	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	276	TS_VH	TS	214	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	276	TS_SMA	TS	214	18915	1.1650774088683844	0.22042581211601905	Higher in AD														False	False	TS: SMA
+muscle_control_l4	276	TS_QUAD	TS	214	153	0.5164682462683998	-0.9532484434918294	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	276	CT_VH__SMA	CT	214	195	0.003365420998125139	-8.2149972942645	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	276	CT_VH__QUAD	CT	214	18	0.035623408910608875	-4.811030610923267	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	276	CT_SMA__QUAD	CT	214	3510	0.2012518761682511	-2.3129258620898474	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	282	TS_VH	TS	319	3	0.29320570881493646	-1.7700149013787412	Higher in Control														False	False	TS: VH
+muscle_control_l4	282	TS_SMA	TS	319	39621	1.0448577239046326	0.06330650690752508	Higher in AD														False	False	TS: SMA
+muscle_control_l4	282	TS_QUAD	TS	319	561	1.0510940779299094	0.07189180316184664	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	282	CT_VH__SMA	CT	319	846	0.006568574189774789	-7.250204039316581	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	282	CT_VH__QUAD	CT	319	102	0.9823472168420552	-0.025695050512745392	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	282	CT_SMA__QUAD	CT	319	9588	0.07313770963076364	-3.7732407416034706	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	283	TS_VH	TS	332	595	0.6166361453860986	-0.6975086364495708	Higher in Control														False	False	TS: VH
+muscle_control_l4	283	TS_SMA	TS	332	41616	1.0112481903399886	0.016137120910026465	Higher in AD														False	False	TS: SMA
+muscle_control_l4	283	TS_QUAD	TS	332	28	0.6233341457283477	-0.6819223503341886	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	283	CT_VH__SMA	CT	332	10115	0.8140792587525013	-0.2967588327759053	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	283	CT_VH__QUAD	CT	332	280	0.11172898093912059	-3.16192464555557	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	283	CT_SMA__QUAD	CT	332	2312	0.8670302030946241	-0.20584584412090395	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	286	TS_VH	TS	335	3828	0.43110912729908996	-1.2138749877879378	Higher in Control														False	False	TS: VH
+muscle_control_l4	286	TS_SMA	TS	335	28680	0.8918924995177833	-0.1650582633951394	Higher in Control														False	False	TS: SMA
+muscle_control_l4	286	TS_QUAD	TS	335	21	0.9817120479219484	-0.026628174171028224	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	286	CT_VH__SMA	CT	335	21120	0.25445969320057443	-1.9744909455606916	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	286	CT_VH__QUAD	CT	335	616	0.07878810803593449	-3.665878298320026	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	286	CT_SMA__QUAD	CT	335	1680	0.10167859291812968	-3.2979121240668094	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	311	TS_VH	TS	211	17578	0.6489583306536464	-0.6238022485417113	Higher in Control														False	False	TS: VH
+muscle_control_l4	311	TS_SMA	TS	211	15	0.716486834799677	-0.4809878991839128	Higher in Control														False	False	TS: SMA
+muscle_control_l4	311	TS_QUAD	TS	211	136	0.37073916986315253	-1.4315235460049875	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	311	CT_VH__SMA	CT	211	1128	0.041095889844186564	-4.604862078055732	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	311	CT_VH__QUAD	CT	211	3196	0.015450320277799141	-6.016219444952303	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	311	CT_SMA__QUAD	CT	211	102	11.414917116582561	3.512848479116694	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	312	TS_VH	TS	216	11026	0.7062511859572884	-0.5017467098551663	Higher in Control														False	False	TS: VH
+muscle_control_l4	312	TS_SMA	TS	216	36	0.9950594416641608	-0.007145384675642878	Higher in Control														False	False	TS: SMA
+muscle_control_l4	312	TS_QUAD	TS	216	1653	0.5092913598287097	-0.9734368528885315	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	312	CT_VH__SMA	CT	216	1341	0.0336878392455227	-4.891628293512731	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	312	CT_VH__QUAD	CT	216	8642	0.03928632585246606	-4.669828939827059	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	312	CT_SMA__QUAD	CT	216	522	1.0625234323606938	0.08749465807650314	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	313	TS_VH	TS	143	7381	0.6684593573183848	-0.5810882485219099	Higher in Control														False	False	TS: VH
+muscle_control_l4	313	TS_SMA	TS	143	153	1.3057704804262404	0.38490133191438647	Higher in AD														False	False	TS: SMA
+muscle_control_l4	313	TS_QUAD	TS	143	3	18.77808479052537	4.230978022409863	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	313	CT_VH__SMA	CT	143	2196	0.13585869476174342	-2.879821195957987	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	313	CT_VH__QUAD	CT	143	366	0.004798311940890275	-7.703257333586262	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	313	CT_SMA__QUAD	CT	143	54	0.0615856133077484	-4.021262819920814	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	314	TS_VH	TS	92	3081	0.6910603724210982	-0.5331163420338247	Higher in Control														False	False	TS: VH
+muscle_control_l4	314	TS_SMA	TS	92	21	1.9465925233568695	0.9609509189548014	Higher in AD														False	False	TS: SMA
+muscle_control_l4	314	TS_QUAD	TS	92	15	0.6165352323411101	-0.6977447540768859	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	314	CT_VH__SMA	CT	92	553	0.3607046116332981	-1.4711102266885254	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	314	CT_VH__QUAD	CT	92	474	0.004422605466772241	-7.820887737094002	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	314	CT_SMA__QUAD	CT	92	42	9.406445226669158	3.233649619576939	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	315	TS_VH	TS	130	6555	0.6425119401425508	-0.6382048299592362	Higher in Control														False	False	TS: VH
+muscle_control_l4	315	TS_SMA	TS	130	36	0.9352867420451961	-0.09651935779455244	Higher in Control														False	False	TS: SMA
+muscle_control_l4	315	TS_QUAD	TS	130	15	0.09383990659509177	-3.4136546124149634	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	315	CT_VH__SMA	CT	130	1035	0.26007326925413093	-1.9430099704864565	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	315	CT_VH__QUAD	CT	130	690	0.28348167238254063	-1.818672629622986	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	315	CT_SMA__QUAD	CT	130	54	0.4655654715010663	-1.1029440296423634	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	317	TS_VH	TS	138	8778	0.6649600632752923	-0.5886603982507392	Higher in Control														False	False	TS: VH
+muscle_control_l4	317	TS_SMA	TS	138	0			Higher in Control														False	False	TS: SMA
+muscle_control_l4	317	TS_QUAD	TS	138	6	0.3099937109707278	-1.6896891479148772	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	317	CT_VH__SMA	CT	138	133	0.002969563596390869	-8.395533354842408	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	317	CT_VH__QUAD	CT	138	532	0.004721978104143481	-7.726392932870384	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	317	CT_SMA__QUAD	CT	138	4	6.936940452293341	2.794299500330914	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	318	TS_VH	TS	99	4656	0.6910495131631288	-0.5331390125867003	Higher in Control														False	False	TS: VH
+muscle_control_l4	318	TS_SMA	TS	99	0			Higher in Control														False	False	TS: SMA
+muscle_control_l4	318	TS_QUAD	TS	99	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	318	CT_VH__SMA	CT	99	97	0.001173366657429878	-9.735130382805224	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	318	CT_VH__QUAD	CT	99	97	0.0178220984340017	-5.810188975131909	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	318	CT_SMA__QUAD	CT	99	1	0.33750556004647275	-1.5670168256560404	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	321	TS_VH	TS	209	4656	0.7138806698917162	-0.48624515696808973	Higher in Control														False	False	TS: VH
+muscle_control_l4	321	TS_SMA	TS	209	595	1.3699842792068375	0.45415933811976994	Higher in AD														False	False	TS: SMA
+muscle_control_l4	321	TS_QUAD	TS	209	2926	0.2100950321685735	-2.250886045920179	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	321	CT_VH__SMA	CT	209	3395	0.3485341525203861	-1.5206280635923022	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	321	CT_VH__QUAD	CT	209	7469	0.24755732060491256	-2.014165482512174	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	321	CT_SMA__QUAD	CT	209	2695	0.2807280408295164	-1.8327549186564331	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	323	TS_VH	TS	368	26565	0.48745533236904603	-1.036658070326886	Higher in Control														False	False	TS: VH
+muscle_control_l4	323	TS_SMA	TS	368	780	1.143006384133007	0.19283346158503134	Higher in AD														False	False	TS: SMA
+muscle_control_l4	323	TS_QUAD	TS	368	4656	1.1718473823259543	0.2287846899831163	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	323	CT_VH__SMA	CT	368	9240	0.5913228600161575	-0.7579820433987977	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	323	CT_VH__QUAD	CT	368	22407	0.28203883776490457	-1.8260342542746018	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	323	CT_SMA__QUAD	CT	368	3880	2.1303832267206633	1.0911129748448951	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	324	TS_VH	TS	298	17020	0.4571939287054301	-1.1291218494380446	Higher in Control														False	False	TS: VH
+muscle_control_l4	324	TS_SMA	TS	298	36	3.6970230291784554	1.8863640302652358	Higher in AD														False	False	TS: SMA
+muscle_control_l4	324	TS_QUAD	TS	298	5356	0.3681072484894888	-1.4418019364262427	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	324	CT_VH__SMA	CT	298	1665	0.10907281167557596	-3.1966365656282734	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	324	CT_VH__QUAD	CT	298	19240	0.05835689810350696	-4.098952989343116	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	324	CT_SMA__QUAD	CT	298	936	2.4411304865024492	1.2875494140041732	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	325	TS_VH	TS	276	31626	1.3358216921652568	0.41772744718557914	Higher in AD														False	False	TS: VH
+muscle_control_l4	325	TS_SMA	TS	276	21	1.0278312739547097	0.03960345499159242	Higher in AD														False	False	TS: SMA
+muscle_control_l4	325	TS_QUAD	TS	276	136	1.1065170830176492	0.1460257244282141	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	325	CT_VH__SMA	CT	276	1764	0.4651238917588353	-1.1043130470121267	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	325	CT_VH__QUAD	CT	276	4284	0.266000515047638	-1.9104990557174621	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	325	CT_SMA__QUAD	CT	276	119	10.778542752332351	3.43009023530656	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	327	TS_VH	TS	30	190	1.108395989466701	0.1484733958065891	Higher in AD														False	False	TS: VH
+muscle_control_l4	327	TS_SMA	TS	30	1	1.176151452713551	0.23407384759780328	Higher in AD														False	False	TS: SMA
+muscle_control_l4	327	TS_QUAD	TS	30	28	0.853287342754132	-0.22889644694344669	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	327	CT_VH__SMA	CT	30	40	0.032589928739068914	-4.939429992282608	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	327	CT_VH__QUAD	CT	30	160	0.04033911975005505	-4.631676586886963	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	327	CT_SMA__QUAD	CT	30	16	0.013865099278152248	-6.172398243243339	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	328	TS_VH	TS	50	1081	0.9645223883472686	-0.05211336860602768	Higher in Control														False	False	TS: VH
+muscle_control_l4	328	TS_SMA	TS	50	0			Higher in Control														False	False	TS: SMA
+muscle_control_l4	328	TS_QUAD	TS	50	1	0.00015409830392318978	-12.663861396574552	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	328	CT_VH__SMA	CT	50	47	0.015796119625575568	-5.984285991150282	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	328	CT_VH__QUAD	CT	50	94	0.11552234360253283	-3.113756179289119	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	328	CT_SMA__QUAD	CT	50	2	28.860053660700892	4.851002077182	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	330	TS_VH	TS	196	15225	0.8623036496034467	-0.21373210882488639	Higher in Control														False	False	TS: VH
+muscle_control_l4	330	TS_SMA	TS	196	15	1.4432966364571285	0.5293678431169682	Higher in AD														False	False	TS: SMA
+muscle_control_l4	330	TS_QUAD	TS	196	105	0.6848590968748915	-0.5461208968140168	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	330	CT_VH__SMA	CT	196	1050	0.028202241225913867	-5.148046371936861	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	330	CT_VH__QUAD	CT	196	2625	0.01796535387497597	-5.7986388364750185	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	330	CT_SMA__QUAD	CT	196	90	1.156596214512737	0.2098852853659441	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	331	TS_VH	TS	270	35778	1.0354595777702091	0.0502712347861085	Higher in AD														False	False	TS: VH
+muscle_control_l4	331	TS_SMA	TS	270	1	0.10535380913928545	-3.2466856181596655	Higher in Control														False	False	TS: SMA
+muscle_control_l4	331	TS_QUAD	TS	270	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	331	CT_VH__SMA	CT	270	536	0.012103288717946041	-6.368457078439553	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	331	CT_VH__QUAD	CT	270	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	331	CT_SMA__QUAD	CT	270	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	338	TS_VH	TS	484	88410	1.136661600822653	0.18480280877668834	Higher in AD														False	False	TS: VH
+muscle_control_l4	338	TS_SMA	TS	484	171	0.6617819408001544	-0.5955721720394882	Higher in Control														False	False	TS: SMA
+muscle_control_l4	338	TS_QUAD	TS	484	946	0.6419481418392352	-0.6394713373110842	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	338	CT_VH__SMA	CT	484	7999	0.22203432481019988	-2.171145371440212	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	338	CT_VH__QUAD	CT	484	18524	0.02310617805137758	-5.435577543656818	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	338	CT_SMA__QUAD	CT	484	836	0.262544830250743	-1.9293643069342035	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	341	TS_VH	TS	311	24090	1.0182313814713544	0.02606543466588288	Higher in AD														False	False	TS: VH
+muscle_control_l4	341	TS_SMA	TS	311	528	0.7216148339642443	-0.47069909905087903	Higher in Control														False	False	TS: SMA
+muscle_control_l4	341	TS_QUAD	TS	311	1653	0.7710392769147724	-0.3751237416641929	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	341	CT_VH__SMA	CT	311	7260	0.40731282585951156	-1.2957908508564284	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	341	CT_VH__QUAD	CT	311	12760	0.03219040266062887	-4.957225566582645	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	341	CT_SMA__QUAD	CT	311	1914	0.2135485739282779	-2.227363831154421	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	345	TS_VH	TS	495	78210	1.1051373659951205	0.14422570438860965	Higher in AD														False	False	TS: VH
+muscle_control_l4	345	TS_SMA	TS	495	1431	0.5329571680303975	-0.9079085017774644	Higher in Control														False	False	TS: SMA
+muscle_control_l4	345	TS_QUAD	TS	495	990	1.1690094928701802	0.22528664523409164	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	345	CT_VH__SMA	CT	495	21384	0.32470482103989845	-1.6227992897560655	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	345	CT_VH__QUAD	CT	495	17820	0.03192246714546332	-4.969284034424403	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	345	CT_SMA__QUAD	CT	495	2430	0.49284462710608723	-1.0207951968302025	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	346	TS_VH	TS	487	108811	1.4518907650900668	0.5379329143591116	Higher in AD														False	False	TS: VH
+muscle_control_l4	346	TS_SMA	TS	487	0			Higher in Control														False	False	TS: SMA
+muscle_control_l4	346	TS_QUAD	TS	487	190	0.8813008544351998	-0.18229349105635545	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	346	CT_VH__SMA	CT	487	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	346	CT_VH__QUAD	CT	487	9340	0.022128043209300133	-5.497980311028789	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	346	CT_SMA__QUAD	CT	487	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	351	TS_VH	TS	658	20910	1.0517629627236231	0.07280959908302083	Higher in AD														False	False	TS: VH
+muscle_control_l4	351	TS_SMA	TS	658	81406	0.7617646017152953	-0.39258284573162916	Higher in Control														False	False	TS: SMA
+muscle_control_l4	351	TS_QUAD	TS	658	1176	1.0852955231563748	0.11808793828259241	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	351	CT_VH__SMA	CT	658	82820	0.9606138793439883	-0.05797144151077972	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	351	CT_VH__QUAD	CT	658	10045	0.1303061444933667	-2.9400229801209696	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	351	CT_SMA__QUAD	CT	658	19796	0.17525747811260164	-2.5124520905613608	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	354	TS_VH	TS	251	17205	0.9723514161749408	-0.04045028440279169	Higher in Control														False	False	TS: VH
+muscle_control_l4	354	TS_SMA	TS	251	1770	1.4612509549400448	0.5472039675708353	Higher in AD														False	False	TS: SMA
+muscle_control_l4	354	TS_QUAD	TS	251	10	2.8700691611504077	1.5210855024920802	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	354	CT_VH__SMA	CT	251	11160	0.3926722779906752	-1.3486023451568296	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	354	CT_VH__QUAD	CT	251	930	0.07532039258205118	-3.730815670243423	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	354	CT_SMA__QUAD	CT	251	300	0.1179317799427076	-3.083975550551135	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	355	TS_VH	TS	866	93528	1.0623367267572026	0.08724112680499774	Higher in AD														False	False	TS: VH
+muscle_control_l4	355	TS_SMA	TS	866	77028	0.6930051305437901	-0.5290620617417796	Higher in Control														False	False	TS: SMA
+muscle_control_l4	355	TS_QUAD	TS	866	780	1.8307373598219066	0.8724248349033362	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	355	CT_VH__SMA	CT	866	170169	0.6885629493305574	-0.5383395414194897	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	355	CT_VH__QUAD	CT	866	17320	0.09439008882926084	-3.4052208084455677	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	355	CT_SMA__QUAD	CT	866	15720	0.31661263940851303	-1.6592092448197124	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	365	TS_VH	TS	400	50721	0.9764949216658686	-0.03431555359815076	Higher in Control														False	False	TS: VH
+muscle_control_l4	365	TS_SMA	TS	400	741	0.7348736200468329	-0.44443193120872343	Higher in Control														False	False	TS: SMA
+muscle_control_l4	365	TS_QUAD	TS	400	861	0.4807435564910004	-1.056660573943672	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	365	CT_VH__SMA	CT	400	12441	0.1968299320367391	-2.3449784660934183	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	365	CT_VH__QUAD	CT	400	13398	0.02896041266167177	-5.109774030008792	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	365	CT_SMA__QUAD	CT	400	1638	0.1507228385557001	-2.730030054364438	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	366	TS_VH	TS	324	33670	0.7991345027295083	-0.3234897505702729	Higher in Control														False	False	TS: VH
+muscle_control_l4	366	TS_SMA	TS	324	1081	0.7166638167644402	-0.48063157795011935	Higher in Control														False	False	TS: SMA
+muscle_control_l4	366	TS_QUAD	TS	324	136	3.162607045115498	1.6611143116942797	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	366	CT_VH__SMA	CT	324	12220	0.20763906563594117	-2.2678501940765137	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	366	CT_VH__QUAD	CT	324	4420	0.01920085058513135	-5.702685966965282	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	366	CT_SMA__QUAD	CT	324	799	0.06716731622001267	-3.8960968049516556	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	367	TS_VH	TS	546	46971	0.6169697379993687	-0.6967283671154905	Higher in Control														False	False	TS: VH
+muscle_control_l4	367	TS_SMA	TS	546	12561	0.9656720640575776	-0.0503947524946076	Higher in Control														False	False	TS: SMA
+muscle_control_l4	367	TS_QUAD	TS	546	3160	0.8354008779493611	-0.25945943521174175	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	367	CT_VH__SMA	CT	546	48813	0.45857504741678007	-1.1247702396360402	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	367	CT_VH__QUAD	CT	546	24560	0.1900659765439668	-2.395427794696758	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	367	CT_SMA__QUAD	CT	546	12720	0.5400524738102563	-0.888828502374467	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	370	TS_VH	TS	56	1225	1.1738849791221186	0.23129105565451363	Higher in AD														False	False	TS: VH
+muscle_control_l4	370	TS_SMA	TS	56	0			Higher in Control														False	False	TS: SMA
+muscle_control_l4	370	TS_QUAD	TS	56	15	0.04063612102266893	-4.621093495549645	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	370	CT_VH__SMA	CT	56	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	370	CT_VH__QUAD	CT	56	300	2.018372809293269	1.0131926761504	Higher in AD														False	False	CT: VH - QUAD
+muscle_control_l4	370	CT_SMA__QUAD	CT	56	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	371	TS_VH	TS	38	465	1.1064663688509597	0.14595960095427965	Higher in AD														False	False	TS: VH
+muscle_control_l4	371	TS_SMA	TS	38	1	6.543989130730444	2.7101703520305316	Higher in AD														False	False	TS: SMA
+muscle_control_l4	371	TS_QUAD	TS	38	10	5.237997301538923	2.3890153164549437	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	371	CT_VH__SMA	CT	38	62	0.27656187483824374	-1.8543258059796324	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	371	CT_VH__QUAD	CT	38	155	0.01015430973770709	-6.621764017283279	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	371	CT_SMA__QUAD	CT	38	10	0.00010142429700211364	-13.267309076660963	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	432	TS_VH	TS	45	990	0.7092068197238038	-0.4957216856468027	Higher in Control														False	False	TS: VH
+muscle_control_l4	432	TS_SMA	TS	45	0			Higher in Control														False	False	TS: SMA
+muscle_control_l4	432	TS_QUAD	TS	45	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	432	CT_VH__SMA	CT	45	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	432	CT_VH__QUAD	CT	45	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	432	CT_SMA__QUAD	CT	45	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	449	TS_VH	TS	447	60726	0.7751896121753052	-0.36737885664673203	Higher in Control														False	False	TS: VH
+muscle_control_l4	449	TS_SMA	TS	447	990	1.0717010852661426	0.09990257096463681	Higher in AD														False	False	TS: SMA
+muscle_control_l4	449	TS_QUAD	TS	447	1378	2.4718935218514204	1.3056165997125924	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	449	CT_VH__SMA	CT	447	15705	0.2631930868822363	-1.9258064996276485	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	449	CT_VH__QUAD	CT	447	18497	0.43675767217743233	-1.1950950488372174	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	449	CT_SMA__QUAD	CT	447	2385	0.5627894867075021	-0.8293327165912016	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	454	TS_VH	TS	392	20503	1.0124244239640119	0.017814216894236144	Higher in AD														False	False	TS: VH
+muscle_control_l4	454	TS_SMA	TS	392	7381	1.062157425177753	0.0869976076596294	Higher in AD														False	False	TS: SMA
+muscle_control_l4	454	TS_QUAD	TS	392	2211	1.190505570023293	0.25157437056724213	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	454	CT_VH__SMA	CT	392	24766	0.719267106210573	-0.4754004671373417	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	454	CT_VH__QUAD	CT	392	13601	0.47197132268930947	-1.0832288918061959	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	454	CT_SMA__QUAD	CT	392	8174	0.7037847893448774	-0.5067937609274488	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	455	TS_VH	TS	617	21321	0.9802789376724087	-0.02873576939745142	Higher in Control														False	False	TS: VH
+muscle_control_l4	455	TS_SMA	TS	617	27261	0.8330757601076438	-0.26348039430059944	Higher in Control														False	False	TS: SMA
+muscle_control_l4	455	TS_QUAD	TS	617	15400	1.834010800301982	0.8750021348414898	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	455	CT_VH__SMA	CT	617	48438	0.6775523454873147	-0.5615956861954257	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	455	CT_VH__QUAD	CT	617	36432	0.91706477141584	-0.12490446128473609	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	455	CT_SMA__QUAD	CT	617	41184	0.4761844061956794	-1.07040771802653	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	466	TS_VH	TS	748	5995	1.0630121684278522	0.08815811166679598	Higher in AD														False	False	TS: VH
+muscle_control_l4	466	TS_SMA	TS	748	181503	1.0066018775101095	0.009493193859431613	Higher in AD														False	False	TS: SMA
+muscle_control_l4	466	TS_QUAD	TS	748	595	2.1101647569464173	1.077355645733407	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	466	CT_VH__SMA	CT	748	66330	1.2982103184912035	0.37652412822495146	Higher in AD														False	False	CT: VH - SMA
+muscle_control_l4	466	CT_VH__QUAD	CT	748	3850	1.5396370363403433	0.6225902810560627	Higher in AD														False	False	CT: VH - QUAD
+muscle_control_l4	466	CT_SMA__QUAD	CT	748	21105	1.4227407721586718	0.5086728222369508	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	468	TS_VH	TS	38	28	0.9426181374890842	-0.08525465349398653	Higher in Control														False	False	TS: VH
+muscle_control_l4	468	TS_SMA	TS	38	351	1.013251609542192	0.018992467096270203	Higher in AD														False	False	TS: SMA
+muscle_control_l4	468	TS_QUAD	TS	38	3	13.47088213480863	3.751772423033041	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	468	CT_VH__SMA	CT	38	216	1.0656279798886714	0.09170386844962912	Higher in AD														False	False	CT: VH - SMA
+muscle_control_l4	468	CT_VH__QUAD	CT	38	24	1.1420057158524808	0.19156987155136157	Higher in AD														False	False	CT: VH - QUAD
+muscle_control_l4	468	CT_SMA__QUAD	CT	38	81	0.19481269349275487	-2.359840412115837	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	470	TS_VH	TS	35	3	6.008054528554074	2.586897906680007	Higher in AD														False	False	TS: VH
+muscle_control_l4	470	TS_SMA	TS	35	351	0.8177624141051436	-0.29024633947018397	Higher in Control														False	False	TS: SMA
+muscle_control_l4	470	TS_QUAD	TS	35	10	2.182223475762771	1.1257988518291187	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	470	CT_VH__SMA	CT	35	81	0.3959664136642533	-1.33655003047885	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	470	CT_VH__QUAD	CT	35	15	0.15552286867978085	-2.684801359514646	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	470	CT_SMA__QUAD	CT	35	135	0.16990607028293636	-2.5571906978646686	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	474	TS_VH	TS	82	1225	1.1767347031069237	0.23478909892032818	Higher in AD														False	False	TS: VH
+muscle_control_l4	474	TS_SMA	TS	82	378	1.129000591937476	0.17504624251927267	Higher in AD														False	False	TS: SMA
+muscle_control_l4	474	TS_QUAD	TS	82	6	1.2889669837476687	0.36621531025228554	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	474	CT_VH__SMA	CT	82	1400	0.3198215566738088	-1.644660911984426	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	474	CT_VH__QUAD	CT	82	200	0.8539003902927245	-0.22786030936507423	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	474	CT_SMA__QUAD	CT	82	112	0.6634278106816759	-0.5919886041790212	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	478	TS_VH	TS	84	28	2.718152132636045	1.4426262047651217	Higher in AD														False	False	TS: VH
+muscle_control_l4	478	TS_SMA	TS	84	55	0.8847171416808502	-0.17671181881258827	Higher in Control														False	False	TS: SMA
+muscle_control_l4	478	TS_QUAD	TS	84	2080	1.0956370858551967	0.1317700052868678	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	478	CT_VH__SMA	CT	84	88	0.8062183957307762	-0.3107573929104971	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	478	CT_VH__QUAD	CT	84	520	5.402119783285419	2.4335256296350956	Higher in AD														False	False	CT: VH - QUAD
+muscle_control_l4	478	CT_SMA__QUAD	CT	84	715	0.3349180919620565	-1.5781197837010632	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	479	TS_VH	TS	273	351	1.0330018963033725	0.04684290259112388	Higher in AD														False	False	TS: VH
+muscle_control_l4	479	TS_SMA	TS	273	105	1.0830926508649938	0.11515666051426413	Higher in AD														False	False	TS: SMA
+muscle_control_l4	479	TS_QUAD	TS	273	26565	2.112306234621004	1.0788190066386012	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	479	CT_VH__SMA	CT	273	405	1.1944913014435472	0.25639634780014653	Higher in AD														False	False	CT: VH - SMA
+muscle_control_l4	479	CT_VH__QUAD	CT	273	6237	1.6505036785960354	0.7229063540020385	Higher in AD														False	False	CT: VH - QUAD
+muscle_control_l4	479	CT_SMA__QUAD	CT	273	3465	0.7444937247309593	-0.42566840637237113	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	484	TS_VH	TS	69	2145	1.162181806920056	0.21683577564860393	Higher in AD														False	False	TS: VH
+muscle_control_l4	484	TS_SMA	TS	69	1	8.099351327663543	3.0178063680173532	Higher in AD														False	False	TS: SMA
+muscle_control_l4	484	TS_QUAD	TS	69	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	484	CT_VH__SMA	CT	69	132	1.8907672871315906	0.9189718094213795	Higher in AD														False	False	CT: VH - SMA
+muscle_control_l4	484	CT_VH__QUAD	CT	69	66	3.120000458331406	1.6415462410209845	Higher in AD														False	False	CT: VH - QUAD
+muscle_control_l4	484	CT_SMA__QUAD	CT	69	2	42.4569302833104	5.407928160310078	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	486	TS_VH	TS	1137	161596	0.8470340691884605	-0.23950809645061186	Higher in Control														False	False	TS: VH
+muscle_control_l4	486	TS_SMA	TS	1137	30135	0.7725720381945415	-0.37225863203157794	Higher in Control														False	False	TS: SMA
+muscle_control_l4	486	TS_QUAD	TS	1137	51681	1.2078704363870487	0.2724657106177415	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	486	CT_VH__SMA	CT	1137	139974	0.8779026489482085	-0.1878671274120637	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	486	CT_VH__QUAD	CT	1137	183218	1.8644723043547742	0.8987673668799723	Higher in AD														False	False	CT: VH - QUAD
+muscle_control_l4	486	CT_SMA__QUAD	CT	1137	79212	1.357576141741053	0.4410331160639872	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	487	TS_VH	TS	1183	66430	0.9775386498675462	-0.03277435014521575	Higher in Control														False	False	TS: VH
+muscle_control_l4	487	TS_SMA	TS	1183	100128	0.9060061064116997	-0.14240732092910988	Higher in Control														False	False	TS: SMA
+muscle_control_l4	487	TS_QUAD	TS	1183	68265	2.8123324440839905	1.491767144582108	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	487	CT_VH__SMA	CT	1183	163520	0.9522024871084105	-0.07065969773614433	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	487	CT_VH__QUAD	CT	1183	135050	2.545378596501939	1.347880256958465	Higher in AD														False	False	CT: VH - QUAD
+muscle_control_l4	487	CT_SMA__QUAD	CT	1183	165760	1.4948287864980032	0.5799802516370419	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	488	TS_VH	TS	101	136	0.7299155499516685	-0.4541985387217672	Higher in Control														False	False	TS: VH
+muscle_control_l4	488	TS_SMA	TS	101	153	1.6340051322196572	0.7084125148276724	Higher in AD														False	False	TS: SMA
+muscle_control_l4	488	TS_QUAD	TS	101	2145	1.8450763088564697	0.8836804846500118	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	488	CT_VH__SMA	CT	101	306	0.3998094576368433	-1.3226154949299131	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	488	CT_VH__QUAD	CT	101	1122	1.0715468021452565	0.09969486424523488	Higher in AD														False	False	CT: VH - QUAD
+muscle_control_l4	488	CT_SMA__QUAD	CT	101	1188	2.792787630500859	1.4817058721957317	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	489	TS_VH	TS	89	703	0.5930443111382833	-0.7537881906706718	Higher in Control														False	False	TS: VH
+muscle_control_l4	489	TS_SMA	TS	89	210	1.4987969826361311	0.5838049783626158	Higher in AD														False	False	TS: SMA
+muscle_control_l4	489	TS_QUAD	TS	89	435	0.8373852360382555	-0.25603661278020173	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	489	CT_VH__SMA	CT	89	798	0.9816452360493144	-0.026726362267658142	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	489	CT_VH__QUAD	CT	89	1140	0.5872684898788413	-0.7679078633436707	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	489	CT_SMA__QUAD	CT	89	630	0.02272519028147954	-5.459563815399452	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	490	TS_VH	TS	119	120	1.049715264637841	0.06999804979346834	Higher in AD														False	False	TS: VH
+muscle_control_l4	490	TS_SMA	TS	119	2346	0.9503439201613143	-0.07347838973800941	Higher in Control														False	False	TS: SMA
+muscle_control_l4	490	TS_QUAD	TS	119	561	0.7498349458976231	-0.4153550312000597	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	490	CT_VH__SMA	CT	119	1104	0.19043743441066835	-2.392610996859985	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	490	CT_VH__QUAD	CT	119	544	0.17884888935448026	-2.48318693561354	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	490	CT_SMA__QUAD	CT	119	2346	0.16031458639668814	-2.641022398248336	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	492	TS_VH	TS	99	105	1.0266225063011238	0.03790579372765633	Higher in AD														False	False	TS: VH
+muscle_control_l4	492	TS_SMA	TS	99	300	1.4060771553433944	0.4916757612505967	Higher in AD														False	False	TS: SMA
+muscle_control_l4	492	TS_QUAD	TS	99	1711	0.953776032919228	-0.0682775646430447	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	492	CT_VH__SMA	CT	99	375	0.29078652063177185	-1.7819677000054146	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	492	CT_VH__QUAD	CT	99	885	0.2667837474229741	-1.9062573152707059	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	492	CT_SMA__QUAD	CT	99	1475	0.8868815931522248	-0.1731865905582468	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	507	TS_VH	TS	395	435	0.8911957860761162	-0.1661856838223696	Higher in Control														False	False	TS: VH
+muscle_control_l4	507	TS_SMA	TS	395	1653	1.454615535327398	0.5406378895108891	Higher in AD														False	False	TS: SMA
+muscle_control_l4	507	TS_QUAD	TS	395	46971	1.238608457280618	0.3087202019957469	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	507	CT_VH__SMA	CT	395	1740	0.8841116011083393	-0.17769960286879835	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	507	CT_VH__QUAD	CT	395	9210	0.7832868938273411	-0.3523872758854091	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	507	CT_SMA__QUAD	CT	395	17806	0.47509853670057683	-1.0737013316201298	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	508	TS_VH	TS	440	6441	1.0543050920184367	0.07629241066626806	Higher in AD														False	False	TS: VH
+muscle_control_l4	508	TS_SMA	TS	440	4186	0.8003547631076486	-0.32128846797928245	Higher in Control														False	False	TS: SMA
+muscle_control_l4	508	TS_QUAD	TS	440	27261	1.089621752106528	0.12382740925463608	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	508	CT_VH__SMA	CT	440	10488	0.3781526899297186	-1.4029592135488549	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	508	CT_VH__QUAD	CT	440	26676	0.4128438411659696	-1.2763319117369372	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	508	CT_SMA__QUAD	CT	440	21528	0.2505531997916192	-1.99681113247799	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	513	TS_VH	TS	382	4465	0.4179799527254365	-1.2584943458758697	Higher in Control														False	False	TS: VH
+muscle_control_l4	513	TS_SMA	TS	382	4371	1.0575590669549666	0.08073824322534684	Higher in AD														False	False	TS: SMA
+muscle_control_l4	513	TS_QUAD	TS	382	18528	0.45310367185698547	-1.1420869126911046	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	513	CT_VH__SMA	CT	382	8930	0.1899763376890954	-2.3961083585653005	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	513	CT_VH__QUAD	CT	382	18335	0.4122199896710463	-1.278513628098414	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	513	CT_SMA__QUAD	CT	382	18142	0.1273847251108433	-2.972735802599496	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	515	TS_VH	TS	363	3828	0.7639074799654793	-0.38853017688512276	Higher in Control														False	False	TS: VH
+muscle_control_l4	515	TS_SMA	TS	363	7750	0.9702602312058011	-0.04355635385726464	Higher in Control														False	False	TS: SMA
+muscle_control_l4	515	TS_QUAD	TS	363	11175	0.8230851527211371	-0.2808864017209505	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	515	CT_VH__SMA	CT	363	11000	0.5611931132300403	-0.8334307900810666	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	515	CT_VH__QUAD	CT	363	13200	0.5384860217337906	-0.8930191997689144	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	515	CT_SMA__QUAD	CT	363	18750	0.18972040095327777	-2.398053272376185	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	526	TS_VH	TS	168	28	0.34321452393754737	-1.5428174896917553	Higher in Control														False	False	TS: VH
+muscle_control_l4	526	TS_SMA	TS	168	1953	1.1326074012550127	0.1796478625551331	Higher in AD														False	False	TS: SMA
+muscle_control_l4	526	TS_QUAD	TS	168	4656	0.794633435422251	-0.331638596574575	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	526	CT_VH__SMA	CT	168	504	0.20033244488084684	-2.3195320028526165	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	526	CT_VH__QUAD	CT	168	776	0.9977020998672791	-0.003318983934875557	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	526	CT_SMA__QUAD	CT	168	6111	0.06913913920207998	-3.854353547942148	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	530	TS_VH	TS	205	3081	0.8466542975603022	-0.2401550804702853	Higher in Control														False	False	TS: VH
+muscle_control_l4	530	TS_SMA	TS	205	820	0.9363755083368152	-0.09484089480641425	Higher in Control														False	False	TS: SMA
+muscle_control_l4	530	TS_QUAD	TS	205	3570	0.9313541987151712	-0.10259815852169853	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	530	CT_VH__SMA	CT	205	3239	0.3599242746205177	-1.4742346886690527	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	530	CT_VH__QUAD	CT	205	6715	0.6396595562601657	-0.6446238259860055	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	530	CT_SMA__QUAD	CT	205	3485	0.40744207711007663	-1.295333117766137	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	542	TS_VH	TS	30	21	0.9375931330138101	-0.09296609147020658	Higher in Control														False	False	TS: VH
+muscle_control_l4	542	TS_SMA	TS	30	1	71953.13022081497	16.134769830320653	Higher in AD														False	False	TS: SMA
+muscle_control_l4	542	TS_QUAD	TS	30	210	1.0633434282803695	0.08860761968989285	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	542	CT_VH__SMA	CT	30	14	4.147710639536387	2.052315249631533	Higher in AD														False	False	CT: VH - SMA
+muscle_control_l4	542	CT_VH__QUAD	CT	30	147	0.25239681239902967	-1.9862344047140936	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	542	CT_SMA__QUAD	CT	30	42	0.17954737506205926	-2.4775635335730786	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	544	TS_VH	TS	764	8128	0.5571566727585747	-0.8438450236437118	Higher in Control														False	False	TS: VH
+muscle_control_l4	544	TS_SMA	TS	764	85078	1.2984127385364874	0.37674905913689793	Higher in AD														False	False	TS: SMA
+muscle_control_l4	544	TS_QUAD	TS	764	24753	1.3152700238413086	0.39535901401617685	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	544	CT_VH__SMA	CT	764	52864	0.1328693668432785	-2.9119195666270477	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	544	CT_VH__QUAD	CT	764	28544	0.14638287997539248	-2.772181259973491	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	544	CT_SMA__QUAD	CT	764	92099	0.1612978837427862	-2.6322005846877694	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	551	TS_VH	TS	640	561	0.8482424149580969	-0.23745147057152236	Higher in Control														False	False	TS: VH
+muscle_control_l4	551	TS_SMA	TS	640	253	0.8937944444458332	-0.16198501747974148	Higher in Control														False	False	TS: SMA
+muscle_control_l4	551	TS_QUAD	TS	640	169653	0.7126799860478588	-0.48867368467075695	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	551	CT_VH__SMA	CT	640	782	0.19746041955787663	-2.3403645971936315	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	551	CT_VH__QUAD	CT	640	19822	0.6852318447085536	-0.5453358956902626	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	551	CT_SMA__QUAD	CT	640	13409	0.178755065475654	-2.483943970014179	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	553	TS_VH	TS	36	6	0.6230896544918576	-0.6824883316623478	Higher in Control														False	False	TS: VH
+muscle_control_l4	553	TS_SMA	TS	36	6	0.18514463893440658	-2.4332753195864245	Higher in Control														False	False	TS: SMA
+muscle_control_l4	553	TS_QUAD	TS	36	378	0.28358548477222123	-1.818144404281213	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	553	CT_VH__SMA	CT	36	16	0.1791290928009219	-2.480928426848583	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	553	CT_VH__QUAD	CT	36	112	0.36737261948874356	-1.4446839893956784	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	553	CT_SMA__QUAD	CT	36	112	0.3342310015473482	-1.5810825383156448	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	558	TS_VH	TS	55	10	0.3056386880347743	-1.710100922249298	Higher in Control														False	False	TS: VH
+muscle_control_l4	558	TS_SMA	TS	55	903	0.8980180910345471	-0.15518358579741393	Higher in Control														False	False	TS: SMA
+muscle_control_l4	558	TS_QUAD	TS	55	21	1.1376210854470739	0.1860201102141425	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	558	CT_VH__SMA	CT	55	215	0.001032828668150567	-9.919183333566775	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	558	CT_VH__QUAD	CT	55	35	0.0764361068804046	-3.7096018903626278	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	558	CT_SMA__QUAD	CT	55	301	0.013995490568118921	-6.158894132818278	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	565	TS_VH	TS	908	139128	0.8257925736061893	-0.27614865054340804	Higher in Control														False	False	TS: VH
+muscle_control_l4	565	TS_SMA	TS	908	54615	1.030034392590249	0.04269250943861005	Higher in AD														False	False	TS: SMA
+muscle_control_l4	565	TS_QUAD	TS	908	1176	0.5198985698771947	-0.9436979081888328	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	565	CT_VH__SMA	CT	908	174768	0.49163761186873417	-1.0243328041140911	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	565	CT_VH__QUAD	CT	908	25872	0.5088924531288678	-0.9745672985698723	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	565	CT_SMA__QUAD	CT	908	16219	0.2812214115822509	-1.830221652654944	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	604	TS_VH	TS	60	3	0.7748498563961821	-0.36801131020090644	Higher in Control														False	False	TS: VH
+muscle_control_l4	604	TS_SMA	TS	60	1	1.3140183320053853	0.3939854029880753	Higher in AD														False	False	TS: SMA
+muscle_control_l4	604	TS_QUAD	TS	60	1485	1.4160751121345752	0.5018977915720871	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	604	CT_VH__SMA	CT	60	6	0.08528535348539905	-3.5515581887739582	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	604	CT_VH__QUAD	CT	60	165	1.6215348825041493	0.6973600594239702	Higher in AD														False	False	CT: VH - QUAD
+muscle_control_l4	604	CT_SMA__QUAD	CT	60	110	0.08197668853907852	-3.6086424765127023	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	606	TS_VH	TS	56	3	1.1647417215106675	0.22001007641936876	Higher in AD														False	False	TS: VH
+muscle_control_l4	606	TS_SMA	TS	56	153	1.5671720008184342	0.6481635276790647	Higher in AD														False	False	TS: SMA
+muscle_control_l4	606	TS_QUAD	TS	56	595	1.2046834678021467	0.26865412618900447	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	606	CT_VH__SMA	CT	56	54	0.1729617151390739	-2.5314753604442535	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	606	CT_VH__QUAD	CT	56	105	0.04364240306824466	-4.518125647251851	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	606	CT_SMA__QUAD	CT	56	630	0.025198024894915867	-5.310545534858376	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	607	TS_VH	TS	67	15	6.347747749802587	2.6662447987245126	Higher in AD														False	False	TS: VH
+muscle_control_l4	607	TS_SMA	TS	67	0			Higher in Control														False	False	TS: SMA
+muscle_control_l4	607	TS_QUAD	TS	67	1830	1.163490772587184	0.21845976906255796	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	607	CT_VH__SMA	CT	67	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	607	CT_VH__QUAD	CT	67	366	0.12934747200610738	-2.9506762369210837	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	607	CT_SMA__QUAD	CT	67	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	614	TS_VH	TS	55	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	614	TS_SMA	TS	55	15	0.5248420322144709	-0.9300448314116779	Higher in Control														False	False	TS: SMA
+muscle_control_l4	614	TS_QUAD	TS	55	1128	1.2141210704271237	0.27991229226551645	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	614	CT_VH__SMA	CT	55	6	0.0736727341269315	-3.7627254051632666	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	614	CT_VH__QUAD	CT	55	48	0.0004047635533363218	-11.270632990179786	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	614	CT_SMA__QUAD	CT	55	288	0.03161430678059937	-4.98327860446039	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	615	TS_VH	TS	86	276	1.402471323103388	0.4879712717684693	Higher in AD														False	False	TS: VH
+muscle_control_l4	615	TS_SMA	TS	86	190	1.0322073278892627	0.04573277781169139	Higher in AD														False	False	TS: SMA
+muscle_control_l4	615	TS_QUAD	TS	86	861	1.1254522749185534	0.17050488024993882	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	615	CT_VH__SMA	CT	86	480	0.2716781181441176	-1.8800297240873662	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	615	CT_VH__QUAD	CT	86	1008	0.09208923040142578	-3.4408237430665882	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	615	CT_SMA__QUAD	CT	86	840	0.4597481522271761	-1.1210843185710775	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	616	TS_VH	TS	82	3	0.5868955400710424	-0.7688243500398768	Higher in Control														False	False	TS: VH
+muscle_control_l4	616	TS_SMA	TS	82	3	0.01925483161162275	-5.6986356833180425	Higher in Control														False	False	TS: SMA
+muscle_control_l4	616	TS_QUAD	TS	82	2850	1.6041610495775318	0.6818189882786841	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	616	CT_VH__SMA	CT	82	9	4.696265781294318	2.2315140588961753	Higher in AD														False	False	CT: VH - SMA
+muscle_control_l4	616	CT_VH__QUAD	CT	82	228	0.474687232521745	-1.0749508482067522	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	616	CT_SMA__QUAD	CT	82	228	0.0606279127387791	-4.043874034715882	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	618	TS_VH	TS	42	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	618	TS_SMA	TS	42	406	1.0244932934680195	0.034910540218267956	Higher in AD														False	False	TS: SMA
+muscle_control_l4	618	TS_QUAD	TS	42	78	2.7351917473521947	1.4516419749766534	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	618	CT_VH__SMA	CT	42	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	618	CT_VH__QUAD	CT	42	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	618	CT_SMA__QUAD	CT	42	377	0.006572693364622542	-7.249299603987883	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	624	TS_VH	TS	73	10	0.7646999228207095	-0.38703436641376143	Higher in Control														False	False	TS: VH
+muscle_control_l4	624	TS_SMA	TS	73	990	1.071740314454293	0.09995537927114458	Higher in AD														False	False	TS: SMA
+muscle_control_l4	624	TS_QUAD	TS	73	253	1.164937600019978	0.22025267886860142	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	624	CT_VH__SMA	CT	73	225	0.037845608435906626	-4.723730288647424	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	624	CT_VH__QUAD	CT	73	115	0.6468838098429145	-0.6284214893414503	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	624	CT_SMA__QUAD	CT	73	1035	0.025282375296222213	-5.305724177719401	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	635	TS_VH	TS	38	55	1.2442100417815565	0.31523005512884356	Higher in AD														False	False	TS: VH
+muscle_control_l4	635	TS_SMA	TS	38	6	0.2625671927932254	-1.9292414290424595	Higher in Control														False	False	TS: SMA
+muscle_control_l4	635	TS_QUAD	TS	38	253	1.1429955430123808	0.19281977792993082	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	635	CT_VH__SMA	CT	38	44	0.10723260275526822	-3.2211844886972143	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	635	CT_VH__QUAD	CT	38	253	0.17835519423389054	-2.4871748628989834	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	635	CT_SMA__QUAD	CT	38	92	0.32448079505502286	-1.6237950024836023	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	662	TS_VH	TS	38	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	662	TS_SMA	TS	38	0			Higher in Control														False	False	TS: SMA
+muscle_control_l4	662	TS_QUAD	TS	38	666	1.021088272820144	0.030107592224517695	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	662	CT_VH__SMA	CT	38	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	662	CT_VH__QUAD	CT	38	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	662	CT_SMA__QUAD	CT	38	37	0.004743751625030805	-7.719755809920865	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	666	TS_VH	TS	36	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	666	TS_SMA	TS	36	0			Higher in Control														False	False	TS: SMA
+muscle_control_l4	666	TS_QUAD	TS	36	561	1.1221666299830513	0.1662869169459627	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	666	CT_VH__SMA	CT	36	1	0.00029547606233118153	-11.72467112276747	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	666	CT_VH__QUAD	CT	36	34	0.0003359328417936319	-11.539539534924664	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	666	CT_SMA__QUAD	CT	36	34	0.009176686116971403	-6.767811022716953	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	670	TS_VH	TS	31	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	670	TS_SMA	TS	31	0			Higher in Control														False	False	TS: SMA
+muscle_control_l4	670	TS_QUAD	TS	31	435	1.3484266727305554	0.43127707013537736	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	670	CT_VH__SMA	CT	31	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	670	CT_VH__QUAD	CT	31	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	670	CT_SMA__QUAD	CT	31	30	0.003304537153870676	-8.241336068171725	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	684	TS_VH	TS	36	3	3.58804985531687	1.8431999363883638	Higher in AD														False	False	TS: VH
+muscle_control_l4	684	TS_SMA	TS	36	78	1.8765713721998123	0.9080991617200072	Higher in AD														False	False	TS: SMA
+muscle_control_l4	684	TS_QUAD	TS	36	190	0.6908490915581482	-0.5335574908406503	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	684	CT_VH__SMA	CT	36	39	2.609323707123438	1.3836759329220625	Higher in AD														False	False	CT: VH - SMA
+muscle_control_l4	684	CT_VH__QUAD	CT	36	60	0.3889945192776698	-1.3621782663253263	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	684	CT_SMA__QUAD	CT	36	260	0.07569696633937531	-3.723620706404377	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	685	TS_VH	TS	37	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	685	TS_SMA	TS	37	21	0.48669129376307557	-1.0389211278673711	Higher in Control														False	False	TS: SMA
+muscle_control_l4	685	TS_QUAD	TS	37	406	1.220934443667782	0.28798573895393687	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	685	CT_VH__SMA	CT	37	7	0.020912823353623374	-5.5794683424190525	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	685	CT_VH__QUAD	CT	37	29	8.574530902414464e-05	-13.509582728314314	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	685	CT_SMA__QUAD	CT	37	203	0.1757571838363542	-2.508344436182605	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	687	TS_VH	TS	40	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	687	TS_SMA	TS	40	3	4.128096304886901	2.045476627970972	Higher in AD														False	False	TS: SMA
+muscle_control_l4	687	TS_QUAD	TS	40	630	1.1104303131788715	0.15111885710293438	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	687	CT_VH__SMA	CT	40	3	0.013901348087653137	-6.168631394231253	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	687	CT_VH__QUAD	CT	40	36	0.36151659845599965	-1.4678662071565685	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	687	CT_SMA__QUAD	CT	40	108	0.2749415924805666	-1.8628029242078343	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	692	TS_VH	TS	47	21	0.47686935580751905	-1.068334018477161	Higher in Control														False	False	TS: VH
+muscle_control_l4	692	TS_SMA	TS	47	66	0.8976134002914963	-0.15583388107325274	Higher in Control														False	False	TS: SMA
+muscle_control_l4	692	TS_QUAD	TS	47	378	0.8867860210913294	-0.17334206651927525	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	692	CT_VH__SMA	CT	47	84	0.8004910528107902	-0.3210428172396965	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	692	CT_VH__QUAD	CT	47	196	0.03066056721808834	-5.027471802786069	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	692	CT_SMA__QUAD	CT	47	336	0.014320194555361657	-6.125805096463845	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	694	TS_VH	TS	36	6	2.76556844190524	1.467576046112944	Higher in AD														False	False	TS: VH
+muscle_control_l4	694	TS_SMA	TS	36	0			Higher in Control														False	False	TS: SMA
+muscle_control_l4	694	TS_QUAD	TS	36	496	1.5566248228073465	0.6384212684388099	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	694	CT_VH__SMA	CT	36	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	694	CT_VH__QUAD	CT	36	128	0.12684859924769498	-2.9788205066606133	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	694	CT_SMA__QUAD	CT	36	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	700	TS_VH	TS	53	36	1.1838520489532918	0.2434887924714287	Higher in AD														False	False	TS: VH
+muscle_control_l4	700	TS_SMA	TS	53	171	0.906333656730367	-0.14188583457744586	Higher in Control														False	False	TS: SMA
+muscle_control_l4	700	TS_QUAD	TS	53	300	1.1502573138598948	0.20195662978247825	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	700	CT_VH__SMA	CT	53	171	0.058436114767352894	-4.096995928679938	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	700	CT_VH__QUAD	CT	53	225	1.0300807916137036	0.042757495747690694	Higher in AD														False	False	CT: VH - QUAD
+muscle_control_l4	700	CT_SMA__QUAD	CT	53	475	0.14432606100782272	-2.792596263582214	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	702	TS_VH	TS	35	21	0.8763304646257911	-0.19045308148515058	Higher in Control														False	False	TS: VH
+muscle_control_l4	702	TS_SMA	TS	35	55	0.41865255037215543	-1.2561746810412087	Higher in Control														False	False	TS: SMA
+muscle_control_l4	702	TS_QUAD	TS	35	136	0.8010512340571397	-0.3200335766524298	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	702	CT_VH__SMA	CT	35	77	1.3517083680914888	0.4347839228538803	Higher in AD														False	False	CT: VH - SMA
+muscle_control_l4	702	CT_VH__QUAD	CT	35	119	0.6382878827941291	-0.6477208348404155	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	702	CT_SMA__QUAD	CT	35	187	0.18107015381613875	-2.465379331536886	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	708	TS_VH	TS	91	1326	0.7333563712623233	-0.4474136549023408	Higher in Control														False	False	TS: VH
+muscle_control_l4	708	TS_SMA	TS	91	105	0.4728740811801091	-1.0804720268444064	Higher in Control														False	False	TS: SMA
+muscle_control_l4	708	TS_QUAD	TS	91	276	1.7229558554129758	0.7848857381312575	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	708	CT_VH__SMA	CT	91	780	0.945611638027726	-0.08068030342694645	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	708	CT_VH__QUAD	CT	91	1248	0.6929238304836259	-0.5292313217789901	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	708	CT_SMA__QUAD	CT	91	360	1.1252227828241228	0.17021066886960948	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	721	TS_VH	TS	78	406	0.4723849950415246	-1.081964955560817	Higher in Control														False	False	TS: VH
+muscle_control_l4	721	TS_SMA	TS	78	325	0.9024487708118394	-0.14808305783872697	Higher in Control														False	False	TS: SMA
+muscle_control_l4	721	TS_QUAD	TS	78	253	1.2104518383578002	0.2755456783086498	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	721	CT_VH__SMA	CT	78	754	0.1259137893667386	-2.9894918073694323	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	721	CT_VH__QUAD	CT	78	667	0.9204465744561257	-0.1195941093296136	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	721	CT_SMA__QUAD	CT	78	598	0.7358855617536294	-0.4424466660062276	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	723	TS_VH	TS	75	300	1.0341932980766337	0.04850586081101022	Higher in AD														False	False	TS: VH
+muscle_control_l4	723	TS_SMA	TS	75	78	0.897375904126167	-0.1562156488543831	Higher in Control														False	False	TS: SMA
+muscle_control_l4	723	TS_QUAD	TS	75	666	1.0128914505487032	0.018479571822935383	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	723	CT_VH__SMA	CT	75	325	0.13865069272531982	-2.850473270512228	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	723	CT_VH__QUAD	CT	75	925	0.29963002916021736	-1.7387458757985543	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	723	CT_SMA__QUAD	CT	75	481	1.1829487005742902	0.24238751152065585	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	725	TS_VH	TS	32	171	0.7836892991787431	-0.35164629689638793	Higher in Control														False	False	TS: VH
+muscle_control_l4	725	TS_SMA	TS	32	21	0.7400163625494838	-0.4343709242700778	Higher in Control														False	False	TS: SMA
+muscle_control_l4	725	TS_QUAD	TS	32	15	0.17640989198641777	-2.5029966342208207	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	725	CT_VH__SMA	CT	32	133	0.11499256207891745	-3.1203875467515516	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	725	CT_VH__QUAD	CT	32	114	0.4380718315391593	-1.1907606439911291	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	725	CT_SMA__QUAD	CT	32	42	4.3916360286268095	2.1347584911704764	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	726	TS_VH	TS	48	351	1.1757162839594668	0.23353996059315396	Higher in AD														False	False	TS: VH
+muscle_control_l4	726	TS_SMA	TS	48	28	0.5211600689853887	-0.9402015452937846	Higher in Control														False	False	TS: SMA
+muscle_control_l4	726	TS_QUAD	TS	48	78	0.9997919567000234	-0.0003001742628713011	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	726	CT_VH__SMA	CT	48	216	0.2703415969213464	-1.8871445813315588	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	726	CT_VH__QUAD	CT	48	351	0.9423357196964429	-0.08568696407856446	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	726	CT_SMA__QUAD	CT	48	104	1.4686268636907398	0.5544678946802408	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	749	TS_VH	TS	85	703	0.49168611842984145	-1.0241904701643236	Higher in Control														False	False	TS: VH
+muscle_control_l4	749	TS_SMA	TS	85	378	1.2002638205706297	0.26335154816390177	Higher in AD														False	False	TS: SMA
+muscle_control_l4	749	TS_QUAD	TS	85	171	3.1404276597118796	1.6509610369938559	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	749	CT_VH__SMA	CT	85	1064	0.4489418609094066	-1.155399470430039	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	749	CT_VH__QUAD	CT	85	722	1.3347291342167635	0.41654699556747593	Higher in AD														False	False	CT: VH - QUAD
+muscle_control_l4	749	CT_SMA__QUAD	CT	85	532	1.8414245250603811	0.880822266337534	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	750	TS_VH	TS	112	861	0.8641461000116163	-0.21065284737908968	Higher in Control														False	False	TS: VH
+muscle_control_l4	750	TS_SMA	TS	112	946	1.4774281679334171	0.5630879887544381	Higher in AD														False	False	TS: SMA
+muscle_control_l4	750	TS_QUAD	TS	112	325	1.2626756378828359	0.3364840803621476	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	750	CT_VH__SMA	CT	112	1848	0.2866629079373161	-1.8025728523138245	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	750	CT_VH__QUAD	CT	112	1092	0.5385668944374354	-0.8928025443995092	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	750	CT_SMA__QUAD	CT	112	1144	0.5193568753398564	-0.9452018696971705	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	768	TS_VH	TS	35	276	0.7861864435874972	-0.3470566076678494	Higher in Control														False	False	TS: VH
+muscle_control_l4	768	TS_SMA	TS	35	3	0.06412478065350007	-3.9629742039579403	Higher in Control														False	False	TS: SMA
+muscle_control_l4	768	TS_QUAD	TS	35	28	0.6192939782149169	-0.6913036769955169	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	768	CT_VH__SMA	CT	35	72	0.26008211762155514	-1.9429608870928161	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	768	CT_VH__QUAD	CT	35	192	0.0005534370223141252	-10.819293222911938	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	768	CT_SMA__QUAD	CT	35	24	0.37764931022893766	-1.4048809430632743	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	770	TS_VH	TS	30	325	1.1704656102850572	0.22708254692317942	Higher in AD														False	False	TS: VH
+muscle_control_l4	770	TS_SMA	TS	30	0			Higher in Control														False	False	TS: SMA
+muscle_control_l4	770	TS_QUAD	TS	30	6	1.1697486687430136	0.22619858680983285	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	770	CT_VH__SMA	CT	30	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	770	CT_VH__QUAD	CT	30	104	0.0004252547580907902	-11.199385001543012	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	770	CT_SMA__QUAD	CT	30	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	778	TS_VH	TS	45	378	1.120564421144576	0.164225591636525	Higher in AD														False	False	TS: VH
+muscle_control_l4	778	TS_SMA	TS	45	0			Higher in Control														False	False	TS: SMA
+muscle_control_l4	778	TS_QUAD	TS	45	136	1.5427785260368092	0.6255309703197772	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	778	CT_VH__SMA	CT	45	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	778	CT_VH__QUAD	CT	45	476	0.030838336984048045	-5.0191312224970375	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	778	CT_SMA__QUAD	CT	45	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	938	TS_VH	TS	66	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	938	TS_SMA	TS	66	2145	0.6360876443521367	-0.652702531640876	Higher in Control														False	False	TS: SMA
+muscle_control_l4	938	TS_QUAD	TS	66	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	938	CT_VH__SMA	CT	66	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	938	CT_VH__QUAD	CT	66	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	938	CT_SMA__QUAD	CT	66	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	941	TS_VH	TS	44	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	941	TS_SMA	TS	44	820	0.8692885583390293	-0.2020929390422963	Higher in Control														False	False	TS: SMA
+muscle_control_l4	941	TS_QUAD	TS	44	1	0.0006741175600577071	-10.534712173123395	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	941	CT_VH__SMA	CT	44	41	0.0005986055654957967	-10.706106687289012	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	941	CT_VH__QUAD	CT	44	2	1.7115374571264805	0.7752928661831519	Higher in AD														False	False	CT: VH - QUAD
+muscle_control_l4	941	CT_SMA__QUAD	CT	44	82	2.894730341121004	1.533428960080758	Higher in AD														False	False	CT: SMA - QUAD
+muscle_control_l4	942	TS_VH	TS	57	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	942	TS_SMA	TS	57	1596	0.7442824505427503	-0.42607787588257073	Higher in Control														False	False	TS: SMA
+muscle_control_l4	942	TS_QUAD	TS	57	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	942	CT_VH__SMA	CT	57	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	942	CT_VH__QUAD	CT	57	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	942	CT_SMA__QUAD	CT	57	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	946	TS_VH	TS	42	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	946	TS_SMA	TS	42	820	0.4193139861349552	-1.2538971430931736	Higher in Control														False	False	TS: SMA
+muscle_control_l4	946	TS_QUAD	TS	42	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	946	CT_VH__SMA	CT	42	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	946	CT_VH__QUAD	CT	42	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	946	CT_SMA__QUAD	CT	42	41	0.0003471252780066062	-11.492255952075464	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	951	TS_VH	TS	55	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	951	TS_SMA	TS	55	1485	0.7106508416565734	-0.4927871886809839	Higher in Control														False	False	TS: SMA
+muscle_control_l4	951	TS_QUAD	TS	55	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	951	CT_VH__SMA	CT	55	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	951	CT_VH__QUAD	CT	55	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	951	CT_SMA__QUAD	CT	55	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	954	TS_VH	TS	49	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	954	TS_SMA	TS	49	1176	0.6459499422936288	-0.6305057268767141	Higher in Control														False	False	TS: SMA
+muscle_control_l4	954	TS_QUAD	TS	49	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	954	CT_VH__SMA	CT	49	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	954	CT_VH__QUAD	CT	49	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	954	CT_SMA__QUAD	CT	49	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	955	TS_VH	TS	39	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	955	TS_SMA	TS	39	741	0.5231896262124737	-0.9345941594798708	Higher in Control														False	False	TS: SMA
+muscle_control_l4	955	TS_QUAD	TS	39	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	955	CT_VH__SMA	CT	39	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	955	CT_VH__QUAD	CT	39	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	955	CT_SMA__QUAD	CT	39	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	966	TS_VH	TS	46	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	966	TS_SMA	TS	46	903	0.5040261070175057	-0.9884296320168953	Higher in Control														False	False	TS: SMA
+muscle_control_l4	966	TS_QUAD	TS	46	3	0.003768606514949292	-8.051753115440219	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	966	CT_VH__SMA	CT	46	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	966	CT_VH__QUAD	CT	46	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	966	CT_SMA__QUAD	CT	46	129	0.0014233651603566151	-9.456478455929544	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	967	TS_VH	TS	43	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	967	TS_SMA	TS	43	561	0.6903501172000649	-0.5345998717784463	Higher in Control														False	False	TS: SMA
+muscle_control_l4	967	TS_QUAD	TS	43	36	2.455022208882455	1.2957360756599914	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	967	CT_VH__SMA	CT	43	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	967	CT_VH__QUAD	CT	43	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	967	CT_SMA__QUAD	CT	43	306	0.01786389767116652	-5.806809297592801	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	971	TS_VH	TS	50	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	971	TS_SMA	TS	50	1225	0.6413322595937021	-0.6408561170188217	Higher in Control														False	False	TS: SMA
+muscle_control_l4	971	TS_QUAD	TS	50	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	971	CT_VH__SMA	CT	50	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	971	CT_VH__QUAD	CT	50	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	971	CT_SMA__QUAD	CT	50	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	972	TS_VH	TS	54	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	972	TS_SMA	TS	54	1326	0.5707366204683127	-0.8091029605166914	Higher in Control														False	False	TS: SMA
+muscle_control_l4	972	TS_QUAD	TS	54	1	1805.5078548974723	10.818188981435474	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	972	CT_VH__SMA	CT	54	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	972	CT_VH__QUAD	CT	54	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	972	CT_SMA__QUAD	CT	54	104	0.0005242633177513975	-10.89742077428174	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	985	TS_VH	TS	75	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	985	TS_SMA	TS	75	2145	0.5977356067426663	-0.7424206091072693	Higher in Control														False	False	TS: SMA
+muscle_control_l4	985	TS_QUAD	TS	75	36	0.2631640550744152	-1.9259656464953372	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	985	CT_VH__SMA	CT	75	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	985	CT_VH__QUAD	CT	75	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	985	CT_SMA__QUAD	CT	75	594	0.008219972779335658	-6.926650668271246	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	987	TS_VH	TS	63	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	987	TS_SMA	TS	63	1431	0.6140891023246223	-0.7034800937617722	Higher in Control														False	False	TS: SMA
+muscle_control_l4	987	TS_QUAD	TS	63	36	0.937445697496522	-0.09319297156102899	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	987	CT_VH__SMA	CT	63	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	987	CT_VH__QUAD	CT	63	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	987	CT_SMA__QUAD	CT	63	486	0.005660969275027419	-7.464735191224418	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	999	TS_VH	TS	82	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	999	TS_SMA	TS	82	3240	0.5923319633694037	-0.7555221560610136	Higher in Control														False	False	TS: SMA
+muscle_control_l4	999	TS_QUAD	TS	82	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	999	CT_VH__SMA	CT	82	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	999	CT_VH__QUAD	CT	82	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	999	CT_SMA__QUAD	CT	82	81	0.0003688099621039596	-11.40483475392355	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1003	TS_VH	TS	132	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	1003	TS_SMA	TS	132	8001	0.9219214554555585	-0.11728425166406935	Higher in Control														False	False	TS: SMA
+muscle_control_l4	1003	TS_QUAD	TS	132	6	0.2625342637749365	-1.9294223713379142	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	1003	CT_VH__SMA	CT	132	127	0.035314981183465315	-4.82357586196968	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1003	CT_VH__QUAD	CT	132	4	0.0028499043602314257	-8.454870779888225	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	1003	CT_SMA__QUAD	CT	132	508	0.004136739942650947	-7.917290019678012	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1011	TS_VH	TS	152	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	1011	TS_SMA	TS	152	11476	0.7605992623602374	-0.3947915550639324	Higher in Control														False	False	TS: SMA
+muscle_control_l4	1011	TS_QUAD	TS	152	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	1011	CT_VH__SMA	CT	152	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1011	CT_VH__QUAD	CT	152	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	1011	CT_SMA__QUAD	CT	152	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1015	TS_VH	TS	35	3	0.6569857139718891	-0.606066095125134	Higher in Control														False	False	TS: VH
+muscle_control_l4	1015	TS_SMA	TS	35	435	0.7657148033456562	-0.3851209460969982	Higher in Control														False	False	TS: SMA
+muscle_control_l4	1015	TS_QUAD	TS	35	1	0.0026659588989714307	-8.551129746060848	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	1015	CT_VH__SMA	CT	35	90	0.09424893046642416	-3.4073799429535385	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1015	CT_VH__QUAD	CT	35	6	0.000610724186111699	-10.677191399125986	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	1015	CT_SMA__QUAD	CT	35	60	0.028932003473064828	-5.111189959816021	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1018	TS_VH	TS	40	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	1018	TS_SMA	TS	40	780	0.8962197486392183	-0.1580755775578984	Higher in Control														False	False	TS: SMA
+muscle_control_l4	1018	TS_QUAD	TS	40	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	1018	CT_VH__SMA	CT	40	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1018	CT_VH__QUAD	CT	40	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	1018	CT_SMA__QUAD	CT	40	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1019	TS_VH	TS	77	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	1019	TS_SMA	TS	77	2926	0.7453380142736535	-0.424033251965571	Higher in Control														False	False	TS: SMA
+muscle_control_l4	1019	TS_QUAD	TS	77	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	1019	CT_VH__SMA	CT	77	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1019	CT_VH__QUAD	CT	77	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	1019	CT_SMA__QUAD	CT	77	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1021	TS_VH	TS	33	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	1021	TS_SMA	TS	33	528	0.8819753441846792	-0.18118976939899153	Higher in Control														False	False	TS: SMA
+muscle_control_l4	1021	TS_QUAD	TS	33	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	1021	CT_VH__SMA	CT	33	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1021	CT_VH__QUAD	CT	33	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	1021	CT_SMA__QUAD	CT	33	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1023	TS_VH	TS	36	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	1023	TS_SMA	TS	36	630	0.8913015246027923	-0.16601452120985777	Higher in Control														False	False	TS: SMA
+muscle_control_l4	1023	TS_QUAD	TS	36	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	1023	CT_VH__SMA	CT	36	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1023	CT_VH__QUAD	CT	36	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	1023	CT_SMA__QUAD	CT	36	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1031	TS_VH	TS	99	1	0.003908524378620216	-7.999160248347512	Higher in Control														False	False	TS: VH
+muscle_control_l4	1031	TS_SMA	TS	99	4278	0.7420903499886665	-0.43033324827669384	Higher in Control														False	False	TS: SMA
+muscle_control_l4	1031	TS_QUAD	TS	99	6	2.023121542232211	1.0165829946902631	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	1031	CT_VH__SMA	CT	99	186	0.0017113818447631213	-9.190622593750843	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1031	CT_VH__QUAD	CT	99	8	0.003687957481780313	-8.08296226153537	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	1031	CT_SMA__QUAD	CT	99	372	0.00866266229847228	-6.850973807685521	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1032	TS_VH	TS	53	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	1032	TS_SMA	TS	53	1378	0.7664410423599612	-0.38375327647534524	Higher in Control														False	False	TS: SMA
+muscle_control_l4	1032	TS_QUAD	TS	53	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	1032	CT_VH__SMA	CT	53	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1032	CT_VH__QUAD	CT	53	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	1032	CT_SMA__QUAD	CT	53	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1033	TS_VH	TS	105	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	1033	TS_SMA	TS	105	5460	0.7789064357305717	-0.36047805647787773	Higher in Control														False	False	TS: SMA
+muscle_control_l4	1033	TS_QUAD	TS	105	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	1033	CT_VH__SMA	CT	105	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1033	CT_VH__QUAD	CT	105	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	1033	CT_SMA__QUAD	CT	105	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1053	TS_VH	TS	38	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	1053	TS_SMA	TS	38	666	0.546557471324536	-0.8715548895016093	Higher in Control														False	False	TS: SMA
+muscle_control_l4	1053	TS_QUAD	TS	38	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	1053	CT_VH__SMA	CT	38	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1053	CT_VH__QUAD	CT	38	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	1053	CT_SMA__QUAD	CT	38	37	0.0012330853971600911	-9.663511567814197	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1060	TS_VH	TS	31	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	1060	TS_SMA	TS	31	325	0.5285172057408111	-0.9199776559513221	Higher in Control														False	False	TS: SMA
+muscle_control_l4	1060	TS_QUAD	TS	31	6	0.003334836557275068	-8.22816822903542	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	1060	CT_VH__SMA	CT	31	26	0.18595376727321725	-2.4269841188044516	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1060	CT_VH__QUAD	CT	31	4	38.25048595338939	5.257406171531645	Higher in AD														False	False	CT: VH - QUAD
+muscle_control_l4	1060	CT_SMA__QUAD	CT	31	104	0.019995801467142242	-5.644159081695024	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1093	TS_VH	TS	33	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	1093	TS_SMA	TS	33	528	0.8419490412244033	-0.24819517774489241	Higher in Control														False	False	TS: SMA
+muscle_control_l4	1093	TS_QUAD	TS	33	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	1093	CT_VH__SMA	CT	33	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1093	CT_VH__QUAD	CT	33	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	1093	CT_SMA__QUAD	CT	33	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1095	TS_VH	TS	50	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	1095	TS_SMA	TS	50	1225	0.7219833834529246	-0.4699624612180279	Higher in Control														False	False	TS: SMA
+muscle_control_l4	1095	TS_QUAD	TS	50	0			Higher in Control														False	False	TS: QUAD
+muscle_control_l4	1095	CT_VH__SMA	CT	50	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1095	CT_VH__QUAD	CT	50	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	1095	CT_SMA__QUAD	CT	50	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1097	TS_VH	TS	51	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	1097	TS_SMA	TS	51	1176	0.6935417154438624	-0.5279454338900255	Higher in Control														False	False	TS: SMA
+muscle_control_l4	1097	TS_QUAD	TS	51	1	1.2694308466049596e-05	-16.265458669429723	Higher in Control														False	False	TS: QUAD
+muscle_control_l4	1097	CT_VH__SMA	CT	51	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1097	CT_VH__QUAD	CT	51	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	1097	CT_SMA__QUAD	CT	51	98	0.00019701239377741976	-12.309425989061744	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1161	TS_VH	TS	41	1	0.47051313528330124	-1.0876930957516988	Higher in Control														False	False	TS: VH
+muscle_control_l4	1161	TS_SMA	TS	41	0			Higher in Control														False	False	TS: SMA
+muscle_control_l4	1161	TS_QUAD	TS	41	741	1.6392686146265159	0.7130522774008367	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	1161	CT_VH__SMA	CT	41	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1161	CT_VH__QUAD	CT	41	78	0.001982605992994277	-8.978386288099998	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	1161	CT_SMA__QUAD	CT	41	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1169	TS_VH	TS	43	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	1169	TS_SMA	TS	43	3	1.8465213812826877	0.8848099679277185	Higher in AD														False	False	TS: SMA
+muscle_control_l4	1169	TS_QUAD	TS	43	741	1.7368157609239068	0.7964447230184758	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	1169	CT_VH__SMA	CT	43	3	0.01750521308209075	-5.836071566705558	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1169	CT_VH__QUAD	CT	43	39	0.002774604367734859	-8.493502213162829	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	1169	CT_SMA__QUAD	CT	43	117	0.0003774073843689896	-11.371589728502192	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1171	TS_VH	TS	38	55	1.0464932293141245	0.06556297755966607	Higher in AD														False	False	TS: VH
+muscle_control_l4	1171	TS_SMA	TS	38	6	0.7142788537805054	-0.4854406839003668	Higher in Control														False	False	TS: SMA
+muscle_control_l4	1171	TS_QUAD	TS	38	253	1.6264056535914502	0.701687135294159	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	1171	CT_VH__SMA	CT	38	44	0.0013933061358054404	-9.48727200440836	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1171	CT_VH__QUAD	CT	38	253	0.023529748850606814	-5.40937026801905	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	1171	CT_SMA__QUAD	CT	38	92	0.0317690892983755	-4.976232455831252	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1187	TS_VH	TS	31	1	0.1562297279629338	-2.6782590940069433	Higher in Control														False	False	TS: VH
+muscle_control_l4	1187	TS_SMA	TS	31	3	2.033775924265707	1.0241607358529115	Higher in AD														False	False	TS: SMA
+muscle_control_l4	1187	TS_QUAD	TS	31	325	1.0134331674539234	0.0192509510031539	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	1187	CT_VH__SMA	CT	31	6	0.1959656189910443	-2.3513275306590984	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1187	CT_VH__QUAD	CT	31	52	0.01574346997510929	-5.989102633417922	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	1187	CT_SMA__QUAD	CT	31	78	0.007898891290550996	-6.984134117685731	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1188	TS_VH	TS	33	6	0.5454408380796069	-0.8745053735684191	Higher in Control														False	False	TS: VH
+muscle_control_l4	1188	TS_SMA	TS	33	28	1.547481985276637	0.6299226146716332	Higher in AD														False	False	TS: SMA
+muscle_control_l4	1188	TS_QUAD	TS	33	210	1.182531721569057	0.24187888456808881	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	1188	CT_VH__SMA	CT	33	32	0.09000238480356096	-3.4738929605692097	Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1188	CT_VH__QUAD	CT	33	84	0.011135399485808889	-6.488702873601681	Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	1188	CT_SMA__QUAD	CT	33	168	0.005306672060191434	-7.557976888306377	Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1202	TS_VH	TS	31	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	1202	TS_SMA	TS	31	0			Higher in Control														False	False	TS: SMA
+muscle_control_l4	1202	TS_QUAD	TS	31	465	1.275812692376503	0.3514165363008792	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	1202	CT_VH__SMA	CT	31	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1202	CT_VH__QUAD	CT	31	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	1202	CT_SMA__QUAD	CT	31	0			Higher in Control														False	False	CT: SMA - QUAD
+muscle_control_l4	1204	TS_VH	TS	44	0			Higher in Control														False	False	TS: VH
+muscle_control_l4	1204	TS_SMA	TS	44	0			Higher in Control														False	False	TS: SMA
+muscle_control_l4	1204	TS_QUAD	TS	44	903	1.2998342199627246	0.37832763457003354	Higher in AD														False	False	TS: QUAD
+muscle_control_l4	1204	CT_VH__SMA	CT	44	0			Higher in Control														False	False	CT: VH - SMA
+muscle_control_l4	1204	CT_VH__QUAD	CT	44	0			Higher in Control														False	False	CT: VH - QUAD
+muscle_control_l4	1204	CT_SMA__QUAD	CT	44	43	0.022792334310917015	-5.455307501840052	Higher in Control														False	False	CT: SMA - QUAD
