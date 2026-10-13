@@ -29,6 +29,24 @@ def command(args):
                         "OPENBLAS_NUM_THREADS":"1", "OMP_NUM_THREADS":"1"})
 
 
+def confirm_push():
+    """A local commit is not deployment; verify the remote even after push errors."""
+    commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=APP,text=True).strip()
+    try:
+        command(['git','push','origin','master'])
+    except subprocess.CalledProcessError:
+        # Some workspaces synchronize commits through an authenticated external
+        # connection while the shell lacks HTTPS credentials. Accept that only
+        # after observing the exact commit on the actual remote master branch.
+        pass
+    for attempt in range(6):
+        output=subprocess.check_output(['git','ls-remote','origin','refs/heads/master'],cwd=APP,text=True,
+                                       env={**os.environ,'GIT_TERMINAL_PROMPT':'0'})
+        if output.split() and output.split()[0]==commit:return
+        if attempt<5:time.sleep(10)
+    raise RuntimeError('Validated commit is push-ready but remote publication is not confirmed')
+
+
 def validate_snapshot(source, files, final):
     import numpy as np
     import pandas as pd
@@ -153,7 +171,7 @@ def publish(source, final, push):
         if staged:
             command(["git","commit","-m",f"Publish {label} all-donor muscle L4 non-prediction results"])
         committed=True
-        if push: command(["git","push","origin","master"])
+        if push: confirm_push()
         return subprocess.check_output(["git","rev-parse","HEAD"],cwd=APP,text=True).strip()
     except Exception:
         if committed:
@@ -182,6 +200,19 @@ def main():
         print(json.dumps(dict(publisher_pid=proc.pid)));return
     path=A.ROOT/"publication_status.json"
     record=json.loads(path.read_text()) if path.exists() else dict(status="waiting",milestones={})
+    # Resume a verified commit if the previous process stopped only during its
+    # push step. Never repeat data uploads merely because shell auth was absent.
+    if args.push and not record['milestones'] and DESTINATION.exists():
+        local=json.loads((DESTINATION/'module_set_manifest.json').read_text())
+        head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=APP,text=True).strip()
+        changed=subprocess.check_output(['git','diff','--name-only','HEAD'],cwd=APP,text=True).splitlines()
+        if local.get('release_status')=='core_complete_inference_pending' and not changed:
+            remote=subprocess.check_output(['git','ls-remote','origin','refs/heads/master'],cwd=APP,text=True,
+                                           env={**os.environ,'GIT_TERMINAL_PROMPT':'0'}).split()
+            if remote and remote[0]==head:
+                record['milestones']['core']=dict(commit=head,pushed=True)
+                record['status']='published_core'
+                A.atomic_json(record,path)
     while True:
         run=json.loads((A.ROOT/"pipeline_manifest.json").read_text())
         done=run.get("stages",{})
