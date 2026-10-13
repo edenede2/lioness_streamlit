@@ -561417,20 +561417,20 @@
       "sha256": "9d5acfd53747bc20050359aad64904a3031d8cc0d14057a74a8630da12b4ea1d"
     },
     "muscle_control_l4/mdc_sensitivity/manifest.json": {
-      "bytes": 4714,
-      "sha256": "1b2904d65fbbf2787e5e485aae9385102ac7eeab98bf0ddefa8ae176e4895324"
+      "bytes": 4411,
+      "sha256": "7aa961252cfc440a02e243eb30e1c5a1afad5801e339cf06afc490b138c78e6b"
     },
     "muscle_control_l4/mdc_sensitivity/resolved.parquet": {
-      "bytes": 203932,
-      "sha256": "8c63c293e967dbacb4fc4ac84d45601498cde536039e7ebefaa26409d41a5dbe"
+      "bytes": 327664,
+      "sha256": "3efffb8fcc52f2216c23eaa7571d1e91aa14bbc557381c3af5d9c6833ba7d6db"
     },
     "muscle_control_l4/mdc_sensitivity/summary.parquet": {
-      "bytes": 157827,
-      "sha256": "46f56ecedf2571dd94cba40baeaf8149c515833627bd57c1dfa9dfad168d92a8"
+      "bytes": 175804,
+      "sha256": "8752a3ff3e5bdd78400491b8559750cbae6c1ecf88b8c8954351154e680f3c4e"
     },
     "muscle_control_l4/module_set_manifest.json": {
-      "bytes": 159464,
-      "sha256": "8b30c9e52af226088c435dec779da513d9d1ed09925ff06892ca10753927d02d"
+      "bytes": 159161,
+      "sha256": "1642ce04b5fd046009ea5a8cec6a00a918b79b389e83f7a092a08e151ae540f6"
     },
     "prediction/prediction_confusion.parquet": {
       "bytes": 29482,
@@ -600970,16 +600970,16 @@
           "sha256": "e4b93d9a9f9fd2be0e7bba93156129cf80e6133c56dc43b764c23b812e57f12d"
         },
         "mdc_sensitivity/manifest.json": {
-          "bytes": 4714,
-          "sha256": "1b2904d65fbbf2787e5e485aae9385102ac7eeab98bf0ddefa8ae176e4895324"
+          "bytes": 4411,
+          "sha256": "7aa961252cfc440a02e243eb30e1c5a1afad5801e339cf06afc490b138c78e6b"
         },
         "mdc_sensitivity/resolved.parquet": {
-          "bytes": 203932,
-          "sha256": "8c63c293e967dbacb4fc4ac84d45601498cde536039e7ebefaa26409d41a5dbe"
+          "bytes": 327664,
+          "sha256": "3efffb8fcc52f2216c23eaa7571d1e91aa14bbc557381c3af5d9c6833ba7d6db"
         },
         "mdc_sensitivity/summary.parquet": {
-          "bytes": 157827,
-          "sha256": "46f56ecedf2571dd94cba40baeaf8149c515833627bd57c1dfa9dfad168d92a8"
+          "bytes": 175804,
+          "sha256": "8752a3ff3e5bdd78400491b8559750cbae6c1ecf88b8c8954351154e680f3c4e"
         },
         "mdc_split_heatmaps/all_edges/M0.png": {
           "bytes": 473970,
@@ -602275,8 +602275,8 @@
         "sample_permutations": 200
       },
       "mdc_normalization_sensitivity": {
-        "completed_gene_permutations": 0,
-        "completed_sample_permutations": 0,
+        "completed_gene_permutations": 200,
+        "completed_sample_permutations": 200,
         "config_hash": "94a19ffab9b2c5c2f4eb6ac8bbd743a29b8bba3fb3f70e089edb7003f902addc",
         "default_variant": "m5_high_no_q90",
         "diagnosis_counts": {
@@ -602286,12 +602286,12 @@
         "directory": "mdc_sensitivity",
         "files": {
           "resolved.parquet": {
-            "bytes": 203932,
-            "sha256": "8c63c293e967dbacb4fc4ac84d45601498cde536039e7ebefaa26409d41a5dbe"
+            "bytes": 327664,
+            "sha256": "3efffb8fcc52f2216c23eaa7571d1e91aa14bbc557381c3af5d9c6833ba7d6db"
           },
           "summary.parquet": {
-            "bytes": 157827,
-            "sha256": "46f56ecedf2571dd94cba40baeaf8149c515833627bd57c1dfa9dfad168d92a8"
+            "bytes": 175804,
+            "sha256": "8752a3ff3e5bdd78400491b8559750cbae6c1ecf88b8c8954351154e680f3c4e"
           }
         },
         "gene_permutations": 200,
@@ -602307,98 +602307,98 @@
         ],
         "sample_permutations": 200,
         "schema_version": 1,
-        "status": "observed_complete_inference_pending",
-        "updated_utc": "2026-10-13T06:38:12.289519+00:00",
+        "status": "complete",
+        "updated_utc": "2026-10-13T07:32:54.679796+00:00",
         "variants": {
           "m5_high_no_q90": {
             "clip": false,
             "family": "high_m5",
             "label": "M5: no q90 scaling (same high powers)",
             "observed_complete": true,
-            "permutation_significance_complete": false,
+            "permutation_significance_complete": true,
             "scale": "none",
-            "status": "observed_complete_inference_pending"
+            "status": "complete"
           },
           "m5_high_separate_unclipped": {
             "clip": false,
             "family": "high_m5",
             "label": "M5 high powers: separate scales, unclipped",
             "observed_complete": true,
-            "permutation_significance_complete": false,
+            "permutation_significance_complete": true,
             "scale": "separate",
-            "status": "observed_complete_inference_pending"
+            "status": "complete"
           },
           "m5_high_shared_clipped": {
             "clip": true,
             "family": "high_m5",
             "label": "M5 high powers: shared Control scale, clipped",
             "observed_complete": true,
-            "permutation_significance_complete": false,
+            "permutation_significance_complete": true,
             "scale": "control",
-            "status": "observed_complete_inference_pending"
+            "status": "complete"
           },
           "m5_high_shared_unclipped": {
             "clip": false,
             "family": "high_m5",
             "label": "M5 high powers: shared Control scale, unclipped",
             "observed_complete": true,
-            "permutation_significance_complete": false,
+            "permutation_significance_complete": true,
             "scale": "control",
-            "status": "observed_complete_inference_pending"
+            "status": "complete"
           },
           "m5_low_separate_clipped": {
             "clip": true,
             "family": "low_m5",
             "label": "M5 low powers: separate scales, clipped",
             "observed_complete": true,
-            "permutation_significance_complete": false,
+            "permutation_significance_complete": true,
             "scale": "separate",
-            "status": "observed_complete_inference_pending"
+            "status": "complete"
           },
           "m5_low_shared_clipped": {
             "clip": true,
             "family": "low_m5",
             "label": "M5 low powers: shared Control scale, clipped",
             "observed_complete": true,
-            "permutation_significance_complete": false,
+            "permutation_significance_complete": true,
             "scale": "control",
-            "status": "observed_complete_inference_pending"
+            "status": "complete"
           },
           "m5_low_shared_unclipped": {
             "clip": false,
             "family": "low_m5",
             "label": "M5 low powers: shared Control scale, unclipped",
             "observed_complete": true,
-            "permutation_significance_complete": false,
+            "permutation_significance_complete": true,
             "scale": "control",
-            "status": "observed_complete_inference_pending"
+            "status": "complete"
           },
           "original": {
             "clip": true,
             "family": "high_m5",
             "label": "Current M5: high powers, separate scales, clipped",
             "observed_complete": true,
-            "permutation_significance_complete": false,
+            "permutation_significance_complete": true,
             "scale": "separate",
-            "status": "observed_complete_inference_pending"
+            "status": "complete"
           },
           "pearson": {
             "clip": false,
             "family": "pearson",
             "label": "Unpowered Pearson correlations",
             "observed_complete": true,
-            "permutation_significance_complete": false,
+            "permutation_significance_complete": true,
             "scale": "none",
-            "status": "observed_complete_inference_pending"
+            "status": "complete"
           },
           "signed_alt_low": {
             "clip": false,
             "family": "signed_alt_low",
             "label": "SignedAlt: CT beta 2 / TS beta 3",
             "observed_complete": true,
-            "permutation_significance_complete": false,
+            "permutation_significance_complete": true,
             "scale": "none",
-            "status": "observed_complete_inference_pending"
+            "status": "complete"
           }
         }
       },
