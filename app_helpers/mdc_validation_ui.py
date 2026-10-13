@@ -18,20 +18,20 @@ LABELS = {"total":"All edges", "TS":"TS pooled", "CT":"CT pooled",
           "CT_minus_TS":"CT minus TS (log2 MDC)"}
 
 
-def load_manifest():
-    path=module_set_path(f"{DIRECTORY}/manifest.json","muscle_control_l4")
+def load_manifest(module_set="muscle_control_l4"):
+    path=module_set_path(f"{DIRECTORY}/manifest.json",module_set)
     return json.loads(ensure_data_path(path).read_text()) if data_path_available(path) else {}
 
 
 @st.cache_data(max_entries=4, ttl=600, show_spinner=False)
-def load_results(variant, revision):
-    return _read_filtered(module_set_path(f"{DIRECTORY}/results.parquet","muscle_control_l4"),
+def load_results(variant, revision, module_set="muscle_control_l4"):
+    return _read_filtered(module_set_path(f"{DIRECTORY}/results.parquet",module_set),
                           [("normalization_variant","=",variant)])
 
 
 @st.cache_data(max_entries=12, ttl=600, show_spinner=False)
-def load_replicates(kind, variant, module, scope, revision):
-    return _read_filtered(module_set_path(f"{DIRECTORY}/{kind}_replicates.parquet","muscle_control_l4"),
+def load_replicates(kind, variant, module, scope, revision, module_set="muscle_control_l4"):
+    return _read_filtered(module_set_path(f"{DIRECTORY}/{kind}_replicates.parquet",module_set),
         [("normalization_variant","=",variant),("module","=",int(module)),("scope","=",scope)])
 
 
@@ -86,10 +86,11 @@ def balanced_figure(frame, scope):
     return fig
 
 
-def render_mdc_validation(module, render_plot):
-    manifest=load_manifest()
+def render_mdc_validation(module, render_plot, module_set="muscle_control_l4"):
+    manifest=load_manifest() if module_set=="muscle_control_l4" else load_manifest(module_set)
     st.caption("All-edge group-network MDC context; this catalog does not change donor-level LIONESS/BONOBO scores or prediction analyses.")
-    st.warning("Fixed Control-derived modules: these checks do not correct discovery-selection bias (step 3). They are conditional validation, not independent replication.")
+    definition="Control-derived" if module_set=="muscle_control_l4" else "all-donor"
+    st.warning(f"Fixed {definition} modules: these checks do not correct discovery-selection bias (step 3). They are conditional validation, not independent replication.")
     if not manifest:
         st.info("Diagnosis-label MDC validation is being prepared. Existing MDC catalogs remain available.")
         return
@@ -98,7 +99,7 @@ def render_mdc_validation(module, render_plot):
     variant=st.selectbox("Validation network weighting",list(VARIANTS),format_func=VARIANTS.get,key="mdc_validation_weighting")
     st.caption("The CT–TS specificity test is primary with unpowered Pearson weights. M5 uses different CT/TS weighting functions and is a sensitivity analysis.")
     revision=manifest["files"]["results.parquet"]["sha256"]
-    frame=load_results(variant,revision)
+    frame=load_results(variant,revision) if module_set=="muscle_control_l4" else load_results(variant,revision,module_set)
     section=st.radio("MDC validation analysis",["Diagnosis-label tests","Balanced groups","Direct CT–TS test"],horizontal=True,key="mdc_validation_analysis")
     selected=frame[frame.module.eq(module)]
     if section=="Balanced groups":
@@ -115,7 +116,8 @@ def render_mdc_validation(module, render_plot):
         table=frame[frame.scope.eq(scope)].copy()
         row=selected[selected.scope.eq(scope)].iloc[0]
         if nlabel==manifest["label_permutations"]:
-            reps=load_replicates("label",variant,module,scope,manifest["files"]["label_replicates.parquet"]["sha256"])
+            parameters=("label",variant,module,scope,manifest["files"]["label_replicates.parquet"]["sha256"])
+            reps=load_replicates(*parameters) if module_set=="muscle_control_l4" else load_replicates(*parameters,module_set)
             render_plot(null_figure(reps,row.statistic,scope),use_container_width=True,plot_id="mdc.validation.contrast")
         else:
             st.info("Label-permutation inference is incomplete. No interim p-values or FDRs are shown.")
@@ -124,9 +126,10 @@ def render_mdc_validation(module, render_plot):
         scope=st.selectbox("Label-test MDC component",list(SCOPES[:-1]),format_func=LABELS.get)
         row=selected[selected.scope.eq(scope)].iloc[0]
         if nlabel==manifest["label_permutations"]:
-            reps=load_replicates("label",variant,module,scope,manifest["files"]["label_replicates.parquet"]["sha256"])
+            parameters=("label",variant,module,scope,manifest["files"]["label_replicates.parquet"]["sha256"])
+            reps=load_replicates(*parameters) if module_set=="muscle_control_l4" else load_replicates(*parameters,module_set)
             render_plot(null_figure(reps,row.statistic,scope),use_container_width=True,plot_id="mdc.validation.label_null")
-            top_n=st.selectbox("Validation heatmap modules",[20,50,155])
+            top_n=st.selectbox("Validation heatmap modules",list(dict.fromkeys([20,50,manifest['module_count']])))
             only_sig=st.toggle("Only modules with significant label tests",value=False)
             if only_sig and not frame.label_fdr.lt(.05).any():
                 st.info("No module passes label-test FDR <0.05 for this weighting.")
@@ -144,4 +147,4 @@ def render_mdc_validation(module, render_plot):
     filterable_dataframe(selected_table,table_key="mdc.validation.selected",table_name="Selected-module validation",hide_index=True)
     filterable_dataframe(table,table_key="mdc.validation.all",table_name="All-module validation",hide_index=True)
     st.download_button("Download complete component validation table",table.to_csv(sep="\t",index=False).encode(),
-        file_name=f"muscle_control_l4_{variant}_{scope}_mdc_validation.tsv",mime="text/tab-separated-values")
+        file_name=f"{module_set}_{variant}_{scope}_mdc_validation.tsv",mime="text/tab-separated-values")

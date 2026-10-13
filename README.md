@@ -863,6 +863,39 @@ Log2 heatmap cells show mean log2 MDC, while raw-scale cells show the equivalent
 geometric mean MDC ratio. Module-level rows remain available for inspection and TSV
 download.
 
+## All-donor VH/SMA/QUAD partitions
+
+The separate `muscle_all_donors_l4` dataset uses the completed
+`20261012_all_donors_fitted_betas/modules_filtered_min30/M5_all_genes_table_3.csv`
+partition: biological level 4, 173 modules, 31,948 unique tissue–gene assignments.
+The comparison cohort remains 357 donors (120 Control, 82 MCI, 155 AD).
+Control-referenced LIONESS is retained for comparability with the Control-derived
+muscle analysis. No predictions or BONOBO networks are generated for this set.
+
+Use `python3 scripts/run_muscle_all_donors_analysis.py --detach --workers 6` to run
+the isolated, checkpointed pipeline. Private outputs and publication staging are
+under `out/muscle_all_donors_l4/20261013_nonprediction`, outside this public app.
+The pipeline covers input/formula QC, full-module regional/tissue-expanded
+KEGG, six LIONESS features with pooled/resolved associations, descriptive
+eigengenes, recovered M5 MDC, ten normalization sensitivities (200 sample and
+200 gene nulls each), diagnosis-label validation (200 permutations), balanced
+groups (100 resamples), direct CT–TS tests, split-triangle heatmaps, and all three
+Hedges' g 0.40 edge directions with feature/edge/driver summaries.
+
+The partition-fitted powers are TS VH=6, SMA=6, QUAD=10 and CT VH–SMA=6,
+VH–QUAD=6, SMA–QUAD=7. Each corresponding AD/Control block uses the same power.
+These differ from the Control-derived partition's powers: comparisons therefore
+combine module-discovery and fitted-weighting differences. Unpowered Pearson
+MDC provides a comparable-weight sensitivity. All MDC validation is conditional
+on fixed modules, not independent module-discovery validation.
+
+The new selector remains hidden until a validated data bundle and Drive index are
+published. `publish_muscle_all_donors.py --wait --detach --push` releases a core
+milestone after eigengenes finish and a final milestone after full QA. Existing
+module definitions, sample pseudonyms, and predictions remain
+unchanged. Completed result catalogs and unfinished inference are labeled
+separately; no pending FDR is borrowed from a different network functional.
+
 ## BONOBO significance and sparse features
 
 BONOBO edge significance tests whether an individual donor-specific covariance edge

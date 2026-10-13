@@ -60,6 +60,13 @@ PRIVATE_MAP = REPO_ROOT / "out/muscle_control_l4/private_public_sample_mapping.t
 # This partition was learned in Controls. Only Control-referenced LIONESS is a
 # supported analysis or public method for this module definition.
 METHODS = ("control_anchored",)
+MODULE_SET = "muscle_control_l4"
+MODULE_COUNT = 155
+ASSIGNMENT_COUNT = 33_491
+MODULE_LABEL = "Control-derived VH/SMA/QUAD M5 L4 modules (155)"
+PARTITION_COHORT = "Control only"
+BETAS_TS = {"VH": 5, "SMA": 7, "QUAD": 13}
+BETAS_CT = {"VH-SMA": 8, "VH-QUAD": 10, "SMA-QUAD": 10}
 FEATURES = (
     "connectivity",
     "positive_density",
@@ -822,7 +829,7 @@ def categorical_statistics(
                 "diagnosis_group", "outcome",
             ],
         )
-        result.insert(0, "module_set", "muscle_control_l4")
+        result.insert(0, "module_set", MODULE_SET)
         result.insert(1, "estimator", "lioness")
         result.insert(2, "network_method", result["lioness_method"])
         result.insert(3, "edge_rule", "all")
@@ -944,7 +951,7 @@ def module_eigengenes(
     result = pd.concat(rows, ignore_index=True).sort_values(
         ["module", "component", "sample_id"], kind="stable"
     ).reset_index(drop=True)
-    if result["sample_id"].nunique() != 357 or result["module"].nunique() != 155:
+    if result["sample_id"].nunique() != 357 or result["module"].nunique() != MODULE_COUNT:
         raise AssertionError("Unexpected eigengene donor or module coverage")
     if {"donor", "projid", "ProjID"}.intersection(result.columns):
         raise AssertionError("Private donor identifiers entered eigengene output")
@@ -1242,7 +1249,7 @@ def mdc_tables(details: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     ].any(axis=1)
     selected = observed.loc[observed["scope"].isin(COMPONENTS)].copy()
     selected = selected.rename(columns={"scope": "component", "mdc_raw": "mdc", "mdc_log2": "log2_mdc"})
-    selected.insert(0, "module_definition", "muscle_control_l4")
+    selected.insert(0, "module_definition", MODULE_SET)
     selected["component_class"] = selected["component"].str.split("_", n=1).str[0]
     selected["n_features"] = selected["module"].map(size_lookup)
     selected["direction"] = np.where(selected["mdc"].ge(1), "Higher in AD", "Higher in Control")
@@ -1409,10 +1416,10 @@ def update_app_manifest(module_manifest: dict[str, object], output: Path) -> Non
             if (output / "resolved_statistics.parquet").exists()
             else 0
         ),
-        "assignment_rows": 33_491,
-        "module_details_rows": 155,
-        "entropy_rows": 155,
-        "mdc_rows": 155,
+        "assignment_rows": ASSIGNMENT_COUNT,
+        "module_details_rows": MODULE_COUNT,
+        "entropy_rows": MODULE_COUNT,
+        "mdc_rows": MODULE_COUNT,
         "resolved_mdc_rows": len(pd.read_csv(output / "mdc_resolved_ad_vs_control.tsv", sep="\t")),
     }
     kegg_frame = pd.read_parquet(output / "kegg_tissue_expanded_full.parquet")
@@ -1423,15 +1430,15 @@ def update_app_manifest(module_manifest: dict[str, object], output: Path) -> Non
     )
     all_modules = set(pd.read_csv(output / "module_details.tsv", sep="\t")["module"].astype(int))
     regional_counts = kegg_frame.groupby("cluster_id", observed=True).size()
-    manifest.setdefault("module_sets", {})["muscle_control_l4"] = {
+    manifest.setdefault("module_sets", {})[MODULE_SET] = {
         "status": "complete",
-        "key": "muscle_control_l4",
-        "label": "Control-derived VH/SMA/QUAD M5 L4 modules (155)",
-        "relative_data_dir": "muscle_control_l4",
+        "key": MODULE_SET,
+        "label": MODULE_LABEL,
+        "relative_data_dir": MODULE_SET,
         "source_run": str(RUN_ROOT.relative_to(REPO_ROOT)),
-        "modules": 155,
-        "assignments": 33_491,
-        "sentinel_module": 36,
+        "modules": MODULE_COUNT,
+        "assignments": ASSIGNMENT_COUNT,
+        "sentinel_module": 36 if 36 in all_modules else min(all_modules),
         "methods": list(METHODS),
         "estimators": ["lioness"],
         "feature_families": list(FEATURES),
@@ -1446,10 +1453,13 @@ def update_app_manifest(module_manifest: dict[str, object], output: Path) -> Non
             for method in METHODS
         },
         "fdr_test_families": (
-            "Association BH is calculated across the 155 modules only within each "
+            f"Association BH is calculated across the {MODULE_COUNT} modules only within each "
             "fixed method, feature, component, outcome, diagnosis/grouping level, and scale."
         ),
         "capabilities": module_manifest["capabilities"],
+        "partition_network": module_manifest.get("partition_network", {}),
+        "mdc_sensitivity": module_manifest.get("mdc_sensitivity", {}),
+        "mdc_label_validation": module_manifest.get("mdc_label_validation", {}),
         "categorical_statistics_local": True,
         "module_details": {
             "classification": "TS when one tissue contributes at least 95%; CT otherwise",
@@ -1461,8 +1471,8 @@ def update_app_manifest(module_manifest: dict[str, object], output: Path) -> Non
             "min_cluster_size": 30,
             "min_term_size": 10,
             "min_overlap": 3,
-            "input_modules": 155,
-            "admitted_modules": 155,
+            "input_modules": MODULE_COUNT,
+            "admitted_modules": MODULE_COUNT,
             "modules_with_reported_pathways": len(expanded_modules),
             "modules_without_reported_pathways": sorted(all_modules - expanded_modules),
             "join_coverage": 1.0,
@@ -1474,7 +1484,7 @@ def update_app_manifest(module_manifest: dict[str, object], output: Path) -> Non
             "per_region_source_sha256": sha256(
                 KEGG_ROOT / "method2_meta_kegg_annotated.tsv"
             ),
-            "per_region_input_modules": 155,
+            "per_region_input_modules": MODULE_COUNT,
             "per_region_pathways_per_module_min": int(regional_counts.min()),
             "per_region_pathways_per_module_max": int(regional_counts.max()),
             "region_statistics": {
@@ -1555,7 +1565,7 @@ def main() -> None:
         return
     if args.eigengenes_only:
         source = pd.read_parquet(
-            RUN_ROOT / "standard/donor_module_metrics.parquet",
+            RUN_ROOT / METHODS[0] / "donor_module_metrics.parquet",
             columns=["donor"],
         )
         donors = set(source["donor"].astype(str))
@@ -1588,7 +1598,7 @@ def main() -> None:
     sources = []
     for method in METHODS:
         frame = pd.read_parquet(RUN_ROOT / method / "donor_module_metrics.parquet")
-        if len(frame) != 55_335 or frame["module"].nunique() != 155:
+        if len(frame) != MODULE_COUNT * 357 or frame["module"].nunique() != MODULE_COUNT:
             raise ValueError(f"{method}: unexpected source dimensions")
         sources.append(frame)
     source = pd.concat(sources, ignore_index=True)
@@ -1598,9 +1608,9 @@ def main() -> None:
     atomic_parquet(metadata, args.output / "sample_metadata.parquet")
 
     aggregate, resolved = transformed_tables(source, metadata, mapping)
-    if len(aggregate) != 155 * 357 * 6 * len(METHODS):
+    if len(aggregate) != MODULE_COUNT * 357 * 6 * len(METHODS):
         raise AssertionError("Unexpected aggregate row count")
-    if len(resolved) != 155 * 357 * 6 * 6 * len(METHODS):
+    if len(resolved) != MODULE_COUNT * 357 * 6 * 6 * len(METHODS):
         raise AssertionError("Unexpected resolved row count")
     atomic_parquet(aggregate, args.output / "aggregate_plot_data.parquet")
     atomic_parquet(resolved, args.output / "resolved_plot_data.parquet")
@@ -1642,10 +1652,10 @@ def main() -> None:
     manifest = {
         "status": "complete" if (args.output / "aggregate_statistics.parquet").exists() else "partial",
         "created_utc": utc_now(),
-        "module_set": "muscle_control_l4",
-        "module_definition": "Control-derived VH/SMA/QUAD Method-5 biological L4",
-        "modules": 155,
-        "assignments": 33_491,
+        "module_set": MODULE_SET,
+        "module_definition": MODULE_LABEL,
+        "modules": MODULE_COUNT,
+        "assignments": ASSIGNMENT_COUNT,
         "donors": 357,
         "diagnosis_counts": {"Control": 120, "MCI": 82, "AD": 155},
         "methods": list(METHODS),
@@ -1654,11 +1664,11 @@ def main() -> None:
         "components": list(COMPONENTS),
         "partition_network": {
             "method": "M5 extended SFN",
-            "cohort": "Control only",
+            "cohort": PARTITION_COHORT,
             "biological_level": 4,
             "zero_indexed_table": 3,
-            "beta_ts": {"VH": 5, "SMA": 7, "QUAD": 13},
-            "beta_ct": {"VH-SMA": 8, "VH-QUAD": 10, "SMA-QUAD": 10},
+            "beta_ts": BETAS_TS,
+            "beta_ct": BETAS_CT,
         },
         "lioness_network": {
             "functional": "Pearson signedAlt with frozen block-specific powers",

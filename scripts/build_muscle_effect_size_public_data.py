@@ -40,11 +40,13 @@ from build_muscle_public_data import (  # noqa: E402
     atomic_parquet,
     refresh_existing_manifest,
     update_app_manifest,
+    gene_symbol_mapping,
 )
 
 
 RUN_NAME = "20261012_muscle_effect_size_edge_filtering"
 MODULE_SET = "muscle_control_l4"
+MODULE_COUNT = 155
 # This module definition was learned in Controls. Standard-LIONESS checkpoints
 # may exist in the private analysis root from early development, but they are
 # intentionally never packaged or exposed by the public application.
@@ -129,6 +131,14 @@ def sanitize(frame: pd.DataFrame, sample_map: dict[str, str]) -> pd.DataFrame:
     forbidden = {"donor", "projid"}.intersection(result.columns)
     if forbidden:
         raise ValueError(f"Private identifiers remain: {sorted(forbidden)}")
+    gene_columns = [column for column in ("gene_a", "gene_b") if column in result]
+    if gene_columns:
+        symbols = gene_symbol_mapping()
+        for column in gene_columns:
+            result[column] = result[column].map(
+                lambda value: symbols.get(str(value).split(".")[0], "Unmapped gene")
+                if str(value).startswith("ENSG") else value
+            )
     return result
 
 
@@ -339,8 +349,8 @@ def publish_all_edge_summaries(output: Path, sample_map: dict[str, str]) -> int:
         .size().unstack(fill_value=0)
         .reindex(columns=["VH", "SMA", "QUAD"], fill_value=0)
     )
-    if len(counts) != 155:
-        raise ValueError(f"Expected 155 retained muscle modules, found {len(counts)}")
+    if len(counts) != MODULE_COUNT:
+        raise ValueError(f"Expected {MODULE_COUNT} retained muscle modules, found {len(counts)}")
     possible_rows: list[dict[str, int | str]] = []
     for module, row in counts.iterrows():
         n = {tissue: int(row[tissue]) for tissue in ("VH", "SMA", "QUAD")}
@@ -365,7 +375,7 @@ def publish_all_edge_summaries(output: Path, sample_map: dict[str, str]) -> int:
     metrics = pd.read_parquet(
         RUN_ROOT / "control_anchored/donor_module_metrics.parquet"
     )
-    if len(metrics) != 155 * 357:
+    if len(metrics) != MODULE_COUNT * 357:
         raise ValueError("Control-referenced all-edge metrics are not rectangular")
     scopes = (
         "total", "TS", "CT", "TS_VH", "TS_SMA", "TS_QUAD",
@@ -570,9 +580,9 @@ def main() -> None:
         int(path.name.split("__", 1)[0].removeprefix("M"))
         for path in checkpoint.glob("M*__effect_qa.json")
     }
-    if run_manifest.get("status") != "complete" or len(completed_modules) != 155:
+    if run_manifest.get("status") != "complete" or len(completed_modules) != MODULE_COUNT:
         raise ValueError(
-            "The 155-module Control-referenced effect analysis is not complete"
+            f"The {MODULE_COUNT}-module Control-referenced effect analysis is not complete"
         )
     metadata, sample_map = private_metadata(analysis_root, output)
     if args.publish_only:

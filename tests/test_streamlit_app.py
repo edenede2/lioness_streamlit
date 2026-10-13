@@ -735,6 +735,32 @@ def test_streamlit_muscle_module_set_core_views_render() -> None:
     assert any("full M5" in warning.value for warning in app.warning)
 
 
+def test_streamlit_all_donor_muscle_core_views_render() -> None:
+    import json
+    import pytest
+    from app_helpers.data import DATA_MANIFEST
+    registry=json.loads(DATA_MANIFEST.read_text()).get('module_sets',{})
+    if 'muscle_all_donors_l4' not in registry:
+        pytest.skip('New module set has not reached its validated public milestone')
+    app=AppTest.from_file(APP,default_timeout=240).run()
+    assert_app_clean(app)
+    app=widget_with_label(app.selectbox,'Module definition').set_value('muscle_all_donors_l4').run()
+    app=preserve_legacy_pills_state(app)
+    assert_app_clean(app)
+    assert widget_with_label(app.radio,'Network estimator').options==['LIONESS']
+    assert widget_with_label(app.radio,'Network method').options==['Control-referenced LIONESS']
+    for view in ('Associations','Feature distributions','Correlation heatmaps','KEGG enrichment','MDC','Statistics','Module details'):
+        app=select_view(app,view)
+        assert_app_clean(app)
+    app=select_view(app,'MDC')
+    assert any('all-donor cohort' in warning.value for warning in app.warning)
+    from app_helpers.data import module_set_path
+    if module_set_path('mdc_label_validation/manifest.json','muscle_all_donors_l4').exists():
+        app=widget_with_label(app.radio,'MDC result catalog').set_value('Diagnosis-label validation (steps 1, 2, 4)').run()
+        assert_app_clean(app)
+        assert any('Fixed all-donor modules' in warning.value for warning in app.warning)
+
+
 def test_streamlit_muscle_mdc_normalization_sensitivity_routes_every_view() -> None:
     app = AppTest.from_file(APP, default_timeout=240).run()
     assert_app_clean(app)

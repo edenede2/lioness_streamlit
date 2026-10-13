@@ -34,6 +34,8 @@ from models.se2.correlation import pairwise_corr
 from models.se2.methods.soft_weighted import _full_bootstrap_stability
 
 DEFAULT_OUTPUT = M.REPO_ROOT / "out/mdc_muscle_control_l4/20261013_no_q90_mdc"
+MODULE_SET = "muscle_control_l4"
+PUBLIC_ROOT = APP_ROOT / 'data' / MODULE_SET
 FAMILIES = ("pearson", "signed_alt_low", "high_m5", "low_m5")
 SCHEMA_VERSION = 1
 _STATE = {}
@@ -230,19 +232,22 @@ def build_public(root, public_root):
     manifest=json.loads((root/"run_manifest.json").read_text())
     complete=manifest.get('status')=='complete'
     frame=pd.read_parquet(root/('mdc_significance.parquet' if complete else 'mdc_observed.parquet'))
-    details=pd.read_csv(APP_ROOT/'data/muscle_control_l4/module_details.tsv',sep='\t')
+    details=pd.read_csv(PUBLIC_ROOT/'module_details.tsv',sep='\t')
     summary,resolved=[],[]
     for variant,part in frame.groupby('normalization_variant',sort=False):
         a,b=public_mdc_tables(part,details)
         for d in (a,b):
             d['normalization_variant']=variant
             d['normalization_label']=VARIANTS[variant]['label']
+            if 'module_definition' in d:
+                d['module_definition']=MODULE_SET
         summary.append(a);resolved.append(b)
     public_root.mkdir(parents=True,exist_ok=True)
     atomic_parquet(pd.concat(summary,ignore_index=True),public_root/'summary.parquet')
     atomic_parquet(pd.concat(resolved,ignore_index=True),public_root/'resolved.parquet')
     files={name:{'bytes':(public_root/name).stat().st_size,'sha256':M.sha256_file(public_root/name)} for name in ['summary.parquet','resolved.parquet']}
-    public_manifest={'schema_version':1,'status':manifest['status'],'module_count':155,
+    public_manifest={'schema_version':1,'status':manifest['status'],'module_count':len(details),
+        'module_set':MODULE_SET,
         'diagnosis_counts':{'Control':120,'AD':155},'sample_permutations':manifest['sample_permutations'],
         'gene_permutations':manifest['gene_permutations'],'completed_sample_permutations':checkpoint_count(root,'sample'),
         'completed_gene_permutations':checkpoint_count(root,'gene'),'files':files,
@@ -259,7 +264,7 @@ def parse_args():
     p.add_argument('--observed-root',type=Path,default=M.DEFAULT_OUTPUT)
     p.add_argument('--expression-root',type=Path,default=M.DEFAULT_EXPRESSION)
     p.add_argument('--assignments',type=Path,default=M.DEFAULT_ASSIGNMENTS)
-    p.add_argument('--public-root',type=Path,default=APP_ROOT/'data/muscle_control_l4/mdc_sensitivity')
+    p.add_argument('--public-root',type=Path,default=PUBLIC_ROOT/'mdc_sensitivity')
     p.add_argument('--sample-permutations',type=int,default=200)
     p.add_argument('--gene-permutations',type=int,default=200)
     p.add_argument('--workers',type=int,default=12)

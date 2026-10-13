@@ -211,6 +211,7 @@ if (
     _data_helpers = importlib.reload(_data_helpers)
 
 from app_helpers.data import (
+    MUSCLE_MODULE_SETS,
     ANALYSIS_SUBSET_LABELS,
     ASSOCIATION_GROUP_LABELS,
     ASSOCIATION_LEVEL_ORDERS,
@@ -3989,13 +3990,13 @@ with st.sidebar:
     active_component_order = list(module_set_components(module_set))
     active_tissue_detail_columns = module_set_tissue_detail_columns(module_set)
     module_manifest = data_manifest.get("module_sets", {}).get(module_set, {})
-    if module_set == "muscle_control_l4":
+    if module_set in MUSCLE_MODULE_SETS:
         st.info(
-            "These Control-derived partitions were discovered with Method 5 extended "
+            "These muscle partitions were discovered with Method 5 extended "
             "SFN (bootstrap stability, CT null excess, signed block powers, and blockwise "
             "q90 normalization). The MDC context is rebuilt with that same M5 functional. "
             "The donor-specific LIONESS scores remain the separately labeled Pearson "
-            "signedAlt analysis with the frozen Control-derived block powers."
+            "signedAlt analysis with the selected partition's frozen block powers."
         )
     annotations = cached_annotations(module_set)
     modules = sorted(annotations["module"].astype(int).unique().tolist())
@@ -4301,7 +4302,7 @@ with st.sidebar:
         options=cohort_scope_options,
         format_func=lambda value: (
             "Complete VH/SMA/QUAD comparison cohort (357)"
-            if module_set == "muscle_control_l4" and value == "complete_450"
+            if module_set in MUSCLE_MODULE_SETS and value == "complete_450"
             else COHORT_SCOPE_LABELS[value]
         ),
         help=(
@@ -4309,7 +4310,7 @@ with st.sidebar:
             "for each tissue or tissue pair. Pooled CT/TS remains restricted to the "
             + (
                 "same 357 complete-tissue donors in the VH/SMA/QUAD comparison cohort."
-                if module_set == "muscle_control_l4"
+                if module_set in MUSCLE_MODULE_SETS
                 else "same 450 complete-tissue donors used by the matched-partition comparison."
             )
         ),
@@ -8422,7 +8423,7 @@ if active_view == "Edge volcano":
 
 if active_view == "MDC":
     st.subheader("Module differential connectivity (MDC)")
-    if module_set == "muscle_control_l4" and differential_edge_rule == "all":
+    if module_set in MUSCLE_MODULE_SETS and differential_edge_rule == "all":
         mdc_catalog = st.radio(
             "MDC result catalog",
             ["Existing MDC catalogs", "Diagnosis-label validation (steps 1, 2, 4)"],
@@ -8430,7 +8431,10 @@ if active_view == "MDC":
         )
         if mdc_catalog != "Existing MDC catalogs":
             from app_helpers.mdc_validation_ui import render_mdc_validation
-            render_mdc_validation(module, render_plotly_chart)
+            if module_set == "muscle_control_l4":
+                render_mdc_validation(module, render_plotly_chart)
+            else:
+                render_mdc_validation(module, render_plotly_chart, module_set=module_set)
             st.stop()
         st.caption(
             "Existing FDRs compare against disrupted-coexpression and random-gene nulls. "
@@ -8439,7 +8443,7 @@ if active_view == "MDC":
         )
     mdc_normalization_variant = "original"
     mdc_sensitivity_manifest = {}
-    if module_set == "muscle_control_l4" and differential_edge_rule == "all":
+    if module_set in MUSCLE_MODULE_SETS and differential_edge_rule == "all":
         mdc_sensitivity_manifest = load_mdc_normalization_manifest(module_set)
         available_variants = {
             name: entry for name, entry in mdc_sensitivity_manifest.get("variants", {}).items()
@@ -8452,10 +8456,15 @@ if active_view == "MDC":
                 format_func=lambda value: available_variants[value]["label"],
                 key="muscle_mdc_normalization_variant_v2",
             )
+            beta_text = (
+                "TS VH=6, SMA=6, QUAD=10; CT VH–SMA=6, VH–QUAD=6, SMA–QUAD=7. "
+                if module_set == "muscle_all_donors_l4"
+                else "TS VH=5, SMA=7, QUAD=13; CT VH–SMA=8, VH–QUAD=10, SMA–QUAD=10. "
+            )
             st.caption(
                 "The same beta is used in AD and Control for every tissue block. "
-                "Current M5: TS VH=5, SMA=7, QUAD=13; CT VH–SMA=8, "
-                "VH–QUAD=10, SMA–QUAD=10. Low-power variants: TS=3 and CT=2. "
+                + "Current M5: " + beta_text
+                + "Low-power variants: TS=3 and CT=2. "
                 "Shared scale uses one Control-derived q90 per block for both diagnoses."
             )
             if mdc_normalization_variant == "m5_high_no_q90":
@@ -8493,7 +8502,7 @@ if active_view == "MDC":
         st.stop()
     mdc_network_label = (
         "full Method-5 extended-SFN adjacency"
-        if module_set == "muscle_control_l4"
+        if module_set in MUSCLE_MODULE_SETS
         else "signedAlt adjacency"
     )
     if mdc_normalization_variant != "original":
@@ -8525,14 +8534,19 @@ if active_view == "MDC":
             "an additional group-MDC filter."
         )
     )
-    if module_set == "muscle_control_l4":
+    if module_set in MUSCLE_MODULE_SETS:
+        discovery_context = (
+            "Modules were discovered in the all-donor cohort"
+            if module_set == "muscle_all_donors_l4"
+            else "Modules were discovered in Controls"
+        )
         st.warning(
             "The muscle MDC uses the 155 AD and 120 Control donors with complete VH, "
             "SMA, and QUAD expression. The weighting selector applies to every MDC "
             "view, table, and download below. M5 variants retain bootstrap stability "
             "and CT null-excess calibration; Pearson and SignedAlt are separate "
             "sensitivity baselines. Current M5 retains the full M5 normalization. "
-            "Modules were discovered in Controls, so these "
+            + discovery_context + ", so these "
             "comparisons remain conditional on that module definition. MCI was not included. "
             + estimator_note
         )
@@ -9054,7 +9068,7 @@ if active_view == "MDC":
         ),
         mime="text/tab-separated-values",
     )
-    if module_set == "muscle_control_l4" and not mdc_metadata.get(
+    if module_set in MUSCLE_MODULE_SETS and not mdc_metadata.get(
         "permutation_significance_complete", False
     ):
         st.info(
@@ -10461,7 +10475,7 @@ if active_view == "Methods & data":
     with formula_col2:
         st.markdown("MCI or AD donor added to the Control reference")
         st.latex(r"A_i = (n_C+1)A_{C+i} - n_C A_C")
-        if module_set == "muscle_control_l4":
+        if module_set in MUSCLE_MODULE_SETS:
             st.markdown(
                 "Donor networks use the frozen signedAlt block powers from the muscle "
                 "partition: VH=5, SMA=7, QUAD=13; VH–SMA=8, VH–QUAD=10, and "

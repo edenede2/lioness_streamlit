@@ -20,18 +20,21 @@ from app_helpers.gene_symbols import public_gene_labels
 APP_ROOT = Path(__file__).resolve().parents[1]
 EFFECT_ENDPOINT_KEGG_API_VERSION = 1
 MDC_NORMALIZATION_API_VERSION = 1
+MUSCLE_MODULE_SETS = ("muscle_control_l4", "muscle_all_donors_l4")
 
 MODULE_SET_LABELS = {
     "full_cohort": "Full-cohort L4 modules (154)",
     "control_derived": "Control-derived L4 modules (186)",
     "all_donor_corrshrink_l4": "All-donor CorShrink M1 L4 modules",
     "muscle_control_l4": "Control-derived VH/SMA/QUAD M5 L4 modules (155)",
+    "muscle_all_donors_l4": "All-donor VH/SMA/QUAD M5 L4 modules (173)",
 }
 MODULE_SET_DIRS = {
     "full_cohort": DATA_DIR,
     "control_derived": DATA_DIR / "control_derived",
     "all_donor_corrshrink_l4": DATA_DIR / "all_donor_corrshrink_l4",
     "muscle_control_l4": DATA_DIR / "muscle_control_l4",
+    "muscle_all_donors_l4": DATA_DIR / "muscle_all_donors_l4",
 }
 MODULE_SET_METHODS = {
     "full_cohort": ("standard", "control_anchored"),
@@ -40,12 +43,14 @@ MODULE_SET_METHODS = {
     # This partition was learned in Controls; only the Control-referenced
     # LIONESS analysis is a supported public method for this module set.
     "muscle_control_l4": ("control_anchored",),
+    "muscle_all_donors_l4": ("control_anchored",),
 }
 MODULE_SET_TISSUES = {
     "full_cohort": ("AC", "DLPFC", "PCG"),
     "control_derived": ("AC", "DLPFC", "PCG"),
     "all_donor_corrshrink_l4": ("AC", "DLPFC", "PCG"),
     "muscle_control_l4": ("VH", "SMA", "QUAD"),
+    "muscle_all_donors_l4": ("VH", "SMA", "QUAD"),
 }
 _BRAIN_COMPONENTS = (
     "CT_AC__DLPFC",
@@ -69,6 +74,7 @@ MODULE_SET_COMPONENTS = {
     ),
 }
 PREDICTION_MODULE_SETS = ("full_cohort", "control_derived")
+MODULE_SET_COMPONENTS["muscle_all_donors_l4"] = MODULE_SET_COMPONENTS["muscle_control_l4"]
 COHORT_SCOPE_LABELS = {
     "complete_450": "Complete-tissue comparison cohort (450)",
     "maximum_component": "Maximum component cohort",
@@ -1442,7 +1448,7 @@ def load_sample_metadata(
     if cohort_scope == "complete_450":
         path = (
             module_set_data_dir(module_set) / "sample_metadata.parquet"
-            if module_set == "muscle_control_l4"
+            if module_set in MUSCLE_MODULE_SETS
             else SAMPLE_METADATA
         )
     elif module_set == "all_donor_corrshrink_l4" and cohort_scope == "maximum_component":
@@ -1498,7 +1504,7 @@ def load_mdc_summary(
     """Load all-edge MDC or the selected discovery-filtered MDC summary."""
 
     if normalization_variant != "original":
-        if module_set != "muscle_control_l4" or differential_edge_rule != "all":
+        if module_set not in MUSCLE_MODULE_SETS or differential_edge_rule != "all":
             raise ValueError("MDC normalization sensitivities are available for all-edge muscle modules only")
         return load_mdc_normalization_summary(module_set, normalization_variant)
     if differential_edge_rule == "all":
@@ -1533,7 +1539,7 @@ def load_mdc_resolved(
     """Load all-edge MDC or the selected discovery-filtered resolved MDC rows."""
 
     if normalization_variant != "original":
-        if module_set != "muscle_control_l4" or differential_edge_rule != "all":
+        if module_set not in MUSCLE_MODULE_SETS or differential_edge_rule != "all":
             raise ValueError("MDC normalization sensitivities are available for all-edge muscle modules only")
         return _read_filtered(
             module_set_path("mdc_sensitivity/resolved.parquet", module_set),
@@ -1560,7 +1566,7 @@ def load_mdc_resolved(
 
 
 def load_mdc_normalization_manifest(module_set: str = "muscle_control_l4") -> dict:
-    if module_set != "muscle_control_l4":
+    if module_set not in MUSCLE_MODULE_SETS:
         return {}
     path = module_set_path("mdc_sensitivity/manifest.json", module_set)
     if not data_path_available(path):
@@ -1571,7 +1577,7 @@ def load_mdc_normalization_manifest(module_set: str = "muscle_control_l4") -> di
 def load_mdc_normalization_summary(
     module_set: str = "muscle_control_l4", variant: str | None = None,
 ) -> pd.DataFrame:
-    if module_set != "muscle_control_l4":
+    if module_set not in MUSCLE_MODULE_SETS:
         raise ValueError("No normalization sensitivity exists for this module definition")
     filters = [("normalization_variant", "=", variant)] if variant is not None else []
     return _read_filtered(module_set_path("mdc_sensitivity/summary.parquet", module_set), filters)
@@ -1587,7 +1593,7 @@ def mdc_split_heatmap_available(
 
     if differential_edge_rule != "all":
         return False
-    if normalization_variant != "original" and (module_set != "muscle_control_l4" or normalization_variant != "m5_high_no_q90"):
+    if normalization_variant != "original" and (module_set not in MUSCLE_MODULE_SETS or normalization_variant != "m5_high_no_q90"):
         return False
     path = (
         module_set_data_dir(module_set)
@@ -1610,7 +1616,7 @@ def load_mdc_split_heatmap(
         raise ValueError(
             "Split-triangle MDC heatmaps are currently available only for all edges."
         )
-    if normalization_variant != "original" and (module_set != "muscle_control_l4" or normalization_variant != "m5_high_no_q90"):
+    if normalization_variant != "original" and (module_set not in MUSCLE_MODULE_SETS or normalization_variant != "m5_high_no_q90"):
         raise ValueError("The requested normalization has no matching split-triangle catalog")
     path = (
         module_set_data_dir(module_set)

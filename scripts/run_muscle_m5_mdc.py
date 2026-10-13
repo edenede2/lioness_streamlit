@@ -40,6 +40,7 @@ from models.se2.methods.soft_weighted import (  # noqa: E402
 
 TISSUES = ("VH", "SMA", "QUAD")
 GROUP_COUNTS = {"Control": 120, "AD": 155}
+MODULE_COUNT = 155
 BETAS_TS = {"VH": 5, "SMA": 7, "QUAD": 13}
 BETAS_CT = {"VH-SMA": 8, "VH-QUAD": 10, "SMA-QUAD": 10}
 M5_PARAMETERS = {
@@ -440,8 +441,8 @@ def build_recovered_module_networks(
     module_dir.mkdir(parents=True, exist_ok=True)
     tissues, donors, sources = load_group(expression_root, group)
     assignments = read_filtered_assignments(assignments_path)
-    if assignments["Cluster ID"].nunique() != 155:
-        raise ValueError("Expected 155 filtered L4 modules")
+    if assignments["Cluster ID"].nunique() != MODULE_COUNT:
+        raise ValueError(f"Expected {MODULE_COUNT} filtered L4 modules")
     null_path = group_dir / "ct_null_statistics.json"
     if null_path.exists() and not force:
         nulls = json.loads(null_path.read_text())
@@ -453,7 +454,7 @@ def build_recovered_module_networks(
         "group": group,
         "started_at_utc": utc_now(),
         "donor_count": len(donors),
-        "module_count": 155,
+        "module_count": MODULE_COUNT,
         "assignment_count": int(len(assignments)),
         "m5_parameters": M5_PARAMETERS,
         "normalization_edge_universe": (
@@ -551,7 +552,7 @@ def build_recovered_module_networks(
             "finished_at_utc": utc_now(),
             "ct_null_statistics_sha256": sha256_file(null_path),
             "normalizers_sha256": sha256_file(group_dir / "block_q90_normalizers.json"),
-            "completed_module_files": 155,
+            "completed_module_files": MODULE_COUNT,
         }
     )
     atomic_json(running, manifest_path)
@@ -583,7 +584,7 @@ def summarize_recovered_modules(assignments_path: Path, output: Path, force: boo
             )
         )
     frame = pd.DataFrame(records)
-    if frame["module"].nunique() != 155 or len(frame) != 155 * len(SCOPES):
+    if frame["module"].nunique() != MODULE_COUNT or len(frame) != MODULE_COUNT * len(SCOPES):
         raise AssertionError("Observed MDC table has unexpected dimensions")
     destination.parent.mkdir(parents=True, exist_ok=True)
     frame.to_parquet(destination, index=False, compression="zstd")
@@ -658,7 +659,7 @@ def summarize_networks(assignments_path: Path, output: Path, force: bool) -> Pat
         )
     ]
     frame = pd.DataFrame(records)
-    if frame["module"].nunique() != 155 or len(frame) != 155 * len(SCOPES):
+    if frame["module"].nunique() != MODULE_COUNT or len(frame) != MODULE_COUNT * len(SCOPES):
         raise AssertionError("Observed MDC table has unexpected dimensions")
     frame.to_parquet(destination, index=False, compression="zstd")
     return destination

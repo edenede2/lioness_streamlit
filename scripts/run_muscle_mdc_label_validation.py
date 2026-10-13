@@ -29,6 +29,9 @@ from app_helpers.mdc_validation import VARIANTS, SCOPES, add_contrasts, permute_
 
 ROOT = M.REPO_ROOT / "out/mdc_muscle_control_l4/20261013_label_balance_ct_ts"
 PUBLIC = APP / "data/muscle_control_l4/mdc_label_validation"
+MODULE_SET = "muscle_control_l4"
+MODULE_COUNT = 155
+DISCOVERY_NOTE = "Fixed Control-derived modules; discovery-selection bias is not corrected."
 STATE = {}
 
 
@@ -173,19 +176,20 @@ def write_public(root, config, config_hash, status):
     label, ln = load_reps(root,"label",config["label_permutations"],config_hash)
     balance, bn = load_reps(root,"balanced",config["balanced_resamples"],config_hash)
     result = summarize_validation(observed,label,balance,config["label_permutations"],config["balanced_resamples"])
-    assert len(result)==3100 and not result.duplicated(["normalization_variant","module","scope"]).any()
+    assert len(result)==len(VARIANTS)*MODULE_COUNT*len(SCOPES) and not result.duplicated(["normalization_variant","module","scope"]).any()
+    result['validation_level']=DISCOVERY_NOTE
     PUBLIC.mkdir(parents=True,exist_ok=True)
     for name, data in [("results.parquet",result),("label_replicates.parquet",ln),("balanced_replicates.parquet",bn)]:
         R.atomic_parquet(data,root/name)
         R.atomic_parquet(data,PUBLIC/name)
     files={p.name:{"bytes":p.stat().st_size,"sha256":M.sha256_file(p)} for p in PUBLIC.glob("*.parquet")}
     manifest=dict(schema_version=1,status=status,config_hash=config_hash,variants=VARIANTS,
-        module_count=155,label_permutations=config["label_permutations"],balanced_resamples=config["balanced_resamples"],
+        module_set=MODULE_SET,module_count=MODULE_COUNT,label_permutations=config["label_permutations"],balanced_resamples=config["balanced_resamples"],
         completed_label_permutations=len(label),completed_balanced_resamples=len(balance),
         diagnosis_counts={"Control":120,"AD":155},balanced_counts={"Control":120,"AD":120},
         strata="study × sex; exact within-stratum counts for label permutations",
         source_hashes=[s["sha256"] for s in config["sources"]],files=files,updated_utc=utc(),
-        notes=["Fixed Control-derived modules; discovery-selection bias is not corrected.",
+        notes=[DISCOVERY_NOTE,
                "Each donor's gene and tissue expression profile is preserved; only diagnosis membership is permuted.",
                "Label-dependent M5 bootstrap and CT calibration are rebuilt; no q90 scaling or clipping.",
                "Two-sided equal-tail plus-one label-permutation p; BH across valid modules separately by weighting and scope.",
@@ -210,6 +214,7 @@ def main():
     sources.append(M.file_identity(M.DEFAULT_ASSIGNMENTS))
     config=dict(schema_version=1,seed=42,label_permutations=args.label_permutations,
         balanced_resamples=args.balanced_resamples,sources=sources,variants=VARIANTS,
+        module_set=MODULE_SET,
         m5_parameters=M.M5_PARAMETERS,runner_sha256=M.sha256_file(Path(__file__)),
         helper_sha256=M.sha256_file(APP/"app_helpers/mdc_validation.py"))
     identity=hashlib.sha256(json.dumps(config,sort_keys=True).encode()).hexdigest()
