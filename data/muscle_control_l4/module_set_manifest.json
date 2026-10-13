@@ -1845,20 +1845,20 @@
       "sha256": "64803c64b36db002a631064b2f390c25e6752e4a73998740853fc3228916fec3"
     },
     "mdc_label_validation/balanced_replicates.parquet": {
-      "bytes": 27700,
-      "sha256": "0cc6f49c7674c4000e21990fd6fbe60e21c8df11208e52f9567cb533f8523d60"
+      "bytes": 2281541,
+      "sha256": "ff45f74944d5fe08bd8a084f3d85e1c81a0ba8f3ec5654bac19d6a8d2e72ece1"
     },
     "mdc_label_validation/label_replicates.parquet": {
-      "bytes": 51988,
-      "sha256": "e28c72aa74eacd9d571f0f63f7af1eb115f22987ed27d1d114f2c35ad1859c39"
+      "bytes": 4293429,
+      "sha256": "dd5a9ccf45ca5c19b37eed0b7f1b3b8f8a224d4dfccb26cf411469bc98dedbe8"
     },
     "mdc_label_validation/manifest.json": {
-      "bytes": 2500,
-      "sha256": "7dea229dcbf9819a2091b187bdcfabad08e04b082eee9e679beaec362c6d42de"
+      "bytes": 2509,
+      "sha256": "1df71aa01cc8298004a526c51081f3fd9b448f6beab993fac89791a0ac03056e"
     },
     "mdc_label_validation/results.parquet": {
-      "bytes": 238949,
-      "sha256": "42d0f83c7cd68604796fc6f4cb88c9595848169ee5bf7b0b6ce118e961d383dc"
+      "bytes": 252037,
+      "sha256": "5d9a2d5437d074d901a7e0c8ec1a785f05d1e8ecae78dd73bbb272a308501e86"
     },
     "mdc_resolved_ad_vs_control.tsv": {
       "bytes": 203790,
@@ -3175,8 +3175,8 @@
       "Control": 120
     },
     "balanced_resamples": 100,
-    "completed_balanced_resamples": 1,
-    "completed_label_permutations": 2,
+    "completed_balanced_resamples": 100,
+    "completed_label_permutations": 200,
     "conditional_on_fixed_control_modules": true,
     "config_hash": "7d58c13e82ab9a12abb807e767cc8de41e9a1473f9f99f09a8515f8cedc426d3",
     "diagnosis_counts": {
@@ -3186,16 +3186,16 @@
     "directory": "mdc_label_validation",
     "files": {
       "balanced_replicates.parquet": {
-        "bytes": 27700,
-        "sha256": "0cc6f49c7674c4000e21990fd6fbe60e21c8df11208e52f9567cb533f8523d60"
+        "bytes": 2281541,
+        "sha256": "ff45f74944d5fe08bd8a084f3d85e1c81a0ba8f3ec5654bac19d6a8d2e72ece1"
       },
       "label_replicates.parquet": {
-        "bytes": 51988,
-        "sha256": "e28c72aa74eacd9d571f0f63f7af1eb115f22987ed27d1d114f2c35ad1859c39"
+        "bytes": 4293429,
+        "sha256": "dd5a9ccf45ca5c19b37eed0b7f1b3b8f8a224d4dfccb26cf411469bc98dedbe8"
       },
       "results.parquet": {
-        "bytes": 238949,
-        "sha256": "42d0f83c7cd68604796fc6f4cb88c9595848169ee5bf7b0b6ce118e961d383dc"
+        "bytes": 252037,
+        "sha256": "5d9a2d5437d074d901a7e0c8ec1a785f05d1e8ecae78dd73bbb272a308501e86"
       }
     },
     "label_permutations": 200,
@@ -3220,9 +3220,9 @@
       "ed62fffc4655e8b0d18f0d91010711c097cf642be7c25d5af61f1004107803c9",
       "b2da95b2b2aaedc85481b77ba1e840f2efe280457fc7722ea33bb7f020dae2eb"
     ],
-    "status": "partial",
+    "status": "complete",
     "strata": "study \u00d7 sex; exact within-stratum counts for label permutations",
-    "updated_utc": "2026-10-13T08:24:32.948320+00:00",
+    "updated_utc": "2026-10-13T09:29:00.743826+00:00",
     "variants": {
       "m5_high_no_q90": "M5 without q90 (weighting sensitivity)",
       "pearson": "Unpowered Pearson (comparable CT/TS weights)"
