@@ -1,0 +1,135 @@
+{
+  "assignments": 31948,
+  "capabilities": {
+    "bonobo": false,
+    "descriptive_eigengenes": true,
+    "differential_edges": false,
+    "edge_expression": false,
+    "edge_summaries": false,
+    "expanded_components": false,
+    "prediction": false
+  },
+  "components": [
+    "CT_VH__SMA",
+    "CT_VH__QUAD",
+    "CT_SMA__QUAD",
+    "TS_VH",
+    "TS_SMA",
+    "TS_QUAD"
+  ],
+  "created_utc": "2026-10-13T14:52:08.911051+00:00",
+  "diagnosis_counts": {
+    "AD": 155,
+    "Control": 120,
+    "MCI": 82
+  },
+  "donors": 357,
+  "estimators": [
+    "lioness"
+  ],
+  "files": {
+    "aggregate_plot_data.parquet": {
+      "bytes": 13041148,
+      "sha256": "c236477545a639e876d448cb7daf8db147150a83ef31ff5d9e822886f2dad510"
+    },
+    "aggregate_statistics.parquet": {
+      "bytes": 13664019,
+      "sha256": "c8446dcccbc4a904e96f4458c4fb252543ad985c2aa8c79b540365cdff3ff912"
+    },
+    "cluster_association_statistics.parquet": {
+      "bytes": 1568144,
+      "sha256": "59d0cd0ce1711e26aacf978ac41f3273787dd4e798c56bcc5431b1229e23c1b6"
+    },
+    "kegg_tissue_expanded_full.parquet": {
+      "bytes": 617118,
+      "sha256": "3d7ea13513fa86ab57ba3faeea07809955feaa4fb5ce3e8c0f5dc31fc8b6e580"
+    },
+    "kegg_tissue_expanded_full.tsv": {
+      "bytes": 12076119,
+      "sha256": "dfb5ded52842c5731d970b6dc2676e5f80adf905911d574aba34a6b9bef7f0f2"
+    },
+    "mdc_ad_vs_control_summary.tsv": {
+      "bytes": 95257,
+      "sha256": "22f6b64af446a974e665dd50483e1105d2923216097da64674638769160555d3"
+    },
+    "mdc_resolved_ad_vs_control.tsv": {
+      "bytes": 235281,
+      "sha256": "f396c044a161a72b96b29b48f5683777aed66e05fc4ec48826f729ca3b7dd946"
+    },
+    "module_details.tsv": {
+      "bytes": 18418,
+      "sha256": "14da4462ff429549ab2a9400da2f66503f2471508a30888d1c6fdd08ac308cb9"
+    },
+    "module_eigengenes.parquet": {
+      "bytes": 2831366,
+      "sha256": "5083811d431df967dc44533c67f00b499d8b6485d51eebe6af310b71806f8822"
+    },
+    "module_eigengenes_manifest.json": {
+      "bytes": 129715,
+      "sha256": "38ac9b761379e88aca3b06d6b1953204cce496c325f8b6d77139252a668f89ba"
+    },
+    "module_kegg_annotations.tsv": {
+      "bytes": 87532,
+      "sha256": "61aec4abf719a1ac04440e8a3348321cc8ce38cc61fb4d581f0ce41969288cca"
+    },
+    "resolved_plot_data.parquet": {
+      "bytes": 29655468,
+      "sha256": "58e4cfdd109575a05ad7d6cddde3539b1402d0cde0737da33bd299b3fba50648"
+    },
+    "resolved_statistics.parquet": {
+      "bytes": 25420555,
+      "sha256": "3314a05468967f9068f501c24db179ddc190ab00537d916289441b205661543e"
+    },
+    "sample_metadata.parquet": {
+      "bytes": 29368,
+      "sha256": "17f72387e075378f0b4208d56c5a3f9660b39b6017a9a59bf9feb4f562a0d340"
+    }
+  },
+  "lioness_network": {
+    "functional": "Pearson signedAlt with frozen block-specific powers",
+    "note": "LIONESS is distinct from the M5 partition and M5 group-MDC functional."
+  },
+  "mdc": {
+    "completed_gene_permutations": 0,
+    "completed_sample_permutations": 0,
+    "functional": "M5 extended SFN recovered-module subnetwork",
+    "gene_permutations": 0,
+    "minimum_group_mean_absolute_weight": 1e-08,
+    "minimum_inference_edges": 10,
+    "note": "Directional FDR is unavailable until the full-M5 null run completes.",
+    "observed_complete": true,
+    "permutation_significance_complete": false,
+    "sample_permutations": 0
+  },
+  "methods": [
+    "control_anchored"
+  ],
+  "module_definition": "All-donor VH/SMA/QUAD M5 L4 modules (173)",
+  "module_set": "muscle_all_donors_l4",
+  "modules": 173,
+  "overall_catalog_interim": true,
+  "partition_network": {
+    "beta_ct": {
+      "SMA-QUAD": 7.0,
+      "VH-QUAD": 6.0,
+      "VH-SMA": 6.0
+    },
+    "beta_ts": {
+      "QUAD": 10.0,
+      "SMA": 6.0,
+      "VH": 6.0
+    },
+    "biological_level": 4,
+    "cohort": "All donors",
+    "method": "M5 extended SFN",
+    "zero_indexed_table": 3
+  },
+  "privacy": "Public rows contain random pseudonyms only; donor and projid are excluded.",
+  "release_status": "core_complete_inference_pending",
+  "status": "complete",
+  "tissues": [
+    "VH",
+    "SMA",
+    "QUAD"
+  ]
+}

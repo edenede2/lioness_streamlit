@@ -599135,6 +599135,259 @@
         2394
       ]
     },
+    "muscle_all_donors_l4": {
+      "assignments": 31948,
+      "capabilities": {
+        "bonobo": false,
+        "descriptive_eigengenes": true,
+        "differential_edges": false,
+        "edge_expression": false,
+        "edge_summaries": false,
+        "expanded_components": false,
+        "prediction": false
+      },
+      "categorical_statistics_local": true,
+      "diagnosis_counts_per_method": {
+        "control_anchored": {
+          "AD": 155,
+          "Control": 120,
+          "MCI": 82
+        }
+      },
+      "donors_per_method": {
+        "control_anchored": 357
+      },
+      "estimators": [
+        "lioness"
+      ],
+      "fdr_test_families": "Association BH is calculated across the 173 modules only within each fixed method, feature, component, outcome, diagnosis/grouping level, and scale.",
+      "feature_families": [
+        "connectivity",
+        "positive_density",
+        "negative_density",
+        "abs_sum",
+        "positive_abs_sum",
+        "negative_abs_sum"
+      ],
+      "feature_families_by_estimator": {
+        "lioness": [
+          "connectivity",
+          "positive_density",
+          "negative_density",
+          "abs_sum",
+          "positive_abs_sum",
+          "negative_abs_sum"
+        ]
+      },
+      "files": {
+        "aggregate_plot_data.parquet": {
+          "bytes": 13041148,
+          "sha256": "c236477545a639e876d448cb7daf8db147150a83ef31ff5d9e822886f2dad510"
+        },
+        "aggregate_statistics.parquet": {
+          "bytes": 13664019,
+          "sha256": "c8446dcccbc4a904e96f4458c4fb252543ad985c2aa8c79b540365cdff3ff912"
+        },
+        "cluster_association_statistics.parquet": {
+          "bytes": 1568144,
+          "sha256": "59d0cd0ce1711e26aacf978ac41f3273787dd4e798c56bcc5431b1229e23c1b6"
+        },
+        "kegg_tissue_expanded_full.parquet": {
+          "bytes": 617118,
+          "sha256": "3d7ea13513fa86ab57ba3faeea07809955feaa4fb5ce3e8c0f5dc31fc8b6e580"
+        },
+        "kegg_tissue_expanded_full.tsv": {
+          "bytes": 12076119,
+          "sha256": "dfb5ded52842c5731d970b6dc2676e5f80adf905911d574aba34a6b9bef7f0f2"
+        },
+        "mdc_ad_vs_control_summary.tsv": {
+          "bytes": 95257,
+          "sha256": "22f6b64af446a974e665dd50483e1105d2923216097da64674638769160555d3"
+        },
+        "mdc_resolved_ad_vs_control.tsv": {
+          "bytes": 235281,
+          "sha256": "f396c044a161a72b96b29b48f5683777aed66e05fc4ec48826f729ca3b7dd946"
+        },
+        "module_details.tsv": {
+          "bytes": 18418,
+          "sha256": "14da4462ff429549ab2a9400da2f66503f2471508a30888d1c6fdd08ac308cb9"
+        },
+        "module_eigengenes.parquet": {
+          "bytes": 2831366,
+          "sha256": "5083811d431df967dc44533c67f00b499d8b6485d51eebe6af310b71806f8822"
+        },
+        "module_eigengenes_manifest.json": {
+          "bytes": 129715,
+          "sha256": "38ac9b761379e88aca3b06d6b1953204cce496c325f8b6d77139252a668f89ba"
+        },
+        "module_kegg_annotations.tsv": {
+          "bytes": 87532,
+          "sha256": "61aec4abf719a1ac04440e8a3348321cc8ce38cc61fb4d581f0ce41969288cca"
+        },
+        "resolved_plot_data.parquet": {
+          "bytes": 29655468,
+          "sha256": "58e4cfdd109575a05ad7d6cddde3539b1402d0cde0737da33bd299b3fba50648"
+        },
+        "resolved_statistics.parquet": {
+          "bytes": 25420555,
+          "sha256": "3314a05468967f9068f501c24db179ddc190ab00537d916289441b205661543e"
+        },
+        "sample_metadata.parquet": {
+          "bytes": 29368,
+          "sha256": "17f72387e075378f0b4208d56c5a3f9660b39b6017a9a59bf9feb4f562a0d340"
+        }
+      },
+      "kegg": {
+        "admitted_modules": 173,
+        "input_modules": 173,
+        "join_coverage": 1.0,
+        "join_keys": [
+          "cluster_id",
+          "term"
+        ],
+        "min_cluster_size": 30,
+        "min_overlap": 3,
+        "min_term_size": 10,
+        "modules_with_reported_pathways": 158,
+        "modules_without_reported_pathways": [
+          350,
+          400,
+          401,
+          402,
+          478,
+          616,
+          906,
+          1053,
+          1115,
+          1360,
+          1399,
+          1890,
+          2056,
+          2089,
+          2109
+        ],
+        "per_region_fdr_definition": "Benjamini-Hochberg separately within each module and region across the stable 328-pathway universe; sub-threshold overlaps receive p=1.",
+        "per_region_input_modules": 173,
+        "per_region_pathways_per_module_max": 328,
+        "per_region_pathways_per_module_min": 328,
+        "per_region_source_sha256": "197c5d4d5700fa504d30dc9fbd61f2b80b4715c837f6588cc9ad63f933310f2d",
+        "region_statistics": {
+          "QUAD": [
+            "p_QUAD",
+            "fdr_QUAD",
+            "significant_QUAD"
+          ],
+          "SMA": [
+            "p_SMA",
+            "fdr_SMA",
+            "significant_SMA"
+          ],
+          "VH": [
+            "p_VH",
+            "fdr_VH",
+            "significant_VH"
+          ]
+        },
+        "rows": 56744,
+        "source_sha256": "937f6b0010d8cc80107d78b0dc38eb9d627f43d197e2da3522a8fadaa8ad3e54",
+        "status": "complete",
+        "tissues": [
+          "VH",
+          "SMA",
+          "QUAD"
+        ],
+        "whole_expanded_fdr_definition": "Benjamini-Hochberg within each module across pathways meeting the expanded tissue-gene overlap threshold."
+      },
+      "key": "muscle_all_donors_l4",
+      "label": "All-donor VH/SMA/QUAD M5 L4 modules (173)",
+      "mdc": {
+        "completed_gene_permutations": 0,
+        "completed_sample_permutations": 0,
+        "functional": "M5 extended SFN recovered-module subnetwork",
+        "gene_permutations": 0,
+        "minimum_group_mean_absolute_weight": 1e-08,
+        "minimum_inference_edges": 10,
+        "note": "Directional FDR is unavailable until the full-M5 null run completes.",
+        "observed_complete": true,
+        "permutation_significance_complete": false,
+        "sample_permutations": 0
+      },
+      "mdc_label_validation": {},
+      "mdc_sensitivity": {},
+      "methods": [
+        "control_anchored"
+      ],
+      "module_details": {
+        "classification": "TS when one tissue contributes at least 95%; CT otherwise",
+        "tissue_entropy": "Shannon entropy base 2 over VH/SMA/QUAD proportions"
+      },
+      "modules": 173,
+      "outcomes": [
+        "cogn_global",
+        "cogng_demog_slope",
+        "cogng_path_slope",
+        "motor10_demog_slope",
+        "sqrt_parksc_demog_slope",
+        "age_at_death",
+        "education_years",
+        "cogdx",
+        "braak_stage",
+        "cerad_score",
+        "adnc",
+        "parkinsonism"
+      ],
+      "partition_network": {
+        "beta_ct": {
+          "SMA-QUAD": 7.0,
+          "VH-QUAD": 6.0,
+          "VH-SMA": 6.0
+        },
+        "beta_ts": {
+          "QUAD": 10.0,
+          "SMA": 6.0,
+          "VH": 6.0
+        },
+        "biological_level": 4,
+        "cohort": "All donors",
+        "method": "M5 extended SFN",
+        "zero_indexed_table": 3
+      },
+      "phenotypes": [
+        "cogn_global",
+        "cogng_demog_slope",
+        "cogng_path_slope",
+        "motor10_demog_slope",
+        "sqrt_parksc_demog_slope"
+      ],
+      "relative_data_dir": "muscle_all_donors_l4",
+      "resolved_components": [
+        "CT_VH__SMA",
+        "CT_VH__QUAD",
+        "CT_SMA__QUAD",
+        "TS_VH",
+        "TS_SMA",
+        "TS_QUAD"
+      ],
+      "rows": {
+        "aggregate_rows": 370566,
+        "aggregate_stat_rows": 37368,
+        "assignment_rows": 31948,
+        "entropy_rows": 173,
+        "mdc_rows": 173,
+        "module_details_rows": 173,
+        "resolved_mdc_rows": 1038,
+        "resolved_rows": 2223396,
+        "resolved_stat_rows": 224208
+      },
+      "sentinel_module": 62,
+      "source_run": "out/muscle_all_donors_l4/20261013_nonprediction/lioness",
+      "status": "complete",
+      "tissues": [
+        "VH",
+        "SMA",
+        "QUAD"
+      ]
+    },
     "muscle_control_l4": {
       "assignments": 33491,
       "capabilities": {

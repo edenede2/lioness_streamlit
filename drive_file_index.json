@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
   "root_folder_id": "1dTj5SkLxuDIvII5LayLViqOzjKQt-dos",
-  "generated_at_utc": "2026-10-13T07:43:40.755924+00:00",
-  "file_count": 10622,
-  "total_bytes": 47868727082,
-  "drive_list_requests": 27,
+  "generated_at_utc": "2026-10-13T15:01:04.843394+00:00",
+  "file_count": 10637,
+  "total_bytes": 47968200681,
+  "drive_list_requests": 2,
   "validated_prefixes": [
-    "muscle_control_l4"
+    "muscle_all_donors_l4"
   ],
   "files": {
     ".repo_bootstrap": {
@@ -134028,6 +134028,96 @@
       "md5": "36c721be8c2c4f5cb585fbaf412e7276",
       "modified_time": "2026-08-23T05:30:58.096Z"
     },
+    "muscle_all_donors_l4/aggregate_plot_data.parquet": {
+      "id": "1kgyIZTL9mYEs7OQKmQt1KgFuOG2ssLsU",
+      "size": 13041148,
+      "md5": "e2075ba5de225f31c7940a927c0b15e0",
+      "modified_time": "2026-10-13T14:51:38.714Z"
+    },
+    "muscle_all_donors_l4/aggregate_statistics.parquet": {
+      "id": "1dDw0etIBQnpSG0e19SOQ_5x7KKxDIEp1",
+      "size": 13664019,
+      "md5": "2063b212782f5efe3d6c9da4d2b4bdc3",
+      "modified_time": "2026-10-13T14:51:41.121Z"
+    },
+    "muscle_all_donors_l4/cluster_association_statistics.parquet": {
+      "id": "1d4zgTT1_ABbx1wAHARORq_JZJxvM-Axe",
+      "size": 1568144,
+      "md5": "62e1cc3552f9c42cc4447a577ed33782",
+      "modified_time": "2026-10-13T14:51:42.651Z"
+    },
+    "muscle_all_donors_l4/kegg_tissue_expanded_full.parquet": {
+      "id": "1rBpG0RxZfkBrNZXgZj-8pWSH392yDFLA",
+      "size": 617118,
+      "md5": "5e25c87c13d1d1128362789c83aca05b",
+      "modified_time": "2026-10-13T14:51:44.360Z"
+    },
+    "muscle_all_donors_l4/kegg_tissue_expanded_full.tsv": {
+      "id": "14NN45RuvS4VpZtZtKmbYtiC-QPpi3Eiu",
+      "size": 12076119,
+      "md5": "a1e510cbff5dce8839afa13666ce0930",
+      "modified_time": "2026-10-13T14:51:46.211Z"
+    },
+    "muscle_all_donors_l4/mdc_ad_vs_control_summary.tsv": {
+      "id": "1xhZCrG5Fk7QclYSfiKnM9rNG3H_n4tIW",
+      "size": 95257,
+      "md5": "74eeafa4ddd30f1e4ed79bf5da29dd73",
+      "modified_time": "2026-10-13T14:51:47.743Z"
+    },
+    "muscle_all_donors_l4/mdc_resolved_ad_vs_control.tsv": {
+      "id": "1ACNw8yGdYim5jDjgKWxNwhOZqU9EeKnW",
+      "size": 235281,
+      "md5": "d3a02717161be493b3909af875cf84b6",
+      "modified_time": "2026-10-13T14:51:49.313Z"
+    },
+    "muscle_all_donors_l4/module_details.tsv": {
+      "id": "1veltM_xkFSZTGs2ApZBg78WExzymGJnD",
+      "size": 18418,
+      "md5": "a0455037f9e56aafbd062be800c52859",
+      "modified_time": "2026-10-13T14:51:51.138Z"
+    },
+    "muscle_all_donors_l4/module_eigengenes.parquet": {
+      "id": "1L4Ro1mkVW74URFyGjY7AQYBj0TW3O1ST",
+      "size": 2831366,
+      "md5": "c167809342cbcc0149e17769b017eb33",
+      "modified_time": "2026-10-13T14:51:53.129Z"
+    },
+    "muscle_all_donors_l4/module_eigengenes_manifest.json": {
+      "id": "1KcR2Adbe8lfI0AnUkd7qw-rsmmtz8FSG",
+      "size": 129715,
+      "md5": "41685527eba9cf5fab98232e2cb24422",
+      "modified_time": "2026-10-13T14:51:55.280Z"
+    },
+    "muscle_all_donors_l4/module_kegg_annotations.tsv": {
+      "id": "12BDfQO0DaQsZq8nJo2VpYClgXnW-y_uz",
+      "size": 87532,
+      "md5": "6def789201fe15fcb7f61d2d320f3cfd",
+      "modified_time": "2026-10-13T14:51:56.988Z"
+    },
+    "muscle_all_donors_l4/module_set_manifest.json": {
+      "id": "1ouhjheM9tBOQkPqoi9jxjHm8rgqj3s4E",
+      "size": 4091,
+      "md5": "b5851ac9ffafaa08197eda970c29d1b2",
+      "modified_time": "2026-10-13T14:51:58.549Z"
+    },
+    "muscle_all_donors_l4/resolved_plot_data.parquet": {
+      "id": "1a-nmxz94j3W773bMn7zPW-Xi_HM_UKcq",
+      "size": 29655468,
+      "md5": "64d846583c4840cc606c97bbc67834a0",
+      "modified_time": "2026-10-13T14:52:01.774Z"
+    },
+    "muscle_all_donors_l4/resolved_statistics.parquet": {
+      "id": "1hnqS343nN2xy0I6pJdpEIe4M0KpETva3",
+      "size": 25420555,
+      "md5": "48ee5aaf72878ab67bdbd8e367c69812",
+      "modified_time": "2026-10-13T14:52:03.898Z"
+    },
+    "muscle_all_donors_l4/sample_metadata.parquet": {
+      "id": "17FXW7RrhV1XEzL3f4bLVyEaNhafnQlWm",
+      "size": 29368,
+      "md5": "3733fd8c894376b14f8b84d05e1a2563",
+      "modified_time": "2026-10-13T14:52:06.289Z"
+    },
     "muscle_control_l4/aggregate_plot_data.parquet": {
       "id": "17IJlErIFyd3C4X2QH2JKF_dLPG3viedo",
       "size": 11529342,
@@ -147976,5 +148066,6 @@
       "md5": "00c3d01ab40e96bc8db20b18d513b7f6",
       "modified_time": "2026-08-23T05:30:58.127Z"
     }
-  }
+  },
+  "refresh_scope": "Incremental muscle prefix; unrelated entries retained from their prior verified snapshot"
 }
