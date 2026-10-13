@@ -31,6 +31,7 @@ if (
             "edge_volcano_figure",
             "module_finder_figure",
             "mdc_entropy_figure",
+            "mdc_normalization_comparison_figure",
             "pathway_mdc_heatmap_figure",
             "prediction_performance_figure",
             "PREDICTION_BLOCK_ORDERING_API_VERSION",
@@ -185,6 +186,7 @@ from app_helpers import data as _data_helpers
 
 if (
     getattr(_data_helpers, "EFFECT_ENDPOINT_KEGG_API_VERSION", 0) < 1
+    or getattr(_data_helpers, "MDC_NORMALIZATION_API_VERSION", 0) < 1
     or not all(
         hasattr(_data_helpers, name)
         for name in (
@@ -202,6 +204,7 @@ if (
             "TARGETED_HEDGES_MASKS",
             "load_effect_endpoint_summary",
             "load_mdc_split_heatmap", "mdc_split_heatmap_available",
+            "load_mdc_normalization_manifest", "load_mdc_normalization_summary",
         )
     )
 ):
@@ -293,6 +296,8 @@ from app_helpers.data import (
     load_cluster_association_statistics,
     load_mdc_summary,
     load_mdc_resolved,
+    load_mdc_normalization_manifest,
+    load_mdc_normalization_summary,
     load_mdc_split_heatmap,
     mdc_split_heatmap_available,
     load_module_annotations,
@@ -440,6 +445,8 @@ def cached_mdc_summary(
     differential_edge_rule: str = "all",
     differential_fdr_scope: str = "global",
     differential_fdr_threshold: float = 0.05,
+    normalization_variant: str = "original",
+    data_revision: str = "",
 ) -> pd.DataFrame:
     return load_mdc_summary(
         module_set,
@@ -448,6 +455,7 @@ def cached_mdc_summary(
         differential_edge_rule,
         differential_fdr_scope,
         differential_fdr_threshold,
+        normalization_variant,
     )
 
 
@@ -459,6 +467,8 @@ def cached_mdc_resolved(
     differential_edge_rule: str = "all",
     differential_fdr_scope: str = "global",
     differential_fdr_threshold: float = 0.05,
+    normalization_variant: str = "original",
+    data_revision: str = "",
 ) -> pd.DataFrame:
     return load_mdc_resolved(
         module_set,
@@ -467,6 +477,7 @@ def cached_mdc_resolved(
         differential_edge_rule,
         differential_fdr_scope,
         differential_fdr_threshold,
+        normalization_variant,
     )
 
 
@@ -479,6 +490,8 @@ def cached_pathway_mdc_rows(
     differential_edge_rule: str = "all",
     differential_fdr_scope: str = "global",
     differential_fdr_threshold: float = 0.05,
+    normalization_variant: str = "original",
+    data_revision: str = "",
 ) -> pd.DataFrame:
     return build_pathway_mdc_rows(
         load_mdc_summary(
@@ -488,6 +501,7 @@ def cached_pathway_mdc_rows(
             differential_edge_rule,
             differential_fdr_scope,
             differential_fdr_threshold,
+            normalization_variant,
         ),
         load_mdc_resolved(
             module_set,
@@ -496,6 +510,7 @@ def cached_pathway_mdc_rows(
             differential_edge_rule,
             differential_fdr_scope,
             differential_fdr_threshold,
+            normalization_variant,
         ),
         load_kegg(module_set=module_set),
         enrichment_fdr_threshold=enrichment_fdr_threshold,
@@ -8407,6 +8422,36 @@ if active_view == "Edge volcano":
 
 if active_view == "MDC":
     st.subheader("Module differential connectivity (MDC)")
+    mdc_normalization_variant = "original"
+    mdc_sensitivity_manifest = {}
+    if module_set == "muscle_control_l4" and differential_edge_rule == "all":
+        mdc_sensitivity_manifest = load_mdc_normalization_manifest(module_set)
+        available_variants = {
+            name: entry for name, entry in mdc_sensitivity_manifest.get("variants", {}).items()
+            if entry.get("observed_complete", False)
+        }
+        if available_variants:
+            mdc_normalization_variant = st.selectbox(
+                "MDC network weighting and normalization",
+                options=[*[value for value in ("m5_high_no_q90", "original") if value in available_variants], *[value for value in available_variants if value not in ("m5_high_no_q90", "original")]],
+                format_func=lambda value: available_variants[value]["label"],
+                key="muscle_mdc_normalization_variant_v2",
+            )
+            st.caption(
+                "The same beta is used in AD and Control for every tissue block. "
+                "Current M5: TS VH=5, SMA=7, QUAD=13; CT VH–SMA=8, "
+                "VH–QUAD=10, SMA–QUAD=10. Low-power variants: TS=3 and CT=2. "
+                "Shared scale uses one Control-derived q90 per block for both diagnoses."
+            )
+            if mdc_normalization_variant == "m5_high_no_q90":
+                st.caption("No-q90 MDC uses the unscaled M5 weights directly, without the block rescaling or its clipping step. Betas, bootstrap stability, and CT null-excess are unchanged. Pooled scores give more weight to stronger blocks; use the resolved views to inspect each tissue and pair.")
+            if mdc_normalization_variant != "original":
+                module_set_label += " · " + available_variants[mdc_normalization_variant]["label"]
+                download_prefix += mdc_normalization_variant + "_"
+    mdc_data_revision = "|".join(
+        mdc_sensitivity_manifest.get("files", {}).get(name, {}).get("sha256", "")
+        for name in ("summary.parquet", "resolved.parquet")
+    )
     if (
         differential_edge_rule != "all"
         and not differential_mdc_data_available(module_set)
@@ -8425,6 +8470,8 @@ if active_view == "MDC":
         differential_edge_rule,
         differential_fdr_scope,
         differential_fdr_threshold,
+        mdc_normalization_variant,
+        mdc_data_revision,
     )
     if mdc_summary.empty:
         st.error("No MDC rows are available for the selected edge mask and network method.")
@@ -8434,6 +8481,8 @@ if active_view == "MDC":
         if module_set == "muscle_control_l4"
         else "signedAlt adjacency"
     )
+    if mdc_normalization_variant != "original":
+        mdc_network_label = available_variants[mdc_normalization_variant]["label"]
     st.caption(
         f"MDC compares the mean absolute {mdc_network_label} in AD with Control. "
         "Values above 1 indicate higher connectivity in AD; values below 1 indicate "
@@ -8445,6 +8494,11 @@ if active_view == "MDC":
         if differential_edge_rule != "all"
         else module_manifest.get("mdc", data_manifest.get("mdc", {}))
     )
+    if mdc_normalization_variant != "original":
+        mdc_metadata = {
+            **mdc_sensitivity_manifest,
+            **available_variants[mdc_normalization_variant],
+        }
     estimator_note = (
         "All-edge MDC is module-level context and does not change with the estimator "
         "or network-method selector."
@@ -8459,16 +8513,38 @@ if active_view == "MDC":
     if module_set == "muscle_control_l4":
         st.warning(
             "The muscle MDC uses the 155 AD and 120 Control donors with complete VH, "
-            "SMA, and QUAD expression. It rebuilds the recovered within-module networks "
-            "with the full M5 bootstrap-stability, CT null-excess, signed-power, and "
-            "block-q90 functional used for the partition. MCI was not included. "
+            "SMA, and QUAD expression. The weighting selector applies to every MDC "
+            "view, table, and download below. M5 variants retain bootstrap stability "
+            "and CT null-excess calibration; Pearson and SignedAlt are separate "
+            "sensitivity baselines. Current M5 retains the full M5 normalization. "
+            "Modules were discovered in Controls, so these "
+            "comparisons remain conditional on that module definition. MCI was not included. "
             + estimator_note
         )
         if not mdc_metadata.get("permutation_significance_complete", False):
             st.info(
-                "Observed full-M5 MDC is available, but directional permutation FDR is "
-                "still unavailable. NA FDR values mean not evaluated—not nonsignificant."
+                "Observed MDC is available for this sensitivity, while its own "
+                "permutation inference is pending. Existing M5 FDRs are not reused. "
+                f"Completed nulls: sample {mdc_metadata.get('completed_sample_permutations', 0)}/200; "
+                f"gene {mdc_metadata.get('completed_gene_permutations', 0)}/200. "
+                "Counts refer to this published snapshot. NA FDR means not evaluated."
             )
+        if mdc_sensitivity_manifest and st.toggle(
+            "Compare MDC distributions across weighting variants", value=False,
+            key="muscle_mdc_compare_normalizations",
+        ):
+            from app_helpers.charts import mdc_normalization_comparison_figure
+            comparison_scope = st.radio(
+                "Comparison component", options=["ct", "ts", "total"],
+                format_func=lambda value: {"ct": "CT pooled", "ts": "TS pooled", "total": "All edges"}[value],
+                horizontal=True,
+            )
+            comparison_data = load_mdc_normalization_summary(module_set)
+            render_plotly_chart(
+                mdc_normalization_comparison_figure(comparison_data, comparison_scope, module),
+                use_container_width=True, plot_id="main.mdc_normalization_comparison",
+            )
+            st.caption("Boxes describe the distribution across modules with at least ten edges. Stars mark the selected module. This comparison does not supply a test across weighting variants.")
     else:
         st.warning(
             "Cohort scope differs from the donor-complete LIONESS analysis. The MDC source "
@@ -8561,11 +8637,11 @@ if active_view == "MDC":
 
     count_columns = st.columns(4)
     count_columns[0].metric(
-        "Total significant", int(mdc_view["significant_total"].sum())
+        "Total significant", int(mdc_view["significant_total"].sum()) if mdc_inference_complete else "Pending"
     )
-    count_columns[1].metric("TS significant", int(mdc_view["significant_ts"].sum()))
-    count_columns[2].metric("CT significant", int(mdc_view["significant_ct"].sum()))
-    count_columns[3].metric("Any MDC significant", int(mdc_view["any_significant"].sum()))
+    count_columns[1].metric("TS significant", int(mdc_view["significant_ts"].sum()) if mdc_inference_complete else "Pending")
+    count_columns[2].metric("CT significant", int(mdc_view["significant_ct"].sum()) if mdc_inference_complete else "Pending")
+    count_columns[3].metric("Any MDC significant", int(mdc_view["any_significant"].sum()) if mdc_inference_complete else "Pending")
 
     selected_mdc = mdc_view.loc[mdc_view["module"].astype(int).eq(int(module))]
     if selected_mdc.empty:
@@ -8669,12 +8745,14 @@ if active_view == "MDC":
             "shows the Control group network. Both triangles use the same absolute "
             f"{mdc_network_label} color scale and the AD-derived node ordering."
         )
-        if differential_edge_rule != "all":
+        if mdc_normalization_variant not in ("original", "m5_high_no_q90"):
+            st.info("The existing split-triangle adjacency image represents Current M5. Select that weighting to view its matching network image.")
+        elif differential_edge_rule != "all":
             st.info(
                 "The split-triangle adjacency image is currently available for the "
                 "all-edge MDC network only. Select **All edges** to view it."
             )
-        elif mdc_split_heatmap_available(module_set, module, differential_edge_rule):
+        elif mdc_split_heatmap_available(module_set, module, differential_edge_rule, mdc_normalization_variant):
             show_mdc_adjacency = st.toggle(
                 "Load the selected module adjacency heatmap",
                 value=False,
@@ -8687,7 +8765,7 @@ if active_view == "MDC":
             if show_mdc_adjacency:
                 with st.spinner("Loading the selected AD/Control adjacency heatmap…"):
                     mdc_heatmap_path = load_mdc_split_heatmap(
-                        module_set, module, differential_edge_rule
+                        module_set, module, differential_edge_rule, mdc_normalization_variant
                     )
                 render_streamlit_image(
                     str(mdc_heatmap_path),
@@ -8815,7 +8893,8 @@ if active_view == "MDC":
     st.markdown("#### MDC and tissue-mixing entropy")
     st.caption(
         "Each point is one module after applying the module filter above. Diamonds are "
-        f"directionally significant at FDR < {mdc_threshold:.2f}; open circles are not. "
+        f"directionally significant at FDR < {mdc_threshold:.2f}; open circles have no "
+        "significant result or have unavailable inference. "
         "The dotted line is an OLS visual guide, while the subtitle reports the Spearman "
         "association across the displayed modules."
     )
@@ -8964,8 +9043,8 @@ if active_view == "MDC":
         "permutation_significance_complete", False
     ):
         st.info(
-            "These rows contain observed full-M5 MDC ratios. Directional permutation p-values "
-            "and FDRs have not been evaluated for this M5 functional, so the FDR fields remain "
+            "These rows contain observed MDC ratios for the selected weighting. Directional permutation p-values "
+            "and FDRs have not been evaluated for this functional, so the FDR fields remain "
             "NA and no significance claim is made."
         )
     else:
@@ -9000,6 +9079,8 @@ if active_view == "MDC":
                 differential_edge_rule,
                 differential_fdr_scope,
                 differential_fdr_threshold,
+                mdc_normalization_variant,
+                mdc_data_revision,
             ).copy()
             resolved_components_available = resolved_mdc[
                 ["component", "component_label"]
@@ -9176,6 +9257,8 @@ if active_view == "MDC":
                 differential_edge_rule,
                 differential_fdr_scope,
                 differential_fdr_threshold,
+                mdc_normalization_variant,
+                mdc_data_revision,
             ).copy()
             component_preference = [
                 *[value for value in active_component_order if value.startswith("TS_")],

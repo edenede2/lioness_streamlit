@@ -32,6 +32,7 @@ def render(
     control: np.ndarray,
     output: Path,
     mdc_stats: dict[str, float],
+    network_label: str = "full M5",
 ) -> dict[str, object]:
     ordering = np.argsort(-np.abs(ad).sum(axis=1), kind="stable")
     ad = ad[np.ix_(ordering, ordering)]
@@ -61,9 +62,9 @@ def render(
     axis.set_xlabel("Genes")
     axis.set_ylabel("Genes")
     axis.set_title(
-        f"Module {module} | MDC={mdc_stats['total']:.2f} "
-        f"(TS={mdc_stats['TS']:.2f}, CT={mdc_stats['CT']:.2f})\n"
-        f"Upper=AD, Lower=Control | full M5 | n={count} nodes",
+        f"Module {module} | MDC={mdc_stats['total']:.3g} "
+        f"(TS={mdc_stats['TS']:.3g}, CT={mdc_stats['CT']:.3g})\n"
+        f"Upper=AD, Lower=Control | {network_label} | n={count} nodes",
         fontsize=12,
         fontweight="bold",
         pad=12,
@@ -88,10 +89,12 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--assignments", type=Path, default=DEFAULT_ASSIGNMENTS)
     parser.add_argument("--mdc-root", type=Path, default=DEFAULT_MDC_ROOT)
+    parser.add_argument("--normalization-variant", choices=["original", "m5_high_no_q90"], default="original")
+    parser.add_argument("--sensitivity-root", type=Path, default=REPO_ROOT / "out/mdc_muscle_control_l4/20261013_no_q90_mdc")
     parser.add_argument(
         "--output",
         type=Path,
-        default=APP_ROOT / "data/muscle_control_l4/mdc_split_heatmaps/all_edges",
+        default=None,
     )
     parser.add_argument("--module", type=int, action="append", default=[])
     parser.add_argument("--force", action="store_true")
@@ -100,6 +103,9 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    folder = "all_edges" if args.normalization_variant == "original" else args.normalization_variant
+    if args.output is None:
+        args.output = APP_ROOT / "data/muscle_control_l4/mdc_split_heatmaps" / folder
     assignments = pd.read_csv(
         args.assignments,
         dtype={"Tissue": str, "Gene ID": str, "Gene Symbol": str},
@@ -110,7 +116,7 @@ def main() -> None:
     ].copy()
     modules = args.module or sorted(assignments["Cluster ID"].unique().tolist())
     module_roots = {
-        group: args.mdc_root / "recovered_modules" / group / "modules"
+        group: args.mdc_root / "recovered_modules" / group / ("modules" if args.normalization_variant == "original" else "raw")
         for group in ("ad", "control")
     }
     manifests = {
@@ -121,7 +127,11 @@ def main() -> None:
     }
     if any(manifest.get("status") != "complete" for manifest in manifests.values()):
         raise RuntimeError("Both AD and Control recovered-module M5 networks must be complete")
-    observed = pd.read_parquet(args.mdc_root / "mdc_observed.parquet")
+    if args.normalization_variant == "original":
+        observed = pd.read_parquet(args.mdc_root / "mdc_observed.parquet")
+    else:
+        observed = pd.read_parquet(args.sensitivity_root / "mdc_observed.parquet")
+        observed = observed.loc[observed.normalization_variant.eq(args.normalization_variant)]
     mdc_lookup = {
         int(module): {
             str(row.scope): float(row.mdc_raw)
@@ -143,9 +153,9 @@ def main() -> None:
                 "lower_triangle": "Control",
             })
             continue
-        ad_data = np.load(module_roots["ad"] / f"M{module}.npz", allow_pickle=False)
+        ad_data = np.load(module_roots["ad"] / f"M{module}.npz", allow_pickle=args.normalization_variant != "original")
         control_data = np.load(
-            module_roots["control"] / f"M{module}.npz", allow_pickle=False
+            module_roots["control"] / f"M{module}.npz", allow_pickle=args.normalization_variant != "original"
         )
         if not np.array_equal(ad_data["tissues"], control_data["tissues"]):
             raise ValueError(f"M{module}: AD/Control node order differs")
@@ -153,7 +163,8 @@ def main() -> None:
             raise ValueError(f"M{module}: AD/Control gene order differs")
         ad = ad_data["weights"]
         control = control_data["weights"]
-        rows.append(render(module, ad, control, destination, mdc_lookup[int(module)]))
+        rows.append(render(module, ad, control, destination, mdc_lookup[int(module)],
+                           network_label="full M5" if args.normalization_variant == "original" else "M5 without q90"))
         if index % 10 == 0 or index == len(modules):
             print(f"Rendered {index}/{len(modules)} modules", flush=True)
     args.output.mkdir(parents=True, exist_ok=True)

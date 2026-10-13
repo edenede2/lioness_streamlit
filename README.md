@@ -649,6 +649,33 @@ python scripts/validate_public_bundle.py /path/to/data
 
 ## Data organization
 
+### Muscle MDC weighting and normalization
+
+The VH/SMA/QUAD MDC page defaults to **M5: no q90 scaling**. It uses the
+unscaled signed M5 weights directly, retaining bootstrap stability, CT
+null-excess calibration, and the same powers in AD and Control:
+TS VH=5, SMA=7, QUAD=13; CT VH–SMA=8, VH–QUAD=10, SMA–QUAD=10.
+The original separately q90-scaled and clipped M5 catalog remains selectable.
+Additional sensitivities use Pearson correlations, SignedAlt TS=3/CT=2, or
+M5 low powers with separate/shared scales and optional clipping.
+
+Each variant receives its own 200 sample and 200 tissue-count-preserving gene
+null permutations. Shared scaling uses one Control q90 per block for both
+diagnoses and repeats that same fitting rule within each null. BH families
+are separate by variant, component, and direction; both nulls must support
+significance. An interim observed catalog has explicit missing p/FDR values
+until its complete null analysis passes validation. Module discovery remains
+Control-derived, so this analysis is conditional on those fixed modules.
+
+```bash
+python3 scripts/run_muscle_mdc_sensitivity.py --stage observed
+python3 scripts/launch_muscle_mdc_sensitivity.py --workers 12
+python3 scripts/register_muscle_mdc_sensitivity.py
+```
+
+The small summary and resolved Parquets are repository hot-cache files;
+private network inputs, null checkpoints, and runtime logs stay upstream.
+
 - Google Drive `data/`: the existing 154-module full-cohort bundle.
 - Google Drive `data/control_derived/`: the isolated 186-module Control-derived bundle. It has
   its own plot data, statistics, KEGG, MDC, annotations, and module-details files.

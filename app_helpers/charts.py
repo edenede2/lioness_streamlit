@@ -3413,7 +3413,7 @@ def mdc_resolved_module_figure(
             y=data[value_column],
             marker={"color": colors},
             text=[
-                ("NA" if pd.isna(value) else f"{float(value):.3f}")
+                ("NA" if pd.isna(value) else f"{float(value):.3g}")
                 + (" ★" if significant else "")
                 + (" †" if not bool(stable) else "")
                 for value, significant, stable in zip(
@@ -3436,7 +3436,7 @@ def mdc_resolved_module_figure(
                 ]
             ),
             hovertemplate=(
-                "Component: %{x}<br>MDC: %{customdata[0]:.4f}<br>"
+                "Component: %{x}<br>MDC: %{customdata[0]:.4g}<br>"
                 "log2 MDC: %{customdata[1]:.4f}<br>Direction: %{customdata[3]}<br>"
                 "Directional FDR: %{customdata[2]:.4g}<br>Edges: %{customdata[4]:,}"
                 "<br>AD mean |weight|: %{customdata[5]:.4g}"
@@ -3524,7 +3524,7 @@ def mdc_resolved_heatmap_figure(
                 "NA"
                 if pd.isna(value)
                 else (
-                    f"{float(value):.2f}"
+                    (f"{float(value):.3g}" if scale == "raw" else f"{float(value):.2f}")
                     + (" ★" if pd.notna(q) and q < threshold else "")
                     + (
                         " †"
@@ -3561,7 +3561,7 @@ def mdc_resolved_heatmap_figure(
                 axis=-1,
             ),
             hovertemplate=(
-                "Module: %{y}<br>Component: %{x}<br>MDC: %{customdata[0]:.4f}<br>"
+                "Module: %{y}<br>Component: %{x}<br>MDC: %{customdata[0]:.4g}<br>"
                 "log2 MDC: %{customdata[1]:.4f}<br>"
                 "Directional FDR: %{customdata[2]:.4g}"
                 "<br>Edges: %{customdata[3]:,}"
@@ -3719,6 +3719,61 @@ def mdc_module_figure(
     return figure
 
 
+def mdc_normalization_comparison_figure(
+    frame: pd.DataFrame, scope: str, selected_module: int,
+) -> go.Figure:
+    """Show module variation without treating these boxes as uncertainty intervals."""
+    from app_helpers.mdc_sensitivity import VARIANTS
+
+    if scope not in {"total", "ct", "ts"}:
+        raise ValueError("Unknown MDC comparison component")
+    labels = {
+        "m5_high_no_q90": "M5 high<br>no q90",
+        "original": "Current M5<br>separate / clipped",
+        "pearson": "Pearson<br>unpowered",
+        "signed_alt_low": "SignedAlt<br>CT 2 / TS 3",
+        "m5_high_shared_unclipped": "M5 high<br>shared / unclipped",
+        "m5_high_shared_clipped": "M5 high<br>shared / clipped",
+        "m5_high_separate_unclipped": "M5 high<br>separate / unclipped",
+        "m5_low_separate_clipped": "M5 low<br>separate / clipped",
+        "m5_low_shared_unclipped": "M5 low<br>shared / unclipped",
+        "m5_low_shared_clipped": "M5 low<br>shared / clipped",
+    }
+    colors = {"pearson": "#235B8E", "signed_alt_low": "#C27B16", "high_m5": "#77619B", "low_m5": "#359281"}
+    data = frame.loc[pd.to_numeric(frame[f"n_{scope}_edges"], errors="coerce").ge(10)]
+    figure = go.Figure()
+    selected_x, selected_y, selected_raw = [], [], []
+    for variant, definition in VARIANTS.items():
+        part = data.loc[data.normalization_variant.eq(variant)].dropna(subset=[f"log2_mdc_{scope}"])
+        if part.empty:
+            continue
+        x_label = labels[variant]
+        figure.add_trace(go.Box(
+            x=[x_label] * len(part), y=part[f"log2_mdc_{scope}"],
+            name=definition["label"], showlegend=False, boxpoints=False,
+            marker_color=colors[definition["family"]], line_width=1.5,
+            hovertemplate=f"{definition['label']}<br>log2 MDC: %{{y:.3f}}<extra></extra>",
+        ))
+        selected = part.loc[part.module.eq(selected_module)]
+        if len(selected):
+            selected_x.append(x_label)
+            selected_y.append(float(selected[f"log2_mdc_{scope}"].iloc[0]))
+            selected_raw.append(float(selected[f"mdc_{scope}"].iloc[0]))
+    figure.add_trace(go.Scatter(
+        x=selected_x, y=selected_y, mode="markers", name=f"Selected M{selected_module}",
+        marker={"color":"#242424","symbol":"star","size":12}, customdata=selected_raw,
+        hovertemplate=f"M{selected_module}<br>%{{x}}<br>MDC: %{{customdata:.4g}}<extra></extra>",
+    ))
+    figure.add_hline(y=0,line_dash="dash",line_color="#646464",line_width=1)
+    figure.update_layout(
+        title={"text":f"{scope.upper()} MDC across weighting and normalization variants","x":.01},
+        template="plotly_white",height=510,margin={"l":75,"r":30,"t":100,"b":95},
+        yaxis={"title":"log2 MDC (AD / Control)"}, xaxis={"tickfont":{"size":11}},
+        legend={"orientation":"h","y":1.02,"yanchor":"bottom","x":1,"xanchor":"right"},
+    )
+    return figure
+
+
 def mdc_overview_figure(
     frame: pd.DataFrame,
     selected_module: int,
@@ -3742,14 +3797,17 @@ def mdc_overview_figure(
         ["TS and CT", "TS only", "CT only"],
         default="Neither",
     )
+    unevaluated = data["directional_fdr_ts"].isna() | data["directional_fdr_ct"].isna()
+    data.loc[unevaluated & ~data["ts_significant"] & ~data["ct_significant"], "significance"] = "Not evaluated"
     category_colors = {
         "TS and CT": "#6A3D9A",
         "TS only": "#2C7FB8",
         "CT only": "#E66101",
         "Neither": "#A8B0B8",
+        "Not evaluated": "#A8B0B8",
     }
     figure = go.Figure()
-    for category in ["Neither", "TS only", "CT only", "TS and CT"]:
+    for category in ["Not evaluated", "Neither", "TS only", "CT only", "TS and CT"]:
         group = data.loc[data["significance"].eq(category)]
         if group.empty:
             continue
@@ -3780,9 +3838,9 @@ def mdc_overview_figure(
                 customdata=customdata,
                 hovertemplate=(
                     "Module: %{customdata[0]}<br>"
-                    "Total MDC: %{customdata[1]:.3f} · FDR=%{customdata[2]:.3g}<br>"
-                    "TS MDC: %{customdata[3]:.3f} · FDR=%{customdata[4]:.3g}<br>"
-                    "CT MDC: %{customdata[5]:.3f} · FDR=%{customdata[6]:.3g}<br>"
+                    "Total MDC: %{customdata[1]:.4g} · FDR=%{customdata[2]:.3g}<br>"
+                    "TS MDC: %{customdata[3]:.4g} · FDR=%{customdata[4]:.3g}<br>"
+                    "CT MDC: %{customdata[5]:.4g} · FDR=%{customdata[6]:.3g}<br>"
                     "TS significance: "
                     + ("yes" if category in {"TS only", "TS and CT"} else "no")
                     + "<br>CT significance: "

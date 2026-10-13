@@ -561416,6 +561416,22 @@
       "bytes": 54181,
       "sha256": "9d5acfd53747bc20050359aad64904a3031d8cc0d14057a74a8630da12b4ea1d"
     },
+    "muscle_control_l4/mdc_sensitivity/manifest.json": {
+      "bytes": 4714,
+      "sha256": "1b2904d65fbbf2787e5e485aae9385102ac7eeab98bf0ddefa8ae176e4895324"
+    },
+    "muscle_control_l4/mdc_sensitivity/resolved.parquet": {
+      "bytes": 203932,
+      "sha256": "8c63c293e967dbacb4fc4ac84d45601498cde536039e7ebefaa26409d41a5dbe"
+    },
+    "muscle_control_l4/mdc_sensitivity/summary.parquet": {
+      "bytes": 157827,
+      "sha256": "46f56ecedf2571dd94cba40baeaf8149c515833627bd57c1dfa9dfad168d92a8"
+    },
+    "muscle_control_l4/module_set_manifest.json": {
+      "bytes": 159464,
+      "sha256": "8b30c9e52af226088c435dec779da513d9d1ed09925ff06892ca10753927d02d"
+    },
     "prediction/prediction_confusion.parquet": {
       "bytes": 29482,
       "rows": 31314,
@@ -599115,39 +599131,35 @@
         "expanded_components": false,
         "prediction": false
       },
-      "categorical_statistics_local": true,
-      "diagnosis_counts_per_method": {
-        "control_anchored": {
-          "AD": 155,
-          "Control": 120,
-          "MCI": 82
-        }
+      "components": [
+        "CT_VH__SMA",
+        "CT_VH__QUAD",
+        "CT_SMA__QUAD",
+        "TS_VH",
+        "TS_SMA",
+        "TS_QUAD"
+      ],
+      "created_utc": "2026-10-13T05:34:17.866256+00:00",
+      "diagnosis_counts": {
+        "AD": 155,
+        "Control": 120,
+        "MCI": 82
       },
-      "donors_per_method": {
-        "control_anchored": 357
+      "donors": 357,
+      "effect_size_edges": {
+        "cutoff": 0.4,
+        "directions": [
+          "either",
+          "ad_higher",
+          "control_higher"
+        ],
+        "mask_learning": "diagnosis-by-sex stratified discovery AD/Control donors only",
+        "statistic": "Hedges g (AD minus Control)",
+        "status": "complete"
       },
       "estimators": [
         "lioness"
       ],
-      "fdr_test_families": "Association BH is calculated across the 155 modules only within each fixed method, feature, component, outcome, diagnosis/grouping level, and scale.",
-      "feature_families": [
-        "connectivity",
-        "positive_density",
-        "negative_density",
-        "abs_sum",
-        "positive_abs_sum",
-        "negative_abs_sum"
-      ],
-      "feature_families_by_estimator": {
-        "lioness": [
-          "connectivity",
-          "positive_density",
-          "negative_density",
-          "abs_sum",
-          "positive_abs_sum",
-          "negative_abs_sum"
-        ]
-      },
       "files": {
         "aggregate_plot_data.parquet": {
           "bytes": 11529342,
@@ -600957,6 +600969,18 @@
           "bytes": 203790,
           "sha256": "e4b93d9a9f9fd2be0e7bba93156129cf80e6133c56dc43b764c23b812e57f12d"
         },
+        "mdc_sensitivity/manifest.json": {
+          "bytes": 4714,
+          "sha256": "1b2904d65fbbf2787e5e485aae9385102ac7eeab98bf0ddefa8ae176e4895324"
+        },
+        "mdc_sensitivity/resolved.parquet": {
+          "bytes": 203932,
+          "sha256": "8c63c293e967dbacb4fc4ac84d45601498cde536039e7ebefaa26409d41a5dbe"
+        },
+        "mdc_sensitivity/summary.parquet": {
+          "bytes": 157827,
+          "sha256": "46f56ecedf2571dd94cba40baeaf8149c515833627bd57c1dfa9dfad168d92a8"
+        },
         "mdc_split_heatmaps/all_edges/M0.png": {
           "bytes": 473970,
           "sha256": "9d2409c9134011705406decaecff76f201abf9d57fa7452b14ee4c2e5ad29688"
@@ -601581,6 +601605,630 @@
           "bytes": 6598,
           "sha256": "c97e56066e961a41dc9110e66aa33c906778204757678a119b37037a9ee9b04f"
         },
+        "mdc_split_heatmaps/m5_high_no_q90/M0.png": {
+          "bytes": 444605,
+          "sha256": "01c0a7af118ee3f008efa5e34e41950b9cdbebe42bd4d312cd8e0539432efb69"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1003.png": {
+          "bytes": 129313,
+          "sha256": "15219dfa4656a14d6aca8194f6bd3174f7bcdf06e429389b71921956e65e798a"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1011.png": {
+          "bytes": 153211,
+          "sha256": "1a6745ec7f434710e09db57812ab5555e2477f855f4e45b2d001d23c00e4fd90"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1015.png": {
+          "bytes": 75274,
+          "sha256": "6c1190dcd70a763e9570d463b322db047bec4f756cc08fae30000705120f5909"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1018.png": {
+          "bytes": 77603,
+          "sha256": "6029e9eb8286c2c4be2f598c6a63001d7ad554943f8642b0fc406ae60c9daa1e"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1019.png": {
+          "bytes": 94693,
+          "sha256": "67dc2c0aeb043436bf1d94cbe9f2ada8e71edaef2b512d419583ef2845d5f6c1"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1021.png": {
+          "bytes": 76432,
+          "sha256": "9599c2b1041c7cbf582ef2da03625d327e606e14ecdefca5af62dc5e7f692714"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1023.png": {
+          "bytes": 76219,
+          "sha256": "04aef2d874d4e8b3fb46b2bba102b49ab4446d872779a4e52a79ef0805746e09"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1031.png": {
+          "bytes": 103697,
+          "sha256": "d03ff03b33087ae592d21635cae05647d01938aa75134c9015575c337f4c723b"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1032.png": {
+          "bytes": 85986,
+          "sha256": "f4440f3dda4126e8ba0a1429cfc62a337ae8dcc172dc134fa16c3c9baf0138f5"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1033.png": {
+          "bytes": 114750,
+          "sha256": "2413ad5bc9c7f8d8de1c0594e665a724bf627287417641e5f685cd2a45ddcaef"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1053.png": {
+          "bytes": 88438,
+          "sha256": "d82cc371df55a7829e336e990f832f0e41c9cf3756c14f36e193dfe6454bc473"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1060.png": {
+          "bytes": 85438,
+          "sha256": "76deeb58f4d0401f4cec25eeaad6655ba590a143cb0c6f67915d32c7c88dfa99"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1093.png": {
+          "bytes": 76245,
+          "sha256": "e11c08b20ddab022573be6ddd8332452ab54d5ca6887c64b0d5b947d1c2a368b"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1095.png": {
+          "bytes": 82077,
+          "sha256": "ac3bbfe4b5975038fd90454a5ba13b4a9164d376027e16ad8527847c8294bf14"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1097.png": {
+          "bytes": 81667,
+          "sha256": "f467672ce70367f636d4b0285dbd5b36538a2a4880030270fa612dac6209735d"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1161.png": {
+          "bytes": 83012,
+          "sha256": "84f908572a451b10190059d2ca83eeea144963b7bfd621f143da532552081bfe"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1169.png": {
+          "bytes": 79835,
+          "sha256": "e2f4cc2b3d4c83652474fb32fd64930e8f351a2aa8459ee19b94d5cf7002ceff"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1171.png": {
+          "bytes": 84947,
+          "sha256": "af60fb2ed4568c6acd367e11dc3f8926199e8e109200564d50d153934227a8ec"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1187.png": {
+          "bytes": 84405,
+          "sha256": "8cebec303c4146928f5c16da9b5a9c253f2c31bb1ceeea3897a8042bacab07ed"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1188.png": {
+          "bytes": 87978,
+          "sha256": "8493fefe5cc7cac4069b287e18d1a7972fa0a541b9353aa630eaf67fcb916f76"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1202.png": {
+          "bytes": 82304,
+          "sha256": "bb0be97725d590377babe67935f9a42a72f87ca2cec264dfbb7cf67b25cac40e"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M1204.png": {
+          "bytes": 85224,
+          "sha256": "73b4403ead77faa5b60278a6ef3a1a44c600e34fe823af28507e837ff3acd8f1"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M137.png": {
+          "bytes": 948632,
+          "sha256": "d17087d1e4ee14f95486c7ae4ed6680859924e96ed6c087ee587e93fab7b56c7"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M138.png": {
+          "bytes": 80359,
+          "sha256": "2db5a8bc77d38763f59aa3f938e3abf8bc886b45364c39773df564b4224e7824"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M140.png": {
+          "bytes": 662151,
+          "sha256": "b374e90ffcca186337c847bd5a675c7e7202b4faef29c5f85e13e1b89edcc07c"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M145.png": {
+          "bytes": 411460,
+          "sha256": "9094bd63c743ffbc0c7164d9d4e3b226aee4ebe8c7cb5eaaab9dd25adf0fad8e"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M159.png": {
+          "bytes": 1722781,
+          "sha256": "cbe1b6852e8863ba29ac4448966d57d25657e1ecb6798aeb5046a47984d5ddcb"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M160.png": {
+          "bytes": 1726370,
+          "sha256": "4852f0ece939abbb51eeece1fa1006741a2d24bfdea8f99a0695fe76a374a998"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M233.png": {
+          "bytes": 128870,
+          "sha256": "6976099558ed42d96d4a25fe65ddd22b65a49248430b77fe4c305982cd100bd7"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M241.png": {
+          "bytes": 108848,
+          "sha256": "1a82099f53309ace138b58bd9a4293da23c70e39885ed2bf21671671488292e7"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M250.png": {
+          "bytes": 139958,
+          "sha256": "c0aff7d670a3ea386cbb4476ba3429f954c82c4fb29a0a882eb77e3713d2f8cc"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M268.png": {
+          "bytes": 126975,
+          "sha256": "0ba3d4f5516083bbfe90878cefaa840114df5b5b9400eef43330399bb33c6fe9"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M269.png": {
+          "bytes": 138956,
+          "sha256": "d2da8cd281018040915a01f926a32d7bd9106dec99d457d10525594c42fb115a"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M270.png": {
+          "bytes": 107681,
+          "sha256": "925e1c54231991f61ccdee6999e28bc5e0dc368deef94ffad45c467c3bc326db"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M272.png": {
+          "bytes": 166057,
+          "sha256": "da8edab6a8841f1e669822ce09c749f434ccf89788b706b74caa74ea206857cd"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M273.png": {
+          "bytes": 243256,
+          "sha256": "9ee89832a1e0258009876e01f71e2be36a38bae83436fa4cc34401799f174f7a"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M275.png": {
+          "bytes": 271265,
+          "sha256": "b98acfb9b74f381dbd21e7ac2d82ca2c5eb9e2e67780ad20da7e37742a687678"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M276.png": {
+          "bytes": 194091,
+          "sha256": "b1aa085833f52916d9fde8d5194395198706febee4183e000f56e32c618cb4e9"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M282.png": {
+          "bytes": 263047,
+          "sha256": "955f94c0420bd80f05010dc45fea8c5c23518d357ec816e6153a4439a6357bd7"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M283.png": {
+          "bytes": 331719,
+          "sha256": "08198555ccb9939e8aa90bd2d483b9bf2afbb1ae220817f83a424d0e9880171a"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M286.png": {
+          "bytes": 279611,
+          "sha256": "0487c9557c7d35019a7f926c5c382baa67b3858c9df6011fc8de2e734f616dee"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M311.png": {
+          "bytes": 187757,
+          "sha256": "6931ac709e272e6ec08a200901fc346cb46352c27f5d0fbac08b79789c7dbd2f"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M312.png": {
+          "bytes": 156869,
+          "sha256": "bf50397aeccdbd7e4622c97b5b762b8cd3f20c35981f72cf5e7c5955179f3936"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M313.png": {
+          "bytes": 131462,
+          "sha256": "c27484548799f93b842024c5c2f74280c8285741e77d4c555487259af4428851"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M314.png": {
+          "bytes": 98126,
+          "sha256": "923e62d885cf13e4f36ffed2d4d30ee6e4db3050ce25567dc1d5a5d851ee0c71"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M315.png": {
+          "bytes": 129621,
+          "sha256": "1f1b12de465b3ef0fe45256ae41d06233dc666e9070949bc51417df8c1eebe99"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M317.png": {
+          "bytes": 135961,
+          "sha256": "ae575282341ad92f473a75730c0a4f5cd9543bde0a5c70d81198718614417916"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M318.png": {
+          "bytes": 119709,
+          "sha256": "5a8be8bf1186349293b437d2c892faa4f1b83c6d5cac75c06ba5fea318230959"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M321.png": {
+          "bytes": 118526,
+          "sha256": "70b70a427f97d0d01844cd1d8956843a3626b3c2e49b7fb2666e38cdbe581e12"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M323.png": {
+          "bytes": 233199,
+          "sha256": "a4d1b5f6cb186355bde1d8718236a99457276859be5ac555654da0f33160eb24"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M324.png": {
+          "bytes": 177806,
+          "sha256": "9bafadc18c10c5e906f1467fc926fe6985e0c024461e79fa15eae1e824238a19"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M325.png": {
+          "bytes": 261587,
+          "sha256": "6322ca6a6c88c58ac39753e7a94beddd4ccf536bc5f63658678416128698aef2"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M327.png": {
+          "bytes": 83136,
+          "sha256": "b36b7f5a9505918bef7b973eb64037e6aa7e4744551cbbd4c35ead10ae10a175"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M328.png": {
+          "bytes": 85344,
+          "sha256": "6430cc0ab53c73b42dc9aee0273706e2791eba714d95f69742a6ce33259421df"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M330.png": {
+          "bytes": 177961,
+          "sha256": "7c8cf3337c20d004c35860360fab44b96e08b0850266c7e9396066d6c6c53d54"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M331.png": {
+          "bytes": 285766,
+          "sha256": "dbff9f9e5e2a5cd3eaa51f6603548ab0c4471dbbe44b9225d73cf1122315208e"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M338.png": {
+          "bytes": 551429,
+          "sha256": "8c03fd8df9087473871e5506a6f6bc89ed8139cdc997adeb76496b9836cbe635"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M341.png": {
+          "bytes": 232521,
+          "sha256": "14257ce33761c18de14ec6c9c2459359aa47cfad7f62f63e310e8d15e2abf33a"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M345.png": {
+          "bytes": 476378,
+          "sha256": "7daa4d6d2e0f458996c6f6f3337fb323a056d6f4442f4ace78b025d93832fcbf"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M346.png": {
+          "bytes": 615819,
+          "sha256": "af5fa09264bdf00776292981b55aa2f9504a7b568f35f6594658ca9fb374ade5"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M35.png": {
+          "bytes": 84056,
+          "sha256": "203b493198a752b20d16fb6132b100f3a4c61490a1f837812b6e7e4de6da37ac"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M351.png": {
+          "bytes": 653361,
+          "sha256": "a969d2091a1d5a18cd8f2cde626b3541b3cceaae8c27594ffc81a7a810ce0373"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M354.png": {
+          "bytes": 206379,
+          "sha256": "c04c5e0aaafc50baaa851f36cde923d892125ea5725ed62dc5ac49535d1c6168"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M355.png": {
+          "bytes": 968554,
+          "sha256": "db9d6bd228da00ad28adfd0b5ba9bdeced18d186a25d554aa6023955a4246ae4"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M36.png": {
+          "bytes": 972335,
+          "sha256": "aaebd4e702d039608535c6e7f1537901bd023278af2fc18737c89972c73d2102"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M365.png": {
+          "bytes": 368376,
+          "sha256": "dcd9bd8616f232b140c2d5351e51b6360a752bacbe0a1be01935473f4a304f61"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M366.png": {
+          "bytes": 269016,
+          "sha256": "250378ccb3698f11da894b1c7cfb5f742db08fc4f5f5c490bc2d9870c60aef58"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M367.png": {
+          "bytes": 398087,
+          "sha256": "9b00b735d1037bab62e9736b5bda4924ec89193247be6ef9453d303e366e6b48"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M37.png": {
+          "bytes": 1020476,
+          "sha256": "6de7d2fea853ae97e62a31e544d53b4fefdf0d914aa6785dd5da9edc24a1e311"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M370.png": {
+          "bytes": 81094,
+          "sha256": "613027e36c4f07f9c26b2abeb8ddffff87ad84bd7306e79420839231d4c7b0e5"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M371.png": {
+          "bytes": 78082,
+          "sha256": "ef604cee33c0b46df5b0808865dfb485dbd3d847b7161b86c1db5408664e4b15"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M43.png": {
+          "bytes": 84702,
+          "sha256": "faafd6708843a48326efa37f5b183d228ef3c1e0cbd91ef16e71e34427cb9410"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M432.png": {
+          "bytes": 85125,
+          "sha256": "e037753a826299506052a5274c4b56ce2884ca0c9109636369d9edb1ed926deb"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M44.png": {
+          "bytes": 90539,
+          "sha256": "e1b356b83e849a286085b4489a2116c19b878acb850613f305cefc408bc1d3cb"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M449.png": {
+          "bytes": 411486,
+          "sha256": "c4c740c83f41c24b060522367a962f65aba3b886233a0c1e0dfc4c579b541bd2"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M45.png": {
+          "bytes": 85383,
+          "sha256": "11058fb442d8a7ed44026ea72aa1c93ed848d05a829fc544adf949c2eeccd2b8"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M454.png": {
+          "bytes": 295923,
+          "sha256": "c2fb7c61c4f9f09b03965a4c7de4ad4b879b3677389a3c796fc55ad2f92a4291"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M455.png": {
+          "bytes": 402034,
+          "sha256": "c6ba097231f7b8e6478236375f2ee7400c0d45b285989c807745435caa01aa8a"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M466.png": {
+          "bytes": 608568,
+          "sha256": "d111fad23e472ae668950913957d126996ece41cbe44495919a6cecf30727bda"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M468.png": {
+          "bytes": 77470,
+          "sha256": "969524ad74e6c8cc17504fdd7262ec3c694d05c95b3822a9dc1ebbcf633ac640"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M470.png": {
+          "bytes": 81424,
+          "sha256": "446aad559a4cc74b03cb7713617079eb18342e77724002ef456f1b78005ad1dc"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M474.png": {
+          "bytes": 85811,
+          "sha256": "8fcbe04d7d7ba4cd4a53ad12f310af54bb444c45a91861d60c545b8c0ae3dd4b"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M478.png": {
+          "bytes": 96353,
+          "sha256": "6c2bd154fd697627ca46e2b5606d7074ff417e6156147e8ae6edd40934d9a365"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M479.png": {
+          "bytes": 159526,
+          "sha256": "56cba462b9bd2bbd8943e12cb6c3545d0e6299976426c9b01ccd79127bc45e04"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M484.png": {
+          "bytes": 91369,
+          "sha256": "6442890f7d6c312ff3b3dedb5645a97e951c43095295de2976cd3a7f058f6426"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M486.png": {
+          "bytes": 825922,
+          "sha256": "f3d7b4651c0b1311b6432aca8454f0897da6c997f20c2557e9b70627c8086499"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M487.png": {
+          "bytes": 832820,
+          "sha256": "512c34c7ba89f77c57b08d6cb26c2b66f60d36b847371f7eab74a43a3494f40a"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M488.png": {
+          "bytes": 104060,
+          "sha256": "68f498bafd059152caac5b42161ed13ab2c4ac3a7503d5fb3a077305174358e2"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M489.png": {
+          "bytes": 88297,
+          "sha256": "c8dc4a1e37840d3ca4785fea37938f636e3ebbe422b8289c47afa24000b5c07d"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M49.png": {
+          "bytes": 80655,
+          "sha256": "808740f15b726095170f61affd915d133cd2c963d3aab43341958ac999ab578f"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M490.png": {
+          "bytes": 97091,
+          "sha256": "98b7ffe0d6f700492ce3438ac749c1f4cd965ac07b081644ca06fb7b507c4a43"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M492.png": {
+          "bytes": 101895,
+          "sha256": "b4151f92602abca9e00dae17e4667a393a2d63342f9c3c89d1b2250c13816c49"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M5.png": {
+          "bytes": 80552,
+          "sha256": "5fbc127bc5326a93effe5b86edc0fbd0c6dc4d1ce05cf9c5049bc20b454cbcae"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M507.png": {
+          "bytes": 232747,
+          "sha256": "3fa134598a3f311595d8f45abd0b365a88dd78a0ff985a43ca46a6e26283b68f"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M508.png": {
+          "bytes": 238283,
+          "sha256": "53075589df0531cc630a5437d7b090955750d37512ad3c3340ccf92472d95602"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M513.png": {
+          "bytes": 193046,
+          "sha256": "6b3919b0e9ff3003bb763f1164a1dcb50971bc4ae2ede93d70f20ad5183ee12c"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M515.png": {
+          "bytes": 209084,
+          "sha256": "1890e94286921d52c1a059267d7fb5f75b00be0f46c564aabc3b4a3be4c9276e"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M526.png": {
+          "bytes": 116208,
+          "sha256": "8d3da5b1ebb2ead540c03100f65e63b7ae90dc2220aac707169ec6ad613d5228"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M530.png": {
+          "bytes": 127571,
+          "sha256": "c7ad5b8212f2e7ba7e700239ad18d401ca851d78ea803b04512c4d85cad48dcd"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M542.png": {
+          "bytes": 86608,
+          "sha256": "1ba1ed0d7fa4943f3b1193de30d14da6ce32b4098819490bcf895f877a803eed"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M544.png": {
+          "bytes": 450740,
+          "sha256": "9d9a5df80f66fafa8801bd04310320b60abf8578174df50f87bdc3377bf2a301"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M551.png": {
+          "bytes": 363799,
+          "sha256": "4c931c67c39f8bea73ea85f5fedcbd2b3aef887e72a391a65f2831c7332526ca"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M553.png": {
+          "bytes": 80453,
+          "sha256": "97843dd0db62ac7e2e97386f29c6035a576e50973fd815ac491e4a5e91d7ccdb"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M558.png": {
+          "bytes": 89393,
+          "sha256": "a8faf5b2d5269f2110f6e0253c781ef9b475c1f29ac3d4cee91d72de30cd0074"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M56.png": {
+          "bytes": 136043,
+          "sha256": "533f95eabb0d932e9582bec9d72fcf3643174926e534b70711a05a1d2ec92a63"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M565.png": {
+          "bytes": 823859,
+          "sha256": "ffa97c0fd3ea0897d5615fc39aeb124fd23c4e431781cdb899d9aa3f7c970dba"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M57.png": {
+          "bytes": 91940,
+          "sha256": "b2946e84ef9e743a47d41bd8e2fa5daa512099ab4582af520d3c171d48c569b4"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M6.png": {
+          "bytes": 299200,
+          "sha256": "caca4f7f207ad8db4246537d3c25db7316d3b0babdb9c407608577e1296894da"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M604.png": {
+          "bytes": 84352,
+          "sha256": "7b892b78e95a3f51408ca389c04739b0c1ed667d39fbc95bcf8782ff73337d52"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M606.png": {
+          "bytes": 83924,
+          "sha256": "a3d4c91678d1eda5a3587a072b575fe67658ba6b7a644445dace1611e562f461"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M607.png": {
+          "bytes": 92878,
+          "sha256": "e1f2a8f291833184a2d857c9dbd7e6d432d89419fa7ee10876ad4cc5d9e3c9fa"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M61.png": {
+          "bytes": 74512,
+          "sha256": "dbdd18a4589d69610bb08109e52d902980edccb70f398a8f5042d2c5b2227a75"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M614.png": {
+          "bytes": 91023,
+          "sha256": "8655607a68a1f2b6c991a851b456379322f297fddce0470bd11f99e9c4e229ad"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M615.png": {
+          "bytes": 90759,
+          "sha256": "f23fa6fb6f1bdf91ce27ab622ec72cedbec1d7148752dd3d307431862af15667"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M616.png": {
+          "bytes": 95320,
+          "sha256": "817a1cff1561b67d6b7d7a4d6a8f2669c1279809243e514749f068344b6062f6"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M618.png": {
+          "bytes": 82784,
+          "sha256": "5ea7069c17ad5cd710dc8af8b285e10b12047cac8f2d8cf37d3c0f400e213cae"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M624.png": {
+          "bytes": 93802,
+          "sha256": "7e74e1aa7685d6380016b37d0d64a1f5880854f4eddeb7e1960ca350143200ec"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M635.png": {
+          "bytes": 80919,
+          "sha256": "5c3c1d5f982285bc63f0180269e500d59708c134a28db4147f816b535ec2d0e8"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M662.png": {
+          "bytes": 90663,
+          "sha256": "2066a99d401b1643a1378f702357efaaa2a55bc97b4830b8366af3cd960899a5"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M666.png": {
+          "bytes": 81331,
+          "sha256": "cfaf842b5956e986781a6cf5bc76ed026e59410b9b08aa2438596de055a86b2d"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M670.png": {
+          "bytes": 81072,
+          "sha256": "26b20b278a9a95714e278d5ff3399157dd10d6067e3c7ff93d8973fb1ac68be6"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M684.png": {
+          "bytes": 76125,
+          "sha256": "1e5629b3041a820485f73a18b77269568a1935e0fba646e1e959242a0e0e3b8e"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M685.png": {
+          "bytes": 82685,
+          "sha256": "134f2646d38b0feedbddef1f7d5752801e63fb709ba8f9500e096a2e404d4fb5"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M687.png": {
+          "bytes": 82979,
+          "sha256": "853a22f2f75286b50bced2d89e40e1c38b6fc50d6a749173cd7ec82c88347e7a"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M692.png": {
+          "bytes": 80886,
+          "sha256": "29766312d92a60f5afd884b021162ab3fbd45438153a6b69ffc52e5d19d3112a"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M694.png": {
+          "bytes": 81616,
+          "sha256": "c452ae85b0d2511fb228fef906b5cae77ac11cd7bac4016b51dddc2a09d6e150"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M700.png": {
+          "bytes": 88147,
+          "sha256": "b50cbf01d9705f52836fde131c5dfe9111adc726ede9465544fa114f467d2928"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M702.png": {
+          "bytes": 90140,
+          "sha256": "fc0d80c53908cea0662b8d6caf15a9f3fcc6792d75fc8ba33365d2740f69f92c"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M708.png": {
+          "bytes": 96498,
+          "sha256": "9a94cd6189679397c3ef235c712ed9851c08275da2666631a0bc9cbcad211ecf"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M721.png": {
+          "bytes": 92195,
+          "sha256": "6de982d75220386428f3dbf2a884c7a7e0c295f5c1c306b9b877b7664e7d6ae2"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M723.png": {
+          "bytes": 87681,
+          "sha256": "ebc1a7cc1e4907df424046aca6fc8c8ee97f5ba1b84ded8ec6b7cdcdb19384a3"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M725.png": {
+          "bytes": 74846,
+          "sha256": "9ce56e7bf2d7e8ef70b1966ee70c42a6a677a4bf598444f6b2e97163d29e7dac"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M726.png": {
+          "bytes": 80386,
+          "sha256": "eddb0c2c2b07f14e88f09abad5a5dbd5aa2a05561cf46aa6f4d3733ec0e878a0"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M749.png": {
+          "bytes": 89379,
+          "sha256": "1c2d7870f72318ac85661e672937eaeae93f24afa17e1e6ae9be6215f5c55e11"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M750.png": {
+          "bytes": 93549,
+          "sha256": "6f1d942aba2c289d9df4560c70a9585d6bc9cb9634c0e259ace352d33e46034b"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M768.png": {
+          "bytes": 84783,
+          "sha256": "b36e37b168d3605125876425231266af9d4ce0dc18bd9f08cc12d3b5a1b0ad54"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M770.png": {
+          "bytes": 82971,
+          "sha256": "2690b4512aeb86179a60b74b9b90f9fab35ed1e506433c08e0f777a0e9c7426c"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M778.png": {
+          "bytes": 79074,
+          "sha256": "6cef443a3565abd2d294140018dbbf50c1b43c092abc181b2bc6e4ed396424d2"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M8.png": {
+          "bytes": 74533,
+          "sha256": "33d4c08f58285272ba45bf625e22c2ea4089dd3e4928eed7d8aed5ff7e6e3e88"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M9.png": {
+          "bytes": 434546,
+          "sha256": "d5fb2b745eb82dbdba66b5de7593e30e57bfd8dc38d22200a8f6b62911f3fa95"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M938.png": {
+          "bytes": 91601,
+          "sha256": "b92c83e5512ba89303d07272a7f74f6698045112f46c15cf550d8bfaefb5d916"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M941.png": {
+          "bytes": 86830,
+          "sha256": "8d26741ba80aa7d7ec0c658f1a3a50cbb5effef5849b8f3d98ed197d72f7df6e"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M942.png": {
+          "bytes": 93863,
+          "sha256": "ca24803964681a9fd62ccb1a904b04e5986dfcdc75fa394ab21826086a99488f"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M946.png": {
+          "bytes": 86612,
+          "sha256": "1a4d58f1518e3602c4aabd1a6ac50c2ae765939a9dd312f82089e4a657183aa9"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M951.png": {
+          "bytes": 83801,
+          "sha256": "639f14f8dfd8a85ff6fb3bd00a84db38cf920524d21b778b8b9c46c94ffb014a"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M954.png": {
+          "bytes": 81565,
+          "sha256": "63d2c7254854b1bb79578752c4ff30c7c893b5b9e6b96a3462635eac43a3ed93"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M955.png": {
+          "bytes": 87433,
+          "sha256": "408ef1bb5c196e8dd8afbbf5e2026858e8be8b5f7550541790db82130065afdd"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M966.png": {
+          "bytes": 82290,
+          "sha256": "3171956e72d47655a53a4b2a2031549f1a4b1f3663a4339024f9c5bf51874da8"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M967.png": {
+          "bytes": 82243,
+          "sha256": "3d25691cd1b20e018978f402b95ff23960d1e43fbba9dd241bf9185b1128800b"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M971.png": {
+          "bytes": 81968,
+          "sha256": "efaff2c64a3f8a89addff307f3091e8433cb43ab5631797636291818c5564611"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M972.png": {
+          "bytes": 89732,
+          "sha256": "0ea6ec96a15d029579160108216cfee2fe201700357c79d5c6e57e34ffd52114"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M985.png": {
+          "bytes": 95834,
+          "sha256": "3bb9ecabab23d1e6ea29ddc669bf7ce8dbabaa0ab9f0cfd5ae8329711b5354f0"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M987.png": {
+          "bytes": 93803,
+          "sha256": "a96890b3f8d679652766f220bc79a5a6b5919e74f36818a51dae159b0d4c40f1"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/M999.png": {
+          "bytes": 108427,
+          "sha256": "5ce21568336c9cc33450d3467778dec6cf7d734bc0bd667cd3beb88ad52b5d7b"
+        },
+        "mdc_split_heatmaps/m5_high_no_q90/manifest.tsv": {
+          "bytes": 7536,
+          "sha256": "0863d3fff30ecc279d4384978426988b78708972315a9f13a10646d39a215d9b"
+        },
         "module_details.tsv": {
           "bytes": 18910,
           "sha256": "39ca56d9fea236724a5fb1accd03c86abb6546db2a3f8cd2be26d6838cc4b2f1"
@@ -601610,64 +602258,10 @@
           "sha256": "544a57e7de9fa972ef50b76c33d785bdd4020639d35afe206d1aaeb0e313766c"
         }
       },
-      "kegg": {
-        "admitted_modules": 155,
-        "input_modules": 155,
-        "join_coverage": 1.0,
-        "join_keys": [
-          "cluster_id",
-          "term"
-        ],
-        "min_cluster_size": 30,
-        "min_overlap": 3,
-        "min_term_size": 10,
-        "modules_with_reported_pathways": 145,
-        "modules_without_reported_pathways": [
-          35,
-          327,
-          470,
-          553,
-          685,
-          770,
-          1032,
-          1060,
-          1187,
-          1202
-        ],
-        "per_region_fdr_definition": "Benjamini-Hochberg separately within each module and region across the stable 328-pathway universe; sub-threshold overlaps receive p=1.",
-        "per_region_input_modules": 155,
-        "per_region_pathways_per_module_max": 249,
-        "per_region_pathways_per_module_min": 1,
-        "per_region_source_sha256": "d3fe7db9c95f6510b6ff5961805fcf8a7641b17e5ce8ec2e5c4cc3ef6c0a38da",
-        "region_statistics": {
-          "QUAD": [
-            "p_QUAD",
-            "fdr_QUAD",
-            "significant_QUAD"
-          ],
-          "SMA": [
-            "p_SMA",
-            "fdr_SMA",
-            "significant_SMA"
-          ],
-          "VH": [
-            "p_VH",
-            "fdr_VH",
-            "significant_VH"
-          ]
-        },
-        "rows": 7597,
-        "source_sha256": "534f86267866bed6cd089b44bec133e1f45baa93ee3f6e63cb4dda61871c99fc",
-        "status": "complete",
-        "tissues": [
-          "VH",
-          "SMA",
-          "QUAD"
-        ],
-        "whole_expanded_fdr_definition": "Benjamini-Hochberg within each module across pathways meeting the expanded tissue-gene overlap threshold."
+      "lioness_network": {
+        "functional": "Pearson signedAlt with frozen block-specific powers",
+        "note": "LIONESS is distinct from the M5 partition and M5 group-MDC functional."
       },
-      "key": "muscle_control_l4",
-      "label": "Control-derived VH/SMA/QUAD M5 L4 modules (155)",
       "mdc": {
         "completed_gene_permutations": 200,
         "completed_sample_permutations": 200,
@@ -601680,57 +602274,157 @@
         "permutation_significance_complete": true,
         "sample_permutations": 200
       },
+      "mdc_normalization_sensitivity": {
+        "completed_gene_permutations": 0,
+        "completed_sample_permutations": 0,
+        "config_hash": "94a19ffab9b2c5c2f4eb6ac8bbd743a29b8bba3fb3f70e089edb7003f902addc",
+        "default_variant": "m5_high_no_q90",
+        "diagnosis_counts": {
+          "AD": 155,
+          "Control": 120
+        },
+        "directory": "mdc_sensitivity",
+        "files": {
+          "resolved.parquet": {
+            "bytes": 203932,
+            "sha256": "8c63c293e967dbacb4fc4ac84d45601498cde536039e7ebefaa26409d41a5dbe"
+          },
+          "summary.parquet": {
+            "bytes": 157827,
+            "sha256": "46f56ecedf2571dd94cba40baeaf8149c515833627bd57c1dfa9dfad168d92a8"
+          }
+        },
+        "gene_permutations": 200,
+        "module_count": 155,
+        "notes": [
+          "Identical beta values are used in AD and Control for every corresponding variant and tissue block.",
+          "Low powers are beta_TS=3 and beta_CT=2; M5 variants retain bootstrap stability and group-specific CT null-excess calibration.",
+          "Shared scale means Control-derived block q90 applied identically to both groups. It is refitted from the Control network within each permutation.",
+          "The sample null independently permutes donors within genes and rebuilds all affected network terms; the gene null preserves tissue counts.",
+          "FDR is computed separately by variant, scope and direction across valid modules; it requires support from both nulls.",
+          "Modules were discovered in Controls. These sensitivities remain conditional on the fixed module definition and do not remove discovery selection dependence.",
+          "No existing MDC, LIONESS or prediction result is replaced."
+        ],
+        "sample_permutations": 200,
+        "schema_version": 1,
+        "status": "observed_complete_inference_pending",
+        "updated_utc": "2026-10-13T06:38:12.289519+00:00",
+        "variants": {
+          "m5_high_no_q90": {
+            "clip": false,
+            "family": "high_m5",
+            "label": "M5: no q90 scaling (same high powers)",
+            "observed_complete": true,
+            "permutation_significance_complete": false,
+            "scale": "none",
+            "status": "observed_complete_inference_pending"
+          },
+          "m5_high_separate_unclipped": {
+            "clip": false,
+            "family": "high_m5",
+            "label": "M5 high powers: separate scales, unclipped",
+            "observed_complete": true,
+            "permutation_significance_complete": false,
+            "scale": "separate",
+            "status": "observed_complete_inference_pending"
+          },
+          "m5_high_shared_clipped": {
+            "clip": true,
+            "family": "high_m5",
+            "label": "M5 high powers: shared Control scale, clipped",
+            "observed_complete": true,
+            "permutation_significance_complete": false,
+            "scale": "control",
+            "status": "observed_complete_inference_pending"
+          },
+          "m5_high_shared_unclipped": {
+            "clip": false,
+            "family": "high_m5",
+            "label": "M5 high powers: shared Control scale, unclipped",
+            "observed_complete": true,
+            "permutation_significance_complete": false,
+            "scale": "control",
+            "status": "observed_complete_inference_pending"
+          },
+          "m5_low_separate_clipped": {
+            "clip": true,
+            "family": "low_m5",
+            "label": "M5 low powers: separate scales, clipped",
+            "observed_complete": true,
+            "permutation_significance_complete": false,
+            "scale": "separate",
+            "status": "observed_complete_inference_pending"
+          },
+          "m5_low_shared_clipped": {
+            "clip": true,
+            "family": "low_m5",
+            "label": "M5 low powers: shared Control scale, clipped",
+            "observed_complete": true,
+            "permutation_significance_complete": false,
+            "scale": "control",
+            "status": "observed_complete_inference_pending"
+          },
+          "m5_low_shared_unclipped": {
+            "clip": false,
+            "family": "low_m5",
+            "label": "M5 low powers: shared Control scale, unclipped",
+            "observed_complete": true,
+            "permutation_significance_complete": false,
+            "scale": "control",
+            "status": "observed_complete_inference_pending"
+          },
+          "original": {
+            "clip": true,
+            "family": "high_m5",
+            "label": "Current M5: high powers, separate scales, clipped",
+            "observed_complete": true,
+            "permutation_significance_complete": false,
+            "scale": "separate",
+            "status": "observed_complete_inference_pending"
+          },
+          "pearson": {
+            "clip": false,
+            "family": "pearson",
+            "label": "Unpowered Pearson correlations",
+            "observed_complete": true,
+            "permutation_significance_complete": false,
+            "scale": "none",
+            "status": "observed_complete_inference_pending"
+          },
+          "signed_alt_low": {
+            "clip": false,
+            "family": "signed_alt_low",
+            "label": "SignedAlt: CT beta 2 / TS beta 3",
+            "observed_complete": true,
+            "permutation_significance_complete": false,
+            "scale": "none",
+            "status": "observed_complete_inference_pending"
+          }
+        }
+      },
       "methods": [
         "control_anchored"
       ],
-      "module_details": {
-        "classification": "TS when one tissue contributes at least 95%; CT otherwise",
-        "tissue_entropy": "Shannon entropy base 2 over VH/SMA/QUAD proportions"
-      },
+      "module_definition": "Control-derived VH/SMA/QUAD Method-5 biological L4",
+      "module_set": "muscle_control_l4",
       "modules": 155,
-      "outcomes": [
-        "cogn_global",
-        "cogng_demog_slope",
-        "cogng_path_slope",
-        "motor10_demog_slope",
-        "sqrt_parksc_demog_slope",
-        "age_at_death",
-        "education_years",
-        "cogdx",
-        "braak_stage",
-        "cerad_score",
-        "adnc",
-        "parkinsonism"
-      ],
-      "phenotypes": [
-        "cogn_global",
-        "cogng_demog_slope",
-        "cogng_path_slope",
-        "motor10_demog_slope",
-        "sqrt_parksc_demog_slope"
-      ],
-      "relative_data_dir": "muscle_control_l4",
-      "resolved_components": [
-        "CT_VH__SMA",
-        "CT_VH__QUAD",
-        "CT_SMA__QUAD",
-        "TS_VH",
-        "TS_SMA",
-        "TS_QUAD"
-      ],
-      "rows": {
-        "aggregate_rows": 332010,
-        "aggregate_stat_rows": 33480,
-        "assignment_rows": 33491,
-        "entropy_rows": 155,
-        "mdc_rows": 155,
-        "module_details_rows": 155,
-        "resolved_mdc_rows": 930,
-        "resolved_rows": 1992060,
-        "resolved_stat_rows": 200880
+      "partition_network": {
+        "beta_ct": {
+          "SMA-QUAD": 10,
+          "VH-QUAD": 10,
+          "VH-SMA": 8
+        },
+        "beta_ts": {
+          "QUAD": 13,
+          "SMA": 7,
+          "VH": 5
+        },
+        "biological_level": 4,
+        "cohort": "Control only",
+        "method": "M5 extended SFN",
+        "zero_indexed_table": 3
       },
-      "sentinel_module": 36,
-      "source_run": "out/lioness_reference_comparison_rosmap/20261012_muscle_control_l4_nonprediction",
+      "privacy": "Public rows contain random pseudonyms only; donor and projid are excluded.",
       "status": "complete",
       "tissues": [
         "VH",

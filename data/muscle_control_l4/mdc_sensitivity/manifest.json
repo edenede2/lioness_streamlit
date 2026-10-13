@@ -1,0 +1,126 @@
+{
+  "completed_gene_permutations": 0,
+  "completed_sample_permutations": 0,
+  "config_hash": "94a19ffab9b2c5c2f4eb6ac8bbd743a29b8bba3fb3f70e089edb7003f902addc",
+  "diagnosis_counts": {
+    "AD": 155,
+    "Control": 120
+  },
+  "files": {
+    "resolved.parquet": {
+      "bytes": 203932,
+      "sha256": "8c63c293e967dbacb4fc4ac84d45601498cde536039e7ebefaa26409d41a5dbe"
+    },
+    "summary.parquet": {
+      "bytes": 157827,
+      "sha256": "46f56ecedf2571dd94cba40baeaf8149c515833627bd57c1dfa9dfad168d92a8"
+    }
+  },
+  "gene_permutations": 200,
+  "module_count": 155,
+  "notes": [
+    "Identical beta values are used in AD and Control for every corresponding variant and tissue block.",
+    "Low powers are beta_TS=3 and beta_CT=2; M5 variants retain bootstrap stability and group-specific CT null-excess calibration.",
+    "Shared scale means Control-derived block q90 applied identically to both groups. It is refitted from the Control network within each permutation.",
+    "The sample null independently permutes donors within genes and rebuilds all affected network terms; the gene null preserves tissue counts.",
+    "FDR is computed separately by variant, scope and direction across valid modules; it requires support from both nulls.",
+    "Modules were discovered in Controls. These sensitivities remain conditional on the fixed module definition and do not remove discovery selection dependence.",
+    "No existing MDC, LIONESS or prediction result is replaced."
+  ],
+  "sample_permutations": 200,
+  "schema_version": 1,
+  "status": "observed_complete_inference_pending",
+  "updated_utc": "2026-10-13T06:38:12.289519+00:00",
+  "variants": {
+    "m5_high_no_q90": {
+      "clip": false,
+      "family": "high_m5",
+      "label": "M5: no q90 scaling (same high powers)",
+      "observed_complete": true,
+      "permutation_significance_complete": false,
+      "scale": "none",
+      "status": "observed_complete_inference_pending"
+    },
+    "m5_high_separate_unclipped": {
+      "clip": false,
+      "family": "high_m5",
+      "label": "M5 high powers: separate scales, unclipped",
+      "observed_complete": true,
+      "permutation_significance_complete": false,
+      "scale": "separate",
+      "status": "observed_complete_inference_pending"
+    },
+    "m5_high_shared_clipped": {
+      "clip": true,
+      "family": "high_m5",
+      "label": "M5 high powers: shared Control scale, clipped",
+      "observed_complete": true,
+      "permutation_significance_complete": false,
+      "scale": "control",
+      "status": "observed_complete_inference_pending"
+    },
+    "m5_high_shared_unclipped": {
+      "clip": false,
+      "family": "high_m5",
+      "label": "M5 high powers: shared Control scale, unclipped",
+      "observed_complete": true,
+      "permutation_significance_complete": false,
+      "scale": "control",
+      "status": "observed_complete_inference_pending"
+    },
+    "m5_low_separate_clipped": {
+      "clip": true,
+      "family": "low_m5",
+      "label": "M5 low powers: separate scales, clipped",
+      "observed_complete": true,
+      "permutation_significance_complete": false,
+      "scale": "separate",
+      "status": "observed_complete_inference_pending"
+    },
+    "m5_low_shared_clipped": {
+      "clip": true,
+      "family": "low_m5",
+      "label": "M5 low powers: shared Control scale, clipped",
+      "observed_complete": true,
+      "permutation_significance_complete": false,
+      "scale": "control",
+      "status": "observed_complete_inference_pending"
+    },
+    "m5_low_shared_unclipped": {
+      "clip": false,
+      "family": "low_m5",
+      "label": "M5 low powers: shared Control scale, unclipped",
+      "observed_complete": true,
+      "permutation_significance_complete": false,
+      "scale": "control",
+      "status": "observed_complete_inference_pending"
+    },
+    "original": {
+      "clip": true,
+      "family": "high_m5",
+      "label": "Current M5: high powers, separate scales, clipped",
+      "observed_complete": true,
+      "permutation_significance_complete": false,
+      "scale": "separate",
+      "status": "observed_complete_inference_pending"
+    },
+    "pearson": {
+      "clip": false,
+      "family": "pearson",
+      "label": "Unpowered Pearson correlations",
+      "observed_complete": true,
+      "permutation_significance_complete": false,
+      "scale": "none",
+      "status": "observed_complete_inference_pending"
+    },
+    "signed_alt_low": {
+      "clip": false,
+      "family": "signed_alt_low",
+      "label": "SignedAlt: CT beta 2 / TS beta 3",
+      "observed_complete": true,
+      "permutation_significance_complete": false,
+      "scale": "none",
+      "status": "observed_complete_inference_pending"
+    }
+  }
+}

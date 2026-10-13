@@ -346,7 +346,29 @@ def build_significance(
     )
     if not np.array_equal(sample_modules, gene_modules):
         raise ValueError("Sample/gene null module order differs")
-    lookup = {int(module): index for index, module in enumerate(sample_modules)}
+    return build_significance_from_arrays(
+        observed, sample_modules, sample_null, gene_null,
+        sample_permutations, gene_permutations,
+    )
+
+
+def build_significance_from_arrays(
+    observed: pd.DataFrame,
+    modules: np.ndarray,
+    sample_null: np.ndarray,
+    gene_null: np.ndarray,
+    sample_permutations: int,
+    gene_permutations: int,
+) -> pd.DataFrame:
+    """Use the identical inference rule for each separately computed functional."""
+    observed = observed.copy()
+    if sample_null.shape != (len(modules), len(SCOPES), sample_permutations):
+        raise ValueError("Sample-null dimensions differ from the requested family")
+    if gene_null.shape != (len(modules), len(SCOPES), gene_permutations):
+        raise ValueError("Gene-null dimensions differ from the requested family")
+    if set(observed["module"].astype(int)) != set(modules.astype(int)):
+        raise ValueError("Observed/null module membership differs")
+    lookup = {int(module): index for index, module in enumerate(modules)}
     scope_lookup = {scope: index for index, scope in enumerate(SCOPES)}
     stable = (
         observed["n_edges"].ge(MIN_INFERENCE_EDGES)

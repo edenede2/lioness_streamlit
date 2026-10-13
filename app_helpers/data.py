@@ -19,6 +19,7 @@ from app_helpers.gene_symbols import public_gene_labels
 
 APP_ROOT = Path(__file__).resolve().parents[1]
 EFFECT_ENDPOINT_KEGG_API_VERSION = 1
+MDC_NORMALIZATION_API_VERSION = 1
 
 MODULE_SET_LABELS = {
     "full_cohort": "Full-cohort L4 modules (154)",
@@ -1492,9 +1493,14 @@ def load_mdc_summary(
     differential_edge_rule: str = "all",
     differential_fdr_scope: str = "global",
     differential_fdr_threshold: float = 0.05,
+    normalization_variant: str = "original",
 ) -> pd.DataFrame:
     """Load all-edge MDC or the selected discovery-filtered MDC summary."""
 
+    if normalization_variant != "original":
+        if module_set != "muscle_control_l4" or differential_edge_rule != "all":
+            raise ValueError("MDC normalization sensitivities are available for all-edge muscle modules only")
+        return load_mdc_normalization_summary(module_set, normalization_variant)
     if differential_edge_rule == "all":
         path = ensure_data_path(
             module_set_path("mdc_ad_vs_control_summary.tsv", module_set)
@@ -1522,9 +1528,17 @@ def load_mdc_resolved(
     differential_edge_rule: str = "all",
     differential_fdr_scope: str = "global",
     differential_fdr_threshold: float = 0.05,
+    normalization_variant: str = "original",
 ) -> pd.DataFrame:
     """Load all-edge MDC or the selected discovery-filtered resolved MDC rows."""
 
+    if normalization_variant != "original":
+        if module_set != "muscle_control_l4" or differential_edge_rule != "all":
+            raise ValueError("MDC normalization sensitivities are available for all-edge muscle modules only")
+        return _read_filtered(
+            module_set_path("mdc_sensitivity/resolved.parquet", module_set),
+            [("normalization_variant", "=", normalization_variant)],
+        )
     if differential_edge_rule == "all":
         path = ensure_data_path(
             module_set_path("mdc_resolved_ad_vs_control.tsv", module_set)
@@ -1545,19 +1559,40 @@ def load_mdc_resolved(
     )
 
 
+def load_mdc_normalization_manifest(module_set: str = "muscle_control_l4") -> dict:
+    if module_set != "muscle_control_l4":
+        return {}
+    path = module_set_path("mdc_sensitivity/manifest.json", module_set)
+    if not data_path_available(path):
+        return {}
+    return json.loads(ensure_data_path(path).read_text(encoding="utf-8"))
+
+
+def load_mdc_normalization_summary(
+    module_set: str = "muscle_control_l4", variant: str | None = None,
+) -> pd.DataFrame:
+    if module_set != "muscle_control_l4":
+        raise ValueError("No normalization sensitivity exists for this module definition")
+    filters = [("normalization_variant", "=", variant)] if variant is not None else []
+    return _read_filtered(module_set_path("mdc_sensitivity/summary.parquet", module_set), filters)
+
+
 def mdc_split_heatmap_available(
     module_set: str,
     module: int,
     differential_edge_rule: str = "all",
+    normalization_variant: str = "original",
 ) -> bool:
     """Return whether the selected all-edge module heatmap is locally or remotely available."""
 
     if differential_edge_rule != "all":
         return False
+    if normalization_variant != "original" and (module_set != "muscle_control_l4" or normalization_variant != "m5_high_no_q90"):
+        return False
     path = (
         module_set_data_dir(module_set)
         / MDC_SPLIT_HEATMAP_DIRNAME
-        / "all_edges"
+        / ("all_edges" if normalization_variant == "original" else normalization_variant)
         / f"M{int(module)}.png"
     )
     return data_path_available(path)
@@ -1567,6 +1602,7 @@ def load_mdc_split_heatmap(
     module_set: str,
     module: int,
     differential_edge_rule: str = "all",
+    normalization_variant: str = "original",
 ) -> Path:
     """Materialize one selected module's AD/Control split-triangle PNG lazily."""
 
@@ -1574,10 +1610,12 @@ def load_mdc_split_heatmap(
         raise ValueError(
             "Split-triangle MDC heatmaps are currently available only for all edges."
         )
+    if normalization_variant != "original" and (module_set != "muscle_control_l4" or normalization_variant != "m5_high_no_q90"):
+        raise ValueError("The requested normalization has no matching split-triangle catalog")
     path = (
         module_set_data_dir(module_set)
         / MDC_SPLIT_HEATMAP_DIRNAME
-        / "all_edges"
+        / ("all_edges" if normalization_variant == "original" else normalization_variant)
         / f"M{int(module)}.png"
     )
     materialized = ensure_data_path(path)
