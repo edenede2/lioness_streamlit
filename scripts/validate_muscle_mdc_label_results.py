@@ -11,6 +11,25 @@ PUBLIC=APP/'data/muscle_control_l4/mdc_label_validation'
 PRIVATE=APP.parents[1]/'out/mdc_muscle_control_l4/20261013_label_balance_ct_ts'
 
 
+def check_scope_sum(frame, column, whole, pieces):
+    """Validate additive weights without treating absent blocks as measured zero."""
+    counts=frame.loc[pieces,'n_edges']
+    count=frame.loc[whole,'n_edges']
+    assert count==counts.sum()
+    values=frame.loc[pieces,column]
+    present=counts.gt(0)
+    assert values[~present].isna().all()
+    if count==0:
+        assert pd.isna(frame.loc[whole,column])
+        assert not present.any()
+        return
+    assert np.isfinite(frame.loc[whole,column])
+    assert np.isfinite(values[present]).all()
+    target=float(frame.loc[whole,column]*count)
+    source=(values[present]*counts[present]).sum()
+    np.testing.assert_allclose(target,source,rtol=2e-6,atol=1e-12)
+
+
 def main():
     manifest=json.loads((PUBLIC/'manifest.json').read_text())
     assert manifest['status']=='complete'
@@ -48,10 +67,7 @@ def main():
         g=part.set_index('scope')
         for column in ['mean_abs_ad','mean_abs_control']:
             for whole,pieces in [('total',['CT','TS']),('CT',['CT_VH__SMA','CT_VH__QUAD','CT_SMA__QUAD']),('TS',['TS_VH','TS_SMA','TS_QUAD'])]:
-                assert g.loc[whole,'n_edges']==g.loc[pieces,'n_edges'].sum()
-                target=float(g.loc[whole,column]*g.loc[whole,'n_edges'])
-                source=(g.loc[pieces,column]*g.loc[pieces,'n_edges']).sum()
-                np.testing.assert_allclose(target,source,rtol=2e-6,atol=1e-12)
+                check_scope_sum(g,column,whole,pieces)
     report={'status':'passed','label_permutations':200,'balanced_resamples':100,
             'scope_rows':len(result),'tested_scope_rows':int(result.label_p.notna().sum()),
             'fixed_control_module_caveat_retained':True}

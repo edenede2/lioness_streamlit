@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import pytest
 from app_helpers.mdc_validation import add_contrasts, permute_within_strata, proportional_subset, summarize_validation
 
 
@@ -115,3 +116,19 @@ def test_validation_charts_keep_labels_directions_and_descriptive_intervals():
     b=balanced_figure(data[data.normalization_variant=='pearson'],'CT')
     assert 'not confidence intervals' in b.layout.title.text
     assert len(b.data)==2
+
+
+def test_scope_sums_preserve_absence_and_still_reject_bad_present_weights():
+    from scripts.validate_muscle_mdc_label_results import check_scope_sum
+    frame=pd.DataFrame({'n_edges':[0,0,0], 'mean_abs_ad':[np.nan]*3},
+                       index=['CT','a','b'])
+    check_scope_sum(frame,'mean_abs_ad','CT',['a','b'])
+    frame.loc['CT','mean_abs_ad']=0.
+    with pytest.raises(AssertionError):
+        check_scope_sum(frame,'mean_abs_ad','CT',['a','b'])
+    frame.loc['CT']=[4,.25]
+    frame.loc['a']=[4,.25]
+    check_scope_sum(frame,'mean_abs_ad','CT',['a','b'])
+    frame.loc['CT','mean_abs_ad']=.5
+    with pytest.raises(AssertionError):
+        check_scope_sum(frame,'mean_abs_ad','CT',['a','b'])
