@@ -144,9 +144,9 @@ def publish(source, final, push):
                  "--oauth-token","google-drive-oauth-token.json","--inventory-credentials",SERVICE_ACCOUNT,
                  "--root-folder-id",DRIVE_ROOT,"--local-prediction",DESTINATION,
                  "--remote-directory",A.KEY,"--manifest-name","module_set_manifest.json"])
-        command([sys.executable,"scripts/build_drive_index.py","--credentials",SERVICE_ACCOUNT,
+        command([sys.executable,"scripts/update_muscle_drive_index.py","--credentials",SERVICE_ACCOUNT,
                  "--root-folder-id",DRIVE_ROOT,"--local-data","data","--output","drive_file_index.json",
-                 "--skip-local-md5","--validation-prefix",A.KEY])
+                 ])
         config = A.configuration()
         B = A.engines(config)[2]
         manifest = json.loads((DESTINATION / "module_set_manifest.json").read_text())

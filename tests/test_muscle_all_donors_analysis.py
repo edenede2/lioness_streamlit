@@ -61,3 +61,15 @@ def test_sampled_formula_qa_has_both_small_large_modules_and_all_donor_roles():
     assert len({r["module"] for r in checks}) == 2
     assert {r["diagnosis"] for r in checks} == {"Control", "MCI", "AD"}
     assert max(r["max_edge_error"] for r in checks) < 1e-8
+
+
+def test_incremental_drive_index_preserves_existing_datasets_and_rejects_scope_escape():
+    import pytest
+    from scripts.update_muscle_drive_index import merge_index, PREFIX
+    existing={'root_folder_id':'root','files':{'muscle_control_l4/old.parquet':{'size':1,'id':'old'},f'{PREFIX}/stale.parquet':{'size':2,'id':'stale'}}}
+    updated=merge_index(existing,{f'{PREFIX}/new.parquet':{'size':3,'id':'new'}},'root',2)
+    assert updated['files']['muscle_control_l4/old.parquet']==existing['files']['muscle_control_l4/old.parquet']
+    assert f'{PREFIX}/stale.parquet' not in updated['files']
+    assert updated['file_count']==2 and updated['total_bytes']==4
+    with pytest.raises(ValueError):merge_index(existing,{'other/new.parquet':{'size':3}},'root',2)
+    with pytest.raises(ValueError):merge_index(existing,{},'different-root',2)
