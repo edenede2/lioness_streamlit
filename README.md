@@ -676,6 +676,44 @@ python3 scripts/register_muscle_mdc_sensitivity.py
 The small summary and resolved Parquets are repository hot-cache files;
 private network inputs, null checkpoints, and runtime logs stay upstream.
 
+### Muscle MDC diagnosis-label validation (steps 1, 2, 4)
+
+The **MDC result catalog** selector preserves the existing catalogs and adds
+**Diagnosis-label validation**. This all-edge group-network context does not
+change LIONESS/BONOBO donor scores, edge filters, predictions, or module discovery.
+
+- 200 diagnosis-label permutations preserve whole donor expression profiles and
+  exact study × sex class counts (all current donors are MAP participants).
+  AD/Control M5 bootstrap weights and group-specific CT calibration are rebuilt
+  in each permutation. Modules remain fixed and q90/clipping remain disabled.
+- 100 balanced resamples use all 120 Controls and 120 AD donors sampled without
+  replacement with proportional study/sex quotas. Control scores are cached only
+  because their expression, labels and settings are unchanged. Central 95%
+  resampling ranges describe sensitivity, not confidence intervals or p-values.
+- A paired `log2(MDC_CT) - log2(MDC_TS)` contrast uses the same donor-label
+  permutations. Unpowered Pearson weights are the primary comparable-weight
+  contrast; high-power M5 without q90 is a weighting-dependent sensitivity.
+- Two-sided equal-tail plus-one permutation p-values do not assume MDC=1 is the
+  null center. BH is separate by weighting × component across valid modules.
+  Missing/near-zero observed blocks and tests with fewer than 90% finite nulls
+  are unavailable; no interim p-values/FDRs are released from incomplete nulls.
+- These tests are **conditional on Control-derived module discovery**. Reusing
+  discovery Controls can bias findings. Step 3 (independent discovery/evaluation)
+  is not part of this release; none of these results is external validation.
+
+```bash
+python3 scripts/run_muscle_mdc_label_validation.py --stage observed
+python3 scripts/run_muscle_mdc_label_validation.py --stage pilot --workers 3
+python3 scripts/launch_muscle_mdc_label_validation.py
+python3 scripts/register_muscle_mdc_label_validation.py
+```
+
+The new public `mdc_label_validation/` directory contains only module-level
+statistics and replicate scores. Donor labels, role hashes, expression, and
+checkpoints stay private upstream. The Streamlit views load selected-module
+replicates lazily and retain all existing MDC outputs and their original null
+definitions unchanged.
+
 - Google Drive `data/`: the existing 154-module full-cohort bundle.
 - Google Drive `data/control_derived/`: the isolated 186-module Control-derived bundle. It has
   its own plot data, statistics, KEGG, MDC, annotations, and module-details files.

@@ -8422,6 +8422,21 @@ if active_view == "Edge volcano":
 
 if active_view == "MDC":
     st.subheader("Module differential connectivity (MDC)")
+    if module_set == "muscle_control_l4" and differential_edge_rule == "all":
+        mdc_catalog = st.radio(
+            "MDC result catalog",
+            ["Existing MDC catalogs", "Diagnosis-label validation (steps 1, 2, 4)"],
+            horizontal=True, key="muscle_mdc_result_catalog",
+        )
+        if mdc_catalog != "Existing MDC catalogs":
+            from app_helpers.mdc_validation_ui import render_mdc_validation
+            render_mdc_validation(module, render_plotly_chart)
+            st.stop()
+        st.caption(
+            "Existing FDRs compare against disrupted-coexpression and random-gene nulls. "
+            "They remain available for those hypotheses; use Diagnosis-label validation "
+            "for the separate group-label tests and CT–TS comparison."
+        )
     mdc_normalization_variant = "original"
     mdc_sensitivity_manifest = {}
     if module_set == "muscle_control_l4" and differential_edge_rule == "all":

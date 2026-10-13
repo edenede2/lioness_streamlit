@@ -758,6 +758,50 @@ def test_streamlit_muscle_mdc_normalization_sensitivity_routes_every_view() -> N
     assert_app_clean(app)
 
 
+def test_streamlit_muscle_mdc_label_validation_keeps_existing_catalog() -> None:
+    app=AppTest.from_file(APP,default_timeout=240).run()
+    assert_app_clean(app)
+    app=widget_with_label(app.selectbox,"Module definition").set_value("muscle_control_l4").run()
+    app=select_view(preserve_legacy_pills_state(app),"MDC")
+    assert_app_clean(app)
+    catalog=widget_with_label(app.radio,"MDC result catalog")
+    assert catalog.value=="Existing MDC catalogs"
+    app=catalog.set_value("Diagnosis-label validation (steps 1, 2, 4)").run()
+    assert_app_clean(app)
+    assert widget_with_label(app.selectbox,"Validation network weighting").value=="pearson"
+    assert any("discovery-selection bias" in str(w.value) for w in app.warning)
+    for section in ["Balanced groups","Direct CT–TS test","Diagnosis-label tests"]:
+        app=widget_with_label(app.radio,"MDC validation analysis").set_value(section).run()
+        assert_app_clean(app)
+    app=widget_with_label(app.radio,"MDC result catalog").set_value("Existing MDC catalogs").run()
+    assert_app_clean(app)
+    assert widget_with_label(app.selectbox,"MDC network weighting and normalization").value=="m5_high_no_q90"
+
+
+def test_streamlit_mdc_validation_complete_chart_paths_with_test_fixture(monkeypatch) -> None:
+    import numpy as np
+    import app_helpers.mdc_validation_ui as ui
+    manifest=ui.load_manifest()
+    manifest={**manifest,"completed_label_permutations":200,"completed_balanced_resamples":100}
+    source=pd.read_parquet(Path(APP).parent/'data/muscle_control_l4/mdc_label_validation/results.parquet')
+    source=source.assign(label_p=.02,label_fdr=.03,tested_module_count=155,
+        balanced_median=source.statistic,balanced_low=source.statistic-.1,balanced_high=source.statistic+.1)
+    monkeypatch.setattr(ui,"load_manifest",lambda:manifest)
+    monkeypatch.setattr(ui,"load_results",lambda variant,revision:source[source.normalization_variant.eq(variant)].copy())
+    monkeypatch.setattr(ui,"load_replicates",lambda *args:pd.DataFrame({'statistic':np.linspace(-1,1,200)}))
+    app=AppTest.from_file(APP,default_timeout=240).run()
+    assert_app_clean(app)
+    app=widget_with_label(app.selectbox,"Module definition").set_value("muscle_control_l4").run()
+    app=select_view(preserve_legacy_pills_state(app),"MDC")
+    app=widget_with_label(app.radio,"MDC result catalog").set_value("Diagnosis-label validation (steps 1, 2, 4)").run()
+    assert_app_clean(app)
+    for section in ["Balanced groups","Direct CT–TS test","Diagnosis-label tests"]:
+        app=widget_with_label(app.radio,"MDC validation analysis").set_value(section).run()
+        assert_app_clean(app)
+        assert app.get('plotly_chart')
+        assert app.dataframe
+
+
 def test_streamlit_differential_filter_can_switch_bh_scope_and_cutoff() -> None:
     app = AppTest.from_file(APP, default_timeout=180).run()
     assert_app_clean(app)
