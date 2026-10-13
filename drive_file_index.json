@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "root_folder_id": "1dTj5SkLxuDIvII5LayLViqOzjKQt-dos",
-  "generated_at_utc": "2026-10-12T14:50:34.652216+00:00",
+  "generated_at_utc": "2026-10-13T05:37:59.130581+00:00",
   "file_count": 10463,
-  "total_bytes": 47835614626,
+  "total_bytes": 47835608201,
   "drive_list_requests": 27,
   "validated_prefixes": [
     "muscle_control_l4"
@@ -139250,15 +139250,15 @@
     },
     "muscle_control_l4/mdc_ad_vs_control_summary.tsv": {
       "id": "1lxOuwDLHbL28fSvSgzsUSPETd2qNxY09",
-      "size": 87223,
-      "md5": "2cf6d536b256e6bf19b9bc75581bb48d",
-      "modified_time": "2026-10-12T14:39:16.876Z"
+      "size": 90509,
+      "md5": "66927fc7bb4cd39663cf958258fea224",
+      "modified_time": "2026-10-13T05:34:46.648Z"
     },
     "muscle_control_l4/mdc_resolved_ad_vs_control.tsv": {
       "id": "1gaZdD57U1Rs20ZiSBaweZM4gajUTmg7R",
-      "size": 213660,
-      "md5": "d9c8bd3b48ae302ef925b50edbac96a6",
-      "modified_time": "2026-10-12T14:39:18.536Z"
+      "size": 203790,
+      "md5": "038b7f435c79de648cadf227b638bad7",
+      "modified_time": "2026-10-13T05:34:48.691Z"
     },
     "muscle_control_l4/mdc_split_heatmaps/all_edges/M0.png": {
       "id": "1oCDjxag-LCGASQSxK3l6-JQHByZMvHTF",
@@ -140222,9 +140222,9 @@
     },
     "muscle_control_l4/module_set_manifest.json": {
       "id": "1_A3EODTbrWtVB_Uvd06TkmFhUUCTiJ4S",
-      "size": 128108,
-      "md5": "4cbf36457404b08c8fc06558588771cc",
-      "modified_time": "2026-10-12T14:46:10.787Z"
+      "size": 128267,
+      "md5": "3f3b890e9a94710829b4314f4884885d",
+      "modified_time": "2026-10-13T05:34:50.854Z"
     },
     "muscle_control_l4/resolved_plot_data.parquet": {
       "id": "1ftrlWTad89Y2eVVShxYIamrbRhTSFFjJ",

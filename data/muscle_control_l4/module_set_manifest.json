@@ -18,7 +18,7 @@
     "TS_SMA",
     "TS_QUAD"
   ],
-  "created_utc": "2026-10-12T14:17:15.899858+00:00",
+  "created_utc": "2026-10-13T05:34:17.866256+00:00",
   "diagnosis_counts": {
     "AD": 155,
     "Control": 120,
@@ -1841,12 +1841,12 @@
       "sha256": "121832b2441165c37e8e30c3c0164af25787e69695ebbcc3b96759281d7a3d53"
     },
     "mdc_ad_vs_control_summary.tsv": {
-      "bytes": 87223,
-      "sha256": "224c7503926be0c9647cf30619a7a9c01205ddbc8c2d2ead84870063eb2f638d"
+      "bytes": 90509,
+      "sha256": "64803c64b36db002a631064b2f390c25e6752e4a73998740853fc3228916fec3"
     },
     "mdc_resolved_ad_vs_control.tsv": {
-      "bytes": 213660,
-      "sha256": "6a1675300e5dd6246edbeadc3c9ff4fda878fc345eb9108b0b1ede24292fdf0f"
+      "bytes": 203790,
+      "sha256": "e4b93d9a9f9fd2be0e7bba93156129cf80e6133c56dc43b764c23b812e57f12d"
     },
     "mdc_split_heatmaps/all_edges/M0.png": {
       "bytes": 473970,
@@ -2506,13 +2506,15 @@
     "note": "LIONESS is distinct from the M5 partition and M5 group-MDC functional."
   },
   "mdc": {
+    "completed_gene_permutations": 200,
+    "completed_sample_permutations": 200,
     "functional": "M5 extended SFN recovered-module subnetwork",
     "gene_permutations": 200,
     "minimum_group_mean_absolute_weight": 1e-08,
     "minimum_inference_edges": 10,
-    "note": "Directional FDR is unavailable until the full-M5 null run completes.",
+    "note": "Directional FDR is the conservative maximum of component- and direction-specific BH values from the sample and tissue-count-preserving gene nulls.",
     "observed_complete": true,
-    "permutation_significance_complete": false,
+    "permutation_significance_complete": true,
     "sample_permutations": 200
   },
   "methods": [
