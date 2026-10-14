@@ -1,0 +1,24 @@
+{
+  "schema_version": 2,
+  "status": "complete",
+  "module_set": "muscle_control_l4",
+  "modules": 155,
+  "color_palette": {
+    "name": "yellow_orange_red",
+    "low": "#FFFF00",
+    "middle": "#FFA500",
+    "high": "#FF0000",
+    "missing": "#FFFFFF",
+    "description": "Low edge weights: yellow; high edge weights: red"
+  },
+  "image_directories": {
+    "original": "yellow_red_20261014_original",
+    "m5_high_no_q90": "yellow_red_20261014_m5_high_no_q90"
+  },
+  "upper_triangle": "AD",
+  "lower_triangle": "Control",
+  "display": "Absolute Method-5 edge weight",
+  "mdc_statistics_unchanged": true,
+  "color_scale": "Shared within each module; pooled 99th-percentile display cap only",
+  "released_utc": "2026-10-14T10:12:51.826809+00:00"
+}

@@ -20,6 +20,11 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 
+try:
+    from .mdc_heatmap_palette import PALETTE, heatmap_cmap
+except ImportError:
+    from mdc_heatmap_palette import PALETTE, heatmap_cmap
+
 APP=Path(__file__).resolve().parents[1]
 REPO=APP.parents[1]
 DEFAULT_OUTPUT=REPO/'out/brain_mdc_split_triangle_heatmaps/20261014'
@@ -76,7 +81,7 @@ def figure(combined,tissues,order,label,module,mdc,color_cap='q99'):
     if cap<=0:cap=1.
     fig=plt.figure(figsize=(32/3,32/3),dpi=300,facecolor='white')
     ax=fig.add_axes([.13,.12,.68,.67])
-    cmap=plt.colormaps['hot'].copy();cmap.set_bad('white')
+    cmap=heatmap_cmap()
     im=ax.imshow(combined,cmap=cmap,vmin=0,vmax=cap,origin='upper',
                  interpolation='nearest',rasterized=True,aspect='auto')
     ax.plot([-.5,n-.5],[-.5,n-.5],color='white',lw=.65)
@@ -112,12 +117,13 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--output',type=Path,default=DEFAULT_OUTPUT)
     p.add_argument('--reuse-adjacencies',action='store_true')
+    p.add_argument('--adjacency-cache',type=Path,help='Reuse a saved private adjacency cache without recalculating networks.')
     p.add_argument('--module-set',choices=['all',*CONFIGS],default='all')
     p.add_argument('--module',type=int,action='append')
     p.add_argument('--color-cap',choices=['q99','full'],default='q99')
-    args=p.parse_args();output=args.output.resolve();cache=output/'_private_adjacencies'
+    args=p.parse_args();output=args.output.resolve();cache=args.adjacency_cache.resolve() if args.adjacency_cache else output/'_private_adjacencies'
     output.mkdir(parents=True,exist_ok=True)
-    if not args.reuse_adjacencies:
+    if not args.reuse_adjacencies and args.adjacency_cache is None:
         subprocess.run(['Rscript',str(APP/'scripts/export_brain_mdc_adjacencies.R'),str(REPO),str(cache)],check=True,cwd=REPO)
     keys=list(CONFIGS) if args.module_set=='all' else [args.module_set]
     overall={}
@@ -155,7 +161,7 @@ def main():
                     mdc_total=stored['total'],mdc_ts=stored['ts'],mdc_ct=stored['ct'],
                     directional_fdr_total=stats.loc[module,'directional_fdr_total'],
                     directional_fdr_ts=stats.loc[module,'directional_fdr_ts'],directional_fdr_ct=stats.loc[module,'directional_fdr_ct'],
-                    color_cap=args.color_cap,display_vmax=cap,width=3200,height=3200,dpi=300,
+                    color_cap=args.color_cap,color_palette=PALETTE['name'],display_vmax=cap,width=3200,height=3200,dpi=300,
                     png_sha256=sha(png),mdc_reproduction_error=row.max_mdc_reproduction_error))
                 if position%20==0 or position==len(rows):print(f'{key}: {position}/{len(rows)} PNG/PDF pages',flush=True)
                 del ad,control,combined,fig
@@ -167,6 +173,7 @@ def main():
     result=dict(status='complete',created_utc=datetime.now(timezone.utc).isoformat(),datasets=overall,
                 upper_triangle='AD',lower_triangle='Control',edge_display='Absolute signedAlt adjacency',
                 beta_ts=3,beta_ct=2,old_results_overwritten=False,
+                color_palette=PALETTE,
                 display_cap_note='Display saturation only; adjacency values, MDC and existing FDRs are unchanged.',
                 privacy='No donor/projid identifiers or Ensembl labels are included in figures or public manifests.')
     (output/'manifest.json').write_text(json.dumps(result,indent=2)+'\n')

@@ -7,12 +7,14 @@ This command uploads and prepares a public bundle; Git commits/pushes are separa
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
 import shutil
 import sys
+import threading
 from types import SimpleNamespace
 
 import pandas as pd
@@ -41,17 +43,29 @@ def folder_at(upload, reader, parent, name):
     return create_folder(upload,name,parent)['id']
 
 
-def sync_verified(upload,reader,parent,files):
+def sync_verified(upload,reader,parent,files,workers=1):
+    if not 1<=workers<=4:raise ValueError('Use one to four bounded image-upload workers')
     existing,_=list_children(reader,parent)
     by_name={item['name']:item for item in existing}
     if len(by_name)!=len(existing):raise ValueError('Duplicate Drive filenames')
-    for file in files:
+    local=threading.local()
+    def sync_one(file):
         item=by_name.get(file.name)
         digest=md5_file(file)
         if item and int(item.get('size') or -1)==file.stat().st_size and item.get('md5Checksum')==digest:
-            continue
-        if item:update_file(upload,file,item['id'])
-        else:create_file(upload,file,file.name,parent,digest)
+            return
+        # Each upload worker owns its HTTP session; credentials are refreshed by
+        # the main-thread folder checks before concurrent file transfer begins.
+        if workers==1:session=upload
+        else:
+            if not hasattr(local,'session'):local.session=AuthorizedSession(upload.credentials)
+            session=local.session
+        if item:update_file(session,file,item['id'])
+        else:create_file(session,file,file.name,parent,digest)
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        for position,_ in enumerate(pool.map(sync_one,files),1):
+            if len(files)>25 and (position%25==0 or position==len(files)):
+                print(f'Image release: uploaded/checked {position}/{len(files)} files',flush=True)
     # Verify visibility/checksums through the app's actual read-only identity.
     observed,_=list_children(reader,parent)
     by_name={item['name']:item for item in observed}
@@ -87,7 +101,12 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source',type=Path,default=DEFAULT_OUTPUT)
     parser.add_argument('--root-folder-id',default=DRIVE_ROOT)
+    parser.add_argument('--version',default=VERSION)
+    parser.add_argument('--upload-workers',type=int,default=1)
     args=parser.parse_args();source=args.source.resolve()
+    version=args.version
+    if Path(version).name!=version or version in {'.','..'}:
+        raise ValueError('Unsafe heatmap release directory')
     run=json.loads((source/'manifest.json').read_text())
     assert run['status']=='complete'
     catalogs={key:verified_files(source,key) for key in CONFIGS}
@@ -114,13 +133,14 @@ def main():
         parent=args.root_folder_id
         for part in [*parts,'mdc_split_heatmaps']:
             parent=folder_at(upload,reader,parent,part)
-        remote=folder_at(upload,reader,parent,VERSION)
-        inventory=sync_verified(upload,reader,remote,files)
+        remote=folder_at(upload,reader,parent,version)
+        inventory=sync_verified(upload,reader,remote,files,args.upload_workers)
         metadata=dict(schema_version=1,status='complete',module_set=key,modules=CONFIGS[key]['count'],
-                      image_directory=VERSION,upper_triangle='AD',lower_triangle='Control',
+                      image_directory=version,upper_triangle='AD',lower_triangle='Control',
                       width=3200,height=3200,dpi=300,display='Absolute signedAlt adjacency',
                       color_scale='Shared within each module; pooled 99th-percentile display cap only',
                       beta_ts=3,beta_ct=2,mdc_statistics_unchanged=True,
+                      color_palette=run.get('color_palette',{'name':'hot'}),
                       source_statistics_sha256=run['datasets'][key]['source_statistics_sha256'],
                       released_utc=datetime.now(timezone.utc).isoformat())
         meta_path=rollback/key/'catalog.json'
@@ -128,7 +148,7 @@ def main():
         meta_path.write_text(json.dumps(metadata,indent=2)+'\n')
         meta_inventory=sync_verified(upload,reader,parent,[meta_path])
         root_relative=Path(*parts,'mdc_split_heatmaps').as_posix()
-        additions.update({f'{root_relative}/{VERSION}/{name}':item for name,item in inventory.items()})
+        additions.update({f'{root_relative}/{version}/{name}':item for name,item in inventory.items()})
         additions[f'{root_relative}/catalog.json']=meta_inventory['catalog.json']
         prepared.append((key,files,meta_path))
         print(f'{key}: verified {len(files)} remote images/catalog files through the app reader',flush=True)
@@ -137,7 +157,7 @@ def main():
         parent=CONFIGS[key]['data']/'mdc_split_heatmaps'
         old=parent/'catalog.json'
         if old.exists():shutil.copy2(old,rollback/f'{key}_previous_catalog.json')
-        target=parent/VERSION
+        target=parent/version
         target.mkdir(parents=True,exist_ok=True)
         for file in files:shutil.copy2(file,target/file.name)
         temporary=parent/'catalog.json.partial'
@@ -147,7 +167,7 @@ def main():
     index['file_count']=len(index['files'])
     index['total_bytes']=sum(int(item.get('size') or 0) for item in index['files'].values())
     temporary=APP/'drive_file_index.json.partial'
-    temporary.write_text(json.dumps(index,indent=2)+'\n');temporary.replace(APP/'drive_file_index.json')
+    temporary.write_text(json.dumps(index,separators=(',',':'))+'\n');temporary.replace(APP/'drive_file_index.json')
     report=dict(status='verified_uploaded',modules=340,indexed_files=len(additions),
                 privacy='No donor IDs, expression or private adjacency caches uploaded',
                 previous_figures_preserved=True,rollback=str(rollback))

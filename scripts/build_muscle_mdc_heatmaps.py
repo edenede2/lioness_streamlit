@@ -15,6 +15,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+try:
+    from .mdc_heatmap_palette import PALETTE, heatmap_cmap
+except ImportError:
+    from mdc_heatmap_palette import PALETTE, heatmap_cmap
+
 
 APP_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = APP_ROOT.parents[1]
@@ -50,7 +55,7 @@ def render(
     figure, axis = plt.subplots(figsize=(8, 8), dpi=200)
     image = axis.imshow(
         combined,
-        cmap="hot",
+        cmap=heatmap_cmap(),
         vmin=0.0,
         vmax=display_max,
         interpolation="nearest",
@@ -82,6 +87,7 @@ def render(
         "display_q99": display_max,
         "upper_triangle": "AD",
         "lower_triangle": "Control",
+        "color_palette": PALETTE["name"],
     }
 
 
@@ -151,6 +157,7 @@ def main() -> None:
                 "display_q99": "",
                 "upper_triangle": "AD",
                 "lower_triangle": "Control",
+                "color_palette": "unverified_existing_image",
             })
             continue
         ad_data = np.load(module_roots["ad"] / f"M{module}.npz", allow_pickle=args.normalization_variant != "original")

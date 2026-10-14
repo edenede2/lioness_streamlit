@@ -8800,7 +8800,8 @@ if active_view == "MDC":
                     str(mdc_heatmap_path),
                     caption=(
                         f"{module_label(module)}: upper triangle = AD; "
-                        "lower triangle = Control"
+                        "lower triangle = Control. Absolute edge weights: "
+                        "yellow (low) → orange → red (high)."
                     ),
                 )
                 st.download_button(

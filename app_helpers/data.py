@@ -1587,12 +1587,17 @@ def _mdc_split_heatmap_path(module_set: str, module: int, normalization_variant:
     root = module_set_data_dir(module_set) / MDC_SPLIT_HEATMAP_DIRNAME
     directory = "all_edges" if normalization_variant == "original" else normalization_variant
     # A tiny repository manifest selects an immutable, verified Drive release.
-    # Older catalogs and muscle normalization variants retain their old routes.
+    # Older catalogs retain their routes; versioned muscle catalogs route each
+    # normalization separately so images cannot be mixed between networks.
     catalog = root / "catalog.json"
-    if normalization_variant == "original" and module_set in ("full_cohort", "control_derived") and catalog.is_file():
+    if catalog.is_file():
         metadata = json.loads(catalog.read_text(encoding="utf-8"))
         if metadata.get("status") == "complete" and metadata.get("module_set") == module_set:
-            directory = str(metadata["image_directory"])
+            directories = metadata.get("image_directories", {})
+            if normalization_variant in directories:
+                directory = str(directories[normalization_variant])
+            elif normalization_variant == "original" and "image_directory" in metadata:
+                directory = str(metadata["image_directory"])
             if Path(directory).name != directory or directory in {".", ".."}:
                 raise ValueError("Unsafe MDC heatmap catalog directory")
     return root / directory / f"M{int(module)}.png"

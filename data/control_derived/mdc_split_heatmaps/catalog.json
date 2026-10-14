@@ -3,7 +3,7 @@
   "status": "complete",
   "module_set": "control_derived",
   "modules": 186,
-  "image_directory": "brain_20261014",
+  "image_directory": "brain_yellow_red_20261014",
   "upper_triangle": "AD",
   "lower_triangle": "Control",
   "width": 3200,
@@ -14,6 +14,14 @@
   "beta_ts": 3,
   "beta_ct": 2,
   "mdc_statistics_unchanged": true,
+  "color_palette": {
+    "name": "yellow_orange_red",
+    "low": "#FFFF00",
+    "middle": "#FFA500",
+    "high": "#FF0000",
+    "missing": "#FFFFFF",
+    "description": "Low edge weights: yellow; high edge weights: red"
+  },
   "source_statistics_sha256": "6c2302d09fc94c65904e92b39f9d9dfc0e1a1d2f6df081e86f8c13b96af47abb",
-  "released_utc": "2026-10-14T07:58:00.694382+00:00"
+  "released_utc": "2026-10-14T10:09:13.593254+00:00"
 }
