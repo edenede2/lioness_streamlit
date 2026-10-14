@@ -3921,6 +3921,7 @@ view_options = [
     "Associations",
     "Feature distributions",
     "Correlation heatmaps",
+    "Module–outcome comparison",
     "Prediction",
     "Module finder",
     "CT–TS screen",
@@ -3948,6 +3949,11 @@ if active_view is None:
     active_view = "Associations"
 if active_view == "Prediction":
     render_prediction_view()
+    st.stop()
+if active_view == "Module–outcome comparison":
+    from app_helpers.score_comparison_ui import render_view as render_score_comparison_view
+
+    render_score_comparison_view(data_manifest)
     st.stop()
 if active_view == "Partition comparison":
     render_partition_comparison_view()
@@ -10428,12 +10434,17 @@ if active_view == "Module details":
 
 if active_view == "Methods & data":
     st.subheader("Analysis methods and deploy data")
-    selected_donor_count = int(
-        module_manifest.get("donors_per_method", {}).get(method, 450)
+    donor_counts = module_manifest.get(
+        "donors_per_method", module_manifest.get("donors", 450)
     )
-    selected_group_counts = module_manifest.get(
-        "diagnosis_counts_per_method", {}
-    ).get(method, {"Control": 164, "MCI": 119, "AD": 167})
+    selected_donor_count = int(
+        donor_counts.get(method, 450) if isinstance(donor_counts, dict) else donor_counts
+    )
+    group_counts = module_manifest.get(
+        "diagnosis_counts_per_method",
+        module_manifest.get("diagnosis_counts", {"Control": 164, "MCI": 119, "AD": 167}),
+    )
+    selected_group_counts = group_counts.get(method, group_counts)
     selected_control_count = int(selected_group_counts.get("Control", 164))
     st.markdown(
         f"**Selected module definition:** {module_set_label}. Module IDs are scoped to "

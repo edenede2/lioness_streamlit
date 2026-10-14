@@ -150,6 +150,18 @@ The app includes three explicitly separated module definitions:
 - Selected-module and all-module correlation heatmaps, including an all-feature
   view across every module and diagnosis group, with sortable/downloadable Pearson,
   Spearman, p-value, and FDR tables.
+- **Module–outcome comparison** builds up to 12 editable boxes across the completed
+  brain/muscle partitions and independent regional sources. Each observation is one
+  module's absolute pooled Pearson/Spearman correlation, not a donor. Choose Raw,
+  asinh or RINT scores, components, saved edge filters and each source's own cohort;
+  regional eigengenes are unfiltered and regional module identities include tissue.
+  Calculation is explicit and serialized, with only compact statistics cached.
+  Top K, FDR display filtering, labels and ordering reuse those statistics without
+  rereading scores. BH uses all valid modules before Top K, separately for each
+  fixed configuration (and each regional tissue). Summary counts, signed effects,
+  donor N, both methods, full-family FDRs and unavailable reasons remain downloadable.
+  Top-K and discovery-edge-selected views are exploratory; between-box differences
+  are descriptive, not tests of predictive superiority.
 - Optional average-linkage clustering of heatmap rows, columns, or whole modules.
   Whole-module clustering keeps all feature rows together and outlines each module
   block. Asterisks mark cells with selected-method FDR below 0.05, and significant-only
