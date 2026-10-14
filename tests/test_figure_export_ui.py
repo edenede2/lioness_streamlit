@@ -10,7 +10,7 @@ from streamlit.testing.v1 import AppTest
 from app_helpers.figure_export import ui
 
 
-def fixture_app(monkeypatch, native=False):
+def fixture_app(monkeypatch, native=False, selected_module=False):
     calls = []
     image = Image.new("RGB", (100, 80), "white")
     buffer = io.BytesIO()
@@ -40,12 +40,14 @@ for identifier in ("first", "second"):
     figure = make_subplots(rows=1, cols=2, subplot_titles=["First panel<br>Enrichment pathway", "Second panel<br>Enrichment pathway"])
     for column in (1, 2):
         figure.add_trace(go.Scatter(x=[1,2,3], y=[2,4,3], mode="markers"), row=1, col=column)
+    if SELECTED_MODULE_OVERLAY:
+        figure.add_trace(go.Scatter(x=[2], y=[4], mode="markers+text", text=["M935"], name="Selected M935", meta={"export_role": "selected_module"}), row=1, col=1)
     figure.update_layout(title="Original plot title<br><sup>Original subtitle</sup>")
     render_exportable_plot(figure, plot_id=identifier)
 if "test_open_spec" in st.session_state:
     from app_helpers.figure_export.ui import export_dialog_body
     export_dialog_body(st.session_state["test_open_spec"])
-""",
+""".replace("SELECTED_MODULE_OVERLAY", repr(selected_module)),
         default_timeout=15,
     ).run()
     return app, calls
@@ -156,6 +158,34 @@ def test_popover_fallback(monkeypatch):
     app.checkbox[0].check().run()
     assert not app.exception
     assert {c[0] for c in calls} == {"first"}
+
+
+def test_selected_module_annotation_control_preview_download_and_reset(monkeypatch):
+    app, calls = fixture_app(monkeypatch, selected_module=True)
+    original_plots = [e.proto.spec for e in app.get("plotly_chart")]
+    app.button[0].click().run()
+    control = widget(app.checkbox, "Show selected-module annotation")
+    assert control.value is True
+    control.uncheck().run()
+    assert not app.exception
+    assert calls[-1][2].show_selected_module_annotation is False
+    widget(app.button, "Prepare download").click().run()
+    assert calls[-1][2].show_selected_module_annotation is False
+    assert app.get("download_button")
+    assert [e.proto.spec for e in app.get("plotly_chart")] == original_plots
+    assert app.session_state["analysis_setting"] == "unchanged"
+    widget(app.button, "Reset to defaults").click().run()
+    assert calls[-1][2].show_selected_module_annotation is True
+    # Visibility settings are local to this plot, not the next export.
+    app.button[1].click().run()
+    assert widget(app.checkbox, "Show selected-module annotation").value is True
+
+
+def test_selected_module_annotation_control_absent_without_overlay(monkeypatch):
+    app, _ = fixture_app(monkeypatch)
+    app.button[0].click().run()
+    assert not app.exception
+    assert not any(c.label == "Show selected-module annotation" for c in app.checkbox)
 
 
 def test_cache_uses_complete_snapshot_and_settings_and_is_session_bounded(monkeypatch):

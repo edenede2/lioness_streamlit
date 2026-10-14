@@ -207,6 +207,7 @@ class PlotContentConfig:
     show_regression: bool = True
     show_intervals: bool = True
     show_statistics: bool = True
+    show_selected_module_annotation: bool = True
     panel_order: tuple[str, ...] | None = None
     panel_labels: bool = False
     horizontal_reference: float | None = None

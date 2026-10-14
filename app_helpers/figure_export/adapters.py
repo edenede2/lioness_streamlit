@@ -103,6 +103,10 @@ def trace_role(trace: Any) -> str:
     ):
         return "legend"
     name = str(trace.name or "").lower()
+    # Backward-compatible recognition of existing selection overlays. Explicit
+    # metadata is preferred, so ordinary module observations are never hidden.
+    if name == "selected module" or re.match(r"^selected m\d+\b", name):
+        return "selected_module"
     if trace.legendgroup == "__pooled__" and getattr(trace, "mode", None) == "lines":
         return "regression"
     if any(v in name for v in ("trend", "ols:", "ols plane", "regression")):
@@ -789,6 +793,11 @@ def build_figure(
     """Rebuild from an immutable figure/data snapshot; never recompute analyses."""
     export_config.validate()
     figure = restore_figure(data)
+    if not content_config.show_selected_module_annotation:
+        for trace in figure.data:
+            if trace_role(trace) == "selected_module":
+                trace.visible = False
+                trace.showlegend = False
     panels = figure_panels(figure)
     content, config, fonts, style = (
         content_config,
@@ -1041,7 +1050,7 @@ def build_figure(
         role = trace_role(trace)
         if not content.show_color_scale and hasattr(trace, "showscale"):
             trace.showscale = False
-        if role == "observations" and not content.show_observations:
+        if role in {"observations", "selected_module"} and not content.show_observations:
             trace.visible = False
         if role == "regression" and not content.show_regression:
             trace.visible = False

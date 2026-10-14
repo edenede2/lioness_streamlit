@@ -362,6 +362,19 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
         styles["legend_visible"] = st.checkbox(
             "Show legend", value=source.layout.showlegend is not False, key=key("legend_visible")
         )
+        show_selected_module_annotation = (
+            st.checkbox(
+                "Show selected-module annotation",
+                value=True,
+                key=key("show_selected_module_annotation"),
+                help=(
+                    "Hide the selected module's highlight, label and legend entry in "
+                    "the export. Its normal data point and all statistics remain unchanged."
+                ),
+            )
+            if any(trace_role(t) == "selected_module" for t in source.data)
+            else True
+        )
         has_color_scale = any(
             k.startswith("coloraxis") and source.layout[k].to_plotly_json() for k in source.layout
         ) or any(
@@ -591,6 +604,7 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
         show_regression=show_regression,
         show_intervals=show_intervals,
         show_statistics=show_statistics,
+        show_selected_module_annotation=show_selected_module_annotation,
         panel_order=order,
         panel_labels=panel_labels,
         horizontal_reference=horizontal,

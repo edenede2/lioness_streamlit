@@ -467,6 +467,7 @@ def module_finder_figure(
                     },
                     hoverinfo="skip",
                     name=f"Selected M{int(selected_module)}",
+                    meta={"export_role": "selected_module"},
                 )
             )
     if minimum_ct_ts_difference > 0:
@@ -2856,6 +2857,7 @@ def module_entropy_figure(
                 text=[f"M{int(selected_module)}"],
                 textposition="top center",
                 name="Selected module",
+                meta={"export_role": "selected_module"},
                 marker={
                     "symbol": "star",
                     "size": 16,
@@ -3001,6 +3003,7 @@ def mdc_entropy_figure(
                 text=[f"M{int(selected_module)}"],
                 textposition="top center",
                 name=f"Selected M{int(selected_module)}",
+                meta={"export_role": "selected_module"},
                 marker={
                     "symbol": "star",
                     "size": 17,
@@ -3327,6 +3330,7 @@ def pathway_mdc_detail_figure(
                 text=[f"M{int(selected_module)}"] * len(selected),
                 textposition="top center",
                 name=f"Selected M{int(selected_module)}",
+                meta={"export_role": "selected_module"},
                 marker={
                     "symbol": "star",
                     "size": 17,
@@ -3761,6 +3765,7 @@ def mdc_normalization_comparison_figure(
             selected_raw.append(float(selected[f"mdc_{scope}"].iloc[0]))
     figure.add_trace(go.Scatter(
         x=selected_x, y=selected_y, mode="markers", name=f"Selected M{selected_module}",
+        meta={"export_role": "selected_module"},
         marker={"color":"#242424","symbol":"star","size":12}, customdata=selected_raw,
         hovertemplate=f"M{selected_module}<br>%{{x}}<br>MDC: %{{customdata:.4g}}<extra></extra>",
     ))
@@ -3859,6 +3864,7 @@ def mdc_overview_figure(
                 y=[row[ct_column]],
                 mode="markers+text",
                 name=f"Selected M{int(selected_module)}",
+                meta={"export_role": "selected_module"},
                 text=[f"M{int(selected_module)}"],
                 textposition="top center",
                 marker={

@@ -784,7 +784,7 @@ def test_all_rendering_sites_are_exportable_and_inline_builders_extracted():
                 if name == "render_plotly_chart":
                     count += 1
                     assert any(k.arg in {"key", "plot_id"} for k in node.keywords)
-    assert count == 72
+    assert count == 73  # Includes the published MDC label-validation view.
 
 
 @pytest.mark.skipif(
