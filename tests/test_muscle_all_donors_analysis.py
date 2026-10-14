@@ -28,6 +28,14 @@ def test_public_parquet_validation_covers_shards_not_dataset_directories(tmp_pat
     assert A.public_parquet_files(tmp_path) == [flat, shard]
 
 
+def test_publication_keeps_large_statistics_on_drive_not_in_repository():
+    from scripts.publish_muscle_all_donors import repository_hot_file
+    assert repository_hot_file('mdc_sensitivity/summary.parquet', 200_000)
+    assert repository_hot_file('aggregate_statistics.parquet', 1_000_000)
+    assert not repository_hot_file('effect_size/resolved_statistics.parquet', 60*1024**2)
+    assert not repository_hot_file('resolved_plot_data.parquet', 1_000_000)
+
+
 def test_qa_resume_rejects_changed_numerical_inputs_or_incomplete_stages():
     from copy import deepcopy
     config = {"sources": {"assignments": "unchanged"}, "code_hashes": {

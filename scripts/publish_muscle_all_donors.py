@@ -21,6 +21,19 @@ DESTINATION = APP / "data" / A.KEY
 DRIVE_ROOT = "1dTj5SkLxuDIvII5LayLViqOzjKQt-dos"
 OAUTH_CLIENT = "client_secret_688842367267-8o25rcsq6jvrb1go8d0gsr1o304v1knq.apps.googleusercontent.com.json"
 SERVICE_ACCOUNT = "lionessexplorer-05e37b3ea2a6.json"
+MAX_HOT_PARQUET_BYTES = 8 * 1024**2
+
+
+def repository_hot_file(relative, size):
+    """Only bounded summary tables belong in the repository; large stats stay on Drive."""
+    path = Path(relative)
+    if path.suffix == ".parquet" and size > MAX_HOT_PARQUET_BYTES:
+        return False
+    return (path.suffix in {".json", ".tsv"} or "statistics" in path.name
+            or relative.endswith("results.parquet")
+            or relative.endswith("mask_retention_summary.parquet")
+            or relative in {"sample_metadata.parquet", "kegg_tissue_expanded_full.parquet",
+                            "mdc_sensitivity/summary.parquet", "mdc_sensitivity/resolved.parquet"})
 
 
 def command(args):
@@ -159,7 +172,7 @@ def publish(source, final, push):
         for path in DESTINATION.rglob("*"):
             if not path.is_file(): continue
             rel = path.relative_to(DESTINATION).as_posix()
-            hot = path.suffix in {".json", ".tsv"} or "statistics" in path.name or rel.endswith("results.parquet") or rel.endswith("mask_retention_summary.parquet") or rel == "sample_metadata.parquet" or rel == "kegg_tissue_expanded_full.parquet" or rel in {"mdc_sensitivity/summary.parquet","mdc_sensitivity/resolved.parquet"}
+            hot = repository_hot_file(rel, path.stat().st_size)
             if "mdc_split_heatmaps" in rel and path.suffix == ".png": hot = False
             if hot:
                 if path.stat().st_size >= 95*1024**2: raise ValueError("Oversized Git file")
