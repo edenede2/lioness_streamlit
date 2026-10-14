@@ -1,0 +1,58 @@
+{
+  "balanced_counts": {
+    "AD": 120,
+    "Control": 120
+  },
+  "balanced_resamples": 100,
+  "completed_balanced_resamples": 100,
+  "completed_label_permutations": 200,
+  "config_hash": "cbf569a1637355fa6442a7c2cb4887a8928d1236fdf09265d6087cf26e8fe2bd",
+  "diagnosis_counts": {
+    "AD": 155,
+    "Control": 120
+  },
+  "files": {
+    "balanced_replicates.parquet": {
+      "bytes": 2016998,
+      "sha256": "31d8d9d386f43b5b1f007651605be87d6c389a222891bcf79ce30628e86359ea"
+    },
+    "label_replicates.parquet": {
+      "bytes": 3711118,
+      "sha256": "2e4ab02786e9457d246f5f2d2151fa9b818efd2a9cefb0b4fd3d4ee063b60305"
+    },
+    "results.parquet": {
+      "bytes": 217521,
+      "sha256": "13731b036d347ce0dbc11610975a802fd18712200d851c0bcfd3f8634e3a0b20"
+    }
+  },
+  "label_permutations": 200,
+  "module_count": 173,
+  "module_set": "muscle_all_donors_l4",
+  "notes": [
+    "Fixed all-donor modules; discovery-selection bias is not corrected.",
+    "Each donor's gene and tissue expression profile is preserved; only diagnosis membership is permuted.",
+    "Label-dependent M5 bootstrap and CT calibration are rebuilt; no q90 scaling or clipping.",
+    "Two-sided equal-tail plus-one label-permutation p; BH across valid modules separately by weighting and scope.",
+    "Primary CT\u2013TS contrast uses unpowered correlations. M5 contrast is weighting-dependent sensitivity.",
+    "Balanced results describe repeated AD subsampling to 120; 2.5/97.5 percentiles are not inferential confidence intervals.",
+    "Existing disrupted-coexpression/gene-set null FDRs are retained and not reused here."
+  ],
+  "schema_version": 1,
+  "source_hashes": [
+    "6e326daf9ef1b051a627d88cebc264eba8225f06488eeb3bfaba64ef9a1b370c",
+    "135898845b57b3aa37f458a120640dd383349b8112b4f45d43477bc3f51415fb",
+    "9660837753abe58f6f5ae782a570a138c5830ea24b434857a7450d17edbb42fa",
+    "94d3faa7662ba52630f3cf7f87fd90c9581b39730392cc7433411abce020143e",
+    "5615f76234cf6b779df1968d8843a65ade6f4686041cd2797cc687435071f5e2",
+    "0fe688a6954301a278c1775ca71227ff07244d1c7322e8d85b457b64d5af3091",
+    "ed62fffc4655e8b0d18f0d91010711c097cf642be7c25d5af61f1004107803c9",
+    "a214d2834cf41d91ffa880973267d802c036e1862ef1fbb5366bd02adf4333e7"
+  ],
+  "status": "complete",
+  "strata": "study \u00d7 sex; exact within-stratum counts for label permutations",
+  "updated_utc": "2026-10-13T17:21:48.155340+00:00",
+  "variants": {
+    "m5_high_no_q90": "M5 without q90 (weighting sensitivity)",
+    "pearson": "Unpowered Pearson (comparable CT/TS weights)"
+  }
+}
