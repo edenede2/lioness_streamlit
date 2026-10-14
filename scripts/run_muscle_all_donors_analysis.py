@@ -235,6 +235,27 @@ def original_inference_export(B):
     atomic_json(public, path)
 
 
+def public_parquet_files(root):
+    """Validate physical shards, not logical dataset directories named *.parquet."""
+    return sorted(path for path in Path(root).rglob("*.parquet") if path.is_file())
+
+
+def public_validation_resume_allowed(manifest, config):
+    """Only adopt the packaging fix after every numerical stage has completed."""
+    old = manifest.get("configuration", {}).copy()
+    old_hashes = old.pop("code_hashes", {})
+    new = config.copy()
+    new_hashes = new.pop("code_hashes", {})
+    changed = {name for name in set(old_hashes) | set(new_hashes)
+               if old_hashes.get(name) != new_hashes.get(name)}
+    completed = {name for name, value in manifest.get("stages", {}).items()
+                 if value.get("status") == "complete"}
+    return (old == new and changed == {Path(__file__).name}
+            and completed == set(STAGES) - {"validate"}
+            and manifest.get("active_stage") == "validate"
+            and manifest.get("status") == "needs_review")
+
+
 def validate(config, L):
     import numpy as np
     import pandas as pd
@@ -246,7 +267,7 @@ def validate(config, L):
         assert not frame.duplicated(["module", "donor"]).any()
         L.validate_feature_identities(frame)
     modules = set(pd.read_csv(ASSIGNMENTS)["Cluster ID"])
-    for path in PUBLIC.rglob("*.parquet"):
+    for path in public_parquet_files(PUBLIC):
         schema = pq.read_schema(path)
         assert not {"donor", "projid", "ProjID", "Gene ID", "gene_id", "role_hash"}.intersection(schema.names), path
         assert path.stat().st_size < 95 * 1024**2, path
@@ -298,6 +319,8 @@ def main():
     parser.add_argument("--detach", action="store_true")
     parser.add_argument("--accept-pre-mdc-fix", action="store_true",
                         help="Revalidate already completed QC/KEGG/LIONESS when adapting the legacy MDC module-count guard.")
+    parser.add_argument("--accept-public-validation-fix", action="store_true",
+                        help="Resume only final QA after reviewing the physical Parquet-shard validation fix; never rerun completed analyses.")
     args = parser.parse_args()
     if not 1 <= args.workers <= 8: raise ValueError("Use 1–8 workers to preserve prediction resources")
     ROOT.mkdir(parents=True, exist_ok=True)
@@ -305,6 +328,7 @@ def main():
         with (ROOT / "pipeline.log").open("ab", buffering=0) as log:
             command=[sys.executable, str(Path(__file__).resolve()), "--stage", args.stage, "--workers", str(args.workers)]
             if args.accept_pre_mdc_fix: command.append("--accept-pre-mdc-fix")
+            if args.accept_public_validation_fix: command.append("--accept-public-validation-fix")
             proc = subprocess.Popen(command,
                                     cwd=APP, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT, start_new_session=True,
                                     env={**os.environ, "OPENBLAS_NUM_THREADS":"1", "OMP_NUM_THREADS":"1", "MKL_NUM_THREADS":"1", "NUMEXPR_NUM_THREADS":"1"})
@@ -319,7 +343,11 @@ def main():
         identity = hashlib.sha256(json.dumps(config, sort_keys=True).encode()).hexdigest()
         path = ROOT / "pipeline_manifest.json"
         manifest = json.loads(path.read_text()) if path.exists() else dict(stages={})
-        if manifest.get("config_hash", identity) != identity:
+        validation_fix = (args.accept_public_validation_fix
+                          and public_validation_resume_allowed(manifest, config))
+        if validation_fix:
+            atomic_json(manifest, ROOT / "provenance_revisions/pre_public_parquet_validation_fix.json")
+        elif manifest.get("config_hash", identity) != identity:
             old=manifest["configuration"].copy();old.pop("code_hashes",None)
             new=config.copy();new.pop("code_hashes",None)
             completed={k for k,v in manifest['stages'].items() if v.get('status')=='complete'}
@@ -336,7 +364,10 @@ def main():
             assert len(frame)==173*357 and frame.module.nunique()==173
             L.validate_feature_identities(frame)
             stage('qc',args.workers)
+        manifest.pop("error", None)
         manifest.update(configuration=config, config_hash=identity, status="running", pid=os.getpid())
+        if validation_fix:
+            manifest["qa_recovery"] = "Reviewed physical-shard validation fix only; all completed numerical outputs retained unchanged."
         try:
             for name in STAGES:
                 if manifest["stages"].get(name, {}).get("status") == "complete": continue

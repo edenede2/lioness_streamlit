@@ -1583,6 +1583,21 @@ def load_mdc_normalization_summary(
     return _read_filtered(module_set_path("mdc_sensitivity/summary.parquet", module_set), filters)
 
 
+def _mdc_split_heatmap_path(module_set: str, module: int, normalization_variant: str) -> Path:
+    root = module_set_data_dir(module_set) / MDC_SPLIT_HEATMAP_DIRNAME
+    directory = "all_edges" if normalization_variant == "original" else normalization_variant
+    # A tiny repository manifest selects an immutable, verified Drive release.
+    # Older catalogs and muscle normalization variants retain their old routes.
+    catalog = root / "catalog.json"
+    if normalization_variant == "original" and module_set in ("full_cohort", "control_derived") and catalog.is_file():
+        metadata = json.loads(catalog.read_text(encoding="utf-8"))
+        if metadata.get("status") == "complete" and metadata.get("module_set") == module_set:
+            directory = str(metadata["image_directory"])
+            if Path(directory).name != directory or directory in {".", ".."}:
+                raise ValueError("Unsafe MDC heatmap catalog directory")
+    return root / directory / f"M{int(module)}.png"
+
+
 def mdc_split_heatmap_available(
     module_set: str,
     module: int,
@@ -1595,12 +1610,7 @@ def mdc_split_heatmap_available(
         return False
     if normalization_variant != "original" and (module_set not in MUSCLE_MODULE_SETS or normalization_variant != "m5_high_no_q90"):
         return False
-    path = (
-        module_set_data_dir(module_set)
-        / MDC_SPLIT_HEATMAP_DIRNAME
-        / ("all_edges" if normalization_variant == "original" else normalization_variant)
-        / f"M{int(module)}.png"
-    )
+    path = _mdc_split_heatmap_path(module_set, module, normalization_variant)
     return data_path_available(path)
 
 
@@ -1618,12 +1628,7 @@ def load_mdc_split_heatmap(
         )
     if normalization_variant != "original" and (module_set not in MUSCLE_MODULE_SETS or normalization_variant != "m5_high_no_q90"):
         raise ValueError("The requested normalization has no matching split-triangle catalog")
-    path = (
-        module_set_data_dir(module_set)
-        / MDC_SPLIT_HEATMAP_DIRNAME
-        / ("all_edges" if normalization_variant == "original" else normalization_variant)
-        / f"M{int(module)}.png"
-    )
+    path = _mdc_split_heatmap_path(module_set, module, normalization_variant)
     materialized = ensure_data_path(path)
     if isinstance(materialized, list):
         raise ValueError(f"Expected one MDC heatmap file, found {len(materialized)}")

@@ -18,6 +18,35 @@ def test_source_is_biological_l4_not_table_4():
     assert config["beta_ct"] == {"VH-SMA": 6., "VH-QUAD": 6., "SMA-QUAD": 7.}
 
 
+def test_public_parquet_validation_covers_shards_not_dataset_directories(tmp_path):
+    flat = tmp_path / "flat.parquet"
+    flat.touch()
+    dataset = tmp_path / "scores.parquet"
+    dataset.mkdir()
+    shard = dataset / "part-0.parquet"
+    shard.touch()
+    assert A.public_parquet_files(tmp_path) == [flat, shard]
+
+
+def test_qa_resume_rejects_changed_numerical_inputs_or_incomplete_stages():
+    from copy import deepcopy
+    config = {"sources": {"assignments": "unchanged"}, "code_hashes": {
+        "run_muscle_all_donors_analysis.py": "new-qa", "run_muscle_lioness.py": "same"}}
+    old = deepcopy(config)
+    old["code_hashes"]["run_muscle_all_donors_analysis.py"] = "old-qa"
+    manifest = {"configuration": old, "active_stage": "validate", "status": "needs_review",
+                "stages": {name: {"status": "complete"} for name in A.STAGES if name != "validate"}}
+    assert A.public_validation_resume_allowed(manifest, config)
+    changed = deepcopy(config)
+    changed["sources"]["assignments"] = "different"
+    assert not A.public_validation_resume_allowed(manifest, changed)
+    changed = deepcopy(config)
+    changed["code_hashes"]["run_muscle_lioness.py"] = "different"
+    assert not A.public_validation_resume_allowed(manifest, changed)
+    del manifest["stages"]["effect_public"]
+    assert not A.public_validation_resume_allowed(manifest, config)
+
+
 def test_new_module_definition_cannot_mix_brain_or_control_muscle_data():
     assert D.module_set_data_dir(A.KEY) != D.module_set_data_dir("muscle_control_l4")
     assert D.module_set_tissues(A.KEY) == ("VH", "SMA", "QUAD")
