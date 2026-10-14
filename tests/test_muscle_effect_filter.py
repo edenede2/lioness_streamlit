@@ -59,6 +59,16 @@ def test_muscle_effect_directions_form_exact_union() -> None:
     assert np.flatnonzero(control).tolist() == [0, 1]
 
 
+def test_public_gene_sanitization_never_retains_ensembl_self_mapping(monkeypatch):
+    from scripts import build_muscle_effect_size_public_data as build
+    monkeypatch.setattr(build, 'gene_symbol_mapping', lambda: {'ENSG00000066379': 'ENSG00000066379'})
+    original = pd.DataFrame({'gene_a': ['ENSG00000066379'], 'gene_b': ['SMAD4'],
+                             'discovery_hedges_g': [0.413], 'module': [1000]})
+    converted = build.sanitize(original, {})
+    assert converted.gene_a.tolist() == ['ZNRD1']
+    pd.testing.assert_frame_equal(original.drop(columns=['gene_a']), converted.drop(columns=['gene_a']))
+
+
 def test_muscle_scope_context_recombines_ts_and_ct() -> None:
     tissues = np.asarray(["VH", "VH", "SMA", "QUAD"], dtype=object)
     upper_i, upper_j = np.triu_indices(len(tissues), k=1)

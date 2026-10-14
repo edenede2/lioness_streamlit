@@ -19,6 +19,8 @@ import pyarrow.parquet as pq
 SCRIPT_DIR = Path(__file__).resolve().parent
 APP_ROOT = SCRIPT_DIR.parent
 REPO_ROOT = APP_ROOT.parents[1]
+if str(APP_ROOT) not in sys.path:
+    sys.path.insert(0, str(APP_ROOT))
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 if str(SCRIPT_DIR) not in sys.path:
@@ -31,6 +33,7 @@ from models.differential_edges import (  # noqa: E402
     effect_size_mask,
 )
 from scripts.python import prepare_effect_size_edge_app_data as prepare  # noqa: E402
+from app_helpers.gene_symbols import public_gene_labels  # noqa: E402
 from build_muscle_public_data import (  # noqa: E402
     ASSIGNMENTS,
     COMPONENT_LABELS,
@@ -139,7 +142,36 @@ def sanitize(frame: pd.DataFrame, sample_map: dict[str, str]) -> pd.DataFrame:
                 lambda value: symbols.get(str(value).split(".")[0], "Unmapped gene")
                 if str(value).startswith("ENSG") else value
             )
-    return result
+    return public_gene_labels(result, gene_columns=tuple(gene_columns))
+
+
+def repair_public_gene_labels(output: Path) -> dict:
+    """Repair labels only in completed edge exports, preserving every numeric value."""
+    files = []
+    for path in sorted((output / "effect_size").rglob("*.parquet")):
+        if not path.is_file():
+            continue
+        columns = tuple(name for name in ("gene_a", "gene_b") if name in pq.read_schema(path).names)
+        if not columns:
+            continue
+        labels = pd.read_parquet(path, columns=list(columns))
+        if not any(labels[c].astype(str).str.contains(r"ENSG\d", regex=True).any() for c in columns):
+            continue
+        original = pd.read_parquet(path)
+        converted = public_gene_labels(original, gene_columns=columns)
+        pd.testing.assert_frame_equal(original.drop(columns=list(columns)), converted.drop(columns=list(columns)))
+        atomic_parquet(converted, path)
+        files.append(path.relative_to(output).as_posix())
+    effect_path = output / "effect_size/manifest.json"
+    manifest = json.loads(effect_path.read_text())
+    manifest["public_files"] = {
+        path.relative_to(output / "effect_size").as_posix(): {"bytes": path.stat().st_size, "sha256": sha256(path)}
+        for path in sorted((output / "effect_size").rglob("*")) if path.is_file() and path != effect_path
+    }
+    manifest["gene_labels"] = "Official gene-symbol asset; unresolved IDs labeled Unmapped gene; numeric results unchanged."
+    effect_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+    refresh_existing_manifest(output)
+    return {"status": "passed", "files_repaired": len(files), "numeric_values_unchanged": True, "files": files}
 
 
 def prepare_private_variants(
@@ -312,7 +344,7 @@ def publish_edge_data(
                 path.name.split("__", 1)[0].removeprefix("M")
             )
             target = volcano_destination / f"M{module}.parquet"
-            atomic_parquet(selected, target)
+            atomic_parquet(sanitize(selected, sample_map), target)
             if target.stat().st_size >= MAX_PUBLIC_FILE_BYTES:
                 raise ValueError(f"Volcano shard exceeds public file limit: {target}")
             volcano_rows += len(selected)
@@ -558,6 +590,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--prepare-only", action="store_true")
     parser.add_argument("--publish-only", action="store_true")
+    parser.add_argument("--gene-labels-only", action="store_true",
+                        help="Repair only gene labels/hashes in an existing completed public edge bundle; no analytical recomputation.")
     return parser.parse_args()
 
 
@@ -565,6 +599,9 @@ def main() -> None:
     args = parse_args()
     analysis_root = args.analysis_root.resolve()
     output = args.output.resolve()
+    if args.gene_labels_only:
+        print(json.dumps(repair_public_gene_labels(output), indent=2))
+        return
     app_data_root = (
         args.app_data_root.resolve()
         if args.app_data_root
