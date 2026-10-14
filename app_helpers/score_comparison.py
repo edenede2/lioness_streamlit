@@ -65,7 +65,7 @@ class ComparisonSeriesSpec:
                 raise ValueError("Regional sources provide connectivity or eigengenes")
             if not self.tissues or len(set(self.tissues)) != len(self.tissues):
                 raise ValueError("Select distinct regional tissues")
-            if not set(self.tissues).issubset(R.REGION_ORDER):
+            if not set(self.tissues).issubset(R.regional_tissues(self.source)):
                 raise ValueError("Unknown regional tissue")
             if self.differential_edge_rule != "all":
                 raise ValueError("Regional scores are all-edge only")
@@ -177,7 +177,10 @@ def _metadata(spec: ComparisonSeriesSpec, outcome: str, analysis_subset: str, ti
             columns.append("ad_control_split")
         result = pq.read_table(ensure_data_path(path), columns=columns).to_pandas()
     else:
-        source = "full_cohort" if spec.is_regional else spec.source
+        source = (
+            "muscle_control_l4" if spec.source == R.MOTOR_SOURCE
+            else "full_cohort" if spec.is_regional else spec.source
+        )
         # This metadata table is small (357–450 rows); never load expression here.
         result = D.load_sample_metadata(source)
         columns = ["sample_id", outcome]

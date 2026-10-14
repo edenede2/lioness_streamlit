@@ -174,12 +174,15 @@ def _box_editor(row: dict, registry: dict, position: int, count: int) -> tuple[d
             methods = list(dict.fromkeys(record["network_method"] for record in completed if record["cohort_scope"] == cohort and record["score_variant"] == feature))
             method = _select("Network method", methods, row["method"], prefix + "method",
                              format_func=lambda value: "Not applicable (eigengene)" if value == "not_applicable" else D.METHOD_LABELS[value], disabled=feature == "eigengene")
-            tissues = [tissue for tissue in R.REGION_ORDER if any(record["tissue"] == tissue and record["cohort_scope"] == cohort and record["score_variant"] == feature and record["network_method"] == method for record in completed)]
+            tissues = [tissue for tissue in R.regional_tissues(source) if any(record["tissue"] == tissue and record["cohort_scope"] == cohort and record["score_variant"] == feature and record["network_method"] == method for record in completed)]
             tissue_key = prefix + "tissues"
             if tissue_key in st.session_state and not set(st.session_state[tissue_key]).issubset(tissues):
                 del st.session_state[tissue_key]
+            default_tissues = [t for t in row.get("tissues", ()) if t in tissues]
+            if source != row["source"] and not default_tissues and tissues:
+                default_tissues = [tissues[0]]
             selected_tissues = st.multiselect(
-                "Regions in this box", tissues, default=[t for t in row.get("tissues", ("AC",)) if t in tissues], key=tissue_key,
+                "Regions in this box", tissues, default=default_tissues, key=tissue_key,
                 help="Regional modules are distinct observations. FDR is corrected separately within each tissue partition.",
             )
             component = "regional"

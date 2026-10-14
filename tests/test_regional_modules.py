@@ -60,14 +60,16 @@ def _regional_view(label: str) -> AppTest:
 def test_regional_manifest_and_score_grain() -> None:
     manifest = load_regional_manifest()
     completed = completed_combinations(manifest)
-    assert len(completed) == 36
+    brain_completed = completed.loc[completed["partition_source"].isin(EXPECTED_MODULES)]
+    assert len(brain_completed) == 36
     assert set(completed["status"]) == {"complete"}
     connectivity = completed.loc[completed["score_variant"].eq("connectivity")]
     assert len(connectivity) == 24
     assert set(connectivity["network_method"]) == {"standard", "control_anchored"}
     details = load_regional_details()
     observed = (
-        details.groupby(["partition_source", "tissue"], observed=True)["module"]
+        details.loc[details["partition_source"].isin(EXPECTED_MODULES)]
+        .groupby(["partition_source", "tissue"], observed=True)["module"]
         .nunique().to_dict()
     )
     expected = {

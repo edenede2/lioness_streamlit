@@ -78,15 +78,22 @@ REGIONAL_KEGG = REGIONAL_ROOT / "kegg_enrichment.parquet"
 REGIONAL_SOURCE_ORDER = (
     "single_region_complete_case_l3",
     "single_region_full_tissue_l3",
+    "single_motor_tissue_complete_case_l3",
 )
 REGION_ORDER = ("AC", "DLPFC", "PCG")
+MOTOR_SOURCE = "single_motor_tissue_complete_case_l3"
+MOTOR_TISSUE_ORDER = ("VH", "SMA", "QUAD")
 REGION_COMPONENTS = {
     "AC": "REGION_AC",
     "DLPFC": "REGION_DLPFC",
     "PCG": "REGION_PCG",
+    "VH": "REGION_VH",
+    "SMA": "REGION_SMA",
+    "QUAD": "REGION_QUAD",
 }
 COHORT_LABELS = {
     "common_450": "Common 450 donors",
+    "common_357": "Common 357 motor-tissue donors",
     "maximum_tissue": "Maximum tissue cohort",
 }
 SCORE_LABELS = {
@@ -99,7 +106,23 @@ KEGG_PRIORITY_PATTERN = re.compile(
     r"sphingolipid|metaboli|alzheimer|infection|infectious|viral|virus",
     flags=re.IGNORECASE,
 )
-REGIONAL_API_VERSION = 1
+REGIONAL_API_VERSION = 2
+
+
+def regional_tissues(source: str) -> tuple[str, ...]:
+    return MOTOR_TISSUE_ORDER if source == MOTOR_SOURCE else REGION_ORDER
+
+
+def regional_metadata(source: str, cohort_scope: str, tissue: str | None = None) -> pd.DataFrame:
+    """Keep motor and brain donor metadata isolated, including shared pseudonyms."""
+    if source == MOTOR_SOURCE and cohort_scope == "common_357":
+        return load_sample_metadata(module_set="muscle_control_l4")
+    if source != MOTOR_SOURCE and cohort_scope == "common_450":
+        return load_sample_metadata()
+    if cohort_scope == "maximum_tissue" and tissue in regional_tissues(source):
+        path = REGIONAL_ROOT / "metadata" / cohort_scope / f"{tissue}.parquet"
+        return pd.read_parquet(ensure_data_path(path))
+    raise ValueError("No donor metadata registered for this regional source/cohort")
 
 
 def regional_data_available() -> bool:
@@ -110,18 +133,18 @@ def regional_data_available() -> bool:
 
 
 @st.cache_data(show_spinner=False)
-def load_regional_manifest() -> dict[str, object]:
+def load_regional_manifest(_schema_version: int = REGIONAL_API_VERSION) -> dict[str, object]:
     path = ensure_data_path(REGIONAL_MANIFEST)
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
 @st.cache_data(show_spinner=False)
-def load_regional_details() -> pd.DataFrame:
+def load_regional_details(_schema_version: int = REGIONAL_API_VERSION) -> pd.DataFrame:
     return pd.read_parquet(ensure_data_path(REGIONAL_DETAILS))
 
 
 @st.cache_data(show_spinner=False)
-def load_regional_kegg() -> pd.DataFrame:
+def load_regional_kegg(_schema_version: int = REGIONAL_API_VERSION) -> pd.DataFrame:
     return pd.read_parquet(ensure_data_path(REGIONAL_KEGG))
 
 
@@ -171,11 +194,7 @@ def load_regional_scores(
     )
     filters = [("module", "=", int(module))] if module is not None else []
     result = _read_parquet(path, filters=filters)
-    if cohort_scope == "common_450":
-        metadata = load_sample_metadata()
-    else:
-        metadata_path = REGIONAL_ROOT / "metadata" / cohort_scope / f"{tissue}.parquet"
-        metadata = pd.read_parquet(ensure_data_path(metadata_path))
+    metadata = regional_metadata(source, cohort_scope, tissue)
     duplicate = metadata["sample_id"].duplicated()
     if duplicate.any():
         raise ValueError("Regional sample metadata contain duplicate pseudonyms")
@@ -1311,7 +1330,7 @@ def _render_correlation_heatmaps(
         )
         st.caption(
             "Each FDR is adjusted across modules within one tissue-specific partition. "
-            "AC, DLPFC, PCG, and grouping levels are separate FDR families."
+            "Each tissue partition and grouping level has a separate FDR family."
         )
         return
 
@@ -1420,9 +1439,11 @@ def render_regional_analysis_view(active_view: str) -> None:
         source_label = manifest.get("source_labels", {}).get(source, source)
         source_rows = completed.loc[completed["partition_source"].eq(source)]
         cohort_options = [
-            value for value in ("common_450", "maximum_tissue")
+            value for value in COHORT_LABELS
             if value in set(source_rows["cohort_scope"])
         ]
+        if st.session_state.get("regional_cohort_scope", cohort_options[0]) not in cohort_options:
+            del st.session_state["regional_cohort_scope"]
         cohort_scope = st.selectbox(
             "Regional donor cohort",
             cohort_options,
@@ -1438,6 +1459,8 @@ def render_regional_analysis_view(active_view: str) -> None:
             key=lambda value: list(SCORE_LABELS).index(value)
             if value in SCORE_LABELS else len(SCORE_LABELS)
         )
+        if st.session_state.get("regional_score_variant", variant_options[0]) not in variant_options:
+            del st.session_state["regional_score_variant"]
         score_variant, network_method = st.selectbox(
             "Regional module score",
             variant_options,
@@ -1449,8 +1472,10 @@ def render_regional_analysis_view(active_view: str) -> None:
             & cohort_rows["network_method"].eq(network_method)
         ]
         available_tissues = [
-            tissue for tissue in REGION_ORDER if tissue in set(score_rows["tissue"])
+            tissue for tissue in regional_tissues(source) if tissue in set(score_rows["tissue"])
         ]
+        if not set(st.session_state.get("regional_tissues", ())).issubset(available_tissues):
+            del st.session_state["regional_tissues"]
         tissues = tuple(
             st.multiselect(
                 "Regions shown side by side",
@@ -1465,13 +1490,16 @@ def render_regional_analysis_view(active_view: str) -> None:
         selected_modules: dict[str, int] = {}
         for tissue in tissues:
             modules, labels, default_index = _module_options(details, source, tissue)
+            module_key = f"regional_module_{tissue}"
+            if st.session_state.get(module_key, modules[default_index]) not in modules:
+                del st.session_state[module_key]
             selected_modules[tissue] = int(
                 st.selectbox(
                     f"{tissue} module",
                     modules,
                     index=default_index,
                     format_func=lambda value, lookup=labels: lookup[int(value)],
-                    key=f"regional_module_{tissue}",
+                    key=module_key,
                 )
             )
         scale = st.selectbox(
@@ -1480,15 +1508,8 @@ def render_regional_analysis_view(active_view: str) -> None:
             format_func=lambda value: SCALE_LABELS[value],
             key="regional_score_scale",
         )
-        metadata = load_sample_metadata() if cohort_scope == "common_450" else pd.concat(
-            [
-                pd.read_parquet(
-                    ensure_data_path(
-                        REGIONAL_ROOT / "metadata" / cohort_scope / f"{tissue}.parquet"
-                    )
-                )
-                for tissue in tissues
-            ],
+        metadata = pd.concat(
+            [regional_metadata(source, cohort_scope, tissue) for tissue in tissues],
             ignore_index=True,
         ).drop_duplicates("sample_id")
         diagnosis_options = [
@@ -1507,7 +1528,7 @@ def render_regional_analysis_view(active_view: str) -> None:
         st.warning("Select at least one diagnosis group.")
         return
 
-    st.subheader("Independent single-region SE2 modules")
+    st.subheader("Independent single-region / tissue SE2 modules")
     st.caption(
         f"{source_label} · {COHORT_LABELS.get(cohort_scope, cohort_scope)} · "
         f"{score_label(score_variant, network_method)}. Module IDs are tissue-scoped; "

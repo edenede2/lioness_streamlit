@@ -162,6 +162,18 @@ The app includes three explicitly separated module definitions:
   donor N, both methods, full-family FDRs and unavailable reasons remain downloadable.
   Top-K and discovery-edge-selected views are exploratory; between-box differences
   are descriptive, not tests of predictive superiority.
+- Independent motor-tissue eigengenes use the completed `20261014_161640`
+  `table_3` partitions: VH=56, SMA=99 and QUAD=126 modules (34,862 tissue-gene
+  assignments). Select **Independent single-region modules**, then **Independent
+  motor tissues: matched complete-expression donors** in Associations, Feature
+  distributions or Correlation heatmaps; the source is also available in the
+  module–outcome comparison boxes. Raw/asinh/RINT PCA1 scores use the same 357
+  public motor donors as the multi-tissue analyses; discovery used 364 donors.
+  Outcomes and pseudonyms come from the motor metadata, never the brain metadata.
+  Correlation FDR is separate within each VH/SMA/QUAD partition and group level.
+  Tissue-specific KEGG subtitles use the motor expression backgrounds. These
+  descriptive eigengenes are not prediction features; no predictions or regional
+  LIONESS networks were recalculated for this release.
 - Optional average-linkage clustering of heatmap rows, columns, or whole modules.
   Whole-module clustering keeps all feature rows together and outlines each module
   block. Asterisks mark cells with selected-method FDR below 0.05, and significant-only

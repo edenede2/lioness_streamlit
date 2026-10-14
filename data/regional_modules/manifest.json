@@ -1,5 +1,9 @@
 {
   "cohort_scopes": {
+    "common_357": {
+      "donors": 357,
+      "label": "Common 357 motor-tissue donors"
+    },
     "common_450": {
       "donors": 450,
       "label": "Common 450 donors"
@@ -410,6 +414,39 @@
       "score_variant": "eigengene",
       "status": "complete",
       "tissue": "PCG"
+    },
+    {
+      "cohort_scope": "common_357",
+      "donors": 357,
+      "modules": 56,
+      "network_method": "not_applicable",
+      "partition_source": "single_motor_tissue_complete_case_l3",
+      "rows": 19992,
+      "score_variant": "eigengene",
+      "status": "complete",
+      "tissue": "VH"
+    },
+    {
+      "cohort_scope": "common_357",
+      "donors": 357,
+      "modules": 99,
+      "network_method": "not_applicable",
+      "partition_source": "single_motor_tissue_complete_case_l3",
+      "rows": 35343,
+      "score_variant": "eigengene",
+      "status": "complete",
+      "tissue": "SMA"
+    },
+    {
+      "cohort_scope": "common_357",
+      "donors": 357,
+      "modules": 126,
+      "network_method": "not_applicable",
+      "partition_source": "single_motor_tissue_complete_case_l3",
+      "rows": 44982,
+      "score_variant": "eigengene",
+      "status": "complete",
+      "tissue": "QUAD"
     }
   ],
   "connectivity_files": {
@@ -921,9 +958,9 @@
     "min_term_size": 10
   },
   "kegg_enrichment": {
-    "bytes": 633362,
+    "bytes": 886687,
     "relative_path": "kegg_enrichment.parquet",
-    "rows": 17965,
+    "rows": 25156,
     "schema": {
       "category_level1": "string",
       "category_level2": "string",
@@ -944,7 +981,7 @@
       "tissue": "string",
       "universe_size": "int64"
     },
-    "sha256": "af3c95010094091dfaaaa0ea528c817faf71f8bf3149d20c65fd987c796e0787"
+    "sha256": "39b426c3671feecc63fb3f4f8a67119f81225f9741f1be19fa793279ad70870f"
   },
   "lioness_validation": {
     "configurations": 24,
@@ -1046,6 +1083,11 @@
     }
   },
   "module_counts": {
+    "single_motor_tissue_complete_case_l3": {
+      "QUAD": 126,
+      "SMA": 99,
+      "VH": 56
+    },
     "single_region_complete_case_l3": {
       "AC": 142,
       "DLPFC": 122,
@@ -1058,9 +1100,9 @@
     }
   },
   "module_details": {
-    "bytes": 26577,
+    "bytes": 33263,
     "relative_path": "module_details.parquet",
-    "rows": 748,
+    "rows": 1029,
     "schema": {
       "assignment_file_sha256": "string",
       "mapped_genes": "int64",
@@ -1077,7 +1119,7 @@
       "status": "string",
       "tissue": "string"
     },
-    "sha256": "5d10ab48d3b854ca7323e3126dfe14ba067d6e19726ac73bd55ae31525f2002f"
+    "sha256": "650bcd87ef179efb186f70960af9304ed1ee6699c57751ffa800841cc1b86a9b"
   },
   "privacy": {
     "forbidden_fields": [
@@ -1096,6 +1138,65 @@
   },
   "public_schema_version": 1,
   "score_files": {
+    "single_motor_tissue_complete_case_l3": {
+      "QUAD": {
+        "bytes": 1795901,
+        "relative_path": "single_motor_tissue_complete_case_l3/common_357/eigengene/QUAD.parquet",
+        "rows": 44982,
+        "schema": {
+          "cohort_scope": "string",
+          "metric_asinh": "double",
+          "metric_raw": "double",
+          "metric_rint": "double",
+          "module": "int64",
+          "module_key": "string",
+          "network_method": "string",
+          "partition_source": "string",
+          "sample_id": "string",
+          "score_variant": "string",
+          "tissue": "string"
+        },
+        "sha256": "afbea983f0850cad6c8abc052e24f4b57c1ec44aa41fbe1fc692929b2608d6a5"
+      },
+      "SMA": {
+        "bytes": 1408578,
+        "relative_path": "single_motor_tissue_complete_case_l3/common_357/eigengene/SMA.parquet",
+        "rows": 35343,
+        "schema": {
+          "cohort_scope": "string",
+          "metric_asinh": "double",
+          "metric_raw": "double",
+          "metric_rint": "double",
+          "module": "int64",
+          "module_key": "string",
+          "network_method": "string",
+          "partition_source": "string",
+          "sample_id": "string",
+          "score_variant": "string",
+          "tissue": "string"
+        },
+        "sha256": "a85e3e52fbc90d2df00cdceb984d3eef86ed3356c6e6ec686e63266b0a1953b2"
+      },
+      "VH": {
+        "bytes": 796875,
+        "relative_path": "single_motor_tissue_complete_case_l3/common_357/eigengene/VH.parquet",
+        "rows": 19992,
+        "schema": {
+          "cohort_scope": "string",
+          "metric_asinh": "double",
+          "metric_raw": "double",
+          "metric_rint": "double",
+          "module": "int64",
+          "module_key": "string",
+          "network_method": "string",
+          "partition_source": "string",
+          "sample_id": "string",
+          "score_variant": "string",
+          "tissue": "string"
+        },
+        "sha256": "4c11114b988f507fb796fa0b0a4bf0f995c7ca4270456dbcec9432b95f85c75e"
+      }
+    },
     "single_region_complete_case_l3": {
       "AC": {
         "bytes": 2413077,
@@ -1354,13 +1455,55 @@
       "network_method": "not_applicable"
     }
   },
+  "source_definitions": {
+    "single_motor_tissue_complete_case_l3": {
+      "analysis_donors": 357,
+      "assignment_sha256": {
+        "QUAD": "c6b3b01967ebc67369f28addc5ec321f09114d5bcd1794c500883bcf3d39315e",
+        "SMA": "9ad0f94e67934b211524dace450decb57d2a0d741ab8a08ccb03a7a59bf62da6",
+        "VH": "f834860b647837e928c87a2065cd9cef7d475501a2da69265e7e57d7c0329070"
+      },
+      "cohort_note": "Seven discovery-cohort donors are outside the existing app motor cohort; no new donor metadata or identifiers were exported.",
+      "dataset": "motor",
+      "discovery_donors": 364,
+      "expression_sha256": {
+        "QUAD": "e61bb63dbebe6187c48d52202fa73bc3e5320d851c4aca9a2131e2bb5d670d30",
+        "SMA": "bc2b82281a113a83612e443c23b1427df735c124bc241f76cdab164aa617b72d",
+        "VH": "33ca9db5c562e7dea0dc0b4be12956d4fa86bc76f61a89162e013d80ea1504e3"
+      },
+      "kegg_input_sha256": {
+        "kegg_hsa_ensembl.gmt": "7280d995f0c08bdd884352e36170ce9f011ba4f50462740c5aceafbcbdf0c672",
+        "method4_tissue_expanded_kegg_annotated.tsv": "81dd9d67067a387975c2c73f869af3b6d710f90f04c72b101d06e9f38fca089b"
+      },
+      "orientation": "PCA1 aligned to mean standardized member-gene expression; no outcomes used",
+      "partition_level_zero_indexed": 3,
+      "partition_manifest_sha256": "9eba71ec7edd2d3c116072cd545965e0eb293cdadc66afd04a806eca28a2e542",
+      "prediction_scores_reused": false,
+      "status": "complete",
+      "supported_scores": [
+        "eigengene"
+      ],
+      "tissues": [
+        "VH",
+        "SMA",
+        "QUAD"
+      ],
+      "transforms": [
+        "raw",
+        "asinh",
+        "rint"
+      ]
+    }
+  },
   "source_labels": {
+    "single_motor_tissue_complete_case_l3": "Independent motor tissues: matched complete-expression donors",
     "single_region_complete_case_l3": "Single-region modules: matched complete-expression donors",
     "single_region_full_tissue_l3": "Single-region modules: full tissue cohorts"
   },
   "sources": [
     "single_region_complete_case_l3",
-    "single_region_full_tissue_l3"
+    "single_region_full_tissue_l3",
+    "single_motor_tissue_complete_case_l3"
   ],
   "stage": "regional_lioness_complete",
   "status": "complete",
@@ -1368,5 +1511,6 @@
     "raw",
     "asinh",
     "rint"
-  ]
+  ],
+  "updated_utc": "2026-10-14T14:29:14.653384+00:00"
 }

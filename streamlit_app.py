@@ -150,6 +150,11 @@ from app_helpers.streamlit_compat import (
     stateful_tabs,
     tab_is_open,
 )
+from app_helpers import regional_modules as _regional_helpers
+
+if getattr(_regional_helpers, "REGIONAL_API_VERSION", 0) < 2:
+    _regional_helpers = importlib.reload(_regional_helpers)
+
 from app_helpers.regional_modules import (
     REGIONAL_ANALYSIS_VIEWS,
     render_regional_analysis_view,
