@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "root_folder_id": "1dTj5SkLxuDIvII5LayLViqOzjKQt-dos",
-  "generated_at_utc": "2026-10-13T15:01:04.843394+00:00",
-  "file_count": 10637,
-  "total_bytes": 47968200681,
+  "generated_at_utc": "2026-10-14T07:58:03.104961+00:00",
+  "file_count": 10983,
+  "total_bytes": 48275292225,
   "drive_list_requests": 2,
   "validated_prefixes": [
     "muscle_all_donors_l4"
@@ -148065,7 +148065,2083 @@
       "size": 66,
       "md5": "00c3d01ab40e96bc8db20b18d513b7f6",
       "modified_time": "2026-08-23T05:30:58.127Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M32.png": {
+      "id": "1NHF9fqX111g3vD5xFsHy1NNbdLk1Tji7",
+      "size": 369201,
+      "md5": "bfa62cb631085245c428e5932ee45d11",
+      "modified_time": "2026-10-14T07:41:04.653Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M34.png": {
+      "id": "1ER2CLUY8TP2cl0NwR4TnyUUcvZn31i_7",
+      "size": 819906,
+      "md5": "4e8658857d63af535b5eee69be35f7d3",
+      "modified_time": "2026-10-14T07:41:07.451Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M36.png": {
+      "id": "1GH_xkUiTwwn6sUljNfLh5Ww1T3gMAdNu",
+      "size": 1039563,
+      "md5": "9fe10d648f3365601db4bdddd128fadc",
+      "modified_time": "2026-10-14T07:41:10.436Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M38.png": {
+      "id": "1UAvLD4ejuaqxqzx5rDX8mGERDFP-0dI0",
+      "size": 824189,
+      "md5": "e14a2f6a275ed0fca20930fedb8a85e4",
+      "modified_time": "2026-10-14T07:41:13.509Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M56.png": {
+      "id": "1U_2iWpM0IVMTovqcXYJi_FMIWhqgg77D",
+      "size": 1067486,
+      "md5": "1878fdfb5c3e603882b229bc90c96e2d",
+      "modified_time": "2026-10-14T07:41:16.168Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M57.png": {
+      "id": "1PjvPX5_aOWmmuSKUjLMlnzl4Fh7AK-w4",
+      "size": 384791,
+      "md5": "3f55d8c39d92c200afe25b147fabf3d4",
+      "modified_time": "2026-10-14T07:41:19.101Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M59.png": {
+      "id": "1TUBijIaS9uWZrNN8s4tLPx3W4zhP3SZ2",
+      "size": 544066,
+      "md5": "1f165e11d7c7b092ea92feb68e831033",
+      "modified_time": "2026-10-14T07:41:21.704Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M60.png": {
+      "id": "1eNoz-Dt-xc2IxMz5o5wmm0CgU9TvRBX9",
+      "size": 566670,
+      "md5": "15b430130d8db774807e6f05977948e3",
+      "modified_time": "2026-10-14T07:41:24.583Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M61.png": {
+      "id": "1E34ZLvT5B7FXE5hFkYmAZK-VWaBAlm_I",
+      "size": 1170225,
+      "md5": "7ed960fd4f6a26a993dca4f9944aa3f4",
+      "modified_time": "2026-10-14T07:41:27.641Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M65.png": {
+      "id": "1hGRuPrm1AlykmlfG2i_d4ZM4COrfZkkJ",
+      "size": 1408943,
+      "md5": "b226539080be324bf8da072227315ca7",
+      "modified_time": "2026-10-14T07:41:30.882Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M66.png": {
+      "id": "1h2aJs9Z-aEcODSHOU4P17SrvHg0Bw-Bb",
+      "size": 304256,
+      "md5": "eead820018d6b68801f237c072c0081f",
+      "modified_time": "2026-10-14T07:41:33.861Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M68.png": {
+      "id": "1CXg3bLzjm8z6h4pBTr55IRbbi4hzugXE",
+      "size": 1111026,
+      "md5": "2fa3872da48d615491b68223953d463b",
+      "modified_time": "2026-10-14T07:41:36.237Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M70.png": {
+      "id": "1FCD45TnIhofCvmT4jl2Mt2s21oAFLpUC",
+      "size": 789786,
+      "md5": "3382e79275f40ae39b888c30ed1b8f48",
+      "modified_time": "2026-10-14T07:41:39.370Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M91.png": {
+      "id": "1wFA-S5Ih--u2tTnIg-2QAE3sqSdCrq5T",
+      "size": 670983,
+      "md5": "b77e90569711afe02380fe010fbec638",
+      "modified_time": "2026-10-14T07:41:42.513Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M92.png": {
+      "id": "1n8YNRecXQIBpwFPW9tTWndHzR_Ua6anS",
+      "size": 486840,
+      "md5": "626488a9839c9048458544b162110814",
+      "modified_time": "2026-10-14T07:41:45.282Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M93.png": {
+      "id": "16UO2XBRetMD-CqeHoEEYXekVZpiyaaAA",
+      "size": 795996,
+      "md5": "d4f7781aad062e49e5fa4622942caf64",
+      "modified_time": "2026-10-14T07:41:48.211Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M144.png": {
+      "id": "1Vum9JzhPC2VWwdY0jemV1opsdEbiinhx",
+      "size": 705796,
+      "md5": "e8be1dd267853ba14f14e11d7357bedf",
+      "modified_time": "2026-10-14T07:41:50.988Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M154.png": {
+      "id": "1d-4lE48c_F8fbYnOGqmV9twJnBWf7QBf",
+      "size": 706008,
+      "md5": "50e28c6a4d470de7eb3aa2a33d6e9dd7",
+      "modified_time": "2026-10-14T07:41:53.823Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M158.png": {
+      "id": "1fggCgyy_-tmtbayMbKxl11udJbUCjkk6",
+      "size": 345091,
+      "md5": "9d8e46f0e7a25c6b08331215398f2ed2",
+      "modified_time": "2026-10-14T07:41:56.431Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M187.png": {
+      "id": "16Pt4tTmAdek4DJe0ms6yZcGLB6CmEqTD",
+      "size": 479486,
+      "md5": "cc9cd0f24d5619a5f85706696b9cec0d",
+      "modified_time": "2026-10-14T07:41:58.846Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M188.png": {
+      "id": "16B0R34redpekEGfjaZJqzRC3QZcAws5A",
+      "size": 306880,
+      "md5": "364da4c144c6d0a6e347769d16b01ada",
+      "modified_time": "2026-10-14T07:42:01.250Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M189.png": {
+      "id": "1F0mh1Ev97NXMg0jOETcOUcupk6cpAbOK",
+      "size": 531832,
+      "md5": "80e20b22120a513b89165a7ac8df4231",
+      "modified_time": "2026-10-14T07:42:03.851Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M190.png": {
+      "id": "1o4GsJHb8jPRXUFdmD28If3-420IVp3YX",
+      "size": 283177,
+      "md5": "f21f9eb9058b09ba3e5c1dc4cec38906",
+      "modified_time": "2026-10-14T07:42:06.490Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M191.png": {
+      "id": "1veod1KNuVkz9sdnwQnKpyyxepyVSfbL1",
+      "size": 537101,
+      "md5": "003738b55c63893b202846d3487240b0",
+      "modified_time": "2026-10-14T07:42:08.916Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M192.png": {
+      "id": "13y3WHd6zR4r7IAovfDHLvkXVEhrJVRHU",
+      "size": 496879,
+      "md5": "a43b385de5af177f67705c05cfb0cb10",
+      "modified_time": "2026-10-14T07:42:11.486Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M193.png": {
+      "id": "12vre5UK8D-EPmzXpRb1YXRUFpRQfpEAt",
+      "size": 541813,
+      "md5": "c7886b641039305fef988e62053834bc",
+      "modified_time": "2026-10-14T07:42:13.933Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M228.png": {
+      "id": "1j18MVFhyZiz7R-tOHD95Z9PI2zFcvyUL",
+      "size": 317403,
+      "md5": "26a3bfa75bcf493653033be32b83d20a",
+      "modified_time": "2026-10-14T07:42:16.510Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M229.png": {
+      "id": "1ZVuVINdN0R20GYL6S8D6_lPLxMPTbS2B",
+      "size": 316489,
+      "md5": "e820e9e41ca0227153e4afa9af227374",
+      "modified_time": "2026-10-14T07:42:18.763Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M263.png": {
+      "id": "1Hgfdbb2nSkVj11eq9F-OuqW3ELEb8yN1",
+      "size": 427162,
+      "md5": "d28fbf4e87b1650035c024b6e82bcbe0",
+      "modified_time": "2026-10-14T07:42:21.271Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M374.png": {
+      "id": "1r6Ma9ZE_70iSv7vPysHjKsT91Rkndpbr",
+      "size": 432416,
+      "md5": "23cec24ed87ec7868df11471469b66fc",
+      "modified_time": "2026-10-14T07:42:24.170Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M376.png": {
+      "id": "12mlOZPbIvQYiNp8K_O6XcFYl07hoQtQY",
+      "size": 308746,
+      "md5": "fba1cdb2afd0e600a04bcb60d1438f43",
+      "modified_time": "2026-10-14T07:42:26.857Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M396.png": {
+      "id": "1s_axmAXXdiOukN_4WLog2ZkA7uyE72ha",
+      "size": 612835,
+      "md5": "d4d754ba4fcb4359d88aca1fd074978a",
+      "modified_time": "2026-10-14T07:42:30.219Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M417.png": {
+      "id": "1CQfygIc7_fyiyhOsw98OFzzUoLA7DoTb",
+      "size": 493907,
+      "md5": "8551fdc27b3b5cf069a7f5afeb42ac42",
+      "modified_time": "2026-10-14T07:42:32.912Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M520.png": {
+      "id": "1W9uNG53MajIcKQHgh7U1QJt__6ugwLJ7",
+      "size": 742327,
+      "md5": "448ec07690582ee3811f13db26903392",
+      "modified_time": "2026-10-14T07:42:35.440Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M541.png": {
+      "id": "1i_xs5LhS5900loqq3pZF0_5s-8F-wB2d",
+      "size": 328185,
+      "md5": "d294f7515abe1f23ab5231d89e749d32",
+      "modified_time": "2026-10-14T07:42:38.278Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M584.png": {
+      "id": "1lCRTrcU0S8FolrBTWdkxbolhxfY9kbGQ",
+      "size": 3259365,
+      "md5": "eb93edc3cdb97f8f628f851f40871f6e",
+      "modified_time": "2026-10-14T07:42:40.811Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M589.png": {
+      "id": "1tibZdo82wETQ9kX-TolMtiCXqld0pk4b",
+      "size": 6216305,
+      "md5": "94933d8955b1edb80842767c536834ff",
+      "modified_time": "2026-10-14T07:42:43.985Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M590.png": {
+      "id": "1uAypRmYYkYopFgT6pY3uxuhDGOv_hw7X",
+      "size": 601185,
+      "md5": "5b8cb098ef07a5cfb5f43fdbcd6861f1",
+      "modified_time": "2026-10-14T07:42:46.961Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M635.png": {
+      "id": "1sxoVVpkodM48w5kYsnYTz0NO-IJvSdFg",
+      "size": 470138,
+      "md5": "c8f2001f361ce1109dfccf955d4b8f35",
+      "modified_time": "2026-10-14T07:42:49.818Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M637.png": {
+      "id": "1JwVGwF7HSttwjmB_I7bO6TJIL2mfPZts",
+      "size": 1523355,
+      "md5": "e66b1c7631b49eaeb94c0284dc90e79d",
+      "modified_time": "2026-10-14T07:42:52.336Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M644.png": {
+      "id": "1WsrV8XpD9MQQJHU7TZuoPRs5jWfEAgIv",
+      "size": 1036226,
+      "md5": "f4d1a16514822fb9e40ae5426dff25c1",
+      "modified_time": "2026-10-14T07:42:55.433Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M660.png": {
+      "id": "1ff-Yrx1KHBbZrJqvbUzQ9atDuQbyDqI-",
+      "size": 1442554,
+      "md5": "10d941b861bd57fc92d5ff17813b9145",
+      "modified_time": "2026-10-14T07:42:58.543Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M661.png": {
+      "id": "10_OMjSNzgdcMLBtUMAmQ6LHvQlY79FVB",
+      "size": 2172733,
+      "md5": "4dc442537147ee1b2c22d75efe1ecd2d",
+      "modified_time": "2026-10-14T07:43:01.840Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M736.png": {
+      "id": "1Hs_WS0mWTlPeonQ-hIAr4FbtftzmoDKZ",
+      "size": 368890,
+      "md5": "d69ae513197ab340b52f906ef08e404b",
+      "modified_time": "2026-10-14T07:43:04.893Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M737.png": {
+      "id": "1xlePGd_cHJn19YYvi-MhE6NEd88C4RsQ",
+      "size": 364295,
+      "md5": "5337c1dd6ed5091e201a6b9f208c84c5",
+      "modified_time": "2026-10-14T07:43:07.322Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M742.png": {
+      "id": "1Ta9nkD0NJgiRvFIe_NBpffoIQ5ygB40x",
+      "size": 333662,
+      "md5": "be04303d30c674f8dfbc888b181b68ba",
+      "modified_time": "2026-10-14T07:43:09.674Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M744.png": {
+      "id": "14bB8v2FtVsv3qu2wsm2b_1sky8f3D0J_",
+      "size": 327843,
+      "md5": "12d04a740f0c51e2200173d43d8aab99",
+      "modified_time": "2026-10-14T07:43:11.987Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M796.png": {
+      "id": "1-ZrrF8FJmlAuoJSdldP6z6sex2yvmreM",
+      "size": 429259,
+      "md5": "12ca6fbb82ed0bca958f9fc9dabbd5f9",
+      "modified_time": "2026-10-14T07:43:14.529Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M883.png": {
+      "id": "1x2Pc6QgVVWH-BhmhP4hmX89BLDjAmqAO",
+      "size": 490645,
+      "md5": "6b052731b5bec90a3a8e38454cd4a803",
+      "modified_time": "2026-10-14T07:43:17.578Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M917.png": {
+      "id": "1fShNrN457YZqjpYlNABDD791T4XaBbeA",
+      "size": 309559,
+      "md5": "b7583bd30cdd22de7b86babca14660d6",
+      "modified_time": "2026-10-14T07:43:20.400Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M933.png": {
+      "id": "1JvAfVulwBB45ae8QTBh-as9U7GDVhPa3",
+      "size": 328498,
+      "md5": "83388e6580a2d5c142b529a2e21b7bf0",
+      "modified_time": "2026-10-14T07:43:22.983Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M934.png": {
+      "id": "1ghHSnM6qLDBhvzx23ur7zyZQqg9S7IOy",
+      "size": 371316,
+      "md5": "2eeb90879691f327220b5b72a1a6a207",
+      "modified_time": "2026-10-14T07:43:25.190Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M935.png": {
+      "id": "1pggPlfHnFYlDMCRAWA00yGpiHv5AIFSN",
+      "size": 312811,
+      "md5": "54ec0c6ec56f85f215914799152877fb",
+      "modified_time": "2026-10-14T07:43:27.802Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M936.png": {
+      "id": "1XadreSyg7YFVGxG8o1WRSoT1SNV5RuLP",
+      "size": 419675,
+      "md5": "e97ff72ccb93408cea868e1921337d53",
+      "modified_time": "2026-10-14T07:43:30.331Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1012.png": {
+      "id": "1VT8znyf873qsm1ii6Oj95gIhdbggEfRY",
+      "size": 402553,
+      "md5": "384fb437525ad26e96255c39ccc6cf6c",
+      "modified_time": "2026-10-14T07:43:32.715Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1014.png": {
+      "id": "1O0g3qvWP91oNMs4iAUcgqNX27xgzjMgU",
+      "size": 367571,
+      "md5": "e3694cf4f8fcbf5eb8a1730db9a966cd",
+      "modified_time": "2026-10-14T07:43:35.065Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1024.png": {
+      "id": "1CoIBVGXnSqfAMcgUCX_zT-JG1fYTgTIl",
+      "size": 485341,
+      "md5": "47a096b4dd0bb0e31418057d9ca3ac7c",
+      "modified_time": "2026-10-14T07:43:37.571Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1046.png": {
+      "id": "1DaxF3wszO166Qoj5Wlf_6Lnyv4u0rxXn",
+      "size": 306378,
+      "md5": "5e7bf27f2e269eaaffb2c2585dc499e4",
+      "modified_time": "2026-10-14T07:43:40.006Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1115.png": {
+      "id": "1isJUz2KWqm_Vs8RVBjdaXYN8AyxE1b9R",
+      "size": 488200,
+      "md5": "daee93ac64832c0b3f4d6072617d01ae",
+      "modified_time": "2026-10-14T07:43:42.357Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1139.png": {
+      "id": "1Lg0b0eQwa9eLgBGq9ylXPjGDNTukBAZi",
+      "size": 701906,
+      "md5": "ac109fee297bab41f3c5aef585f8d6b1",
+      "modified_time": "2026-10-14T07:43:45.171Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1144.png": {
+      "id": "1blS5LQAonagzdVpNpfPgDQGESteCrigV",
+      "size": 697171,
+      "md5": "8f6dc5dc57ced100d88c23f5ca13cb2c",
+      "modified_time": "2026-10-14T07:43:48.078Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1158.png": {
+      "id": "1cXHNXgJ9ytpW8A2BWfeCD7N49HKyICoS",
+      "size": 303483,
+      "md5": "2218621902c5ce0d72980b491ff44eee",
+      "modified_time": "2026-10-14T07:43:50.840Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1175.png": {
+      "id": "14t1mIa8jukvUdvVh_Szxd8LNQ70HVotJ",
+      "size": 657891,
+      "md5": "166034038b97d19030552c52e22dbe0b",
+      "modified_time": "2026-10-14T07:43:53.194Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1179.png": {
+      "id": "1ADU8TiNOhJRFEKhQzNfCGuVu_FVT7Uw4",
+      "size": 356514,
+      "md5": "d5efaa950a2bfa40431ed5aae32b32fa",
+      "modified_time": "2026-10-14T07:43:55.750Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1180.png": {
+      "id": "12Ve0BBDY5bwJNZWt_luErO8sNt3krWJu",
+      "size": 891036,
+      "md5": "d5201f18ca5fe259039e44e87a4443d3",
+      "modified_time": "2026-10-14T07:43:58.271Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1181.png": {
+      "id": "1W1EvUxOB36CFWz_mdDiLZ4I15a164cVJ",
+      "size": 797523,
+      "md5": "0b6538adb34ba57ad4e3e5e369393726",
+      "modified_time": "2026-10-14T07:44:01.651Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1196.png": {
+      "id": "1p6R7FeZWvPCFoMtg3ft-6qqrzgtgWZKm",
+      "size": 318963,
+      "md5": "3a23278f8bcaa6b65c6c88510f5676a3",
+      "modified_time": "2026-10-14T07:44:04.383Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1198.png": {
+      "id": "1K6PV-VE6QmfxCgSE6lpLh4keZaxqFXAZ",
+      "size": 324739,
+      "md5": "634404385338e27bbb4d05c8cb8be8c5",
+      "modified_time": "2026-10-14T07:44:06.718Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1203.png": {
+      "id": "1ANJcZZk_w8Y2pFHOHSNvJuHxlCaKtU-e",
+      "size": 342314,
+      "md5": "716ad88fa6b3a6d3dbbceae8f8aa65f3",
+      "modified_time": "2026-10-14T07:44:09.281Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1205.png": {
+      "id": "1aZANgOkIUfso_z7XaOLG0zeTQfyrhql2",
+      "size": 382094,
+      "md5": "fa2c4885783f130d748a8e3483397816",
+      "modified_time": "2026-10-14T07:44:11.716Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1206.png": {
+      "id": "1qvpMI8xu7tXIZV7c0hfxAylRo61aAI6d",
+      "size": 323955,
+      "md5": "f73cf1249200950208ad03eb8b724e2f",
+      "modified_time": "2026-10-14T07:44:14.067Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1209.png": {
+      "id": "13i-J72TJj8fK5EhRRSJevjxLNm0Zq3QY",
+      "size": 338199,
+      "md5": "42e8ff4dbbea4e3a82915af58a4c5bec",
+      "modified_time": "2026-10-14T07:44:16.243Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1210.png": {
+      "id": "1AK025_Rh65-KAk5EWZc205usIpSdbmUj",
+      "size": 324268,
+      "md5": "ef8c2176a5a6f6d931b988b5560c7d29",
+      "modified_time": "2026-10-14T07:44:18.569Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1211.png": {
+      "id": "18K0WJjWv6eMd1kGb9my-2SBpGDc3RB9u",
+      "size": 316596,
+      "md5": "4e2790b92f229def0ff06d36173729cb",
+      "modified_time": "2026-10-14T07:44:21.388Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1263.png": {
+      "id": "1ZzrldKBp8zacKlR5ZYW0RdNqumCIzoy0",
+      "size": 954007,
+      "md5": "4eafb0d845f0a83d42c5909415a4293d",
+      "modified_time": "2026-10-14T07:44:23.800Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1267.png": {
+      "id": "1L6Bik2NdV5YbGP-ozfITZ4F5j1rqPPit",
+      "size": 490424,
+      "md5": "0c03221e8f541fb488152f638395b115",
+      "modified_time": "2026-10-14T07:44:27.553Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1269.png": {
+      "id": "1ihv9hMSc84EyfEjYzBzIAeLQQpSahcrI",
+      "size": 931035,
+      "md5": "6482278f414da496ef615be5d0ab6818",
+      "modified_time": "2026-10-14T07:44:30.632Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1304.png": {
+      "id": "1L14t0MrCgDBIjAx8AZjQCLcn90eu_CJT",
+      "size": 367939,
+      "md5": "374c91bbe6b62ac7cfa73d17b5a3a23f",
+      "modified_time": "2026-10-14T07:44:33.444Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1307.png": {
+      "id": "1HHMMdF8whFFMWeLps2EUFoM3FsfSnz2K",
+      "size": 379828,
+      "md5": "5bc1c8cdf54839b0cab4730c10df1db1",
+      "modified_time": "2026-10-14T07:44:35.729Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1308.png": {
+      "id": "14ytS_Hcz1AziJgGfZ4f7l4PBfZQuAczO",
+      "size": 418006,
+      "md5": "18e955ed3803a609a5ad0aba6ddf018e",
+      "modified_time": "2026-10-14T07:44:38.152Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1309.png": {
+      "id": "1GM6UUIlm8fZkru4jyobbeYZ1v1BPshpA",
+      "size": 409024,
+      "md5": "917b6fbb277fac7e3d14ca8f0ba58402",
+      "modified_time": "2026-10-14T07:44:40.547Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1312.png": {
+      "id": "14AjTFrzYD0FjgJXLTItW9MIYaSBgdQlr",
+      "size": 1591021,
+      "md5": "4c80f5adf2b3502471b03f962f71d268",
+      "modified_time": "2026-10-14T07:44:42.832Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1313.png": {
+      "id": "1fGxSPd2Zci1o-SwyipDWQ7qRinpcc6mx",
+      "size": 1604975,
+      "md5": "2ac077bd0a54172604de3332a5316316",
+      "modified_time": "2026-10-14T07:44:45.941Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1314.png": {
+      "id": "1Ze4KBDmIbqHw5h0dxhAKPWmTlWO-vCi-",
+      "size": 1203936,
+      "md5": "3042e5fb7de74d0fe9b16dc86ff11142",
+      "modified_time": "2026-10-14T07:44:49.187Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1317.png": {
+      "id": "1h4wHZX-GMizXTCUIurqHNWOjULUAzHTf",
+      "size": 852461,
+      "md5": "eb63d67b9a029839fc93461220bcfecc",
+      "modified_time": "2026-10-14T07:44:52.298Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1396.png": {
+      "id": "1mz9U0_mUZKgyh5WniP4lak1zfe8Q_jVg",
+      "size": 640645,
+      "md5": "31fa28312770e50ceb3223a67cc0e500",
+      "modified_time": "2026-10-14T07:44:55.150Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1402.png": {
+      "id": "1RSqHGzzobMYxJoQe-WP-uvlRE3BCJBcq",
+      "size": 479669,
+      "md5": "8b6042d1541f50ff315ada298f809e48",
+      "modified_time": "2026-10-14T07:44:57.691Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1403.png": {
+      "id": "1jQP8j2isFCpXMFx2DJrec4zbVJJTEyeh",
+      "size": 607660,
+      "md5": "4844e642a8bac98357770e2aa56a7aa8",
+      "modified_time": "2026-10-14T07:45:00.375Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1405.png": {
+      "id": "1TFhTp-2Tz_II28joUJT23NYD8k80JlH6",
+      "size": 321546,
+      "md5": "012b79a98d1bc437e59fe72a8136ba96",
+      "modified_time": "2026-10-14T07:45:03.206Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1460.png": {
+      "id": "1vVraya87wAyBq9-pzneXl-iN-Vs48P5t",
+      "size": 589467,
+      "md5": "e2dbea9fd3417dd4a36607061402b58d",
+      "modified_time": "2026-10-14T07:45:06.405Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1464.png": {
+      "id": "1jfcoCRiTQih_Ns4q4El3bRKJBrbFxJ3-",
+      "size": 726063,
+      "md5": "078dd6d37e19f2c9a3d7d42d888c84bc",
+      "modified_time": "2026-10-14T07:45:09.153Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1477.png": {
+      "id": "1bP4RRkYf_q_tUoPuWcwvFSmrRnx2PA6L",
+      "size": 555936,
+      "md5": "f9a8b0488911dfe387b7a5f3fd203c29",
+      "modified_time": "2026-10-14T07:45:11.877Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1505.png": {
+      "id": "1iOtwGmRY2dW2vxM-sRtpm-1_OL30PDjd",
+      "size": 344635,
+      "md5": "959ae8c3766a52d506a6fc6bb8e42a4b",
+      "modified_time": "2026-10-14T07:45:14.416Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1506.png": {
+      "id": "1ebzETI12GyK4UXSzaS-L-f33y3fIBEeW",
+      "size": 374491,
+      "md5": "9cf7a94a687998246e899227a748669d",
+      "modified_time": "2026-10-14T07:45:17.033Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1508.png": {
+      "id": "1AoBF8TpBWZdM362Jy3FZ3LfJgc4SXkuZ",
+      "size": 312652,
+      "md5": "92ce818821c2ec38e86a62f52dd1363f",
+      "modified_time": "2026-10-14T07:45:19.349Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1509.png": {
+      "id": "1nG94hZGhtf-2pVB6zB4jy-LJ1pIRAZ_u",
+      "size": 345010,
+      "md5": "ac7031d1ea422199d9a5ce9b30588914",
+      "modified_time": "2026-10-14T07:45:21.934Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1510.png": {
+      "id": "1g_NGFb1oPg1hPQ44OPEH6OqNLLW3qeB5",
+      "size": 314890,
+      "md5": "82df84d5ad4ad7af94d0512af81cfee3",
+      "modified_time": "2026-10-14T07:45:24.433Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1533.png": {
+      "id": "1jbzYIJG2SLL0KRt5LeyYb0Vj1a_2luhQ",
+      "size": 1218214,
+      "md5": "fd2e94f5d06c4dd828b9678cf8c63f99",
+      "modified_time": "2026-10-14T07:45:26.728Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1535.png": {
+      "id": "1_r1-NL3TZLUyk85aTTu6-8B6FnO3mCVm",
+      "size": 1523440,
+      "md5": "779a028097fa161c50a16daceab25179",
+      "modified_time": "2026-10-14T07:45:29.901Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1537.png": {
+      "id": "16AC8UNL_K9JJMTmBE6RZe0pkVJHglp_A",
+      "size": 1543407,
+      "md5": "3dcb367aba82145eb958ca24884a8779",
+      "modified_time": "2026-10-14T07:45:34.204Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1541.png": {
+      "id": "1EOjIBuQIGs1JKcrIuR1RvqEJu8U-r6WK",
+      "size": 1373977,
+      "md5": "28705e777c1342df265ae61660ff8292",
+      "modified_time": "2026-10-14T07:45:37.400Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1543.png": {
+      "id": "1fwufglUUdASyxz0PP3l3OCxUoPD28Qmx",
+      "size": 1593863,
+      "md5": "5ed67e000c66608ad999f14f8437d0c9",
+      "modified_time": "2026-10-14T07:45:40.347Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1547.png": {
+      "id": "1ytOmfFl6nF-vneaJKh9cC-BOx6a6Ji5x",
+      "size": 2071908,
+      "md5": "ee5c14a90d006d24a6ad8b514771e25f",
+      "modified_time": "2026-10-14T07:45:43.900Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1548.png": {
+      "id": "1S_fMVKUY8bdUG7JrXHVkpyg84werr91Y",
+      "size": 1044554,
+      "md5": "0b888a2ee8c9669be735353610f01b11",
+      "modified_time": "2026-10-14T07:45:47.051Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1556.png": {
+      "id": "1PjDkYiouH3qSiapeMzaJOuaeEJ7e-ACL",
+      "size": 449585,
+      "md5": "6b82f639f52fe01bc3a612ff3a89fa32",
+      "modified_time": "2026-10-14T07:45:49.916Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1557.png": {
+      "id": "1gD3ZwroAnqPgLZMhzRPDrN99Y4O0W3CI",
+      "size": 451291,
+      "md5": "f4c9bbddd1bec72800a5447e107e7168",
+      "modified_time": "2026-10-14T07:45:52.335Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1563.png": {
+      "id": "1GoliBgEpNvWdPDMuf7fzMwWlHaNgIqFg",
+      "size": 353450,
+      "md5": "bea3b6e7a5f5dd067c1b9242aa433e8c",
+      "modified_time": "2026-10-14T07:45:54.792Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1564.png": {
+      "id": "1MSLvlE48xR_ih_qHS3-9uFDS_O8Z9q0-",
+      "size": 382456,
+      "md5": "aabe7ee09c3c7e24e8b21b698033599d",
+      "modified_time": "2026-10-14T07:45:57.211Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1567.png": {
+      "id": "12SLZ6uDZdSn7kYmIPkqjAgNrbEaPb9-1",
+      "size": 2679355,
+      "md5": "bf056940cf608f58792487b8c6f4eff3",
+      "modified_time": "2026-10-14T07:45:59.978Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1572.png": {
+      "id": "1SG2fQzjLse9ztj1DB8Lo2wFV4VO30CSH",
+      "size": 4076487,
+      "md5": "8fa30105b091f88aa79503e032808ad8",
+      "modified_time": "2026-10-14T07:46:02.933Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1579.png": {
+      "id": "13lE6Llps9R80NYTjfJHyentldR7gdvU6",
+      "size": 341317,
+      "md5": "3c2b30f124913d68e9801e754bd13bec",
+      "modified_time": "2026-10-14T07:46:05.946Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1580.png": {
+      "id": "1rph59NRYmQyNsWNABWPYdc_PrPsqKje1",
+      "size": 352041,
+      "md5": "42e9b8fa9d94633fe709679b405aee21",
+      "modified_time": "2026-10-14T07:46:08.581Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1581.png": {
+      "id": "1ve9SwqwPbxoyDUnHkJsOClwUEzUhRD2c",
+      "size": 332061,
+      "md5": "7c1b548e63848e27c354ed3b9d1acb2d",
+      "modified_time": "2026-10-14T07:46:10.896Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1582.png": {
+      "id": "1QbqypaK_2K6be2aQZWXtdT_E1QaLcLib",
+      "size": 343706,
+      "md5": "4dbeaa45e1b83ea815fea2fbc0663f53",
+      "modified_time": "2026-10-14T07:46:13.351Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1590.png": {
+      "id": "1jfCGJjsj0OI2BUVEz8atAsj4crOr56Tj",
+      "size": 353601,
+      "md5": "747fdedc1d6aff2e1953fefba2b87407",
+      "modified_time": "2026-10-14T07:46:15.594Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1591.png": {
+      "id": "1xjbxsWN-uTW55Oyk-hFlQ7Dx0CSvMxmw",
+      "size": 376431,
+      "md5": "51567250aa44b0d19bbc8475df16f13c",
+      "modified_time": "2026-10-14T07:46:17.931Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1592.png": {
+      "id": "1o584gvD2SYf8hzgInZzNy0ZGSqLiGyC-",
+      "size": 401450,
+      "md5": "7dae6e1f77f7635681e0908c791a0def",
+      "modified_time": "2026-10-14T07:46:20.295Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1598.png": {
+      "id": "15h5rfrU7r4IgUu3BryfYm5tpweU38eDn",
+      "size": 412916,
+      "md5": "bb12e29cd45245f2f66baa645d0483a2",
+      "modified_time": "2026-10-14T07:46:22.881Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1599.png": {
+      "id": "1hEzWXrsJb0VVLPCsTeN7iEPPVBLdNDLX",
+      "size": 322325,
+      "md5": "52be2e84deafc42a1c58c68e6df8a8cb",
+      "modified_time": "2026-10-14T07:46:25.376Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1600.png": {
+      "id": "1OWcZBsrD8eWpvXQkVzjSCzfMRJC0WiON",
+      "size": 332900,
+      "md5": "95dbb81216e7ef4c643b1d64fa62afa7",
+      "modified_time": "2026-10-14T07:46:27.730Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1603.png": {
+      "id": "1rT7NDsAWM-pEgnE1G-i0_nCQZxWpmPG-",
+      "size": 404331,
+      "md5": "581af36ff1ed34ae7f1d9ea530d5f6cd",
+      "modified_time": "2026-10-14T07:46:30.136Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1604.png": {
+      "id": "1fEiqsGaf_kAOP_0UUkCEtIRFToAtsxhc",
+      "size": 425886,
+      "md5": "25ee308b9c3f3c6866005d6010d4bb0b",
+      "modified_time": "2026-10-14T07:46:32.729Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1630.png": {
+      "id": "16SkJ0wMIjL1COFzDfHUJ2I9pjQnQhCNw",
+      "size": 716478,
+      "md5": "c85b5adefd08fff425a479cf81d71471",
+      "modified_time": "2026-10-14T07:46:35.098Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1632.png": {
+      "id": "1i387nYi5sBBWoKUcBtho1WONDLY24frF",
+      "size": 1198714,
+      "md5": "7532ab00bdfd185406399dbae377b018",
+      "modified_time": "2026-10-14T07:46:37.669Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1634.png": {
+      "id": "1pdm84-ppDEFT3iX_ZfckKB7vtbKfp1qR",
+      "size": 709447,
+      "md5": "7fb619cdc8d239b2381f6056c06c6b8b",
+      "modified_time": "2026-10-14T07:46:40.725Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1639.png": {
+      "id": "1NNUx8RuilHaSd3ox_qbfnxNymyV2U-0r",
+      "size": 1611448,
+      "md5": "11555d5de451a3842dacdedf859edc52",
+      "modified_time": "2026-10-14T07:46:44.009Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1640.png": {
+      "id": "1YOaxFdVLzrrNG3U8S6Z-swlDAAqQoG34",
+      "size": 335746,
+      "md5": "5bd6646b32aaf60ce555c96083836e2c",
+      "modified_time": "2026-10-14T07:46:47.510Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1643.png": {
+      "id": "1nfxqE57-WiZbZoVgT96pinjRJK9al9VG",
+      "size": 2732155,
+      "md5": "4cef1cf29f09b8505c1c5d9cd358f161",
+      "modified_time": "2026-10-14T07:46:49.960Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1644.png": {
+      "id": "12V1k4xC6W79U3OQaFiyf2VuuujdZTaZp",
+      "size": 447529,
+      "md5": "a6d6e5f8bb6b4010a0a9556759ad4deb",
+      "modified_time": "2026-10-14T07:46:54.269Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1649.png": {
+      "id": "1QNV946D9Tkj0CXlS96BN24ZH43nTCpvp",
+      "size": 612458,
+      "md5": "f6e29ea3cbf78c1af5e779720ad79f79",
+      "modified_time": "2026-10-14T07:46:56.692Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1650.png": {
+      "id": "1yha71GGTmqZe0kk4b3_4XZR2ndRDMzxx",
+      "size": 599677,
+      "md5": "f36680da5c74dd786e27c43d9472e492",
+      "modified_time": "2026-10-14T07:46:59.320Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1653.png": {
+      "id": "1RJjW2zIH8Ddwa7T6GvmuvZx9H0yhwfKZ",
+      "size": 479910,
+      "md5": "e0dde04061df4dbd830f984fcb930f54",
+      "modified_time": "2026-10-14T07:47:02.686Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1654.png": {
+      "id": "1Z0JxWXTKy4_hzXOTpJte0t_mRNvNFV81",
+      "size": 443197,
+      "md5": "5f52e811122a1954cfad15ddcfb04112",
+      "modified_time": "2026-10-14T07:47:05.223Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1671.png": {
+      "id": "1y6fHx5K9zGXz1RoZJBQEaSROTg-0N70-",
+      "size": 1572306,
+      "md5": "e2206d62280817c4bfd4452e448976d9",
+      "modified_time": "2026-10-14T07:47:07.657Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1710.png": {
+      "id": "1jgBlkldJi4Q98aTItOzkvA9QBu1Z9Qu7",
+      "size": 362819,
+      "md5": "50909e171fec11c324ed8e1a2b268d92",
+      "modified_time": "2026-10-14T07:47:10.560Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1726.png": {
+      "id": "1ThwtYO7Dif3fSH9ve2ROpQNIoSNElu3e",
+      "size": 316015,
+      "md5": "f4ea5bb4243a936609c6337f3773a42d",
+      "modified_time": "2026-10-14T07:47:12.869Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1730.png": {
+      "id": "160Ym3gUEF4Pl2ET46xbCal5AbXLxgMPk",
+      "size": 375979,
+      "md5": "c4bdd2cd7d06e5a0196f319e2c0ac3eb",
+      "modified_time": "2026-10-14T07:47:15.168Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1757.png": {
+      "id": "1_QLYtIk0Tsj3f2kn3F6I1J3-ng9bXmqy",
+      "size": 2160630,
+      "md5": "3aef89f71a597db56fdee4abd743e18b",
+      "modified_time": "2026-10-14T07:47:18.067Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1806.png": {
+      "id": "1bQi94N1dD96-tPhdAp008YGDGrrASaxj",
+      "size": 790564,
+      "md5": "c365288c021e5abb069047fe373e2d65",
+      "modified_time": "2026-10-14T07:47:20.783Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1823.png": {
+      "id": "168mV_LIKflIfBpWDq01kmPfAYgrBxaTD",
+      "size": 552093,
+      "md5": "935ed7f3eb1b2643c426a490719d663c",
+      "modified_time": "2026-10-14T07:47:23.580Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1831.png": {
+      "id": "1zvfNzYy74doEhhNdOlJAQfdOpMNhZYf7",
+      "size": 1318239,
+      "md5": "875333a3273e6b138830081afb347d99",
+      "modified_time": "2026-10-14T07:47:26.308Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1849.png": {
+      "id": "1kQ11SIwiyXUX32oZ68muVd-amEipEZi2",
+      "size": 345621,
+      "md5": "fee8df8e8eb4685d233bd303e7c89b8f",
+      "modified_time": "2026-10-14T07:47:29.354Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1861.png": {
+      "id": "16yrq6_5kuZM8-xtzt9Ypr7jEtEm5LkBe",
+      "size": 383231,
+      "md5": "e7b4b2fb70254685e468b864aa68c88b",
+      "modified_time": "2026-10-14T07:47:31.825Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1901.png": {
+      "id": "1hYUTc1jlTCNw5UGq71W7B-LDsIQIKu0C",
+      "size": 480898,
+      "md5": "86f772afc8d936787bc66b8339a5bbcd",
+      "modified_time": "2026-10-14T07:47:34.318Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1903.png": {
+      "id": "19qQ4lhDY-4TGPkcodYmU4Xrpz1uFudxQ",
+      "size": 374025,
+      "md5": "1b0014a547ce6163d4486055e0a9dee9",
+      "modified_time": "2026-10-14T07:47:36.810Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1904.png": {
+      "id": "15SA8azte8d4tLUvcRhqwcpA6dT2imEzw",
+      "size": 1004920,
+      "md5": "b5a0815e348c1bfe06497ba3264a5a2c",
+      "modified_time": "2026-10-14T07:47:39.068Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1905.png": {
+      "id": "1mwzGdDEODQNgevjMRZ3hnxTxMdtQMZJm",
+      "size": 978723,
+      "md5": "7e4e0902d580c6e30b0c7420b6109b2b",
+      "modified_time": "2026-10-14T07:47:42.272Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1907.png": {
+      "id": "1SsSwmmh0WXhc4vsnwW_CemhpZKGMP70g",
+      "size": 851537,
+      "md5": "28d076d0feb4f2e2df892902972f533c",
+      "modified_time": "2026-10-14T07:47:45.006Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1918.png": {
+      "id": "16pW9_sAGH9_i48JrXbSmnKm2B3zISO-U",
+      "size": 1081775,
+      "md5": "0ebf66bfd02a975b78436fd27c634156",
+      "modified_time": "2026-10-14T07:47:48.257Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1969.png": {
+      "id": "1zP3E9_6GQzQ4kYbVlwfugnL-Rtiuaxkn",
+      "size": 1428717,
+      "md5": "6ba2a8e27506e1d59468e520cb0ed915",
+      "modified_time": "2026-10-14T07:47:51.541Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1982.png": {
+      "id": "1ML0wJ_YYhm0goO6LMhl9Iyvvd7kCqRCi",
+      "size": 1565505,
+      "md5": "a16d53431cfd57a09899c6fb1e5a3922",
+      "modified_time": "2026-10-14T07:47:54.977Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M1996.png": {
+      "id": "1dWyYtpRa46bi-kPAe8adjAuPOuYV-k0M",
+      "size": 322911,
+      "md5": "6e10d15a946839c4d1fa06625df8eef8",
+      "modified_time": "2026-10-14T07:47:57.895Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M2198.png": {
+      "id": "148jz2Y2__BQGH7On01uN-j0-jz6FF39Y",
+      "size": 325810,
+      "md5": "18c01cd5db3858843208c35e382f85b8",
+      "modified_time": "2026-10-14T07:48:00.236Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/M2394.png": {
+      "id": "1-7GzkEL8xB-UwkeubRu6W6PKrC9_qu2g",
+      "size": 306417,
+      "md5": "93698f7f1815f1dddeb950633dc62f6e",
+      "modified_time": "2026-10-14T07:48:02.363Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/manifest.tsv": {
+      "id": "18dEwesrYc1Ypw_kxFaixf-nVp-dLZC9T",
+      "size": 39221,
+      "md5": "ba4cae7a4ac334e5d92d4c42649dde85",
+      "modified_time": "2026-10-14T07:48:04.634Z"
+    },
+    "mdc_split_heatmaps/brain_20261014/AD_Control_MDC_split_triangles.pdf": {
+      "id": "1B1-7vY6cIU6tg49LwMqknoQO5JOPVKtz",
+      "size": 36314940,
+      "md5": "5e4fb5e228ef2ad4b555c0536fac215e",
+      "modified_time": "2026-10-14T07:48:07.422Z"
+    },
+    "mdc_split_heatmaps/catalog.json": {
+      "id": "1LvRDk_PxdcRGnxxPa-YkPIptoUM0HSeh",
+      "size": 596,
+      "md5": "37d8d06d6ff116f42cbdefc0e1549a7a",
+      "modified_time": "2026-10-14T07:48:10.531Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M10.png": {
+      "id": "162RzbUlgz9ubpv5g_q2Pm1bC80BenZlc",
+      "size": 835915,
+      "md5": "49cba91fa000abddfb275e2565811f38",
+      "modified_time": "2026-10-14T07:48:16.854Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M11.png": {
+      "id": "1DR0k0s2H9jdi6xH20i92EqfQ0JzS4I_e",
+      "size": 927539,
+      "md5": "9f60e4e80dc6070864ed6852fc63a7f5",
+      "modified_time": "2026-10-14T07:48:19.606Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M18.png": {
+      "id": "1Wi0pEHBfu7_Yg8x9vu843yu7nYonwNb5",
+      "size": 424532,
+      "md5": "48581c1fdd08a5023f86e52b0140d42d",
+      "modified_time": "2026-10-14T07:48:22.379Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M21.png": {
+      "id": "1wOC8xrGybqRGg-XJq68yqqh6e5JbVaj0",
+      "size": 622782,
+      "md5": "7efc8cd0ee2795eef263ebccd774ef1e",
+      "modified_time": "2026-10-14T07:48:25.150Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M28.png": {
+      "id": "1sQtSxwR8CjCAOUm9j_DxqfdA2E1bLzAg",
+      "size": 1076672,
+      "md5": "48ae104ff24850ac614176b6e523b6cc",
+      "modified_time": "2026-10-14T07:48:27.872Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M31.png": {
+      "id": "1Y77OCDycK4PTTRH6buz5Jj_ASxMZb8gl",
+      "size": 1317838,
+      "md5": "b23e0809f8a5a984a9f8cfe5f6c66ac9",
+      "modified_time": "2026-10-14T07:48:30.880Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M34.png": {
+      "id": "1fBLSOMwbfathLf6EUtWHHX9xLYTfGw0_",
+      "size": 1086320,
+      "md5": "bef4b3c0597c4d2d1a6b150572817be1",
+      "modified_time": "2026-10-14T07:48:34.099Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M35.png": {
+      "id": "1TaTIpsOKdSkoYOlLPq7v_0nspBLS3FcG",
+      "size": 931428,
+      "md5": "84f5edddea66af0d8b0487d1a9a9891e",
+      "modified_time": "2026-10-14T07:48:37.127Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M54.png": {
+      "id": "1ZukER-oMVo3K1V2k8vOB6vCbBOXS5J3w",
+      "size": 752460,
+      "md5": "addf3d0510f69a3ee2a229c492b6e95c",
+      "modified_time": "2026-10-14T07:48:39.988Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M56.png": {
+      "id": "1WQyz-jJKLhdI5vFhZb7iBr5ASET7wER6",
+      "size": 361137,
+      "md5": "bd59c6809a5bd522a417e106e895dddf",
+      "modified_time": "2026-10-14T07:48:42.651Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M60.png": {
+      "id": "1vSqSDylgjWGGTEkWSapGppyNY9vqgrYH",
+      "size": 778408,
+      "md5": "2e131f491e2084e6f8cf2384dfaaf3d0",
+      "modified_time": "2026-10-14T07:48:45.040Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M68.png": {
+      "id": "1L0yeLN0aru5CSJP9AMtM9-Ae128PV5oL",
+      "size": 460844,
+      "md5": "8dcb796f31a4abf2a7bf800f3452cdd0",
+      "modified_time": "2026-10-14T07:48:48.052Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M85.png": {
+      "id": "1jZKpsu1FT-5UxHReqtfUlT_qLsbiKLoD",
+      "size": 687248,
+      "md5": "365f716623ea4f8d354393f1014d8da6",
+      "modified_time": "2026-10-14T07:48:50.462Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M86.png": {
+      "id": "1P6mcK8KEEqPkBhvHPETcWmYTYRuHKW77",
+      "size": 820932,
+      "md5": "81615c0c13dd992a43c8e15c0bfa13e4",
+      "modified_time": "2026-10-14T07:48:54.273Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M88.png": {
+      "id": "1Tz2KaEO7U10IDhMuPxs2XcMgjT1__61i",
+      "size": 576818,
+      "md5": "889f34020a78c4abae27eb84e63b16b3",
+      "modified_time": "2026-10-14T07:48:57.529Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M89.png": {
+      "id": "1l3hB1nGHatBOiHyCGsMb_3gsPf_firNQ",
+      "size": 347006,
+      "md5": "a760870ce41dcc4054f8b3ac0d20dc81",
+      "modified_time": "2026-10-14T07:49:00.318Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M91.png": {
+      "id": "1UevBDlC2_rDaf1FP3mW6DT92pkD85Bcv",
+      "size": 410767,
+      "md5": "aa644137aef4884ac4189d620e4ff508",
+      "modified_time": "2026-10-14T07:49:02.816Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M92.png": {
+      "id": "1zF_7rup-OqOp9zcjrF1Tv4qJyT5p6jAA",
+      "size": 463333,
+      "md5": "2cffbe6f0a306bc83bf475be1dde1b32",
+      "modified_time": "2026-10-14T07:49:05.363Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M94.png": {
+      "id": "1URqQLX0M0Xaq90no50CcMdjaB468qRns",
+      "size": 464907,
+      "md5": "54475fcf9cfa4a35d97770f8f1a2095e",
+      "modified_time": "2026-10-14T07:49:07.888Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M96.png": {
+      "id": "1vyTNzHm46XWaVGXARjh7viA4-k6R9QS3",
+      "size": 503992,
+      "md5": "0af6f59c7ada983a631689e0b4d5adca",
+      "modified_time": "2026-10-14T07:49:10.724Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M97.png": {
+      "id": "1QBYHAv29xwd3hJqhV-p9vPrMug7_B0XG",
+      "size": 553792,
+      "md5": "903c8bc077860c08a0696039c1ed048c",
+      "modified_time": "2026-10-14T07:49:13.239Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M99.png": {
+      "id": "1EpYyTqC9dnzVRZRzHaYpartekvyc41NC",
+      "size": 543065,
+      "md5": "b2fbd0b5259ae87818050da99c93975a",
+      "modified_time": "2026-10-14T07:49:15.712Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M101.png": {
+      "id": "1XG0fSh2u9OuMJdx95muaZRiC7p5Za_g7",
+      "size": 526065,
+      "md5": "9b07120445bb395684ea5d58f9c348ea",
+      "modified_time": "2026-10-14T07:49:18.362Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M102.png": {
+      "id": "1LWO7sPYDsVt7iXD5U1QmeYYUgonbNoEd",
+      "size": 438932,
+      "md5": "b122f74e25d9999d8df65a393acec913",
+      "modified_time": "2026-10-14T07:49:21.078Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M103.png": {
+      "id": "1FJN8ooMWjbx3QsshhWeB-uvU02GqJgcy",
+      "size": 410531,
+      "md5": "9f8843a43302fb26e34313ad4bbf2e64",
+      "modified_time": "2026-10-14T07:49:23.586Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M104.png": {
+      "id": "1qByI4nE-zBnA4beqLc4_DW9O-HXW3o-c",
+      "size": 440598,
+      "md5": "d404d7ad66be6856b7777d96168ca28f",
+      "modified_time": "2026-10-14T07:49:26.276Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M105.png": {
+      "id": "1VMhwqwo4nt6ufURBkXO0p1_hCyqu58cp",
+      "size": 536019,
+      "md5": "94c4729f9b4a7d832bdc2e16f1a9ff4c",
+      "modified_time": "2026-10-14T07:49:29.025Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M106.png": {
+      "id": "1cfdeLBCeV0AwVBYnKNDqGkN_rEIBXG3w",
+      "size": 491055,
+      "md5": "b4ede97b188eb8374f8f7b4d69e8a09f",
+      "modified_time": "2026-10-14T07:49:31.582Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M108.png": {
+      "id": "1nJVJmtObobyp1oTdvpnKqMMVA2rV4Xr4",
+      "size": 328333,
+      "md5": "fa6bd51dc81939ceb0f4e827f21460d2",
+      "modified_time": "2026-10-14T07:49:34.166Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M110.png": {
+      "id": "1IRNwn0M3rxHPuaokFwjNBy6OrF9Sts50",
+      "size": 412146,
+      "md5": "56223fa8dac75a1fb5fa525e0a31c9ff",
+      "modified_time": "2026-10-14T07:49:36.368Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M111.png": {
+      "id": "1SGlYNZxb8iSqP4JvJLWyn-TzmXTFUj2h",
+      "size": 551442,
+      "md5": "0295c5833225807500cc667fd999b12f",
+      "modified_time": "2026-10-14T07:49:38.811Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M112.png": {
+      "id": "1UWHjqE7_VioU9x7NcWmJTOYw_DEoyUC5",
+      "size": 451009,
+      "md5": "d6a297b1055b9b485d23d9b635670961",
+      "modified_time": "2026-10-14T07:49:41.518Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M113.png": {
+      "id": "1Ky7ylj7epGulj8rntWwsTPI2WfshjGv7",
+      "size": 605410,
+      "md5": "b0f6c1bc747fa44e40b930f3a9428cd7",
+      "modified_time": "2026-10-14T07:49:44.068Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M115.png": {
+      "id": "1tCuLx7DlpMUe_Q13_btYz4m_lD0qxZK0",
+      "size": 724819,
+      "md5": "479c7ee50b070fb0643698561a2104c0",
+      "modified_time": "2026-10-14T07:49:46.944Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M116.png": {
+      "id": "1u-kX-ByLYDUwbO5ETi0bBz3jgBXxQe_R",
+      "size": 707360,
+      "md5": "f75a921ddb0b5a59e81d915209548245",
+      "modified_time": "2026-10-14T07:49:49.445Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M117.png": {
+      "id": "1Uytcu7TAk3F2TiXgM9SjCzMUjYEm03h0",
+      "size": 506323,
+      "md5": "509ba9eb45dfea71ac63e3bab5064dc9",
+      "modified_time": "2026-10-14T07:49:52.181Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M119.png": {
+      "id": "1Q8KW3Q2hTHvdb6QeWGFnmeAqc3EbTzqc",
+      "size": 920944,
+      "md5": "75495a44eb84db334790880bfb738d6d",
+      "modified_time": "2026-10-14T07:49:55.428Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M121.png": {
+      "id": "15JJgtAeKxsDnyTEJKCmTswu3mD3paSg5",
+      "size": 1082850,
+      "md5": "5fea6e8281e30cfaf48bb140ca0be62b",
+      "modified_time": "2026-10-14T07:49:58.695Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M122.png": {
+      "id": "12KgZPcT5W3CVT38ts8YBpw_AYRt1FBAD",
+      "size": 709366,
+      "md5": "6b1f92b67e43c1e79ebfe9000c33aaf4",
+      "modified_time": "2026-10-14T07:50:01.590Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M124.png": {
+      "id": "1KlNMl5K8o07qFJC3bCyjcj32K28x5ZzD",
+      "size": 346327,
+      "md5": "2ed678f7d08c4cebaebb0c7c5dc4e07c",
+      "modified_time": "2026-10-14T07:50:04.364Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M354.png": {
+      "id": "1ORufm6e0tKc9u7Tv3a7vA8NsYcWmq7X_",
+      "size": 324071,
+      "md5": "2e6c0b3a316883a08b28951166ad40d0",
+      "modified_time": "2026-10-14T07:50:06.781Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M355.png": {
+      "id": "1sj2ZulAdF9WzSZokaC_8p_fIIcYUd_sP",
+      "size": 303289,
+      "md5": "1f3fd8cb711f67156c2b155101e038f6",
+      "modified_time": "2026-10-14T07:50:09.261Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M356.png": {
+      "id": "1YEP1oCZvu2OudO-c19nv7MeHldqoEubh",
+      "size": 319481,
+      "md5": "44542a1db5c2519789ed2203dd4cfa38",
+      "modified_time": "2026-10-14T07:50:11.640Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M416.png": {
+      "id": "1CuhFcAdoQkOruzJpPmc6YjFd6l6t4uIP",
+      "size": 317711,
+      "md5": "2f6bcc4f83baa3430326b9252776ea86",
+      "modified_time": "2026-10-14T07:50:13.945Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M417.png": {
+      "id": "1pwZp_JckGcMRFlbxaJ27sTWRoIl3qUhe",
+      "size": 324855,
+      "md5": "8be2f73a8e1a5c3a57fbee6c5d35c984",
+      "modified_time": "2026-10-14T07:50:16.331Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M418.png": {
+      "id": "1Gr0Hs3AWMh5jZQdIj9p2Sl3fRoGOlH9f",
+      "size": 322531,
+      "md5": "8d5233f2f7fd930638ff9544bdb33d31",
+      "modified_time": "2026-10-14T07:50:18.672Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M419.png": {
+      "id": "1tRBVb18hKyVjrO9TmmlCH4O0z4KllpNa",
+      "size": 347900,
+      "md5": "cbb38d0c7aa9c0e3c8852bdf608243ba",
+      "modified_time": "2026-10-14T07:50:20.852Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M421.png": {
+      "id": "1WX8Te76gFwfmeTFhz3sTTRh1BWNRK47C",
+      "size": 330249,
+      "md5": "8e5ffb285fef4565639417b6880e98e0",
+      "modified_time": "2026-10-14T07:50:23.099Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M422.png": {
+      "id": "1qX9vpI89N-_Aa5jBUjJ6qqNkCGqtHdOW",
+      "size": 315253,
+      "md5": "d30ae1308551d4173cdabf0bd22f7133",
+      "modified_time": "2026-10-14T07:50:25.329Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M424.png": {
+      "id": "17kshQNuT2WIkYOR7cBzxb_tR6-LD7wXx",
+      "size": 337277,
+      "md5": "ee9b29d37cbb0794fef6832f9332f1db",
+      "modified_time": "2026-10-14T07:50:27.470Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M425.png": {
+      "id": "1nu1Vmx-qOUdt3TJXC5uGrM-LFDVDXAFW",
+      "size": 342476,
+      "md5": "6189195cb696dcae7d1cec7ebaf515aa",
+      "modified_time": "2026-10-14T07:50:30.390Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M433.png": {
+      "id": "1-UhsF4wJNeGymJ4ffeZc83_DVr-TsGie",
+      "size": 357028,
+      "md5": "da9d31dceafdb7bac9a3a44ed482089d",
+      "modified_time": "2026-10-14T07:50:32.771Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M435.png": {
+      "id": "1qhehfD4MW9IIvpi0XEXM-t4ddXwNWBtt",
+      "size": 384282,
+      "md5": "d86f0b47177a73a6d77ccefab7dd0fac",
+      "modified_time": "2026-10-14T07:50:35.132Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M436.png": {
+      "id": "1UkLWVVCiL1VPwm7LHRz4yJmycm89ta21",
+      "size": 320990,
+      "md5": "312b3faa73d7498d1f676926ef83a2de",
+      "modified_time": "2026-10-14T07:50:37.464Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M442.png": {
+      "id": "1aCHR1_BB1bzw80Gp2QZpjMnomd1I-HkQ",
+      "size": 344225,
+      "md5": "19826d348241de0106ea296b0bc9f919",
+      "modified_time": "2026-10-14T07:50:39.899Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M447.png": {
+      "id": "1-TeC-0i9ITgDkCHIikRiRTukSVsZhEoB",
+      "size": 532731,
+      "md5": "452dcfdb28e48adb080f3edd699ec467",
+      "modified_time": "2026-10-14T07:50:42.622Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M450.png": {
+      "id": "1cp6WPxKBdkib5LRca3U8qVEtIHz9hHjy",
+      "size": 714610,
+      "md5": "fd5de84cfa392d74a6aede8d9189cbac",
+      "modified_time": "2026-10-14T07:50:45.943Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M452.png": {
+      "id": "1t9bR5E6VBtbWpmGJmy83_euY4lHBdJXI",
+      "size": 358600,
+      "md5": "e1f5f08cae300846bc78ad701a6044d4",
+      "modified_time": "2026-10-14T07:50:48.583Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M456.png": {
+      "id": "1UtvMLRK99d8OZTH3cF5nzMqw5WuwTBt6",
+      "size": 529363,
+      "md5": "1f5d0fa1a174f33f8327f48132a48d71",
+      "modified_time": "2026-10-14T07:50:50.913Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M457.png": {
+      "id": "1_q7Jaacgz69P0_rMgEYc7rMD5stTtNsc",
+      "size": 438220,
+      "md5": "77ed1d2d5d4dbb1da5440295d817fb41",
+      "modified_time": "2026-10-14T07:50:53.485Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M461.png": {
+      "id": "1y8xC5nWxzz3K60zw0VzplOhjMmQz53gJ",
+      "size": 357090,
+      "md5": "d680713a7029ef9ffcda2a99234a47b4",
+      "modified_time": "2026-10-14T07:50:55.945Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M462.png": {
+      "id": "1GzA_thc78mQz8ASGV7yd9EgDnx-KSx-x",
+      "size": 447698,
+      "md5": "fc9dfc4358af87ea1e2c70837c3c3977",
+      "modified_time": "2026-10-14T07:50:58.144Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M463.png": {
+      "id": "1eOBhQ4QWP5gLuJin75AJ8BuTcwPBWuAw",
+      "size": 372263,
+      "md5": "37d769b0f44cfef3e63d60ccffeddd1d",
+      "modified_time": "2026-10-14T07:51:00.704Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M468.png": {
+      "id": "1Dl4oyBJUHZFjEgKI7XNSt1l8_sgHRgCV",
+      "size": 485752,
+      "md5": "8b779f861e16270e05a3d47e77a5df40",
+      "modified_time": "2026-10-14T07:51:03.211Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M469.png": {
+      "id": "1WBBl5xfbJNXiWnG9foB1ww-vjtOjOOgo",
+      "size": 542725,
+      "md5": "5e9358f3a747bbbc4227a9396356d892",
+      "modified_time": "2026-10-14T07:51:05.984Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M470.png": {
+      "id": "1DptgetZXEgV25VyB3HV1IWV4igFsO_Lr",
+      "size": 327769,
+      "md5": "de4b94f5de499c700b6c4c4ed38977c6",
+      "modified_time": "2026-10-14T07:51:08.594Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M474.png": {
+      "id": "1c3czXbNlxMsXO8IE5EnO4Un2FN1G1vM-",
+      "size": 336733,
+      "md5": "324d99465c2af6e10a8679d3c197fa7f",
+      "modified_time": "2026-10-14T07:51:11.314Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M484.png": {
+      "id": "1IIkMd9H7E0fCwyyx39E0pbC5fZ0KSvCn",
+      "size": 344728,
+      "md5": "c92fcac6aa288fc3bbfdd8b0875f84d1",
+      "modified_time": "2026-10-14T07:51:13.921Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M486.png": {
+      "id": "11jY76V568nIIzm6tJ74LjQ9ssd58w9ya",
+      "size": 332267,
+      "md5": "23a69bb1b51217289c37eeafb7db19e4",
+      "modified_time": "2026-10-14T07:51:16.423Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M487.png": {
+      "id": "1ROPmh6an8ZZkVo11gFlyT61zd4GWdaUU",
+      "size": 350616,
+      "md5": "a8899f6c22687527093941a8f9a5a7cc",
+      "modified_time": "2026-10-14T07:51:18.609Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M488.png": {
+      "id": "1Xct9qLdlntI59mh1OdPQFvk2vwKTHTQN",
+      "size": 324739,
+      "md5": "53dde312c4b926eeeb88e9c4c1e5755a",
+      "modified_time": "2026-10-14T07:51:21.065Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M489.png": {
+      "id": "1HYBXJgqCub7cvgbxXWjBgT0YWTSiQ9tk",
+      "size": 330291,
+      "md5": "23f3d2ef13d7b01c02cb9c7f2cec6f37",
+      "modified_time": "2026-10-14T07:51:23.489Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M492.png": {
+      "id": "1v7swHbLibvqd3zgvvdfcDq9eeMs1NtJh",
+      "size": 473922,
+      "md5": "bb1f45fe5fd72da712519e87892998e1",
+      "modified_time": "2026-10-14T07:51:25.843Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M494.png": {
+      "id": "1ZdiCeL8BlzgIeRg3ltRtnq4jexMMqvW_",
+      "size": 740053,
+      "md5": "1408d0ea8c054842f8d97cf7c459674f",
+      "modified_time": "2026-10-14T07:51:28.340Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M495.png": {
+      "id": "1-RsgbieNI8gELnfnxs9MB96AgdXI-A9L",
+      "size": 540598,
+      "md5": "d59af2960ec852140c860fc783754464",
+      "modified_time": "2026-10-14T07:51:31.202Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M682.png": {
+      "id": "1Ke6j77aj4PPZ7pLM8hvH1jp5O3Pv3HJR",
+      "size": 1132133,
+      "md5": "60dbf618f1bd64cbe274ba9efb7145fb",
+      "modified_time": "2026-10-14T07:51:33.657Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M691.png": {
+      "id": "1xPvxJjvR42jlct0MIqGGmXWMvlbJgRc3",
+      "size": 756002,
+      "md5": "4094242208438ed8426026aff7c03b3e",
+      "modified_time": "2026-10-14T07:51:36.300Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M693.png": {
+      "id": "1rYJo8lPWd9xCRoR6VvWMzj7tJYsB110G",
+      "size": 999029,
+      "md5": "2362f7c1045568798a9accff5121c11c",
+      "modified_time": "2026-10-14T07:51:39.030Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M724.png": {
+      "id": "1Vz3Pb7aX6rqpikJeHWnxY87KbkOemcpc",
+      "size": 1242715,
+      "md5": "7c16aecd8619b9b56ff4a29398d486fb",
+      "modified_time": "2026-10-14T07:51:42.106Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M728.png": {
+      "id": "1T3SJyN9QIc6Ta6J0mFPZWtjndz-YnYIV",
+      "size": 1420496,
+      "md5": "e7a666325a40499bf1f7fd666b211600",
+      "modified_time": "2026-10-14T07:51:45.043Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M729.png": {
+      "id": "1qhAAOad2vowDggf62nmUSIEIwbUCcYqH",
+      "size": 1131760,
+      "md5": "22f7b147ea8ecc8886c5b0a217ccb80c",
+      "modified_time": "2026-10-14T07:51:48.127Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M732.png": {
+      "id": "1zLl0II3Bw_sCTFIREtI7mI5JAG21mYil",
+      "size": 391843,
+      "md5": "32170e8ed7e53f54e37ba6fe0a0b06f3",
+      "modified_time": "2026-10-14T07:51:51.384Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M733.png": {
+      "id": "1MBy5EG_wsz5BDFppro99jlquufCHyIZM",
+      "size": 417093,
+      "md5": "847b99466f86d4f173313c61fc8f81cc",
+      "modified_time": "2026-10-14T07:51:53.756Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M734.png": {
+      "id": "1Ly6fb27G6IoHJ188AtsU0lS1GH1QfqL2",
+      "size": 422125,
+      "md5": "a3a08b77f4c1425025c7ec6e43766f74",
+      "modified_time": "2026-10-14T07:51:56.075Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M738.png": {
+      "id": "1Y4Ts-RsoD55kFr5_MzP5PzEmq-aN1fy5",
+      "size": 772225,
+      "md5": "640fe26ca64d650691da6116946de2c8",
+      "modified_time": "2026-10-14T07:51:58.634Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M739.png": {
+      "id": "1Xg8b7v1c7p6dPGmAYbIuGB7sLa7HYNBK",
+      "size": 860242,
+      "md5": "37634431b2a03f678564c891c7b562b0",
+      "modified_time": "2026-10-14T07:52:01.543Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M740.png": {
+      "id": "1QmqFoVO7b8qAJ_n-UbVxua-9SlCVHLeM",
+      "size": 1060894,
+      "md5": "7631dc21f71cc6a269a8f31936ad7c6d",
+      "modified_time": "2026-10-14T07:52:04.574Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M745.png": {
+      "id": "1OhvrAQ-MJUo2sJEVb2MQymxCcl3I5gHQ",
+      "size": 1904199,
+      "md5": "4e72210a0800de8985eae6dc600d635b",
+      "modified_time": "2026-10-14T07:52:07.587Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M746.png": {
+      "id": "1rJxFf0zbthnsDtoC5Rk22WezlAWaEMii",
+      "size": 2371739,
+      "md5": "e5fc08348606a5e398c2a13d38dcb573",
+      "modified_time": "2026-10-14T07:52:11.857Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M747.png": {
+      "id": "1SAQQ7nPeoob_CCZ-UjoKzM_-T7pjPsqN",
+      "size": 888339,
+      "md5": "9e17c22746a8057e839df76d16f7ebc1",
+      "modified_time": "2026-10-14T07:52:14.485Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M750.png": {
+      "id": "1coUu4rMnBMZPuqtuZTs3bhdZgAM_5mZC",
+      "size": 910069,
+      "md5": "590ccf1f1ad8712533cd87064c664bde",
+      "modified_time": "2026-10-14T07:52:17.515Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M751.png": {
+      "id": "1ajxkg3JbqeimP7W3-xG1igWgDAh2djNl",
+      "size": 1533965,
+      "md5": "63fd17e3864f38a5b213e21b92646f80",
+      "modified_time": "2026-10-14T07:52:20.472Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M752.png": {
+      "id": "1RPh9CtqUnbNTXgexajrC0I-yXZTpsuim",
+      "size": 2103702,
+      "md5": "408b66afb078c32489f97f95eeb9754f",
+      "modified_time": "2026-10-14T07:52:23.854Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M755.png": {
+      "id": "1pZDzeeMVuCUkUIuetbxuTY0B6kfl-RsS",
+      "size": 320968,
+      "md5": "1e346bc37bf0864f18d83b467fd961d4",
+      "modified_time": "2026-10-14T07:52:26.813Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M757.png": {
+      "id": "1vFkI-0ZuV3GG8IFlseKg15bSKNZhTNC4",
+      "size": 2619299,
+      "md5": "af48721df8cbeed6982f03e1c5cef846",
+      "modified_time": "2026-10-14T07:52:29.396Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M763.png": {
+      "id": "10mU_ht4EuZwskFA3HAnYAT9Xvqak2aMb",
+      "size": 2556106,
+      "md5": "a2f43b0bd83dd3cc07ce0a89df9d7a08",
+      "modified_time": "2026-10-14T07:52:33.326Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M768.png": {
+      "id": "1LrMb4SqS5v1e2tu5DAojJhfs9-UKGb5G",
+      "size": 612510,
+      "md5": "aa010f34f7b686581cb75b8ae97a570d",
+      "modified_time": "2026-10-14T07:52:36.396Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M771.png": {
+      "id": "1vSXiBcNhkYp4Lz2KsGe0yIzLzvSyqM9h",
+      "size": 3201598,
+      "md5": "9d20cca3396aa682480c11924cb3bf3f",
+      "modified_time": "2026-10-14T07:52:39.263Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M772.png": {
+      "id": "1NybzG2DLH43ZJSA1At1veb-eKbVCXIIz",
+      "size": 1474377,
+      "md5": "185cd2e392bbdd382941251878333cce",
+      "modified_time": "2026-10-14T07:52:42.208Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M787.png": {
+      "id": "1WJXNnrzeO_xv9KFqYzMMe8E1eTq8K78S",
+      "size": 692989,
+      "md5": "51cde8c3252170294ee34b2d0d01f042",
+      "modified_time": "2026-10-14T07:52:45.249Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M788.png": {
+      "id": "1eLqEhJzi3D_WJz3b3OH_mqUr_o11ktMB",
+      "size": 716899,
+      "md5": "e4b0c4c84c715f64b70b4d3b4d66270c",
+      "modified_time": "2026-10-14T07:52:48.358Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M792.png": {
+      "id": "19Lq3r-9I-PYdGnIAjkZM1R-vGxItEfOf",
+      "size": 558349,
+      "md5": "998852e97ca22d3f50b24cdbae8f85af",
+      "modified_time": "2026-10-14T07:52:51.171Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M794.png": {
+      "id": "1YLlcpaYeDq7AJelqqR4FXKKTR27irmqa",
+      "size": 377333,
+      "md5": "5b3360ae622e88b4581f03c1ea5425cb",
+      "modified_time": "2026-10-14T07:52:53.544Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M795.png": {
+      "id": "1jKZOYq04NbmzAD9qB7DF85iI2n-311vg",
+      "size": 644757,
+      "md5": "a5d9e8d9e1ef5f73b30c00620213fa72",
+      "modified_time": "2026-10-14T07:52:56.183Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M798.png": {
+      "id": "1hyeJ_7-gInpOZVKXjQ26MgU6grZb0tSp",
+      "size": 363216,
+      "md5": "c3a9f234357ab082054be8d36ba18408",
+      "modified_time": "2026-10-14T07:52:59.011Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M799.png": {
+      "id": "1IiXzmBIA7UWzuGgK9ODLBqUa148zEutw",
+      "size": 322301,
+      "md5": "420c58e35ae08f950e89466f2691bb2f",
+      "modified_time": "2026-10-14T07:53:01.640Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M802.png": {
+      "id": "1wnZ59LfF3GiAWcgXNGZQphbxGGZFdNFq",
+      "size": 395578,
+      "md5": "f34db48f54f1d1f9397557380624e74d",
+      "modified_time": "2026-10-14T07:53:03.870Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M805.png": {
+      "id": "1DnyE5Qc_SlbQ__XqxcMUE4erri_kGC5b",
+      "size": 612527,
+      "md5": "b1c34d21c74bedc743e6e41168ab7bde",
+      "modified_time": "2026-10-14T07:53:06.386Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M807.png": {
+      "id": "1ZsBSltyd1gIQRi6BAyqWZbbtOj_wC6hc",
+      "size": 779488,
+      "md5": "7ca52252b8a371ab0177b7c61f8e24ef",
+      "modified_time": "2026-10-14T07:53:09.170Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M808.png": {
+      "id": "1VFUKL28569R4mNIOGytYl-D7v6sRAWPk",
+      "size": 331622,
+      "md5": "f47dd5887fcd56fb72b36caf113c1975",
+      "modified_time": "2026-10-14T07:53:12.609Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M809.png": {
+      "id": "1UyU1S3Nk_xO9AyHYib6RWlLwf2wQeLiN",
+      "size": 336126,
+      "md5": "837624519aff1603892d486c886b3df3",
+      "modified_time": "2026-10-14T07:53:14.730Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M856.png": {
+      "id": "1cL9Bqan0UbDs_O99Ta8gDG9p1Ef3_u99",
+      "size": 531205,
+      "md5": "4b24c875be83d18707b839547392eea9",
+      "modified_time": "2026-10-14T07:53:17.065Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M867.png": {
+      "id": "1NPtPCJrmJhckpIMqPi7mwY7JfFLqugnE",
+      "size": 528006,
+      "md5": "2ba8fa980e39a8671c373f9bf0ba558c",
+      "modified_time": "2026-10-14T07:53:19.715Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M881.png": {
+      "id": "10wHdlUwBzSOuqbYdxgQRWDd0jiTvYQtM",
+      "size": 480495,
+      "md5": "d18a19501b0b12e5ab7c8e538eaae52d",
+      "modified_time": "2026-10-14T07:53:22.150Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M884.png": {
+      "id": "1VOZiZBIBhMYmUWhe9oILZMMZfbC90wMk",
+      "size": 329735,
+      "md5": "3452e36cbb7deca35a30413db3d453c7",
+      "modified_time": "2026-10-14T07:53:24.573Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M901.png": {
+      "id": "1Z_T97rR7vXeu_mpCMZTtnDiAAHBOBrdF",
+      "size": 572195,
+      "md5": "0626760c4f90128ace62cdae3de0f96a",
+      "modified_time": "2026-10-14T07:53:26.837Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M902.png": {
+      "id": "1nwi83sM8LPX3mMS50zVqGkTSUJRqtUqE",
+      "size": 407069,
+      "md5": "839f79ab2b200eb7d719aff5a0b9c30c",
+      "modified_time": "2026-10-14T07:53:29.421Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M904.png": {
+      "id": "1vEVaPXWN3kpQoou25X0HRnRIiieUHTQK",
+      "size": 394294,
+      "md5": "76b4237b0ac9c8fa79402a69a2b60b4d",
+      "modified_time": "2026-10-14T07:53:32.147Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M905.png": {
+      "id": "1-1xMsLKzSztY9BcKrVKe7YYAsDWRVpds",
+      "size": 361196,
+      "md5": "eb3e6e26138ec2975fa9698475bbef27",
+      "modified_time": "2026-10-14T07:53:34.643Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M906.png": {
+      "id": "1DI7C0LDs345gXdpFqHuuSW14IygiD_YY",
+      "size": 478108,
+      "md5": "7173fef25a319013324aa321e8fda60c",
+      "modified_time": "2026-10-14T07:53:37.150Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M913.png": {
+      "id": "1Di7Ea-TgGQk6OShk6q9DuqWnB6hoQCIC",
+      "size": 377806,
+      "md5": "0dba02f66e9aaa70e878b5dbd827635b",
+      "modified_time": "2026-10-14T07:53:39.542Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M914.png": {
+      "id": "13xSi-MIHsK2ZPGr1NdiGQXRihuxv8Rzx",
+      "size": 390791,
+      "md5": "4f43b9990f779c1cf4322a66adb51a99",
+      "modified_time": "2026-10-14T07:53:41.876Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M916.png": {
+      "id": "1Zm0dxGJIx5P6GMCsHBS2JRJ9f8f70wYy",
+      "size": 401204,
+      "md5": "ce457f20bb70a1f3b3b245eb0b85ca30",
+      "modified_time": "2026-10-14T07:53:44.288Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M918.png": {
+      "id": "18BXduiUEYTfOgO0KPAPlR2EM25842FKN",
+      "size": 535396,
+      "md5": "b4d8c399b7d9002953fe2ac8060a22c3",
+      "modified_time": "2026-10-14T07:53:47.313Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M921.png": {
+      "id": "1SQJq87DdZV1Souw2a5INnhjfOC2GcBGc",
+      "size": 358119,
+      "md5": "d069d285e1dd21d49214e53f5b2d1352",
+      "modified_time": "2026-10-14T07:53:50.226Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M923.png": {
+      "id": "1Gln_x2fcjhlxejWhXszitAeFyoyejNHk",
+      "size": 513812,
+      "md5": "44b23808693d4130a048ad3b89db72c3",
+      "modified_time": "2026-10-14T07:53:52.447Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M924.png": {
+      "id": "1srdY9t0-b7BtOt6trhbBUV9gBMmiYPoz",
+      "size": 557710,
+      "md5": "90c358b3dc022afd5d65c56ce7e9ac0c",
+      "modified_time": "2026-10-14T07:53:54.979Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M925.png": {
+      "id": "1KnyLhjicDq7hOR9WAZGta9s_-DaVCwPs",
+      "size": 475363,
+      "md5": "d279e741f1779bfab193d979fd2e0d0a",
+      "modified_time": "2026-10-14T07:53:57.371Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M930.png": {
+      "id": "1Dx0uJj7MhW2O-q88iTvmTV_E-UjknsHC",
+      "size": 311146,
+      "md5": "66511de355887f5ba296d70c5213dda6",
+      "modified_time": "2026-10-14T07:53:59.786Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M932.png": {
+      "id": "1fnHFHkgt33d9XG4bb2YETkT0nuTWfkKh",
+      "size": 336852,
+      "md5": "698516815538ba30edf1ea817d88b947",
+      "modified_time": "2026-10-14T07:54:02.107Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M933.png": {
+      "id": "1FNPURjt61L1brV9WFGd5JZqIn7RkWwdb",
+      "size": 338687,
+      "md5": "28e2924b6183b1681b8729c81a1bbc67",
+      "modified_time": "2026-10-14T07:54:04.440Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M935.png": {
+      "id": "12wt5Ozj6-kakJ9VaOLoIIfoHiS0z2Kxm",
+      "size": 1089786,
+      "md5": "6abfb6946dc7d718a17d276a45b27735",
+      "modified_time": "2026-10-14T07:54:06.899Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M937.png": {
+      "id": "1wpqhYQIHnFmPc_FimqEMaOPylZ_uOuC2",
+      "size": 853646,
+      "md5": "41234df2147ac3b5b1ff4c0c64e93447",
+      "modified_time": "2026-10-14T07:54:09.721Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M938.png": {
+      "id": "1hkkHd_3-v0cueJvODVlNombtSWMGxHh0",
+      "size": 1738056,
+      "md5": "c42501c34d996765b31cba46174336a9",
+      "modified_time": "2026-10-14T07:54:12.449Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M947.png": {
+      "id": "1r78ivmlwBdxXy8Sd6ipavhPRMlqn1B1Q",
+      "size": 432969,
+      "md5": "99531df76c3abe7365da0f84ccdb1ed7",
+      "modified_time": "2026-10-14T07:54:15.505Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M951.png": {
+      "id": "15PVaeFvRTmYb4otptMOR_WPGWboRnFW0",
+      "size": 1071656,
+      "md5": "c865c1e4a0d96fdef0ff038e60f76c2e",
+      "modified_time": "2026-10-14T07:54:18.132Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M954.png": {
+      "id": "1xy_uYKwGxYiCGwJGlTefPtj33OZxREzK",
+      "size": 1076647,
+      "md5": "fa8af197f5df4e14fff68f9be7bcd3d8",
+      "modified_time": "2026-10-14T07:54:20.834Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M958.png": {
+      "id": "1gJSBr8DzbdR0MzI6znKXPoF1ay-kqGa_",
+      "size": 1207153,
+      "md5": "98774b0ae81ae4003f4c82b208acfabc",
+      "modified_time": "2026-10-14T07:54:23.816Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M959.png": {
+      "id": "1lWdDpEq_gpjRupqyvY9uRdSv6tslUsif",
+      "size": 1691899,
+      "md5": "218d8dcbf397c6eaf6d96d7517d69419",
+      "modified_time": "2026-10-14T07:54:26.694Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M960.png": {
+      "id": "10aiUS5FX_mkpC7luXySwiHT1n2IS2x-X",
+      "size": 782679,
+      "md5": "b006d9973abd033e93331740ff5b7979",
+      "modified_time": "2026-10-14T07:54:29.595Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M962.png": {
+      "id": "1UaS4wNSYLXRwBrWp5nilbB2BM2Dh6vFI",
+      "size": 374807,
+      "md5": "72bbe97e79325f4e6958e83d4b6ef36c",
+      "modified_time": "2026-10-14T07:54:32.213Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1053.png": {
+      "id": "1W-yzdaWEfYaRd7O1kD5HSbNcS-57wRAS",
+      "size": 387884,
+      "md5": "8b62cb5fd232633f707c1bc99be08686",
+      "modified_time": "2026-10-14T07:54:34.476Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1056.png": {
+      "id": "1zcH89cWtHqO0rPDkwUscBJV-y8Tr79mS",
+      "size": 458451,
+      "md5": "7d90c6a3f718084193f17e952e39a1aa",
+      "modified_time": "2026-10-14T07:54:36.679Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1058.png": {
+      "id": "1ycs4kcmoattugWqQ9dapt4JTHIcc-Twf",
+      "size": 414709,
+      "md5": "e14593f96cbf9628e959b72786656f16",
+      "modified_time": "2026-10-14T07:54:39.289Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1059.png": {
+      "id": "1GvWr5KfU28cPKAu5F792NgRJyVQTpKM8",
+      "size": 318321,
+      "md5": "3bdebf5397e31e4ed99bc20a6301d40a",
+      "modified_time": "2026-10-14T07:54:41.914Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1060.png": {
+      "id": "1hfqgZ2b10udPDmMYtGgLDEII0EF5KcCC",
+      "size": 431923,
+      "md5": "e3c62b9bfaf2f79a2364fb8fa00dae99",
+      "modified_time": "2026-10-14T07:54:44.385Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1063.png": {
+      "id": "1DhX4KBt24bbsnFY30NkSgKGTTH-QfYb_",
+      "size": 517199,
+      "md5": "ff972c0bdfadf134bd52ed68f4ca48f8",
+      "modified_time": "2026-10-14T07:54:46.930Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1064.png": {
+      "id": "1QPZbHnC0gXzU7r0wGkojlXyBRfjfZXY_",
+      "size": 446334,
+      "md5": "a308708e3601a87b70856363a24b3df1",
+      "modified_time": "2026-10-14T07:54:49.643Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1065.png": {
+      "id": "1hRKCLmh4JD1xD4iBpMW1VaiikKajPENR",
+      "size": 498280,
+      "md5": "f76d3fcf766beba23dc438a77794f7b7",
+      "modified_time": "2026-10-14T07:54:51.993Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1067.png": {
+      "id": "1MvyxlC6JeTvs5xguYprjEFEO9KaIrj5U",
+      "size": 1037206,
+      "md5": "8bd0f100f5313ac723895786cc1873ec",
+      "modified_time": "2026-10-14T07:54:54.650Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1070.png": {
+      "id": "1VClcH9cbe4e-xd5WBq9q2lSWHD1YOFwn",
+      "size": 346763,
+      "md5": "e5ee659a5e9fd009d2d1bc0ebaeba5c6",
+      "modified_time": "2026-10-14T07:54:57.375Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1072.png": {
+      "id": "1EvX9QptHIFYZN7KKikbw1vIHLXmQ9QXS",
+      "size": 373971,
+      "md5": "2ecf461653264c5925926dd153d4b632",
+      "modified_time": "2026-10-14T07:54:59.615Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1073.png": {
+      "id": "1CgMHkvi0X02yVPbU1RQphzEGyUwgpgGq",
+      "size": 381637,
+      "md5": "85e6bc7df84d2e955de8815a0c17fd7b",
+      "modified_time": "2026-10-14T07:55:01.925Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1074.png": {
+      "id": "13flv0pRdY-cTTeGcKlaZOP_o4B2rP1Jz",
+      "size": 873678,
+      "md5": "46d076adc148113fef5580e45c5b7e81",
+      "modified_time": "2026-10-14T07:55:04.541Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1075.png": {
+      "id": "17MvGyWj6_qjctoXPPlVNkpgpwpQ7rYQt",
+      "size": 1568986,
+      "md5": "42c38a8c78f5fa2103284eae4c10aee7",
+      "modified_time": "2026-10-14T07:55:07.434Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1077.png": {
+      "id": "1pG5Xk1dc5nYlJYfsKbG75xmvrBXBsldM",
+      "size": 636233,
+      "md5": "8eefb77fb1f180b3007c703e58260fd1",
+      "modified_time": "2026-10-14T07:55:10.588Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1078.png": {
+      "id": "1XJO_rRqv7ojsiVPysnu6xa5DAJ2ET61c",
+      "size": 361338,
+      "md5": "f44ec345072602394196701574bf6ad9",
+      "modified_time": "2026-10-14T07:55:13.183Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1085.png": {
+      "id": "1YQ9SQ3t9YdrGkLx4NgCgOfX9e62o0mEs",
+      "size": 873445,
+      "md5": "fc2e737b397194343c493e679979ee02",
+      "modified_time": "2026-10-14T07:55:15.517Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1086.png": {
+      "id": "1va0zVD_XOE7lP2QEOhnFJzGL7wHfS45q",
+      "size": 334953,
+      "md5": "2bbfe5532933abbc0c84bd0cb82512ee",
+      "modified_time": "2026-10-14T07:55:18.446Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1088.png": {
+      "id": "1Ud8xxypfwIMGP3RDryr2pNeoIpsgmr_D",
+      "size": 1277505,
+      "md5": "f61517f3f4f0ab94e3d09410429c95ac",
+      "modified_time": "2026-10-14T07:55:21.379Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1091.png": {
+      "id": "1QLI89CPjCC0YUdCkAD5oalxxGMURhJDv",
+      "size": 410045,
+      "md5": "9cfe009e5b5f0b015b459436efae33ae",
+      "modified_time": "2026-10-14T07:55:24.256Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1095.png": {
+      "id": "1HZb_rmHdo_EpJ5YJjx4C4IJAzQfNZ3ZJ",
+      "size": 1018142,
+      "md5": "ab839873747e3f3f4ea6806f2c503fe3",
+      "modified_time": "2026-10-14T07:55:26.587Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1096.png": {
+      "id": "1Q48NzlnNEXAcIh_qJFeA7v2pdIQ8rkiZ",
+      "size": 323042,
+      "md5": "0938f895617ca475a8ef2162bce646c8",
+      "modified_time": "2026-10-14T07:55:29.611Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1097.png": {
+      "id": "10km1yihAbGms5qxsqjfzhYn_2THP_XbT",
+      "size": 1015207,
+      "md5": "d1c052b30932a47f47e9717c7e252099",
+      "modified_time": "2026-10-14T07:55:32.139Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1106.png": {
+      "id": "1EAM7OG0f-Wu-ahU4mi2h5d-AY16csted",
+      "size": 819472,
+      "md5": "1386b0d2fcd7d082473c5f604c0424fc",
+      "modified_time": "2026-10-14T07:55:35.156Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1110.png": {
+      "id": "16HuptgalT1cjg6qrkN8n4jIEPRyv4QUp",
+      "size": 949250,
+      "md5": "51b7805a636b5e511be741dc021c99b9",
+      "modified_time": "2026-10-14T07:55:37.941Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1112.png": {
+      "id": "1kOWP6Hy-HE6lmy3XjwLkmbF_61wjgAaZ",
+      "size": 975359,
+      "md5": "605ebe2d47c628800f5b0757b64a0749",
+      "modified_time": "2026-10-14T07:55:40.779Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1115.png": {
+      "id": "1E2AKWzVdmgFeooJZUJxgpzNEeijMstyJ",
+      "size": 561018,
+      "md5": "f427c0b547f4a887b4bfcd9fd01744ea",
+      "modified_time": "2026-10-14T07:55:43.557Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1116.png": {
+      "id": "1plG9Qf0U8gYN9tdm6rW2vyMTGohsQLWd",
+      "size": 804267,
+      "md5": "e61c368cd7a7d74efb0dca8706a2a955",
+      "modified_time": "2026-10-14T07:55:46.168Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1117.png": {
+      "id": "1E2MS2tU6uwYcL_yhywuTkWRJZBK-SmgD",
+      "size": 457288,
+      "md5": "0545309dbfc94537ae0acdfd69c164aa",
+      "modified_time": "2026-10-14T07:55:48.626Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1120.png": {
+      "id": "1pq0ynyqCL1uoLiBc6ItJJselT4Xo6OTC",
+      "size": 1035998,
+      "md5": "523c5aa6f9f2bacad25e244dc1f94467",
+      "modified_time": "2026-10-14T07:55:51.090Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1127.png": {
+      "id": "1xNEGS2yMQWo2q7ChzWrxG-Dq7sWmA23s",
+      "size": 318318,
+      "md5": "5c548d5cd02b61aa1d97436f0cf44d93",
+      "modified_time": "2026-10-14T07:55:53.904Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1128.png": {
+      "id": "11_UAzFiVpFg__IaXYw7mlYuEGeAu7pKr",
+      "size": 314451,
+      "md5": "a0a42660a39f5bf995229cdcee89cbf4",
+      "modified_time": "2026-10-14T07:55:56.336Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1129.png": {
+      "id": "1zc4gZfGSwLLRZw-nKWxlTSs3xlNagJzt",
+      "size": 340518,
+      "md5": "f37a3a7b69c75ce97081cc0b54c7fbde",
+      "modified_time": "2026-10-14T07:55:58.554Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1130.png": {
+      "id": "1RFKOfn8tjItDOiCbOJFWLLUTohzStsLE",
+      "size": 347099,
+      "md5": "a2b308447f59bb55048575f20f177586",
+      "modified_time": "2026-10-14T07:56:00.933Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1131.png": {
+      "id": "12UFBkHWDJJ4FdCMA7OvPB-nWwzI76zw2",
+      "size": 354975,
+      "md5": "5d5e2abb92c113de50f24ec510b8958f",
+      "modified_time": "2026-10-14T07:56:03.347Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1133.png": {
+      "id": "1--Zntg-T4pl-FlWMWl_NpyDj6pgcT4A4",
+      "size": 395165,
+      "md5": "49baf26fc9083cdc659182c1e85eee0e",
+      "modified_time": "2026-10-14T07:56:05.478Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1135.png": {
+      "id": "1OFtppHqDWZKVViVCMu5Wjl3OWLoxj0Lw",
+      "size": 412613,
+      "md5": "711b43b97f4e5af7aba3009a0ac26cc0",
+      "modified_time": "2026-10-14T07:56:07.960Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1138.png": {
+      "id": "1WDEtsuNo8NQL4gr2xhLEx9fXTYg5aqXY",
+      "size": 360441,
+      "md5": "85aabec544a27d08bbfcf5fa01cb52a1",
+      "modified_time": "2026-10-14T07:56:10.514Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1139.png": {
+      "id": "1J8dyDGJiZR7gI-5Vjv0Wq0jmfIQx0GL4",
+      "size": 358580,
+      "md5": "2a4f8f7a4a97e43bcff03ce2abec949a",
+      "modified_time": "2026-10-14T07:56:13.576Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1142.png": {
+      "id": "1yQIVlIuPCa9xSbTvPWX_Ha7GnR52-pqM",
+      "size": 388955,
+      "md5": "c3913629ced166776d471be680da132f",
+      "modified_time": "2026-10-14T07:56:15.713Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1143.png": {
+      "id": "1D1N1bBWx4Gs8s1wukgC-0v4SsH2ZUDeZ",
+      "size": 347155,
+      "md5": "108f465a06d2d3fa130f644440f9dcde",
+      "modified_time": "2026-10-14T07:56:18.038Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1145.png": {
+      "id": "1vZbrFCDXlyBWPIreEo1MCIoUJ9xjKzLu",
+      "size": 342232,
+      "md5": "de3923e275c8f39d5d0f38611e691196",
+      "modified_time": "2026-10-14T07:56:20.450Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1147.png": {
+      "id": "10xurrklitsCHZ-YNtBfHVGeMBJviM1ds",
+      "size": 337423,
+      "md5": "8175f6e2c938f3154d42b6f19bd7e87a",
+      "modified_time": "2026-10-14T07:56:22.932Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1148.png": {
+      "id": "1Ys7RefUe7tFrK5RaXpLvs1jMh1Z86FQE",
+      "size": 351558,
+      "md5": "13192e20cc852b08b584ac1fadd9e148",
+      "modified_time": "2026-10-14T07:56:25.292Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/M1150.png": {
+      "id": "1WlWt_OEFLK9NJYuX5uiAlwFTK2OAFg5h",
+      "size": 346421,
+      "md5": "786d7667d6f0f27f3e9adaa36f517955",
+      "modified_time": "2026-10-14T07:56:27.653Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/manifest.tsv": {
+      "id": "1L6TeiK2WRRVNn2ZH7tA_JOImUjrppegQ",
+      "size": 48479,
+      "md5": "8396f4a4dc673164c96d76d5dc4d6f8b",
+      "modified_time": "2026-10-14T07:56:29.887Z"
+    },
+    "control_derived/mdc_split_heatmaps/brain_20261014/AD_Control_MDC_split_triangles.pdf": {
+      "id": "1GZtZsl13C7aQj6BgmRTf7UfiTzArzbPH",
+      "size": 34286915,
+      "md5": "5aae12fb439cf260b1f66e1d78a3222a",
+      "modified_time": "2026-10-14T07:56:32.459Z"
+    },
+    "control_derived/mdc_split_heatmaps/catalog.json": {
+      "id": "1vPFD_sBQ5lRSPYW6RbQg1cKuYWquNX-E",
+      "size": 600,
+      "md5": "f0be2e03597ee9792cfa04561f2504ca",
+      "modified_time": "2026-10-14T07:56:35.330Z"
     }
   },
-  "refresh_scope": "Incremental muscle prefix; unrelated entries retained from their prior verified snapshot"
+  "refresh_scope": "Verified brain split-triangle heatmap release; unrelated entries preserved"
 }
