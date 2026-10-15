@@ -178,6 +178,25 @@ The app includes three explicitly separated module definitions:
   Whole-module clustering keeps all feature rows together and outlines each module
   block. Asterisks mark cells with selected-method FDR below 0.05, and significant-only
   or strongest-correlation row views keep large maps navigable.
+- Non-prediction outcome controls also include **Global AD pathology (gpath)**,
+  **Amyloid burden** (`amylsqrt_est_8reg`) and **Tangle burden**
+  (`tangsqrt_est_8reg`) from the verified August 13, 2025 cross-sectional release.
+  These are postmortem measures; the supplied square-root 8-region amyloid/tangle
+  scales are preserved, not transformed again. Brain coverage is 450/449/448 and
+  motor coverage is 354/357/357, respectively; missing outcomes are never imputed.
+  They are numeric outcomes and continuous color/hover fields, not artificial
+  categorical grouping codes. Independent regional and expanded-cohort metadata
+  use the same source and existing pseudonyms.
+  Pathology association BH is across valid modules separately for each fixed
+  outcome, score, component, method, donor group and edge configuration. Existing
+  all-12/primary-five corrections are unchanged and do not apply to these new
+  outcomes. Common all-edge statistics are additive Parquets under `data/pathology/`;
+  custom strata and existing edge subsets use serialized, bounded saved-score reads.
+  No predictions, networks, eigengenes, edge masks, KEGG or MDC were recomputed.
+  Offline refresh: run `scripts/build_pathology_outcomes.py --publish-local` after
+  rebuilding upstream bundles, then `scripts/validate_pathology_outcomes.py`.
+  Drive publication uses approved, immutable copies so the old index remains
+  valid until the release's new index is pushed. Publication is separate from Git push.
 - Module differential connectivity (MDC) for total, pooled TS, pooled CT, three
   tissue-specific blocks, and three cross-tissue pairs, including directional
   FDR significance and an all-module resolved heatmap.

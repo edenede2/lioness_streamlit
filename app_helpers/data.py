@@ -20,6 +20,7 @@ from app_helpers.gene_symbols import public_gene_labels
 APP_ROOT = Path(__file__).resolve().parents[1]
 EFFECT_ENDPOINT_KEGG_API_VERSION = 1
 MDC_NORMALIZATION_API_VERSION = 1
+PATHOLOGY_OUTCOME_API_VERSION = 1
 MUSCLE_MODULE_SETS = ("muscle_control_l4", "muscle_all_donors_l4")
 
 MODULE_SET_LABELS = {
@@ -363,6 +364,9 @@ OUTCOME_LABELS = {
     "cerad_score": "CERAD score",
     "adnc": "AD neuropathologic change (ADNC)",
     "parkinsonism": "Parkinsonism",
+    "gpath": "Global AD pathology (gpath)",
+    "amyloid": "Amyloid burden (8-region, supplied square-root scale)",
+    "tangles": "Tangle burden (8-region, supplied square-root scale)",
 }
 
 CATEGORICAL_OUTCOME_LABELS = {
@@ -1315,6 +1319,14 @@ def load_aggregate_statistics(
     analysis_subset: str = "all_donors",
     diagnosis_group: str | None = None,
 ) -> pd.DataFrame:
+    from app_helpers.pathology import PATHOLOGY_OUTCOMES, load_statistics
+    pathology = phenotype in PATHOLOGY_OUTCOMES
+    if pathology:
+        return load_statistics(resolved=False, method=method, module=module,
+            phenotype=phenotype, metric_family=metric_family, module_set=module_set,
+            estimator=estimator, edge_rule=edge_rule, differential_edge_rule=differential_edge_rule,
+            differential_fdr_scope=differential_fdr_scope, differential_fdr_threshold=differential_fdr_threshold,
+            score_normalization=score_normalization, analysis_subset=analysis_subset, diagnosis_group=diagnosis_group)
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
         filters.append(("module", "=", int(module)))
@@ -1326,13 +1338,21 @@ def load_aggregate_statistics(
         filters.append(("diagnosis_group", "=", diagnosis_group))
     if differential_edge_rule != "all":
         filters.append(("analysis_subset", "=", analysis_subset))
-    return _read_filtered(
+    result = _read_filtered(
         differential_estimator_path(
             "aggregate_statistics.parquet", module_set, estimator, method, edge_rule,
             differential_edge_rule, differential_fdr_scope,
             differential_fdr_threshold, score_normalization,
         ), filters
     )
+    if phenotype is None:
+        additional = load_statistics(resolved=False, method=method, module=module,
+            metric_family=metric_family, module_set=module_set, estimator=estimator,
+            edge_rule=edge_rule, differential_edge_rule=differential_edge_rule,
+            differential_fdr_scope=differential_fdr_scope, differential_fdr_threshold=differential_fdr_threshold,
+            score_normalization=score_normalization, analysis_subset=analysis_subset, diagnosis_group=diagnosis_group)
+        result = pd.concat([result, additional], ignore_index=True)
+    return result
 
 
 def load_resolved_statistics(
@@ -1352,6 +1372,14 @@ def load_resolved_statistics(
     diagnosis_group: str | None = None,
     cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
+    from app_helpers.pathology import PATHOLOGY_OUTCOMES, load_statistics
+    if phenotype in PATHOLOGY_OUTCOMES:
+        return load_statistics(resolved=True, method=method, module=module,
+            phenotype=phenotype, metric_family=metric_family, module_set=module_set,
+            estimator=estimator, edge_rule=edge_rule, differential_edge_rule=differential_edge_rule,
+            differential_fdr_scope=differential_fdr_scope, differential_fdr_threshold=differential_fdr_threshold,
+            score_normalization=score_normalization, analysis_subset=analysis_subset,
+            component=component, diagnosis_group=diagnosis_group, cohort_scope=cohort_scope)
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
         filters.append(("module", "=", int(module)))
@@ -1377,7 +1405,16 @@ def load_resolved_statistics(
             differential_fdr_threshold, score_normalization,
         )
     )
-    return _read_filtered(path, filters)
+    result = _read_filtered(path, filters)
+    if phenotype is None:
+        additional = load_statistics(resolved=True, method=method, module=module,
+            metric_family=metric_family, module_set=module_set, estimator=estimator,
+            edge_rule=edge_rule, differential_edge_rule=differential_edge_rule,
+            differential_fdr_scope=differential_fdr_scope, differential_fdr_threshold=differential_fdr_threshold,
+            score_normalization=score_normalization, analysis_subset=analysis_subset,
+            component=component, diagnosis_group=diagnosis_group, cohort_scope=cohort_scope)
+        result = pd.concat([result, additional], ignore_index=True)
+    return result
 
 
 def load_module_annotations(module_set: str = "full_cohort") -> pd.DataFrame:

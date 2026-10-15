@@ -106,7 +106,7 @@ KEGG_PRIORITY_PATTERN = re.compile(
     r"sphingolipid|metaboli|alzheimer|infection|infectious|viral|virus",
     flags=re.IGNORECASE,
 )
-REGIONAL_API_VERSION = 2
+REGIONAL_API_VERSION = 3
 
 
 def regional_tissues(source: str) -> tuple[str, ...]:
@@ -539,6 +539,8 @@ def _render_associations(
             format_func=lambda value: ASSOCIATION_OUTCOME_LABELS[value],
             key="regional_association_outcome",
         )
+        if phenotype in {"gpath", "amyloid", "tangles"}:
+            st.caption("Postmortem pathology, August 2025. Amyloid/tangles retain the supplied square-root 8-region scale.")
         if phenotype in SELECTABLE_ASSOCIATION_OUTCOMES:
             interpretation = st.radio(
                 "Outcome interpretation",
@@ -685,7 +687,10 @@ def _render_associations(
         for tissue in tissues
     }
     feature_label = score_label(score_variant, network_method)
-    title = f"Independent regional modules: {ASSOCIATION_OUTCOME_LABELS[phenotype]} vs {feature_label}"
+    title_outcome = {"gpath": "Global AD pathology (gpath)", "amyloid": "Amyloid burden", "tangles": "Tangle burden"}.get(
+        phenotype, ASSOCIATION_OUTCOME_LABELS[phenotype]
+    )
+    title = f"Independent regional modules: {title_outcome} vs {feature_label}"
     definition_label = f"{source_label} · {COHORT_LABELS.get(cohort_scope, cohort_scope)}"
 
     if interpretation == "numeric":

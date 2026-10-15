@@ -292,6 +292,8 @@ def collapsed_metadata(metrics: pd.DataFrame, mapping: dict[str, str]) -> pd.Dat
         "MCI": 82,
     }:
         raise ValueError("Unexpected muscle cohort counts")
+    from scripts.build_pathology_outcomes import augment_metadata
+    result = augment_metadata(result, result["donor"])
     result.insert(0, "sample_id", result["donor"].map(mapping))
     result = result.drop(columns="donor")
     result["sex_code"] = result["sex_code"].map({0: "Code 0", 1: "Code 1"}).astype("string")

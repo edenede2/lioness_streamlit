@@ -13,6 +13,11 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
+from app_helpers import data as _data_helpers
+if getattr(_data_helpers, "PATHOLOGY_OUTCOME_API_VERSION", 0) < 1:
+    _data_helpers = importlib.reload(_data_helpers)
+from app_helpers.pathology import PATHOLOGY_OUTCOMES
+
 # Streamlit Community Cloud may hot-reload this entrypoint while retaining an older
 # app_helpers.charts module in memory. Reload the helper when its current public API
 # is absent so a repository update cannot leave the two modules out of sync.
@@ -152,7 +157,7 @@ from app_helpers.streamlit_compat import (
 )
 from app_helpers import regional_modules as _regional_helpers
 
-if getattr(_regional_helpers, "REGIONAL_API_VERSION", 0) < 2:
+if getattr(_regional_helpers, "REGIONAL_API_VERSION", 0) < 3:
     _regional_helpers = importlib.reload(_regional_helpers)
 
 from app_helpers.regional_modules import (
@@ -440,6 +445,7 @@ def cached_sample_metadata(
     module_set: str = "full_cohort",
     cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
+    """Metadata schema includes the verified August-2025 pathology extension."""
     return load_sample_metadata(module_set=module_set, cohort_scope=cohort_scope)
 
 
@@ -565,6 +571,7 @@ def cached_effect_size_manifest(module_set: str) -> dict[str, object]:
 
 @st.cache_data(show_spinner=False)
 def cached_data_manifest() -> dict[str, object]:
+    """Read the deploy registry including the additive pathology catalog."""
     return load_data_manifest()
 
 
@@ -625,7 +632,7 @@ def cached_pooled_module_finder_stats(
         score_normalization=score_normalization,
         include_embedded_metadata=False,
     )
-    source = attach_metadata(source)
+    source = attach_metadata(source, module_set=module_set)
     if differential_edge_rule != "all" and analysis_subset != "all_donors":
         split_value = {
             "discovery_ad_control": "Discovery",
@@ -1044,6 +1051,8 @@ def standardize_stored_associations(
             part["pearson_p"] = part[f"p_{scale}_{component}"]
             part["spearman_rho"] = part[f"rho_{component}"]
             part["spearman_p"] = part[f"p_spearman_{component}"]
+            if f"n_{component}" in part:
+                part["n"] = part[f"n_{component}"].fillna(part["n"])
             parts.append(part)
         result = pd.concat(parts, ignore_index=True)
     if phenotype is None:
@@ -1563,6 +1572,7 @@ def cached_module_correlations(
     analysis_subset: str = "all_donors",
     cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
+    """Selected-module matrix including the three verified pathology outcomes."""
     if resolved:
         source = load_resolved_scope(
             method, module=module, module_set=module_set,
@@ -1632,7 +1642,7 @@ def cached_grouped_module_correlations(
     analysis_subset: str = "all_donors",
     cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
-    """Return all-outcome correlations within selected category levels."""
+    """Return all-outcome correlations, including pathology, within selected levels."""
 
     if resolved:
         source = load_resolved_scope(
@@ -1723,7 +1733,7 @@ def cached_grouped_all_module_correlations(
     analysis_subset: str = "all_donors",
     cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
-    """Return a memory-bounded grouped module-by-outcome correlation catalog."""
+    """Memory-bounded grouped matrix including the three pathology outcomes."""
 
     module_ids = tuple(
         sorted(cached_annotations(module_set)["module"].astype(int).unique())
@@ -1781,6 +1791,7 @@ def cached_all_module_correlations(
     analysis_subset: str = "all_donors",
     cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
+    """All-module matrix including the additive pathology statistics catalog."""
     feature_filter = None if feature == "__all__" else feature
     component_filter = None if component == "__all__" else component
     summaries: list[pd.DataFrame] = []
@@ -4083,6 +4094,11 @@ with st.sidebar:
         association_interpretation = "categorical"
     else:
         association_interpretation = "numeric"
+    if phenotype in PATHOLOGY_OUTCOMES:
+        st.caption(
+            "Postmortem pathology, August 2025 release. Amyloid and tangles use the "
+            "supplied square-root 8-region estimates; no additional outcome transform is applied."
+        )
     active_feature_labels = dict(
         FEATURE_LABELS if estimator == "lioness" else BONOBO_FEATURE_LABELS
     )
@@ -6876,6 +6892,13 @@ if active_view == "CT–TS screen":
             "q_component_rint_all12_global"
         ]
     screen["correlation_method"] = correlation_method
+    if phenotype in PATHOLOGY_OUTCOMES:
+        family = "spearman" if correlation_method == "Spearman" else "rint"
+        test = "rank" if correlation_method == "Spearman" else "rint"
+        for component in ("CT", "TS"):
+            screen[f"fdr_{component}_global"] = screen[f"q_{family}_{component}_across_modules"]
+        screen["fdr_CT_vs_TS_global"] = screen[f"q_component_{test}_across_modules"]
+        st.caption("Pathology FDRs are BH across valid modules only, separately for this outcome and donor group.")
     screen["delta_correlation_CT_minus_TS"] = (
         screen["correlation_CT"] - screen["correlation_TS"]
     )
@@ -7154,6 +7177,11 @@ if active_view == "Module finder":
         correlation_method=correlation_method,
         criterion=finder_criterion,
     )
+    if phenotype in PATHOLOGY_OUTCOMES:
+        finder["ct_ts_fdr_across_modules"] = finder["ct_ts_fdr_within_phenotype"]
+        for component in ("CT", "TS"):
+            finder[f"ad_control_fdr_{component}"] = benjamini_hochberg(finder[f"ad_control_p_value_{component}"])
+        finder["ad_control_min_fdr"] = finder[["ad_control_fdr_CT", "ad_control_fdr_TS"]].min(axis=1)
     finder = finder.merge(
         annotations[
             [
@@ -7282,7 +7310,7 @@ if active_view == "Module finder":
             "ct_ts_test_statistic",
             "ct_ts_p_value",
             "ct_ts_fdr_within_phenotype",
-            "ct_ts_fdr_all12_global",
+            "ct_ts_fdr_across_modules" if phenotype in PATHOLOGY_OUTCOMES else "ct_ts_fdr_all12_global",
             "n_control",
             "n_ad",
             "correlation_CT_control",
@@ -7339,6 +7367,10 @@ if active_view == "Module finder":
             mime="text/tab-separated-values",
         )
     st.info(
+        "Pathology CT–TS FDR is BH across modules for this outcome and cohort. "
+        "Control–AD contrasts use approximate Fisher-z tests with BH across modules "
+        "separately for CT and TS. These are descriptive association-pattern screens."
+        if phenotype in PATHOLOGY_OUTCOMES else
         "CT–TS FDR uses the existing dependent-component test corrected across modules "
         "within the selected phenotype. For All donors this test is calculated from the "
         "pooled donor rows; its legacy all-12-outcome FDR field remains unavailable. "
@@ -7364,7 +7396,7 @@ if active_view == "Edge summaries":
             module_set, estimator, method, module, edge_rule,
             differential_edge_rule, differential_fdr_scope,
             differential_fdr_threshold,
-        )
+        ), module_set=module_set, cohort_scope=cohort_scope,
     )
     if differential_edge_rule != "all" and analysis_subset != "all_donors":
         edge_data = edge_data.loc[edge_data["ad_control_split"].eq(selected_split)]
@@ -7601,7 +7633,7 @@ if active_view == "Donor edge explorer":
                 module_set, estimator, method, module, edge_rule,
                 differential_edge_rule, differential_fdr_scope,
                 differential_fdr_threshold,
-            )
+            ), module_set=module_set, cohort_scope=cohort_scope,
         )
         edge_data = edge_data.loc[edge_data["sample_id"].isin(selected_pair)].copy()
         edge_data["retained_edge_fraction"] = (
@@ -9651,6 +9683,10 @@ if active_view == "Statistics":
         )
         st.stop()
     st.caption(
+        "Pathology corrections are BH across valid modules only within each outcome, "
+        "feature, component and donor group. Legacy all-12/primary-five corrections "
+        "are not applicable. The download retains all robustness and module-only FDR fields."
+        if phenotype in PATHOLOGY_OUTCOMES else
         f"The primary table follows the sidebar selection: {correlation_method}. The "
         "download retains raw, asinh, Winsorized, Spearman, RINT, leave-one-out "
         "sensitivity, dependent CT-vs-TS tests, and all stored FDR fields. All-12 "
@@ -9720,6 +9756,13 @@ if active_view == "Statistics":
             "q_component_rint_primary5_global",
         ]
     statistics = statistics.copy()
+    if phenotype in PATHOLOGY_OUTCOMES:
+        display_columns = [
+            column.replace("_all12_global", "_across_modules")
+            for column in display_columns if "_primary5_global" not in column
+        ]
+        if not resolved:
+            display_columns[display_columns.index("n"):display_columns.index("n") + 1] = ["n_CT", "n_TS", "n"]
     statistics.insert(0, "module_definition", module_set_label)
     filterable_dataframe(
         statistics[display_columns],

@@ -1001,13 +1001,14 @@
   },
   "metadata_files": {
     "AC": {
-      "bytes": 54607,
+      "bytes": 74497,
       "relative_path": "metadata/maximum_tissue/AC.parquet",
       "rows": 730,
       "schema": {
         "ad_control_split": "string",
         "adnc": "double",
         "age_at_death": "double",
+        "amyloid": "double",
         "apoe_genotype": "string",
         "braak_stage": "double",
         "cerad_score": "double",
@@ -1018,23 +1019,26 @@
         "cogng_path_slope": "double",
         "diagnosis_group": "string",
         "education_years": "double",
+        "gpath": "double",
         "motor10_demog_slope": "double",
         "parkinsonism": "double",
         "parkinsonism_label": "string",
         "sample_id": "string",
         "sex_code": "string",
-        "sqrt_parksc_demog_slope": "double"
+        "sqrt_parksc_demog_slope": "double",
+        "tangles": "double"
       },
-      "sha256": "f6a30b4184c834b0ee11c0ec0723e6a04bc8d4357b009d0ec0ff62e1525daa59"
+      "sha256": "c5e3ed9bc340c7261ea672fc96921ef673a5c6f640b899deaead753fe632effe"
     },
     "DLPFC": {
-      "bytes": 81607,
+      "bytes": 113908,
       "relative_path": "metadata/maximum_tissue/DLPFC.parquet",
       "rows": 1216,
       "schema": {
         "ad_control_split": "string",
         "adnc": "double",
         "age_at_death": "double",
+        "amyloid": "double",
         "apoe_genotype": "string",
         "braak_stage": "double",
         "cerad_score": "double",
@@ -1045,23 +1049,26 @@
         "cogng_path_slope": "double",
         "diagnosis_group": "string",
         "education_years": "double",
+        "gpath": "double",
         "motor10_demog_slope": "double",
         "parkinsonism": "double",
         "parkinsonism_label": "string",
         "sample_id": "string",
         "sex_code": "string",
-        "sqrt_parksc_demog_slope": "double"
+        "sqrt_parksc_demog_slope": "double",
+        "tangles": "double"
       },
-      "sha256": "f19918ebd2cef8dd7f075a8e90a6a00831f4d838e8edf0d5d9ae85267c462411"
+      "sha256": "960abc252c6f8a92205aee8f08b6948727535f9bf708fbe997504f7ea96d66b6"
     },
     "PCG": {
-      "bytes": 50321,
+      "bytes": 68517,
       "relative_path": "metadata/maximum_tissue/PCG.parquet",
       "rows": 659,
       "schema": {
         "ad_control_split": "string",
         "adnc": "double",
         "age_at_death": "double",
+        "amyloid": "double",
         "apoe_genotype": "string",
         "braak_stage": "double",
         "cerad_score": "double",
@@ -1072,14 +1079,16 @@
         "cogng_path_slope": "double",
         "diagnosis_group": "string",
         "education_years": "double",
+        "gpath": "double",
         "motor10_demog_slope": "double",
         "parkinsonism": "double",
         "parkinsonism_label": "string",
         "sample_id": "string",
         "sex_code": "string",
-        "sqrt_parksc_demog_slope": "double"
+        "sqrt_parksc_demog_slope": "double",
+        "tangles": "double"
       },
-      "sha256": "e0816946a4b7b8ad915e62f49cf7e035b5495aee35275a4c84a09ea0ca1d4d09"
+      "sha256": "6031f6d118464fb46a9d0702ef03370fb3a054a9c0c9cceae44cb2ea5711cff7"
     }
   },
   "module_counts": {
