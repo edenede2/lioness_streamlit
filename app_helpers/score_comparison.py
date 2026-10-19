@@ -12,7 +12,7 @@ import hashlib
 import json
 from pathlib import Path
 import textwrap
-from typing import Iterator
+from typing import Iterator, Mapping
 
 import numpy as np
 import pandas as pd
@@ -30,6 +30,7 @@ from app_helpers.streaming_associations import _serialized_heavy_read
 
 
 MAX_BOXES = 12
+COMPARISON_COLORS = ("#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00", "#56B4E9")
 COMBINED_COMPONENT = "CT_TS"
 COMPONENT_LABELS = {**D.EDGE_SCOPE_LABELS, COMBINED_COMPONENT: "CT + TS together"}
 SCALE_ORDER = ("raw", "asinh", "rint")
@@ -425,9 +426,13 @@ def display_results(
     return pd.concat(displayed, ignore_index=True), pd.concat(complete, ignore_index=True), pd.DataFrame(summaries)
 
 
-def comparison_figure(displayed: pd.DataFrame, summary: pd.DataFrame, outcome: str, method: str, show_points: bool = True) -> go.Figure:
+def comparison_figure(
+    displayed: pd.DataFrame, summary: pd.DataFrame, outcome: str, method: str,
+    show_points: bool = True, *, box_colors: Mapping[str, str] | None = None,
+    dot_colors: Mapping[str, str] | None = None,
+) -> go.Figure:
     """Boxplot values are module/component correlations, never donor scores."""
-    colors = ("#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00", "#56B4E9")
+    box_colors, dot_colors = box_colors or {}, dot_colors or {}
     figure = go.Figure()
     tick_values, tick_text = [], []
     for index, row in summary.reset_index(drop=True).iterrows():
@@ -441,7 +446,7 @@ def comparison_figure(displayed: pd.DataFrame, summary: pd.DataFrame, outcome: s
             count_label += f"<br>{row['plotted_score_observations']} {suffix}"
         tick_text.append("<br>".join(textwrap.wrap(str(row["box_label"]), wrap_width)) + f"<br>{count_label}")
         part = displayed.loc[displayed["box_id"].eq(box_id)]
-        color = colors[index % len(colors)]
+        color = box_colors.get(box_id, COMPARISON_COLORS[index % len(COMPARISON_COLORS)])
         figure.add_trace(go.Box(
             x=[index] * len(part), y=part["absolute_correlation"], name=row["box_label"], width=.5,
             marker_color=color, line_color=color, boxpoints=False, showlegend=False,
@@ -454,7 +459,7 @@ def comparison_figure(displayed: pd.DataFrame, summary: pd.DataFrame, outcome: s
             custom = part[[source_column, "module_key", "component_label", "signed_correlation", "n", "selected_p", "selected_fdr"]].to_numpy()
             figure.add_trace(go.Scatter(
                 x=index + (jitter - .5) * .36, y=part["absolute_correlation"], mode="markers",
-                marker=dict(color=color, size=6, opacity=.65), showlegend=False,
+                marker=dict(color=dot_colors.get(box_id, color), size=6, opacity=.65), showlegend=False,
                 customdata=custom, name=row["box_label"],
                 hovertemplate=("%{customdata[1]}<br>Partition: %{customdata[0]}<br>Component: %{customdata[2]}"
                                "<br>Signed correlation: %{customdata[3]:.4f}<br>|correlation|: %{y:.4f}"

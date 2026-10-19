@@ -184,6 +184,44 @@ def test_plot_points_are_modules_and_exports_have_fixed_abs_axis():
     assert len(C.comparison_figure(shown, summary, "cogn_global", "pearson", False).data) == 1
 
 
+def test_box_and_dot_colors_are_independent_and_use_box_identity_not_label():
+    from app_helpers.figure_export import ExportConfig, PlotContentConfig, PlotExportSpec
+    from app_helpers.figure_export.adapters import build_artifact
+
+    spec = C.ComparisonSeriesSpec("control_derived")
+    result, _, _ = _fixture(spec)
+    boxes = [("first", "Same label", spec), ("second", "Same label", spec)]
+    shown, _, summary = C.display_results({spec.key: result}, boxes)
+    original_shown, original_summary = shown.copy(deep=True), summary.copy(deep=True)
+    defaults = C.comparison_figure(shown, summary, "cogn_global", "spearman")
+    for box, points in zip(defaults.data[::2], defaults.data[1::2]):
+        assert points.marker.color == box.line.color
+    colors = {"first": "#112233", "second": "#AA4455"}
+    dots = {"second": "#000000"}  # Unspecified dots must follow their box.
+    figure = C.comparison_figure(shown, summary, "cogn_global", "spearman",
+                                 box_colors=colors, dot_colors=dots)
+    for index, box_id in enumerate(("first", "second")):
+        box, points = figure.data[index * 2 : index * 2 + 2]
+        assert box.line.color == box.marker.color == colors[box_id]
+        assert points.marker.color == dots.get(box_id, colors[box_id])
+        np.testing.assert_array_equal(box.y, defaults.data[index * 2].y)
+        np.testing.assert_array_equal(points.x, defaults.data[index * 2 + 1].x)
+        np.testing.assert_array_equal(points.customdata, defaults.data[index * 2 + 1].customdata)
+    reverse = C.comparison_figure(shown, summary.iloc[::-1], "cogn_global", "spearman",
+                                  box_colors=colors, dot_colors=dots)
+    assert reverse.data[0].line.color == colors["second"]
+    assert reverse.data[1].marker.color == dots["second"]
+    hidden = C.comparison_figure(shown, summary, "cogn_global", "spearman", False,
+                                 box_colors=colors, dot_colors=dots)
+    assert len(hidden.data) == 2 and all(t.type == "box" for t in hidden.data)
+    exported = build_artifact(PlotExportSpec.from_figure("comparison.colors", figure),
+                              ExportConfig(width=180, height=130), PlotContentConfig()).figure
+    assert [t.line.color for t in exported.data if t.type == "box"] == list(colors.values())
+    assert [t.marker.color for t in exported.data if t.type == "scatter"] == [colors["first"], dots["second"]]
+    pd.testing.assert_frame_equal(shown, original_shown)
+    pd.testing.assert_frame_equal(summary, original_summary)
+
+
 @pytest.mark.parametrize("source", ["full_cohort", "control_derived", "muscle_control_l4", "muscle_all_donors_l4"])
 @pytest.mark.parametrize("scale", C.SCALE_ORDER)
 def test_projected_multitissue_reader_routes_filters_and_components(monkeypatch, source, scale):
@@ -355,6 +393,56 @@ def test_ui_requires_calculate_and_display_edits_never_read_donors(monkeypatch):
     app = next(button for button in app.button if button.label == "Move down" and not button.disabled).click().run()
     assert not app.exception and len(calls) == 5
     app = next(button for button in app.button if button.label == "Remove").click().run()
+    assert not app.exception and len(calls) == 5
+
+
+def test_ui_box_and_dot_colors_follow_defaults_and_survive_reordering_without_reads(monkeypatch):
+    calls = _mock_ui(monkeypatch)
+    app = AppTest.from_function(_ui_app, default_timeout=30).run()
+    assert not app.exception and not calls
+    uid = app.session_state[U.BOX_STATE][0]["uid"]
+    prefix = f"module_comparison__{uid}__"
+    app = app.color_picker(key=prefix + "box_color").set_value("#112233").run()
+    assert not calls  # Appearance edits must not trigger the calculation action.
+    assert app.checkbox(key=prefix + "dots_match_box").value
+    assert not any(e.label == "Dot color" for e in app.color_picker)
+    app = _widget(app.button, "Calculate comparison").click().run()
+    baseline = app.dataframe[0].value.copy(deep=True)
+
+    def traces_for_first_box():
+        return json.loads(app.get("plotly_chart")[0].proto.spec)["data"][:2]
+
+    box, dots = traces_for_first_box()
+    assert box["line"]["color"] == dots["marker"]["color"] == "#112233"
+    app = app.checkbox(key=prefix + "dots_match_box").uncheck().run()
+    assert app.color_picker(key=prefix + "dot_color").value == "#112233"
+    app = app.color_picker(key=prefix + "dot_color").set_value("#AA4455").run()
+    app = app.color_picker(key=prefix + "box_color").set_value("#223344").run()
+    box, dots = traces_for_first_box()
+    assert box["line"]["color"] == "#223344" and dots["marker"]["color"] == "#AA4455"
+    app = app.checkbox(key=prefix + "dots_match_box").check().run()
+    assert traces_for_first_box()[1]["marker"]["color"] == "#223344"
+    app = app.checkbox(key=prefix + "dots_match_box").uncheck().run()
+    assert app.color_picker(key=prefix + "dot_color").value == "#AA4455"
+    pd.testing.assert_frame_equal(app.dataframe[0].value, baseline)
+    assert len(calls) == 5
+    app = app.button(key=prefix + "down").click().run()
+    assert not app.exception
+    traces = json.loads(app.get("plotly_chart")[0].proto.spec)["data"]
+    assert traces[2]["line"]["color"] == "#223344"
+    assert traces[3]["marker"]["color"] == "#AA4455"
+    app = app.button(key=prefix + "duplicate").click().run()
+    rows = app.session_state[U.BOX_STATE]
+    copied = rows[2]
+    assert copied["uid"] != uid
+    assert copied["box_color"] == "#223344" and copied["dot_color"] == "#AA4455"
+    assert not copied["dots_match_box"]
+    copied_prefix = f"module_comparison__{copied['uid']}__"
+    app = app.color_picker(key=copied_prefix + "box_color").set_value("#334455").run()
+    original = next(row for row in app.session_state[U.BOX_STATE] if row["uid"] == uid)
+    assert original["box_color"] == "#223344"  # Duplicates can be edited independently.
+    app = _widget(app.checkbox, "Show module points").uncheck().run()
+    assert all(t["type"] == "box" for t in json.loads(app.get("plotly_chart")[0].proto.spec)["data"])
     assert not app.exception and len(calls) == 5
 
 

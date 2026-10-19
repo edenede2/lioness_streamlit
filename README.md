@@ -173,7 +173,10 @@ The app includes three explicitly separated module definitions:
   Top K ranks unique modules by their strongest eligible component and retains
   both qualifying scores. CT and TS retain separate across-module FDR families.
   Calculation is explicit and serialized, with only compact statistics cached.
-  Top K, FDR display filtering, labels and ordering reuse those statistics without
+  Each box has a **Box color** picker; dots match it by default. Turn off
+  **Match dots to box color** to set an independent **Dot color**. Colors stay with
+  their box when it is renamed, reordered or duplicated and are retained in exports.
+  Top K, FDR display filtering, colors, labels and ordering reuse those statistics without
   rereading scores. BH uses all valid modules before Top K, separately for each
   fixed configuration (and each regional tissue). Summary counts, signed effects,
   donor N, both methods, full-family FDRs and unavailable reasons remain downloadable.

@@ -13,7 +13,7 @@ from app_helpers import data as D
 from app_helpers import regional_modules as R
 from app_helpers.figure_export import render_exportable_plot
 from app_helpers.score_comparison import (
-    COMBINED_COMPONENT, COMPONENT_LABELS, CORRELATION_LABELS, MAX_BOXES, SCALE_ORDER, ComparisonSeriesSpec,
+    COMBINED_COMPONENT, COMPARISON_COLORS, COMPONENT_LABELS, CORRELATION_LABELS, MAX_BOXES, SCALE_ORDER, ComparisonSeriesSpec,
     availability_reason, calculate_series, comparison_figure, display_results,
     effect_settings, source_registry,
 )
@@ -229,6 +229,26 @@ def _box_editor(row: dict, registry: dict, position: int, count: int) -> tuple[d
             st.caption("This partition's own donor cohort is used; it is not intersected with other boxes.")
         scale = _select("Score transformation", SCALE_ORDER, row["scale"], prefix + "scale",
                         format_func=lambda value: {"raw": "Raw", "asinh": "asinh", "rint": "RINT"}[value])
+        color_columns = st.columns(2)
+        with color_columns[0]:
+            box_color = st.color_picker(
+                "Box color", value=row.get("box_color", COMPARISON_COLORS[position % len(COMPARISON_COLORS)]),
+                key=prefix + "box_color",
+            )
+        with color_columns[1]:
+            dots_match_box = st.checkbox(
+                "Match dots to box color", value=row.get("dots_match_box", True),
+                key=prefix + "dots_match_box",
+            )
+            # Keep an independent custom color in row state while its widget is
+            # hidden; Streamlit discards the state of unrendered widgets.
+            dot_color = row.get("dot_color")
+            if not dots_match_box:
+                dot_color = st.color_picker(
+                    "Dot color", value=dot_color or box_color, key=prefix + "dot_color",
+                )
+            else:
+                st.caption("Dots follow the box color.")
         buttons = st.columns(4)
         buttons[0].button("Move up", key=prefix + "up", disabled=position == 0, on_click=edit_boxes, args=("up", row["uid"]))
         buttons[1].button("Move down", key=prefix + "down", disabled=position == count - 1, on_click=edit_boxes, args=("down", row["uid"]))
@@ -236,7 +256,10 @@ def _box_editor(row: dict, registry: dict, position: int, count: int) -> tuple[d
         buttons[3].button("Remove", key=prefix + "remove", disabled=count == 1, on_click=edit_boxes, args=("remove", row["uid"]))
         config = dict(source=source, feature=feature, method=method, component=component,
                       scale=scale, cohort_scope=cohort, tissues=tuple(selected_tissues), **edges)
-        updated = dict(uid=row["uid"], label=label.strip() or f"Box {position + 1}", **config)
+        updated = dict(
+            uid=row["uid"], label=label.strip() or f"Box {position + 1}",
+            box_color=box_color, dot_color=dot_color, dots_match_box=dots_match_box, **config,
+        )
         if regional and not selected_tissues:
             st.warning("Select at least one completed region for this box.")
             return updated, None
@@ -278,7 +301,7 @@ def render_view(data_manifest: dict) -> None:
             boxes.append((new_row["uid"], new_row["label"], spec))
     st.session_state[BOX_STATE] = updated
     st.button("Add box", disabled=len(rows) >= MAX_BOXES, on_click=edit_boxes, args=("add",), key="module_comparison_add")
-    st.caption(f"{len(rows)}/{MAX_BOXES} boxes. Expand a box to change its source, score, component, transformation or edge subset.")
+    st.caption(f"{len(rows)}/{MAX_BOXES} boxes. Expand a box to change its source, score, component, transformation, edge subset or colors.")
     valid = len(boxes) == len(rows)
     # Manifest revision invalidates compact caches when an incremental release changes data.
     regional_manifest = R.load_regional_manifest() if any(entry["regional"] for entry in registry.values()) else {}
@@ -318,7 +341,7 @@ def render_view(data_manifest: dict) -> None:
             return
     result = st.session_state.get(RESULT_STATE)
     if not valid or result is None or result["context"] != context or any(spec.key not in result["catalogs"] for _, _, spec in boxes):
-        st.info("Choose completed score combinations and click Calculate comparison. Labels, order, correlation method, K and display filters reuse the calculated compact statistics.")
+        st.info("Choose completed score combinations and click Calculate comparison. Colors, labels, order, correlation method, K and display filters reuse the calculated compact statistics.")
         return
     displayed, complete, summary = display_results(result["catalogs"], boxes, method, int(k) if selection == "Top K" else None, fdr)
     for table in (displayed, complete, summary):
@@ -332,7 +355,15 @@ def render_view(data_manifest: dict) -> None:
     if displayed.empty:
         st.info("No modules meet the current eligibility and FDR display filters. Summary counts and complete calculated results remain available.")
     else:
-        figure = comparison_figure(displayed, summary, outcome, method, points)
+        box_colors = {row["uid"]: row["box_color"] for row in updated}
+        dot_colors = {
+            row["uid"]: row["box_color"] if row["dots_match_box"] else row["dot_color"]
+            for row in updated
+        }
+        figure = comparison_figure(
+            displayed, summary, outcome, method, points,
+            box_colors=box_colors, dot_colors=dot_colors,
+        )
         render_exportable_plot(figure, key="module_outcome_comparison_plot")
     filterable_dataframe(summary, table_key="module_comparison_summary", table_name="Box summaries", hide_index=True)
     choice = st.radio("Module table", ["Displayed modules", "Complete calculated results"], horizontal=True, key="module_comparison_table_choice")
