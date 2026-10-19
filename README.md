@@ -16,6 +16,9 @@ predictor blocks to include, changes their order, or selects individual bars.
 For example, export only CT pooled and TS pooled without CT + TS pooled.
 Selections affect the preview and final file only, preserve bar values, colors,
 hover details and attached error bars, and reset with the other export settings.
+Enable **Customize bar colors** to set series/model colors, then **Override
+individual bar colors** to recolor selected bars independently. Explicit choices
+take precedence over the general export palette and remain aligned after filtering.
 The **Content** tab includes toggles for the plot title/subtitle, panel titles,
 enrichment subtitles, axis titles, and legend (plus color scales when present).
 Identical axis titles appear once for a combined figure by default; turn off
@@ -246,8 +249,12 @@ The app includes three explicitly separated module definitions:
 - Type-aware row filters are available for every interactive table: numeric ranges,
   categorical value selection, text matching, dates, and missing-value policies,
   with persistent per-table choices and one-click reset.
-- Interactive module-size distributions and size-ranked AC/DLPFC/PCG composition
-  bars, filterable to CT modules, TS modules, or both.
+- Interactive module-size distributions and size-ranked tissue-composition bars,
+  filterable to CT modules, TS modules, or both. In **Module details**, select
+  horizontal or vertical composition, gene counts or 100% tissue proportions,
+  and individual brain/motor tissue colors. Percentages always use full module
+  size; hiding a tissue does not renormalize the remaining segments. The current
+  orientation, values and colors carry into figure exports.
 - A separate leakage-reduced **Prediction** view for LIONESS. It compares pooled CT,
   pooled TS, individual tissues/pairs, resolved CT/TS blocks, and combined blocks for
   eight prespecified targets using dummy, demographics/APOE, network-only, and adjusted

@@ -22,6 +22,7 @@ from sklearn.metrics import precision_recall_curve, roc_curve
 
 PREDICTION_BLOCK_ORDERING_API_VERSION = 1
 PUBLICATION_EXPORT_API_VERSION = 1
+MODULE_COMPOSITION_API_VERSION = 1
 DISTRIBUTION_GROUPING_API_VERSION = 3
 COEFFICIENT_ANNOTATION_API_VERSION = 3
 ASSOCIATION_STYLE_API_VERSION = 1
@@ -53,6 +54,10 @@ REGION_COLORS = {
     "AC": "#2C7FB8",
     "DLPFC": "#D8A500",
     "PCG": "#E66101",
+}
+TISSUE_COMPOSITION_COLORS = {
+    **REGION_COLORS,
+    "VH": "#88CCEE", "SMA": "#CC6677", "QUAD": "#DDCC77",
 }
 KEGG_REGION_COMBINATION_COLORS = {
     "AC + DLPFC": "#4C78A8",
@@ -2478,8 +2483,14 @@ def module_size_distribution_figure(
 def module_region_composition_figure(
     frame: pd.DataFrame,
     module_definition: str | None = None,
+    *,
+    orientation: str = "h",
+    composition_scale: str = "counts",
+    tissue_colors: dict[str, str] | None = None,
 ) -> go.Figure:
     """Rank modules by size and show their three-tissue gene composition."""
+    if orientation not in {"h", "v"} or composition_scale not in {"counts", "proportions"}:
+        raise ValueError("Choose horizontal/vertical composition and counts/proportions.")
     tissue_columns = (
         [("AC", "n_genes_ac"), ("DLPFC", "n_genes_dlpfc"), ("PCG", "n_genes_pcg")]
         if "n_genes_ac" in frame.columns
@@ -2501,11 +2512,16 @@ def module_region_composition_figure(
     )
     if data.empty:
         return go.Figure()
+    if composition_scale == "proportions":
+        counts_by_module = data[[column for _, column in tissue_columns]].fillna(0)
+        if (data["module_size"].le(0).any() or counts_by_module.lt(0).any().any()
+                or not np.allclose(counts_by_module.sum(axis=1), data["module_size"], atol=1e-8, rtol=0)):
+            raise ValueError("Tissue gene counts must be nonnegative and sum to each positive module size for a 100% composition plot.")
 
     module_labels = data["module"].astype(int).map(lambda value: f"M{value}")
     figure = go.Figure()
     region_columns = tissue_columns
-    fallback_colors = px.colors.qualitative.Safe
+    palette = {**TISSUE_COMPOSITION_COLORS, **(tissue_colors or {})}
     for region, count_column in region_columns:
         counts = data[count_column].fillna(0).astype(int)
         proportions = np.divide(
@@ -2514,30 +2530,27 @@ def module_region_composition_figure(
             out=np.zeros(len(data), dtype=float),
             where=data["module_size"].to_numpy(dtype=float) > 0,
         )
-        customdata = np.column_stack(
-            [
-                data["module_size"].astype(int).astype(str),
-                data["cluster_type"].astype(str),
-                np.char.mod("%.1f%%", proportions * 100.0),
-            ]
-        )
+        customdata = np.empty((len(data), 4), dtype=object)
+        customdata[:, 0] = data["module_size"].astype(int)
+        customdata[:, 1] = data["cluster_type"].astype(str)
+        customdata[:, 2] = np.char.mod("%.1f%%", proportions * 100.0)
+        customdata[:, 3] = counts.to_numpy()
+        values = proportions if composition_scale == "proportions" else counts
         figure.add_trace(
             go.Bar(
-                x=counts,
-                y=module_labels,
-                orientation="h",
+                x=values if orientation == "h" else module_labels,
+                y=module_labels if orientation == "h" else values,
+                orientation=orientation,
                 name=region,
                 marker={
-                    "color": REGION_COLORS.get(
-                        region, fallback_colors[len(figure.data) % len(fallback_colors)]
-                    ),
+                    "color": palette[region],
                     "line": {"color": "white", "width": 0.35},
                 },
                 customdata=customdata,
                 hovertemplate=(
-                    "Module: %{y}<br>"
-                    f"Region: {region}<br>"
-                    "Region genes: %{x:,}<br>"
+                    ("Module: %{y}<br>" if orientation == "h" else "Module: %{x}<br>")
+                    + f"Region: {region}<br>"
+                    "Region genes: %{customdata[3]:,}<br>"
                     "Region proportion: %{customdata[2]}<br>"
                     "Total module genes: %{customdata[0]}<br>"
                     "Module type: %{customdata[1]}<extra></extra>"
@@ -2545,28 +2558,33 @@ def module_region_composition_figure(
             )
         )
 
-    title_text = "Brain-region composition by module"
+    is_brain = "n_genes_ac" in data.columns
+    title_text = "Brain-region composition by module" if is_brain else "Tissue composition by module"
     if module_definition:
         title_text += (
             f"<br><sup>{module_definition} · sorted from largest to smallest · "
             f"{len(data)} modules shown</sup>"
         )
+    value_axis = {"title": "Genes in module", "rangemode": "tozero"}
+    if composition_scale == "proportions":
+        value_axis = {"title": "Proportion of module genes", "tickformat": ".0%", "range": [0, 1]}
+    category_axis = {"title": "Module", "categoryorder": "array",
+                     "categoryarray": module_labels.tolist(), "tickfont": {"size": 10}}
+    if orientation == "h":
+        category_axis["autorange"] = "reversed"
+    else:
+        category_axis["tickangle"] = -90 if len(data) > 30 else -45
     figure.update_layout(
         title={"text": title_text, "x": 0.01, "xanchor": "left"},
         template="plotly_white",
         barmode="stack",
-        height=max(620, min(2600, 230 + 16 * len(data))),
+        height=max(620, min(2600, 230 + 16 * len(data))) if orientation == "h" else 680,
         margin={"l": 85, "r": 25, "t": 95, "b": 65},
-        xaxis={"title": "Genes in module", "rangemode": "tozero"},
-        yaxis={
-            "title": "Module",
-            "categoryorder": "array",
-            "categoryarray": module_labels.tolist(),
-            "autorange": "reversed",
-            "tickfont": {"size": 10},
-        },
+        xaxis=value_axis if orientation == "h" else category_axis,
+        yaxis=category_axis if orientation == "h" else value_axis,
         legend={
-            "title": {"text": "Brain region"},
+            "title": {"text": "Brain region" if is_brain else "Tissue"},
+            "traceorder": "normal",
             "orientation": "h",
             "yanchor": "bottom",
             "y": 1.02,
@@ -2574,6 +2592,7 @@ def module_region_composition_figure(
             "x": 1,
         },
         hovermode="closest",
+        meta={"figure_export": {"bar_selection": {"series_label": "Tissues", "category_label": "Modules"}}},
     )
     return figure
 

@@ -27,6 +27,7 @@ if (
     getattr(_chart_helpers, "DISTRIBUTION_GROUPING_API_VERSION", 0) < 3
     or getattr(_chart_helpers, "PUBLICATION_EXPORT_API_VERSION", 0) < 1
     or getattr(_chart_helpers, "ASSOCIATION_STYLE_API_VERSION", 0) < 1
+    or getattr(_chart_helpers, "MODULE_COMPOSITION_API_VERSION", 0) < 1
     or not all(
         hasattr(_chart_helpers, name)
         for name in (
@@ -10334,10 +10335,33 @@ if active_view == "Module details":
                 "feature": feature,
             },
         )
+        composition_controls = st.columns(2)
+        composition_orientation = composition_controls[0].selectbox(
+            "Composition orientation", ["h", "v"],
+            format_func=lambda value: "Horizontal" if value == "h" else "Vertical",
+            key=f"module_composition_orientation_{module_set}",
+        )
+        composition_scale = composition_controls[1].selectbox(
+            "Composition values", ["counts", "proportions"],
+            format_func=lambda value: "Gene counts" if value == "counts" else "Tissue proportions (100%)",
+            key=f"module_composition_scale_{module_set}",
+            help="Proportions divide each tissue's gene count by the full module size. Hiding a tissue does not renormalize the others.",
+        )
+        composition_colors = {}
+        with st.expander("Composition tissue colors", expanded=False):
+            color_columns = st.columns(len(active_tissues))
+            for column, tissue in zip(color_columns, active_tissues):
+                composition_colors[tissue] = column.color_picker(
+                    f"{tissue} tissue color", value=_chart_helpers.TISSUE_COMPOSITION_COLORS[tissue],
+                    key=f"module_composition_color_{module_set}_{tissue}",
+                )
         render_plotly_chart(
             module_region_composition_figure(
                 chart_module_details,
                 module_definition=module_set_label,
+                orientation=composition_orientation,
+                composition_scale=composition_scale,
+                tissue_colors=composition_colors,
             ),
             use_container_width=True,
             config={
@@ -10371,10 +10395,13 @@ if active_view == "Module details":
                 "feature": feature,
             },
         )
+        composition_description = (
+            "Each complete bar represents 100% of the module's genes; colored segments show tissue proportions. "
+            if composition_scale == "proportions" else "Total bar length is module size; colored segments show gene counts. "
+        )
         st.caption(
-            f"Total bar width is module size; colored segments are {', '.join(active_tissues[:-1])}, "
-            f"and {active_tissues[-1]} "
-            "gene counts. Modules are ordered largest to smallest. Hover for exact "
+            composition_description + f"Tissues are {', '.join(active_tissues[:-1])}, "
+            f"and {active_tissues[-1]}. Modules are ordered largest to smallest. Hover for exact "
             "counts and proportions; drag or scroll to zoom. Entropy is the continuous "
             "tissue-mixing complement to the discrete CT/TS module classification: zero "
             "means one tissue only and one means equal representation of all three tissues."

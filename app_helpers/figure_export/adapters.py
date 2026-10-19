@@ -34,7 +34,7 @@ from .config import (
     figure_panels,
     restore_figure,
 )
-from .bar_selection import select_bars
+from .bar_selection import apply_bar_colors, select_bars
 
 SAFE_COLORS = [
     "#0072B2",
@@ -803,6 +803,7 @@ def build_figure(
         if trace.type == "bar" and (trace.legendgroup or trace.name):
             group = str(trace.legendgroup or trace.name)
             bar_legends[group] = bar_legends.get(group, False) or trace.showlegend is not False
+    apply_bar_colors(figure, content_config)
     select_bars(figure, content_config)
     if not content_config.show_selected_module_annotation:
         for trace in figure.data:

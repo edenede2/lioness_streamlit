@@ -215,6 +215,8 @@ class PlotContentConfig:
     bar_series: tuple[str, ...] | None = None
     bar_categories: tuple[str, ...] | None = None
     bar_items: tuple[str, ...] | None = None
+    bar_series_colors: tuple[tuple[str, str], ...] = ()
+    bar_item_colors: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True)

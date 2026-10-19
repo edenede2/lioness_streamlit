@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+from dataclasses import replace
 
 import numpy as np
 import pandas as pd
@@ -14,7 +15,7 @@ from streamlit.testing.v1 import AppTest
 from app_helpers.charts import prediction_performance_figure, protocol_performance_figure
 from app_helpers.figure_export import ExportConfig, PlotContentConfig, PlotExportSpec
 from app_helpers.figure_export import adapters, ui
-from app_helpers.figure_export.bar_selection import bar_options
+from app_helpers.figure_export.bar_selection import bar_color_defaults, bar_options
 from app_helpers.figure_export.config import render_fingerprint
 
 
@@ -55,6 +56,38 @@ def test_models_and_predictor_blocks_filter_without_changing_values_or_source():
     assert result.data[0].marker.color == source.data[1].marker.color
     assert tuple(result.layout.xaxis.categoryarray) == ("CT pooled", "TS pooled")
     assert source.to_json() == snapshot
+
+
+def test_explicit_bar_colors_survive_filtering_reordering_and_global_palette():
+    source = performance_figure()
+    snapshot = source.to_json()
+    defaults = bar_color_defaults(source)
+    assert defaults["bar:1:0"].lower() == source.data[1].marker.color.lower()
+    content = PlotContentConfig(
+        bar_series=("Connectivity", "Demographics/APOE"),
+        bar_categories=("TS pooled", "CT pooled"),
+        bar_series_colors=(("Connectivity", "#112233"), ("Demographics/APOE", "#445566")),
+        bar_item_colors=(("bar:1:1", "#FF00AA"), ("bar:1:2", "#00FF00")),
+    )
+    config = ExportConfig(width=180, height=120)
+    config = replace(config, style=replace(config.style, palette="Color-blind safe"))
+    result = adapters.build_artifact(PlotExportSpec.from_figure("prediction", source), config, content).figure
+    assert result.data[0].name == "Connectivity"
+    assert tuple(result.data[0].marker.color) == ("#112233", "#FF00AA")
+    assert tuple(result.data[1].marker.color) == ("#445566", "#445566")
+    assert np.allclose(result.data[0].y, source.data[1].y[:2])
+    assert source.to_json() == snapshot
+
+
+@pytest.mark.parametrize("colors", [
+    {"bar_series_colors": (("Unknown", "#001122"),)},
+    {"bar_item_colors": (("bar:99:0", "#001122"),)},
+    {"bar_item_colors": (("bar:0:0", "red"),)},
+    {"bar_series_colors": (("Connectivity", "#001122"), ("Connectivity", "#334455"))},
+])
+def test_invalid_bar_color_overrides_are_explicit(colors):
+    with pytest.raises(ValueError, match="bar color|Bar colors"):
+        build(performance_figure(), PlotContentConfig(**colors))
 
 
 def test_individual_bar_selection_keeps_point_styles_errors_text_and_hover_aligned():
@@ -240,4 +273,43 @@ def test_export_dialog_bar_controls_preview_download_reset_and_main_state(monkey
     widget(app.button, "Reset to defaults").click().run()
     assert calls[-1][2].bar_series is None and calls[-1][2].bar_categories is None
     assert calls[-1][2].bar_items is None
+    assert not app.exception
+
+
+def test_export_dialog_individual_colors_preview_download_and_reset(monkeypatch):
+    import streamlit as st
+    calls = []
+    image = io.BytesIO()
+    Image.new("RGB", (50, 40), "white").save(image, format="PNG")
+    def renderer(spec, config, content):
+        calls.append((spec, config, content))
+        return image.getvalue(), ()
+    monkeypatch.setattr(ui, "_render_cached", renderer)
+    monkeypatch.setattr(ui, "export_dialog", lambda spec: st.session_state.__setitem__("test_open_spec", spec))
+    app = AppTest.from_function(_prediction_export_app, default_timeout=30).run()
+    source_plot = app.get("plotly_chart")[0].proto.spec
+    widget(app.button, "Export figure").click().run()
+    widget(app.multiselect, "Models to include").set_value(["Connectivity"]).run()
+    widget(app.multiselect, "Predictor blocks to include").set_value(["CT pooled", "TS pooled"]).run()
+    widget(app.checkbox, "Customize bar colors").check().run()
+    widget(app.color_picker, "Connectivity color").set_value("#224466").run()
+    widget(app.checkbox, "Override individual bar colors").check().run()
+    picker = widget(app.multiselect, "Bars to recolor individually")
+    picker.set_value(["bar:1:0"]).run()
+    individual = next(control for control in app.color_picker if control.label.startswith("Bar color:"))
+    individual.set_value("#CC3355").run()
+    assert not app.exception
+    assert dict(calls[-1][2].bar_series_colors) == {"Connectivity": "#224466"}
+    assert list(dict(calls[-1][2].bar_item_colors).values()) == ["#CC3355"]
+    exported = adapters.build_artifact(*calls[-1]).figure
+    assert tuple(exported.data[0].marker.color) == ("#CC3355", "#224466")
+    widget(app.button, "Prepare download").click().run()
+    assert app.get("download_button") and calls[-1][2].bar_item_colors
+    assert app.get("plotly_chart")[0].proto.spec == source_plot
+    next(control for control in app.color_picker if control.label.startswith("Bar color:")).set_value("#009977").run()
+    assert not app.get("download_button")  # Old bytes cannot be downloaded for a new color.
+    assert list(dict(calls[-1][2].bar_item_colors).values()) == ["#009977"]
+    widget(app.button, "Reset to defaults").click().run()
+    assert not widget(app.checkbox, "Customize bar colors").value
+    assert calls[-1][2].bar_series_colors == calls[-1][2].bar_item_colors == ()
     assert not app.exception

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import html
+import hashlib
 import io
 import re
 import zipfile
@@ -11,7 +12,7 @@ from typing import Any
 
 import streamlit as st
 from app_helpers.streamlit_compat import supports_dialog
-from .bar_selection import bar_options
+from .bar_selection import bar_color_defaults, bar_options
 
 from .adapters import (
     ExportError,
@@ -107,6 +108,47 @@ def _render_cached(spec: PlotExportSpec, config: ExportConfig, content: PlotCont
         cache[fingerprint] = result
         st.session_state[key] = cache
     return result
+
+
+def _bar_color_controls(source, choices, series, categories, items, key):
+    if not st.checkbox("Customize bar colors", key=key("custom_bar_colors")):
+        return (), ()
+    try:
+        defaults = bar_color_defaults(source)
+    except (TypeError, ValueError) as error:
+        st.info(str(error))
+        return (), ()
+    candidates = [item for item in choices.items if item.series in series and item.category in categories
+                  and (items is None or item.key in items)]
+    series_colors = []
+    columns = st.columns(2)
+    for i, series_name in enumerate(series):
+        members = [item for item in candidates if item.series == series_name]
+        if not members:
+            continue
+        with columns[i % 2]:
+            series_colors.append((series_name, st.color_picker(
+                f"{_plain(series_name)} color", value=defaults[members[0].key],
+                key=key("series_color_" + hashlib.sha256(series_name.encode()).hexdigest()[:16]),
+            )))
+    item_colors = []
+    if st.checkbox("Override individual bar colors", key=key("custom_individual_colors")):
+        labels = {item.key: f"{_plain(item.category)} — {_plain(item.series)} ({item.panel})" for item in candidates}
+        selection_key = key("recolored_bar_items")
+        if selection_key in st.session_state:
+            st.session_state[selection_key] = [value for value in st.session_state[selection_key] if value in labels]
+        selected = st.multiselect("Bars to recolor individually", list(labels),
+                                  default=None if selection_key in st.session_state else [],
+                                  format_func=labels.get, key=selection_key)
+        series_lookup = dict(series_colors)
+        for i, item in enumerate(item for item in candidates if item.key in selected):
+            with columns[i % 2]:
+                item_colors.append((item.key, st.color_picker(
+                    f"Bar color: {labels[item.key]}", value=series_lookup.get(item.series, defaults[item.key]),
+                    key=key("item_color_" + item.key),
+                )))
+        st.caption("Individual bar colors override series colors and the export palette. Legend entries identify series; a series swatch does not show every per-bar override.")
+    return tuple(series_colors), tuple(item_colors)
 
 
 def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bool]:
@@ -572,6 +614,7 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
         else:
             st.caption("This figure has one panel.")
     bar_series = bar_categories = bar_items = None
+    bar_series_colors = bar_item_colors = ()
     if bar_choices:
         with tabs[5]:
             st.caption("Export only: hide models, blocks or individual bars without changing the analysis. Retained values and uncertainty are unchanged. Remove and re-add model/block selections to change their order.")
@@ -604,6 +647,9 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
             else:
                 count = sum(item.series in series and item.category in categories for item in bar_choices.items)
             st.caption(f"{count} of {len(bar_choices.items)} bars selected before panel filtering.")
+            bar_series_colors, bar_item_colors = _bar_color_controls(
+                source, bar_choices, series, categories, bar_items, key,
+            )
     config = ExportConfig(
         preset,
         width,
@@ -650,6 +696,8 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
         bar_series=bar_series,
         bar_categories=bar_categories,
         bar_items=bar_items,
+        bar_series_colors=bar_series_colors,
+        bar_item_colors=bar_item_colors,
     )
     return config, content, separately
 

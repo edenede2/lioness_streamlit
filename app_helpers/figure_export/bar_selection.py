@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Any
 
 import numpy as np
 import plotly.graph_objects as go
+from PIL import ImageColor
 
 
 @dataclass(frozen=True)
@@ -90,6 +92,62 @@ def _slice_array(value: Any, positions: list[int], count: int) -> Any:
     if isinstance(value, (list, tuple, np.ndarray)) and len(value) == count:
         return [value[index] for index in positions]
     return value
+
+
+def _original_colors(figure: go.Figure, trace: Any, index: int) -> list[str]:
+    count = len(getattr(trace, _category_axis(trace)))
+    colors = trace.marker.color
+    if colors is None:
+        palette = figure.layout.colorway or figure.layout.template.layout.colorway or ("#636EFA",)
+        return [palette[index % len(palette)]] * count
+    if isinstance(colors, str):
+        return [colors] * count
+    if isinstance(colors, (tuple, list, np.ndarray)) and len(colors) == count and all(isinstance(color, str) for color in colors):
+        return list(colors)
+    raise ValueError("Custom bar colors require categorical, rather than continuous numeric, colors.")
+
+
+def bar_color_defaults(figure: go.Figure) -> dict[str, str]:
+    """Hex defaults for bounded color pickers; no alteration of source colors."""
+    defaults = {}
+    for i, trace in enumerate(figure.data):
+        for j, color in enumerate(_original_colors(figure, trace, i)):
+            try:
+                rgb = ImageColor.getrgb(color)[:3]
+            except ValueError:
+                channels = re.findall(r"[\d.]+", color)
+                if not color.startswith("rgba(") or len(channels) != 4:
+                    raise ValueError("This bar color cannot be represented by a color picker.") from None
+                rgb = tuple(int(float(value)) for value in channels[:3])
+            defaults[f"bar:{i}:{j}"] = "#" + "".join(f"{value:02x}" for value in rgb)
+    return defaults
+
+
+def apply_bar_colors(figure: go.Figure, content: Any) -> None:
+    """Apply explicit colors before slicing so original point identities persist."""
+    if not content.bar_series_colors and not content.bar_item_colors:
+        return
+    options = bar_options(figure)
+    if options is None:
+        raise ValueError("Custom bar colors are unavailable for this figure.")
+    series_colors, item_colors = dict(content.bar_series_colors), dict(content.bar_item_colors)
+    if (len(series_colors) != len(content.bar_series_colors) or len(item_colors) != len(content.bar_item_colors)
+            or set(series_colors) - set(options.series)
+            or set(item_colors) - {item.key for item in options.items}):
+        raise ValueError("Invalid bar color identity. Reset the export settings.")
+    if any(not isinstance(color, str) or not re.fullmatch(r"#[0-9a-fA-F]{6}", color)
+           for color in [*series_colors.values(), *item_colors.values()]):
+        raise ValueError("Bar colors must be six-digit hexadecimal colors, such as #0072B2.")
+    for i, trace in enumerate(figure.data):
+        series = _series(trace, i)
+        colors = _original_colors(figure, trace, i)
+        if series not in series_colors and not any(f"bar:{i}:{j}" in item_colors for j in range(len(colors))):
+            continue
+        trace.marker.color = [item_colors.get(f"bar:{i}:{j}", series_colors.get(series, color))
+                              for j, color in enumerate(colors)]
+        # Literal color arrays also prevent a global export palette from
+        # overriding the user's explicit model/per-bar choices.
+        trace.marker.coloraxis = None
 
 
 def _slice_trace(trace: Any, positions: list[int], count: int) -> None:
