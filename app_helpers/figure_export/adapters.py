@@ -34,6 +34,7 @@ from .config import (
     figure_panels,
     restore_figure,
 )
+from .bar_selection import select_bars
 
 SAFE_COLORS = [
     "#0072B2",
@@ -793,12 +794,26 @@ def build_figure(
     """Rebuild from an immutable figure/data snapshot; never recompute analyses."""
     export_config.validate()
     figure = restore_figure(data)
+    original_panels = figure_panels(figure)
+    has_bar_selection = any(value is not None for value in (
+        content_config.bar_series, content_config.bar_categories, content_config.bar_items,
+    ))
+    bar_legends = {}
+    for trace in figure.data:
+        if trace.type == "bar" and (trace.legendgroup or trace.name):
+            group = str(trace.legendgroup or trace.name)
+            bar_legends[group] = bar_legends.get(group, False) or trace.showlegend is not False
+    select_bars(figure, content_config)
     if not content_config.show_selected_module_annotation:
         for trace in figure.data:
             if trace_role(trace) == "selected_module":
                 trace.visible = False
                 trace.showlegend = False
-    panels = figure_panels(figure)
+    panels = original_panels
+    if has_bar_selection:
+        active = {p.identifier for p in figure_panels(figure)}
+        order = content_config.panel_order if content_config.panel_order is not None else tuple(p.identifier for p in panels)
+        content_config = replace(content_config, panel_order=tuple(identifier for identifier in order if identifier in active))
     content, config, fonts, style = (
         content_config,
         export_config,
@@ -807,6 +822,15 @@ def build_figure(
     )
     _correlation_annotations(figure, content)
     selected = _select_panels(figure, panels, content, config) if panels else ()
+    if has_bar_selection:
+        # Facet legends often live only on the first panel. If that panel was
+        # omitted, move the existing series legend to its first surviving trace.
+        seen = set()
+        for trace in figure.data:
+            group = str(trace.legendgroup or trace.name or "")
+            if trace.type == "bar" and group in bar_legends:
+                trace.showlegend = bar_legends[group] and group not in seen
+                seen.add(group)
     warnings = []
     family = resolve_font(fonts.family)
     if family != fonts.family:

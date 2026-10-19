@@ -4186,6 +4186,7 @@ def prediction_performance_figure(
             ],
         },
         yaxis_title=metric,
+        meta={"figure_export": {"bar_selection": {"series_label": "Models", "category_label": "Predictor blocks"}}},
     )
     return figure
 
@@ -5600,6 +5601,7 @@ def protocol_performance_figure(selected) -> go.Figure:
         facet_col="metric",
         title="Protocol v1.1 validated performance",
     )
+    figure.update_layout(meta={"figure_export": {"bar_selection": {"series_label": "Models", "category_label": "Representations"}}})
     return figure
 
 

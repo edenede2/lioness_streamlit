@@ -11,6 +11,7 @@ from typing import Any
 
 import streamlit as st
 from app_helpers.streamlit_compat import supports_dialog
+from .bar_selection import bar_options
 
 from .adapters import (
     ExportError,
@@ -121,7 +122,11 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
         args=(spec,),
     )
     defaults = preset_config(preset, spec.aspect_ratio)
-    tabs = st.tabs(["Size and format", "Typography", "Appearance", "Content", "Panels"])
+    # A custom builder owns its own presentation contract; do not offer filters
+    # it may not implement. Ordinary application charts use snapshot rebuilding.
+    bar_choices = bar_options(source) if spec.builder is None else None
+    tabs = st.tabs(["Size and format", "Typography", "Appearance", "Content", "Panels"]
+                   + (["Bars and groups"] if bar_choices else []))
     with tabs[0]:
         a, b = st.columns(2)
         with a:
@@ -566,6 +571,39 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
             )
         else:
             st.caption("This figure has one panel.")
+    bar_series = bar_categories = bar_items = None
+    if bar_choices:
+        with tabs[5]:
+            st.caption("Export only: hide models, blocks or individual bars without changing the analysis. Retained values and uncertainty are unchanged. Remove and re-add model/block selections to change their order.")
+            series = tuple(st.multiselect(
+                f"{bar_choices.series_label} to include", bar_choices.series,
+                default=bar_choices.series, format_func=_plain, key=key("bar_series"),
+            ))
+            categories = tuple(st.multiselect(
+                f"{bar_choices.category_label} to include", bar_choices.categories,
+                default=bar_choices.categories, format_func=_plain, key=key("bar_categories"),
+                help=("For example, retain CT pooled and TS pooled and remove CT + TS pooled."
+                      if bar_choices.category_label == "Predictor blocks"
+                      else "Only selected categories appear in the export; retained values are unchanged."),
+            ))
+            bar_series = series if series != bar_choices.series else None
+            bar_categories = categories if categories != bar_choices.categories else None
+            if st.checkbox("Choose individual bars", key=key("choose_bar_items")):
+                candidates = [item for item in bar_choices.items if item.series in series and item.category in categories]
+                labels = {item.key: f"{_plain(item.category)} — {_plain(item.series)}"
+                          + (f" ({item.panel})" if len(panels) > 1 else "") for item in candidates}
+                item_key = key("bar_items")
+                if item_key in st.session_state:
+                    st.session_state[item_key] = [value for value in st.session_state[item_key] if value in labels]
+                bar_items = tuple(st.multiselect(
+                    "Individual bars to include", list(labels),
+                    default=None if item_key in st.session_state else list(labels),
+                    format_func=labels.get, key=item_key,
+                ))
+                count = len(bar_items)
+            else:
+                count = sum(item.series in series and item.category in categories for item in bar_choices.items)
+            st.caption(f"{count} of {len(bar_choices.items)} bars selected before panel filtering.")
     config = ExportConfig(
         preset,
         width,
@@ -609,12 +647,17 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
         panel_labels=panel_labels,
         horizontal_reference=horizontal,
         vertical_reference=vertical,
+        bar_series=bar_series,
+        bar_categories=bar_categories,
+        bar_items=bar_items,
     )
     return config, content, separately
 
 
 def export_dialog_body(spec: PlotExportSpec) -> None:
     config, content, separately = _controls(spec)
+    # Keep recovery available even when no bars/panels are selected.
+    st.button("Reset to defaults", key=_prefix(spec) + "reset", on_click=_reset, args=(spec,))
     try:
         fitted = fit_automatic_config(spec, config, content)
     except (ExportError, ValueError, ImportError, OSError) as error:
@@ -629,7 +672,6 @@ def export_dialog_body(spec: PlotExportSpec) -> None:
         )
     config = fitted
     st.caption(output_summary(config, is_mixed(restore_figure(spec.figure_snapshot))))
-    st.button("Reset to defaults", key=_prefix(spec) + "reset", on_click=_reset, args=(spec,))
     filename_default = default_filename(spec, config)
     filename_key = _prefix(spec) + "filename_" + config.format
     auto_key = filename_key + "_automatic"
@@ -659,7 +701,7 @@ def export_dialog_body(spec: PlotExportSpec) -> None:
         if st.button("Prepare download", key=_prefix(spec) + "prepare"):
             with st.spinner("Rendering publication file…"):
                 if separately:
-                    panel_ids = content.panel_order or tuple(p.identifier for p in artifact.panels)
+                    panel_ids = tuple(p.identifier for p in artifact.panels)
                     buffer = io.BytesIO()
                     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
                         labels = {p.identifier: p.label for p in artifact.panels}

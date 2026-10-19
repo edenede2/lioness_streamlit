@@ -11,6 +11,11 @@ typography, plot-appropriate presentation controls, editable filenames, and a
 reset button. Select **Prepare download**, then **Download figure**. Multi-panel
 figures support panel selection/order, combined exports, or a ZIP containing one
 file per selected panel. Export settings never change the main application plot.
+For supported categorical bar charts, **Bars and groups** selects the model series and
+predictor blocks to include, changes their order, or selects individual bars.
+For example, export only CT pooled and TS pooled without CT + TS pooled.
+Selections affect the preview and final file only, preserve bar values, colors,
+hover details and attached error bars, and reset with the other export settings.
 The **Content** tab includes toggles for the plot title/subtitle, panel titles,
 enrichment subtitles, axis titles, and legend (plus color scales when present).
 Identical axis titles appear once for a combined figure by default; turn off

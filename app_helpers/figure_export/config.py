@@ -212,6 +212,9 @@ class PlotContentConfig:
     panel_labels: bool = False
     horizontal_reference: float | None = None
     vertical_reference: float | None = None
+    bar_series: tuple[str, ...] | None = None
+    bar_categories: tuple[str, ...] | None = None
+    bar_items: tuple[str, ...] | None = None
 
 
 @dataclass(frozen=True)
