@@ -155,6 +155,7 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
     source = restore_figure(spec.figure_snapshot)
     panels = figure_panels(source)
     meta = correlation_metadata(source)
+    split_mdc = meta.get("split_mdc_heatmap", {})
     key = lambda name: _prefix(spec) + name
     preset = st.selectbox(
         "Publication preset",
@@ -303,11 +304,14 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
         styles["decimals"] = st.slider("Decimal precision", 0, 10, 3, key=key("decimals"))
         styles["palette"] = st.selectbox(
             "Color palette",
-            ["Original", "Color-blind safe", "Viridis", "Cividis"],
+            ["Original"] if split_mdc else ["Original", "Color-blind safe", "Viridis", "Cividis"],
             key=key("palette"),
         )
+        if split_mdc:
+            st.caption("The original MDC palette is fixed so the raster and numeric color bar always agree.")
         has_points = any(
-            "markers" in str(getattr(t, "mode", "")) or t.type in {"box", "violin"}
+            ("markers" in str(getattr(t, "mode", "")) or t.type in {"box", "violin"})
+            and trace_role(t) not in {"legend", "colorbar"}
             for t in source.data
         )
         if has_points:
@@ -409,6 +413,15 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
         styles["legend_visible"] = st.checkbox(
             "Show legend", value=source.layout.showlegend is not False, key=key("legend_visible")
         )
+        show_region_annotations = (
+            st.checkbox(
+                "Show region annotation strips",
+                value=split_mdc.get("region_annotations_shown", True),
+                key=key("show_region_annotations"),
+                help="Hide only the tissue strips; preserve the original AD/Control heatmap pixels and ordering.",
+            )
+            if split_mdc.get("region_annotations_available") else True
+        )
         show_selected_module_annotation = (
             st.checkbox(
                 "Show selected-module annotation",
@@ -422,7 +435,7 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
             if any(trace_role(t) == "selected_module" for t in source.data)
             else True
         )
-        has_color_scale = any(
+        has_color_scale = bool(split_mdc) or any(
             k.startswith("coloraxis") and source.layout[k].to_plotly_json() for k in source.layout
         ) or any(
             (hasattr(t, "showscale") and t.showscale is not False)
@@ -430,7 +443,11 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
             for t in source.data
         )
         show_color_scale = (
-            st.checkbox("Show color scale", value=True, key=key("show_color_scale"))
+            st.checkbox(
+                "Show color scale",
+                value=any(getattr(getattr(t, "marker", None), "showscale", None) is True for t in source.data) if split_mdc else True,
+                key=key("show_color_scale"),
+            )
             if has_color_scale
             else True
         )
@@ -464,7 +481,7 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
             ("y", "Y-axis label"),
             ("z", "Z-axis label"),
         ):
-            if direction == "z" and not is_mixed(source):
+            if direction == "z" and not any(p.scene for p in panels):
                 continue
             originals = [
                 str(
@@ -509,7 +526,9 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
             (a.name or "").startswith("publication-statistics") for a in source.layout.annotations
         ):
             show_statistics = st.checkbox(
-                "Show statistical annotations", value=True, key=key("statistics")
+                "Show statistical annotations",
+                value=any(a.visible is not False for a in source.layout.annotations if (a.name or "").startswith("publication-statistics")) if split_mdc else True,
+                key=key("statistics"),
             )
         mode, groups, fields, precision, position = (
             "Original",
@@ -675,6 +694,7 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
         show_panel_titles=show_panel_titles,
         show_panel_subtitles=show_panel_subtitles,
         show_color_scale=show_color_scale,
+        show_region_annotations=show_region_annotations,
         shared_axis_titles=shared_axis_titles,
         **axis_visibility,
         caption=caption,

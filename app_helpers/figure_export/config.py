@@ -193,6 +193,7 @@ class PlotContentConfig:
     show_y_title: bool = True
     show_z_title: bool = True
     show_color_scale: bool = True
+    show_region_annotations: bool = True
     shared_axis_titles: bool = True
     x_label: str | None = None
     y_label: str | None = None

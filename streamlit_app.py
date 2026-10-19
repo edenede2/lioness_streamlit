@@ -8840,16 +8840,27 @@ if active_view == "MDC":
                     mdc_heatmap_path = load_mdc_split_heatmap(
                         module_set, module, differential_edge_rule, mdc_normalization_variant
                     )
-                render_streamlit_image(
-                    str(mdc_heatmap_path),
-                    caption=(
-                        f"{module_label(module)}: upper triangle = AD; "
-                        "lower triangle = Control. Absolute edge weights: "
-                        "yellow (low) → orange → red (high)."
-                    ),
-                )
+                try:
+                    from app_helpers.mdc_adjacency_ui import render_configurable_mdc_heatmap
+
+                    render_configurable_mdc_heatmap(
+                        mdc_heatmap_path, int(module), module_set, module_set_label,
+                        mdc_normalization_variant,
+                        {tissue: int(selected_details.get(f"n_genes_{tissue.lower()}", 0))
+                         for tissue in active_tissues},
+                    )
+                except (ValueError, OSError, KeyError) as error:
+                    st.warning(
+                        "The configurable frame is unavailable for this image. "
+                        "Showing the original heatmap instead. " + str(error)
+                    )
+                    render_streamlit_image(
+                        str(mdc_heatmap_path),
+                        caption=(f"{module_label(module)}: upper triangle = AD; "
+                                 "lower triangle = Control. Yellow (low) → orange → red (high)."),
+                    )
                 st.download_button(
-                    "Download selected adjacency heatmap (PNG)",
+                    "Download original adjacency heatmap (PNG)",
                     data=mdc_heatmap_path.read_bytes(),
                     file_name=(
                         f"{download_prefix}M{module}_AD_Control_"

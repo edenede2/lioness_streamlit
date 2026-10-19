@@ -61,6 +61,9 @@ missing-cell gap, color scale, significance mark and panel order. Native 3D plot
 necessarily contain rasterized components in SVG/PDF; the dialog identifies this
 mixed output and uses the selected DPI for those components. No screenshot is
 enlarged or resampled.
+Published split-triangle MDC heatmaps retain their original raster in PNG/TIFF
+and in mixed raster/vector SVG/PDF exports. Their labels are rebuilt separately;
+they are not converted back to numeric edges from pixel colors.
 Tight layout wraps long titles and widens the export-only 3D camera to keep axis
 labels inside the viewport; disabling tight layout preserves the source camera.
 
@@ -907,6 +910,19 @@ neutral MDC ratio of 1. The MDC tab also joins each module to its normalized
 Shannon tissue-mixing entropy and shows separate TS-MDC-versus-entropy and
 CT-MDC-versus-entropy scatter plots, with selected-module highlighting, directional
 FDR status, an OLS visual guide, and a Spearman association summary.
+
+After loading one module's split-triangle image, **Configure adjacency heatmap**
+independently controls the region annotation strips (where present), tissue legend,
+edge-weight color bar, title, triangle labels/node count, MDC summary, and both axis
+titles. Blank axis titles hide them. **Export figure → Content** provides the same
+region-strip, legend, axis-title and summary visibility controls, alongside the
+usual publication size, typography and margins. The original PNG remains separately
+downloadable. These controls preserve the AD upper triangle, Control lower triangle,
+node order, original matrix pixels, and exact release-manifest color limit. The
+yellow–orange–red palette is locked to avoid mismatching the raster and color bar.
+Only one selected image and its small release manifest are fetched; no MDC or
+adjacency calculation is rerun. Unsupported image layouts show the unchanged
+original PNG with an explanation instead of inventing values or hiding the module.
 
 The MDC tab contains separate **Region-resolved MDC** and **Pathway-resolved MDC**
 views. Pathway-resolved MDC is an annotation-level summary rather than a new

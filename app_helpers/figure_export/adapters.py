@@ -103,12 +103,12 @@ def trace_role(trace: Any) -> str:
         and all(v is None for v in trace.x)
     ):
         return "legend"
-    name = str(trace.name or "").lower()
+    name = str(getattr(trace, "name", None) or "").lower()
     # Backward-compatible recognition of existing selection overlays. Explicit
     # metadata is preferred, so ordinary module observations are never hidden.
     if name == "selected module" or re.match(r"^selected m\d+\b", name):
         return "selected_module"
-    if trace.legendgroup == "__pooled__" and getattr(trace, "mode", None) == "lines":
+    if getattr(trace, "legendgroup", None) == "__pooled__" and getattr(trace, "mode", None) == "lines":
         return "regression"
     if any(v in name for v in ("trend", "ols:", "ols plane", "regression")):
         return "regression"
@@ -118,7 +118,7 @@ def trace_role(trace: Any) -> str:
 
 
 def is_mixed(figure: go.Figure) -> bool:
-    return any(t.type in GL_TYPES for t in figure.data)
+    return bool(figure.layout.images) or any(t.type in GL_TYPES | {"image"} for t in figure.data)
 
 
 def _axis_key(reference: str) -> str:
@@ -794,6 +794,18 @@ def build_figure(
     """Rebuild from an immutable figure/data snapshot; never recompute analyses."""
     export_config.validate()
     figure = restore_figure(data)
+    if correlation_metadata(figure).get("split_mdc_heatmap"):
+        from app_helpers.mdc_adjacency import configure_heatmap_view
+
+        if export_config.style.palette != "Original":
+            raise ExportError("The published MDC raster and its color bar must retain their matching original palette.")
+        configure_heatmap_view(figure, content_config.show_region_annotations)
+        for trace in figure.data:
+            if trace_role(trace) == "colorbar":
+                trace.marker.showscale = content_config.show_color_scale
+        for annotation in figure.layout.annotations:
+            if (annotation.name or "").startswith("publication-statistics"):
+                annotation.visible = content_config.show_statistics
     original_panels = figure_panels(figure)
     has_bar_selection = any(value is not None for value in (
         content_config.bar_series, content_config.bar_categories, content_config.bar_items,
@@ -828,7 +840,7 @@ def build_figure(
         # omitted, move the existing series legend to its first surviving trace.
         seen = set()
         for trace in figure.data:
-            group = str(trace.legendgroup or trace.name or "")
+            group = str(getattr(trace, "legendgroup", None) or getattr(trace, "name", None) or "")
             if trace.type == "bar" and group in bar_legends:
                 trace.showlegend = bar_legends[group] and group not in seen
                 seen.add(group)
@@ -926,7 +938,9 @@ def build_figure(
         )
     )
     legend_items = [
-        t for t in figure.data if t.showlegend is not False and t.type not in {"heatmap", "surface"}
+        t for t in figure.data
+        if t.type not in {"heatmap", "surface", "image"}
+        and getattr(t, "showlegend", None) is not False
     ]
     horizontal_legend = style.legend_orientation == "Horizontal" or (
         style.legend_orientation == "Original" and figure.layout.legend.orientation == "h"
@@ -1086,7 +1100,7 @@ def build_figure(
             error = getattr(trace, attr, None)
             if error and (error.array is not None or error.value is not None):
                 error.visible = content.show_intervals
-        group = str(trace.legendgroup or trace.name or "")
+        group = str(getattr(trace, "legendgroup", None) or getattr(trace, "name", None) or "")
         if group not in color_groups:
             color_groups[group] = SAFE_COLORS[len(color_groups) % len(SAFE_COLORS)]
         if hasattr(trace, "textfont"):
@@ -1110,7 +1124,7 @@ def build_figure(
                 marker.size, marker.opacity = style.point_size * pt, style.point_opacity
                 if style.point_shape != "Original":
                     marker.symbol = style.point_shape
-            if "markers" in str(getattr(trace, "mode", "")):
+            if "markers" in str(getattr(trace, "mode", "")) and role not in {"legend", "colorbar"}:
                 marker.size, marker.opacity = style.point_size * pt, style.point_opacity
                 if style.point_shape != "Original":
                     # Scatter3d has a smaller supported symbol set.
@@ -1264,9 +1278,9 @@ def build_figure(
         warnings.append("This is an unusually large raster export (over 40 million pixels).")
     if config.vector and is_mixed(figure):
         warnings.append(
-            "This vector container includes unavoidable rasterized 3D/WebGL components at the selected DPI."
+            "This vector container includes raster images or rasterized 3D/WebGL components; labels remain vector text."
         )
-    if is_mixed(figure) and height < width:
+    if any(panel.scene for panel in selected) and height < width:
         warnings.append(
             "Wide 3D layouts may clip axis labels. Increase the height or reduce the tick-label font size if the preview is clipped."
         )
