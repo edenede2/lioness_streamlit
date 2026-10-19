@@ -22,7 +22,7 @@ from sklearn.metrics import precision_recall_curve, roc_curve
 
 PREDICTION_BLOCK_ORDERING_API_VERSION = 1
 PUBLICATION_EXPORT_API_VERSION = 1
-MODULE_COMPOSITION_API_VERSION = 1
+MODULE_COMPOSITION_API_VERSION = 2
 DISTRIBUTION_GROUPING_API_VERSION = 3
 COEFFICIENT_ANNOTATION_API_VERSION = 3
 ASSOCIATION_STYLE_API_VERSION = 1
@@ -2487,6 +2487,8 @@ def module_region_composition_figure(
     orientation: str = "h",
     composition_scale: str = "counts",
     tissue_colors: dict[str, str] | None = None,
+    show_x_ticks: bool = True,
+    show_y_ticks: bool = True,
 ) -> go.Figure:
     """Rank modules by size and show their three-tissue gene composition."""
     if orientation not in {"h", "v"} or composition_scale not in {"counts", "proportions"}:
@@ -2592,8 +2594,17 @@ def module_region_composition_figure(
             "x": 1,
         },
         hovermode="closest",
-        meta={"figure_export": {"bar_selection": {"series_label": "Tissues", "category_label": "Modules"}}},
+        meta={"figure_export": {
+            "bar_selection": {"series_label": "Tissues", "category_label": "Modules"},
+            "axis_tick_controls": True,
+        }},
     )
+    figure.update_xaxes(showticklabels=show_x_ticks)
+    figure.update_yaxes(showticklabels=show_y_ticks)
+    if not show_x_ticks:
+        figure.update_xaxes(ticks="")
+    if not show_y_ticks:
+        figure.update_yaxes(ticks="")
     return figure
 
 

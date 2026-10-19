@@ -192,6 +192,8 @@ class PlotContentConfig:
     show_x_title: bool = True
     show_y_title: bool = True
     show_z_title: bool = True
+    show_x_ticks: bool | None = None
+    show_y_ticks: bool | None = None
     show_color_scale: bool = True
     show_region_annotations: bool = True
     shared_axis_titles: bool = True

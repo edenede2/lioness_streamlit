@@ -466,6 +466,7 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
         )
         axis_labels = {}
         axis_visibility = {}
+        axis_tick_visibility = {}
         shared_axis_titles = (
             st.checkbox(
                 "Use shared axis titles",
@@ -503,6 +504,16 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
                 value=True,
                 key=key("show_" + direction + "_title"),
             )
+            if meta.get("axis_tick_controls") and direction in {"x", "y"}:
+                axis_tick_visibility[f"show_{direction}_ticks"] = st.checkbox(
+                    f"Show {direction.upper()}-axis ticks",
+                    value=all(
+                        source.layout[direction + "axis" + getattr(p, direction + "axis")[1:]].showticklabels is not False
+                        for p in panels if not p.scene
+                    ),
+                    key=key(f"show_{direction}_ticks"),
+                    help="Show or hide tick marks and labels; axis titles and data stay unchanged.",
+                )
             edited = st.text_input(label, value=_plain(original), key=key(direction + "_label"))
             axis_labels[direction + "_label"] = edited if edited != _plain(original) else None
         caption = st.text_area("Caption / footnote", key=key("caption"))
@@ -697,6 +708,7 @@ def _controls(spec: PlotExportSpec) -> tuple[ExportConfig, PlotContentConfig, bo
         show_region_annotations=show_region_annotations,
         shared_axis_titles=shared_axis_titles,
         **axis_visibility,
+        **axis_tick_visibility,
         caption=caption,
         **axis_labels,
         correlation_mode=mode,

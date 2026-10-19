@@ -21,6 +21,10 @@ individual bar colors** to recolor selected bars independently. Explicit choices
 take precedence over the general export palette and remain aligned after filtering.
 The **Content** tab includes toggles for the plot title/subtitle, panel titles,
 enrichment subtitles, axis titles, and legend (plus color scales when present).
+For module tissue-composition plots, **Composition axis ticks** controls the X and Y
+tick marks/labels independently; the export **Content** tab starts with those
+settings and can override them. Axis titles, bar values, sorting and hover details
+remain unchanged when ticks are hidden.
 Identical axis titles appear once for a combined figure by default; turn off
 **Use shared axis titles** to repeat
 them on each panel. Tight layout wraps text at the exported panel width and

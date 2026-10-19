@@ -27,7 +27,7 @@ if (
     getattr(_chart_helpers, "DISTRIBUTION_GROUPING_API_VERSION", 0) < 3
     or getattr(_chart_helpers, "PUBLICATION_EXPORT_API_VERSION", 0) < 1
     or getattr(_chart_helpers, "ASSOCIATION_STYLE_API_VERSION", 0) < 1
-    or getattr(_chart_helpers, "MODULE_COMPOSITION_API_VERSION", 0) < 1
+    or getattr(_chart_helpers, "MODULE_COMPOSITION_API_VERSION", 0) < 2
     or not all(
         hasattr(_chart_helpers, name)
         for name in (
@@ -10358,6 +10358,18 @@ if active_view == "Module details":
             key=f"module_composition_scale_{module_set}",
             help="Proportions divide each tissue's gene count by the full module size. Hiding a tissue does not renormalize the others.",
         )
+        with st.expander("Composition axis ticks", expanded=False):
+            tick_columns = st.columns(2)
+            composition_x_ticks = tick_columns[0].checkbox(
+                "Show X-axis ticks", value=True,
+                key=f"module_composition_x_ticks_{module_set}",
+                help="Show or hide tick marks and tick labels without hiding the axis title or hover information.",
+            )
+            composition_y_ticks = tick_columns[1].checkbox(
+                "Show Y-axis ticks", value=True,
+                key=f"module_composition_y_ticks_{module_set}",
+                help="Show or hide tick marks and tick labels without hiding the axis title or hover information.",
+            )
         composition_colors = {}
         with st.expander("Composition tissue colors", expanded=False):
             color_columns = st.columns(len(active_tissues))
@@ -10373,6 +10385,8 @@ if active_view == "Module details":
                 orientation=composition_orientation,
                 composition_scale=composition_scale,
                 tissue_colors=composition_colors,
+                show_x_ticks=composition_x_ticks,
+                show_y_ticks=composition_y_ticks,
             ),
             use_container_width=True,
             config={

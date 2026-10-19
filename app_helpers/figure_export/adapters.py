@@ -1063,6 +1063,10 @@ def build_figure(
         for direction, reference in axis_pairs:
             axis = figure.layout[_axis_key(reference)]
             axis.update(axis_style)
+            tick_visibility = getattr(content, f"show_{direction}_ticks")
+            if tick_visibility is not None:
+                axis.showticklabels = tick_visibility
+                axis.ticks = None if tick_visibility else ""
             label = content.x_label if direction == "x" else content.y_label
             if label is not None:
                 axis.title.text = html.escape(label)
