@@ -155,6 +155,12 @@ The app includes three explicitly separated module definitions:
   module's absolute pooled Pearson/Spearman correlation, not a donor. Choose Raw,
   asinh or RINT scores, components, saved edge filters and each source's own cohort;
   regional eigengenes are unfiltered and regional module identities include tissue.
+  **All regions in one box** pools every distinct regional module (including the
+  independent motor tissues). **CT + TS together** pools the two separate component
+  correlations per module, without averaging donor scores or correlation values.
+  Its labels and summaries report both unique modules and score observations;
+  Top K ranks unique modules by their strongest eligible component and retains
+  both qualifying scores. CT and TS retain separate across-module FDR families.
   Calculation is explicit and serialized, with only compact statistics cached.
   Top K, FDR display filtering, labels and ordering reuse those statistics without
   rereading scores. BH uses all valid modules before Top K, separately for each

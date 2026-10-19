@@ -13,7 +13,7 @@ from app_helpers import data as D
 from app_helpers import regional_modules as R
 from app_helpers.figure_export import render_exportable_plot
 from app_helpers.score_comparison import (
-    CORRELATION_LABELS, MAX_BOXES, SCALE_ORDER, ComparisonSeriesSpec,
+    COMBINED_COMPONENT, COMPONENT_LABELS, CORRELATION_LABELS, MAX_BOXES, SCALE_ORDER, ComparisonSeriesSpec,
     availability_reason, calculate_series, comparison_figure, display_results,
     effect_settings, source_registry,
 )
@@ -181,10 +181,34 @@ def _box_editor(row: dict, registry: dict, position: int, count: int) -> tuple[d
             default_tissues = [t for t in row.get("tissues", ()) if t in tissues]
             if source != row["source"] and not default_tissues and tissues:
                 default_tissues = [tissues[0]]
-            selected_tissues = st.multiselect(
-                "Regions in this box", tissues, default=default_tissues, key=tissue_key,
-                help="Regional modules are distinct observations. FDR is corrected separately within each tissue partition.",
+            all_tissues = R.regional_tissues(source)
+            all_ready = set(tissues) == set(all_tissues)
+            all_key = prefix + "all_regions"
+            if not all_ready and st.session_state.get(all_key):
+                st.session_state[all_key] = False
+            use_all = st.checkbox(
+                "All regions in one box", value=all_ready and set(default_tissues) == set(all_tissues),
+                disabled=not all_ready, key=all_key,
+                help="Pool all distinct regional modules in one distribution; module correlations are not averaged. FDR remains separate within each region.",
             )
+            if use_all:
+                # Streamlit removes widget state while a control is hidden.
+                # Preserve the custom subset outside the widget's own key.
+                if tissue_key in st.session_state:
+                    st.session_state[prefix + "custom_tissues"] = list(st.session_state[tissue_key])
+                selected_tissues = all_tissues
+                st.caption(f"Includes every regional module from {', '.join(all_tissues)}. Each module is one observation.")
+            else:
+                remembered = st.session_state.get(prefix + "custom_tissues", default_tissues)
+                if not set(remembered).issubset(tissues):
+                    remembered = default_tissues
+                selected_tissues = st.multiselect(
+                    "Regions in this box", tissues, default=remembered, key=tissue_key,
+                    help="Regional modules are distinct observations. FDR is corrected separately within each tissue partition.",
+                )
+                st.session_state[prefix + "custom_tissues"] = list(selected_tissues)
+            if not all_ready:
+                st.caption("All regions becomes available when this score/method/cohort is complete for every region.")
             component = "regional"
             edges = dict(differential_edge_rule="all", differential_fdr_scope="per_module", differential_fdr_threshold=.05, score_normalization="standard_pruned")
             st.caption("Regional scores are all-edge only; eigengenes are never edge-filtered.")
@@ -196,8 +220,10 @@ def _box_editor(row: dict, registry: dict, position: int, count: int) -> tuple[d
             if feature == "eigengene":
                 components = [value for value in components if value.startswith("TS_")]
             else:
-                components = ["CT", "TS", *components]
-            component = _select("Score component", components, row["component"], prefix + "component", format_func=D.EDGE_SCOPE_LABELS.get)
+                components = ["CT", "TS", COMBINED_COMPONENT, *components]
+            component = _select("Score component", components, row["component"], prefix + "component", format_func=COMPONENT_LABELS.get)
+            if component == COMBINED_COMPONENT:
+                st.caption("CT + TS pools two correlations per module, one for each component; donor scores are not summed or averaged. BH remains separate for CT and TS. Top K ranks modules by their strongest eligible component and includes both qualifying scores.")
             selected_tissues = ()
             edges = _edge_controls(row, source, method, feature, prefix)
             st.caption("This partition's own donor cohort is used; it is not intersected with other boxes.")
@@ -224,7 +250,7 @@ def _box_editor(row: dict, registry: dict, position: int, count: int) -> tuple[d
 
 def render_view(data_manifest: dict) -> None:
     st.header("Module–outcome comparison")
-    st.caption("Each observation is one module's absolute score–outcome correlation, not an individual donor. Comparisons are descriptive and use each source's own cohort.")
+    st.caption("Each observation is a module's absolute score–outcome correlation, not an individual donor. All regions pools distinct regional modules; CT + TS includes separate component correlations per module. Comparisons are descriptive and use each source's own cohort.")
     registry = source_registry(data_manifest)
     if not registry:
         st.info("No completed score sources are available.")
@@ -277,8 +303,13 @@ def render_view(data_manifest: dict) -> None:
                             observed = table.groupby("tissue")["module_key"].nunique().to_dict()
                             if observed != expected:
                                 raise ValueError("Regional module counts do not reconcile with the completion manifest")
-                        elif len(table) != registry[spec.source]["modules"]:
-                            raise ValueError("Module counts do not reconcile with the selected partition manifest")
+                        else:
+                            expected_n = registry[spec.source]["modules"]
+                            expected_components = ("CT", "TS") if spec.combines_ct_ts else (spec.component,)
+                            observed = table.groupby("component")["module_key"].nunique().to_dict()
+                            expected = {component: expected_n for component in expected_components}
+                            if observed != expected or table.duplicated(["module_key", "component"]).any():
+                                raise ValueError("Module/component counts do not reconcile with the selected partition manifest")
                         catalogs[spec.key] = table
             # Atomic replacement: do not expose partial BH families on an I/O error.
             st.session_state[RESULT_STATE] = {"context": context, "catalogs": catalogs}
@@ -297,7 +328,7 @@ def render_view(data_manifest: dict) -> None:
         st.warning("Top K is selected using this outcome. These are outcome-selected descriptive distributions, not independent evidence of predictive superiority.")
     if any(spec.differential_edge_rule != "all" for _, _, spec in boxes):
         st.warning("Edge masks were selected using discovery AD–Control differences. Discovery/all-donor associations can be selection-biased; held-out validation is an exploratory check, not external validation.")
-    st.caption("BH FDR uses all valid modules before display filtering. Each box's analysis configuration is a separate family; regional corrections remain separate by tissue. No between-box significance tests are performed.")
+    st.caption("BH FDR uses all valid modules before display filtering, separately per component and regional tissue partition. Pooling regions or CT + TS does not combine FDR families. No between-box significance tests are performed.")
     if displayed.empty:
         st.info("No modules meet the current eligibility and FDR display filters. Summary counts and complete calculated results remain available.")
     else:

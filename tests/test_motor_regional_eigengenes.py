@@ -112,7 +112,7 @@ def test_motor_source_is_selectable_in_module_outcome_comparison():
     app = _view(app, "Module–outcome comparison")
     app = _widget(app.selectbox, "Partition / score source").set_value(R.MOTOR_SOURCE).run()
     assert not app.exception
-    app = _widget(app.multiselect, "Regions in this box").set_value(list(R.MOTOR_TISSUE_ORDER)).run()
+    app = _widget(app.checkbox, "All regions in one box").check().run()
     assert not app.exception
     app = _widget(app.button, "Calculate comparison").click().run()
     assert not app.exception
@@ -121,3 +121,10 @@ def test_motor_source_is_selectable_in_module_outcome_comparison():
     assert len(motor) == 1 and motor.total_modules.iloc[0] == 281
     assert motor.cohort_label.iloc[0] == "Common 357 motor-tissue donors"
     assert len(app.get("plotly_chart")) == 1
+    app = _widget(app.selectbox, "Score component").set_value(C.COMBINED_COMPONENT).run()
+    app = _widget(app.button, "Calculate comparison").click().run()
+    assert not app.exception
+    combined = app.dataframe[0].value.loc[lambda table: table.component.eq(C.COMBINED_COMPONENT)]
+    assert len(combined) == 1 and combined.total_modules.iloc[0] == 186
+    assert combined.total_score_observations.iloc[0] == 372
+    assert combined.plotted_score_observations.iloc[0] > combined.plotted_modules.iloc[0]

@@ -31,6 +31,83 @@ def _fixture(spec, tissues=("",), n=30):
     return result, metadata, frames
 
 
+def _combined_fixture(spec):
+    single = dataclasses.replace(spec, component="CT")
+    _, metadata, frames = _fixture(single)
+    combined_frames = []
+    for module, _, frame in frames:
+        combined_frames.append((module, "CT", frame))
+        ts = frame.copy()
+        if not ts.empty:
+            ts["metric_value"] = np.roll(ts["metric_value"], module)
+        combined_frames.append((module, "TS", ts))
+    result = C.statistics_from_module_frames(
+        spec, iter(combined_frames), {"": metadata}, "cogn_global", 10,
+    )
+    return result, metadata, combined_frames
+
+
+def test_combined_ct_ts_retains_exact_component_correlations_and_separate_fdr():
+    spec = C.ComparisonSeriesSpec("control_derived", component=C.COMBINED_COMPONENT)
+    result, metadata, frames = _combined_fixture(spec)
+    assert len(result) == 12 and result["module_key"].nunique() == 6
+    assert result["observation_key"].is_unique
+    assert set(result["tissue"]) == {""}
+    for component, part in result.groupby("component", sort=False):
+        single = dataclasses.replace(spec, component=component)
+        expected = C.statistics_from_module_frames(
+            single, ((m, "", f) for m, c, f in frames if c == component),
+            {"": metadata}, "cogn_global", 10,
+        )
+        for method in ("pearson", "spearman"):
+            for suffix in ("p", "fdr_across_modules", "fdr_module_family_n"):
+                assert np.allclose(part[f"{method}_{suffix}"], expected[f"{method}_{suffix}"], equal_nan=True)
+            assert set(part[f"{method}_fdr_module_family_n"]) == {3}
+        assert np.allclose(part["pearson_r"], expected["pearson_r"], equal_nan=True)
+        assert np.allclose(part["spearman_rho"], expected["spearman_rho"], equal_nan=True)
+
+
+def test_combined_top_k_counts_unique_modules_and_fdr_filters_individual_scores():
+    spec = C.ComparisonSeriesSpec("control_derived", component=C.COMBINED_COMPONENT)
+    result, _, _ = _combined_fixture(spec)
+    result.loc[result["eligible"], "spearman_rho"] = [.9, -.1, .8, -.2, .7, -.3]
+    result.loc[result["eligible"], "spearman_fdr_across_modules"] = .01
+    boxes = [("both", "CT + TS", spec)]
+    shown, full, summary = C.display_results({spec.key: result}, boxes, top_k=2)
+    assert set(shown["module"]) == {1, 2}
+    assert len(shown) == 4 and shown["observation_key"].is_unique
+    assert summary.iloc[0]["plotted_modules"] == 2
+    assert summary.iloc[0]["plotted_score_observations"] == 4
+    assert summary.iloc[0]["total_modules"] == 6
+    assert summary.iloc[0]["total_score_observations"] == 12
+    # One component may fail a display filter without hiding the module's other score.
+    result.loc[result["module"].eq(1) & result["component"].eq("TS"), "spearman_fdr_across_modules"] = .3
+    shown, full, summary = C.display_results({spec.key: result}, boxes, top_k=1, fdr_cutoff=.05)
+    assert list(shown[["module", "component"]].itertuples(index=False, name=None)) == [(1, "CT")]
+    assert full.loc[full["displayed"], "observation_key"].tolist() == shown["observation_key"].tolist()
+    larger, _, summary = C.display_results({spec.key: result}, boxes, top_k=999)
+    assert len(larger) == 6 and summary.iloc[0]["plotted_modules"] == 3
+    figure = C.comparison_figure(larger, summary, "cogn_global", "spearman")
+    assert "3 modules" in figure.layout.xaxis.ticktext[0]
+    assert "6 CT/TS scores" in figure.layout.xaxis.ticktext[0]
+    points = next(trace for trace in figure.data if trace.type == "scatter")
+    assert len(points.y) == 6
+    assert set(points.customdata[:, 2]) == {C.D.EDGE_SCOPE_LABELS["CT"], C.D.EDGE_SCOPE_LABELS["TS"]}
+    assert len(set(points.x)) == 6
+
+
+@pytest.mark.parametrize("source", C.R.REGIONAL_SOURCE_ORDER)
+def test_all_regional_tissues_keep_distinct_modules_and_tissue_fdr(source):
+    tissues = C.R.regional_tissues(source)
+    spec = C.ComparisonSeriesSpec(source, feature="eigengene", method="not_applicable", component="regional", tissues=tissues)
+    result, _, _ = _fixture(spec, tissues)
+    shown, _, summary = C.display_results({spec.key: result}, [("regions", "All regional eigengenes", spec)])
+    assert len(shown) == 9 and shown["module_key"].is_unique
+    assert set(shown["tissue"]) == set(tissues)
+    assert set(shown["spearman_fdr_module_family_n"]) == {3}
+    assert summary.iloc[0]["plotted_modules"] == summary.iloc[0]["plotted_score_observations"] == 9
+
+
 def test_direct_correlations_full_family_and_invalid_reasons():
     spec = C.ComparisonSeriesSpec("control_derived")
     result, metadata, frames = _fixture(spec)
@@ -130,6 +207,26 @@ def test_projected_multitissue_reader_routes_filters_and_components(monkeypatch,
     assert all(("component", "=", component) in call["filters"] and "/global/fdr_0.10/" in call["path"] and call["value"] == f"metric_{scale}" for call in called)
 
 
+@pytest.mark.parametrize("source", ["full_cohort", "control_derived", *C.D.MUSCLE_MODULE_SETS])
+@pytest.mark.parametrize("scale", C.SCALE_ORDER)
+def test_combined_reader_scans_ct_ts_once_and_preserves_saved_values(monkeypatch, source, scale):
+    calls = []
+    def scanner(path, filters, value, modules):
+        calls.append((path, filters, value, modules))
+        yield 10, pd.DataFrame({"sample_id": ["A", "B"], f"CT_{scale}": [1., 2.], f"TS_{scale}": [7., -9.]})
+        yield 11, pd.DataFrame()
+    monkeypatch.setattr(C.D, "load_module_details", lambda **_: pd.DataFrame({"module": [10, 11]}))
+    monkeypatch.setattr(C, "_scan_score_vectors", scanner)
+    spec = C.ComparisonSeriesSpec(source, component=C.COMBINED_COMPONENT, scale=scale)
+    frames = list(C._module_frames(spec))
+    assert len(calls) == 1 and calls[0][2] == (f"CT_{scale}", f"TS_{scale}")
+    assert C.score_path(spec) == C.score_path(dataclasses.replace(spec, component="CT"))
+    assert [row[:2] for row in frames] == [(10, "CT"), (10, "TS"), (11, "CT"), (11, "TS")]
+    assert frames[0][2]["metric_value"].tolist() == [1., 2.]
+    assert frames[1][2]["metric_value"].tolist() == [7., -9.]
+    assert frames[2][2].empty and frames[3][2].empty
+
+
 def test_monotonic_raw_asinh_spearman_and_duplicate_donor_guard():
     spec = C.ComparisonSeriesSpec("control_derived")
     raw, metadata, frames = _fixture(spec)
@@ -159,7 +256,7 @@ def test_batched_reader_projects_one_family_and_handles_cross_batch_modules(tmp_
         "sample_id": [f"S-{i}" for i in range(12000)],
         "module": np.where(np.arange(12000) < 10000, 10, 11),
         "metric_family": "connectivity", "lioness_method": "control_anchored",
-        "CT_raw": np.arange(12000, dtype=float), "CT_asinh": 99.,
+        "CT_raw": np.arange(12000, dtype=float), "TS_raw": -np.arange(12000, dtype=float), "CT_asinh": 99.,
     })
     frame.to_parquet(path, row_group_size=12000)
     monkeypatch.setattr(C, "ensure_data_path", lambda path, *_: path)
@@ -167,6 +264,10 @@ def test_batched_reader_projects_one_family_and_handles_cross_batch_modules(tmp_
     assert [len(row[1]) for row in rows] == [10000, 2000, 0]
     assert rows[0][1]["metric_value"].tolist() == list(range(10000))
     assert list(rows[0][1].columns) == ["sample_id", "metric_value"]
+    combined = list(C._scan_score_vectors(path, [("metric_family", "=", "connectivity")], ("CT_raw", "TS_raw"), [10, 11, 12]))
+    assert [len(row[1]) for row in combined] == [10000, 2000, 0]
+    assert list(combined[0][1].columns) == ["sample_id", "CT_raw", "TS_raw"]
+    assert combined[0][1]["TS_raw"].tolist() == list(-np.arange(10000, dtype=float))
     assert list(C._scan_score_vectors(path, [("metric_family", "=", "negative_density")], "CT_raw", [10]))[0][1].empty
     with pq.ParquetFile(path) as parquet:
         assert not C._row_group_matches(parquet, 0, [("module", "=", 99)])
@@ -223,6 +324,8 @@ def _mock_ui(monkeypatch):
     monkeypatch.setattr(U, "availability_reason", lambda *_: "")
     def calculate(spec, *args):
         calls.append(spec)
+        if spec.combines_ct_ts:
+            return _combined_fixture(spec)[0]
         return _fixture(spec, spec.tissues if spec.is_regional else ("",))[0]
     monkeypatch.setattr(U, "calculate_series", calculate)
     return calls
@@ -265,6 +368,43 @@ def test_ui_changed_outcome_is_stale_until_calculated_and_empty_region_is_safe(m
     app = app.multiselect[0].set_value([]).run()
     assert not app.exception
     assert _widget(app.button, "Calculate comparison").disabled
+
+
+def test_ui_all_regions_and_ct_ts_combined_boxes_render_and_do_not_reread_for_top_k(monkeypatch):
+    calls = _mock_ui(monkeypatch)
+    app = AppTest.from_function(_ui_app, default_timeout=30).run()
+    assert not _widget(app.checkbox, "All regions in one box").value
+    app = _widget(app.checkbox, "All regions in one box").check().run()
+    assert not app.exception and not calls
+    app = _widget(app.selectbox, "Score component").set_value(C.COMBINED_COMPONENT).run()
+    app = _widget(app.button, "Calculate comparison").click().run()
+    assert not app.exception and len(calls) == 5
+    assert calls[0].tissues == C.R.regional_tissues(calls[0].source)
+    assert sum(spec.combines_ct_ts for spec in calls) == 1
+    summary = app.dataframe[0].value
+    assert summary.iloc[0]["plotted_modules"] == 9  # Three regions, three eligible modules each.
+    both = summary.loc[summary["component"].eq(C.COMBINED_COMPONENT)].iloc[0]
+    assert both["plotted_modules"] == 3 and both["plotted_score_observations"] == 6
+    app = _widget(app.radio, "Modules shown").set_value("Top K").run()
+    app = _widget(app.number_input, "K per box").set_value(1).run()
+    assert not app.exception and len(calls) == 5
+    both = app.dataframe[0].value.loc[lambda frame: frame["component"].eq(C.COMBINED_COMPONENT)].iloc[0]
+    assert both["plotted_modules"] == 1 and both["plotted_score_observations"] == 2
+    app = _widget(app.checkbox, "All regions in one box").uncheck().run()
+    assert not app.exception
+    assert app.multiselect[0].value == ["AC"]  # Original custom choice is preserved.
+
+
+def test_ui_all_regions_unavailable_for_partial_method_cohort(monkeypatch):
+    _mock_ui(monkeypatch)
+    registry = U.source_registry({})
+    registry["single_region_complete_case_l3"]["combinations"] = [
+        row for row in registry["single_region_complete_case_l3"]["combinations"] if row["tissue"] != "PCG"
+    ]
+    monkeypatch.setattr(U, "source_registry", lambda *_: registry)
+    app = AppTest.from_function(_ui_app).run()
+    assert not app.exception
+    assert all(widget.disabled and not widget.value for widget in app.checkbox if widget.label == "All regions in one box")
 
 
 def test_unfinished_sources_not_registered(monkeypatch):
@@ -350,3 +490,24 @@ def test_local_saved_bundle_default_boxes_match_direct_statistics():
         assert row["pearson_r"] == pytest.approx(pearsonr(joined["metric_value"], joined["cogn_global"]).statistic)
         assert row["spearman_rho"] == pytest.approx(spearmanr(joined["metric_value"], joined["cogn_global"]).statistic)
     assert counts == [142, 122, 116, 186, 186]
+
+
+@pytest.mark.parametrize("source", ["full_cohort", "control_derived", *C.D.MUSCLE_MODULE_SETS])
+def test_saved_combined_catalog_matches_both_separate_component_catalogs(source):
+    spec = C.ComparisonSeriesSpec(source, component=C.COMBINED_COMPONENT)
+    needed = [C.score_path(spec), C.D.module_set_path("module_details.tsv", source),
+              C.D.module_set_path("sample_metadata.parquet", source)]
+    if not all(path.is_file() for path in needed):
+        pytest.skip("Saved local scores unavailable; never download for this test")
+    combined = C.calculate_series(spec, "cogn_global", "all_donors", 10, "combined-ct-ts-local-qa")
+    expected_n = len(C.D.load_module_details(module_set=source))
+    assert len(combined) == 2 * expected_n
+    assert combined["module_key"].nunique() == expected_n
+    assert combined["observation_key"].is_unique
+    for component in ("CT", "TS"):
+        single = C.calculate_series(dataclasses.replace(spec, component=component), "cogn_global", "all_donors", 10, "combined-ct-ts-local-qa")
+        both = combined.loc[combined["component"].eq(component)].reset_index(drop=True)
+        columns = ["module_key", "n", "eligible", "pearson_r", "spearman_rho", "pearson_p", "spearman_p",
+                   "pearson_fdr_across_modules", "spearman_fdr_across_modules",
+                   "pearson_fdr_module_family_n", "spearman_fdr_module_family_n"]
+        pd.testing.assert_frame_equal(both[columns], single[columns])

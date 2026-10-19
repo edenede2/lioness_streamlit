@@ -1,4 +1,4 @@
-"""Descriptive score–outcome comparisons with one observation per module.
+"""Descriptive score–outcome comparisons with module/component observations.
 
 Only compact correlation tables are cached. Donor scores are projected to one
 scale and scanned in bounded batches under the app's shared analysis lock. Box
@@ -30,6 +30,8 @@ from app_helpers.streaming_associations import _serialized_heavy_read
 
 
 MAX_BOXES = 12
+COMBINED_COMPONENT = "CT_TS"
+COMPONENT_LABELS = {**D.EDGE_SCOPE_LABELS, COMBINED_COMPONENT: "CT + TS together"}
 SCALE_ORDER = ("raw", "asinh", "rint")
 CORRELATION_LABELS = {"spearman": "Spearman", "pearson": "Pearson"}
 SPLIT_VALUES = {
@@ -71,7 +73,7 @@ class ComparisonSeriesSpec:
                 raise ValueError("Regional scores are all-edge only")
         elif self.source not in D.MODULE_SET_LABELS:
             raise ValueError("Unknown module definition")
-        elif self.component not in {"CT", "TS", *D.module_set_components(self.source)}:
+        elif self.component not in {"CT", "TS", COMBINED_COMPONENT, *D.module_set_components(self.source)}:
             raise ValueError("Component does not belong to this module definition")
         if self.feature == "eigengene" and not self.is_regional and not self.component.startswith("TS_"):
             raise ValueError("Saved multi-tissue eigengenes are tissue-specific")
@@ -79,6 +81,10 @@ class ComparisonSeriesSpec:
     @property
     def is_regional(self) -> bool:
         return self.source in R.REGIONAL_SOURCE_ORDER
+
+    @property
+    def combines_ct_ts(self) -> bool:
+        return not self.is_regional and self.component == COMBINED_COMPONENT
 
     @property
     def key(self) -> str:
@@ -135,7 +141,7 @@ def score_path(spec: ComparisonSeriesSpec):
         raise ValueError("A regional series has one score path per tissue")
     if spec.feature == "eigengene":
         return D.module_set_path("module_eigengenes.parquet", spec.source)
-    filename = "aggregate_plot_data.parquet" if spec.component in {"CT", "TS"} else "resolved_plot_data.parquet"
+    filename = "aggregate_plot_data.parquet" if spec.component in {"CT", "TS", COMBINED_COMPONENT} else "resolved_plot_data.parquet"
     return D.differential_estimator_path(
         filename, spec.source, "lioness", spec.method, "all",
         spec.differential_edge_rule, spec.differential_fdr_scope,
@@ -208,11 +214,11 @@ def _row_group_matches(parquet: pq.ParquetFile, group: int, filters: list[tuple]
     return True
 
 
-def _scan_score_vectors(path, filters: list[tuple], value: str, modules: list[int]) -> Iterator[tuple[int, pd.DataFrame]]:
+def _scan_score_vectors(path, filters: list[tuple], value: str | tuple[str, ...], modules: list[int]) -> Iterator[tuple[int, pd.DataFrame]]:
     """Scan a single family once, without whole-table decoding or threaded arenas.
 
     Only the selected scalar vectors survive each 8,192-row batch. They are small
-    (at most one tissue/component × feature × scale), uncached, and released as
+    (at most CT + TS × one feature × scale), uncached, and released as
     each module's statistics are calculated. This avoids repeatedly decoding the
     muscle catalogs that have all modules in a single large Parquet row group.
     """
@@ -224,7 +230,8 @@ def _scan_score_vectors(path, filters: list[tuple], value: str, modules: list[in
         files.extend(sorted(candidate.rglob("*.parquet")) if candidate.is_dir() else [candidate])
     if not files:
         raise FileNotFoundError("No score Parquet files are available for this configuration")
-    columns = list(dict.fromkeys(["sample_id", "module", value, *(column for column, _, _ in filters)]))
+    values = [value] if isinstance(value, str) else list(value)
+    columns = list(dict.fromkeys(["sample_id", "module", *values, *(column for column, _, _ in filters)]))
     pieces: dict[int, list[pd.DataFrame]] = {}
     for file in files:
         with pq.ParquetFile(file) as parquet:
@@ -234,9 +241,11 @@ def _scan_score_vectors(path, filters: list[tuple], value: str, modules: list[in
                 mask = pc.is_in(table["module"], value_set=pa.array(modules, type=table["module"].type))
                 for column, _, expected in filters:
                     mask = pc.and_(mask, pc.equal(table[column], expected))
-                selected = table.filter(mask).select(["sample_id", "module", value]).to_pandas()
+                selected = table.filter(mask).select(["sample_id", "module", *values]).to_pandas()
                 for module, part in selected.groupby("module", observed=True, sort=False):
-                    vector = part[["sample_id", value]].rename(columns={value: "metric_value"})
+                    vector = part[["sample_id", *values]]
+                    if isinstance(value, str):
+                        vector = vector.rename(columns={value: "metric_value"})
                     pieces.setdefault(int(module), []).append(vector)
     for module in modules:
         parts = pieces.pop(int(module), [])
@@ -244,7 +253,7 @@ def _scan_score_vectors(path, filters: list[tuple], value: str, modules: list[in
 
 
 def _module_frames(spec: ComparisonSeriesSpec) -> Iterator[tuple[int, str, pd.DataFrame]]:
-    """Yield projected donor-module vectors from serialized row-group scans."""
+    """Yield module, regional tissue/combined component, and narrow score vector."""
     if spec.is_regional:
         details = R.load_regional_details()
         for tissue in spec.tissues:
@@ -257,15 +266,25 @@ def _module_frames(spec: ComparisonSeriesSpec) -> Iterator[tuple[int, str, pd.Da
                 yield int(module), tissue, frame
         return
     modules = sorted(D.load_module_details(module_set=spec.source)["module"].astype(int).unique())
-    aggregate = spec.component in {"CT", "TS"}
-    value = f"{spec.component}_{spec.scale}" if aggregate else f"metric_{spec.scale}"
+    aggregate = spec.component in {"CT", "TS", COMBINED_COMPONENT}
+    value = (
+        (f"CT_{spec.scale}", f"TS_{spec.scale}") if spec.combines_ct_ts
+        else f"{spec.component}_{spec.scale}" if aggregate else f"metric_{spec.scale}"
+    )
     filters = [("metric_family", "=", spec.feature)]
     if spec.feature != "eigengene":
         filters.append(("lioness_method", "=", spec.method))
     if not aggregate:
         filters.append(("component", "=", spec.component))
     for module, frame in _scan_score_vectors(score_path(spec), filters, value, list(modules)):
-        yield int(module), "", frame
+        if spec.combines_ct_ts:
+            for component in ("CT", "TS"):
+                vector = frame if frame.empty else frame[["sample_id", f"{component}_{spec.scale}"]].rename(
+                    columns={f"{component}_{spec.scale}": "metric_value"},
+                )
+                yield int(module), component, vector
+        else:
+            yield int(module), "", frame
 
 
 def _module_statistic(frame: pd.DataFrame, metadata: pd.DataFrame, outcome: str, min_n: int) -> dict:
@@ -292,12 +311,16 @@ def statistics_from_module_frames(
 ) -> pd.DataFrame:
     """Normalize rows then correct each complete valid module family, never Top K."""
     rows = []
-    for module, tissue, frame in frames:
+    for module, scope, frame in frames:
+        tissue = scope if spec.is_regional else ""
+        component = scope if spec.is_regional or spec.combines_ct_ts else spec.component
+        if spec.combines_ct_ts and component not in {"CT", "TS"}:
+            raise ValueError("Combined CT + TS frames must identify their component")
         module_key = f"{spec.source}:{tissue + ':' if tissue else ''}M{module}"
-        component = tissue if spec.is_regional else spec.component
         rows.append({
             "series_key": spec.key, "source": spec.source, "module": module,
             "module_key": module_key, "tissue": tissue, "component": component,
+            "observation_key": f"{module_key}:{component}",
             "component_label": tissue if spec.is_regional else D.EDGE_SCOPE_LABELS.get(component, component),
             "feature": spec.feature, "method": spec.method, "scale": spec.scale,
             "cohort_scope": spec.cohort_scope, "outcome": outcome,
@@ -312,7 +335,7 @@ def statistics_from_module_frames(
     if result.empty:
         raise ValueError("No module assignments are available for this series")
     result = add_across_module_fdr(
-        result, family_columns=["series_key", "tissue"], module_column="module_key",
+        result, family_columns=["series_key", "tissue", "component"], module_column="module_key",
     )
     return result
 
@@ -323,7 +346,7 @@ def calculate_series(
     spec: ComparisonSeriesSpec, outcome: str, analysis_subset: str,
     min_n: int, data_revision: str,
 ) -> pd.DataFrame:
-    """Cache only one compact row per module. Failed/partial families never cache."""
+    """Cache compact module/component rows. Failed/partial families never cache."""
     if outcome not in D.OUTCOME_LABELS:
         raise ValueError("Nominal category codes cannot be correlated")
     if analysis_subset not in D.ANALYSIS_SUBSET_LABELS:
@@ -349,8 +372,11 @@ def display_results(
     displayed, complete, summaries = [], [], []
     for position, (box_id, label, spec) in enumerate(boxes):
         frame = catalogs[spec.key].copy()
-        if frame["module_key"].duplicated().any():
-            raise ValueError("Duplicate module observations in comparison box")
+        if frame.duplicated(["module_key", "component"]).any():
+            raise ValueError("Duplicate module/component observations in comparison box")
+        # Also normalize compact results retained in a session from the previous
+        # single-component schema; display edits must not trigger donor reads.
+        frame["observation_key"] = frame["module_key"] + ":" + frame["component"]
         frame["box_id"], frame["box_label"], frame["box_order"] = box_id, label, position
         frame["signed_correlation"] = frame[coefficient]
         frame["absolute_correlation"] = frame[coefficient].abs()
@@ -359,13 +385,17 @@ def display_results(
         eligible = frame.loc[frame["eligible"] & np.isfinite(frame[coefficient])].copy()
         qualified = eligible if fdr_cutoff is None else eligible.loc[eligible[fdr_column].lt(fdr_cutoff)]
         selected = qualified.sort_values(
-            ["absolute_correlation", "module_key"], ascending=[False, True], kind="stable",
+            ["absolute_correlation", "module_key", "component"], ascending=[False, True, True], kind="stable",
         )
         if top_k is not None:
-            selected = selected.head(top_k)
+            # K always counts biological modules. In a CT + TS box, rank each
+            # module by its strongest eligible component and retain both scores
+            # when both pass the optional display FDR filter.
+            top_modules = selected["module_key"].drop_duplicates().head(top_k)
+            selected = selected.loc[selected["module_key"].isin(top_modules)]
         selected = selected.copy()
         selected["display_rank"] = np.arange(1, len(selected) + 1)
-        frame["displayed"] = frame["module_key"].isin(selected["module_key"])
+        frame["displayed"] = frame["observation_key"].isin(selected["observation_key"])
         complete.append(frame)
         displayed.append(selected)
         summaries.append({
@@ -376,9 +406,13 @@ def display_results(
             "differential_fdr_threshold": spec.differential_fdr_threshold,
             "score_normalization": spec.score_normalization,
             "component": ", ".join(spec.tissues) if spec.is_regional else spec.component,
-            "total_modules": len(frame), "eligible_modules": len(eligible),
-            "invalid_modules": len(frame) - len(eligible), "fdr_qualified_modules": len(qualified),
-            "plotted_modules": len(selected), "excluded_from_plot": len(frame) - len(selected),
+            "total_modules": frame["module_key"].nunique(), "eligible_modules": eligible["module_key"].nunique(),
+            "invalid_modules": frame["module_key"].nunique() - eligible["module_key"].nunique(),
+            "fdr_qualified_modules": qualified["module_key"].nunique(),
+            "plotted_modules": selected["module_key"].nunique(),
+            "excluded_from_plot": frame["module_key"].nunique() - selected["module_key"].nunique(),
+            "total_score_observations": len(frame), "eligible_score_observations": len(eligible),
+            "plotted_score_observations": len(selected), "excluded_score_observations": len(frame) - len(selected),
             "eligible_donor_n_min": eligible["n"].min(), "eligible_donor_n_max": eligible["n"].max(),
             "plotted_donor_n_min": selected["n"].min(), "plotted_donor_n_max": selected["n"].max(),
             "median_absolute_correlation": selected["absolute_correlation"].median(),
@@ -392,7 +426,7 @@ def display_results(
 
 
 def comparison_figure(displayed: pd.DataFrame, summary: pd.DataFrame, outcome: str, method: str, show_points: bool = True) -> go.Figure:
-    """Boxplot values are module correlation coefficients, never donor scores."""
+    """Boxplot values are module/component correlations, never donor scores."""
     colors = ("#0072B2", "#D55E00", "#009E73", "#CC79A7", "#E69F00", "#56B4E9")
     figure = go.Figure()
     tick_values, tick_text = [], []
@@ -402,6 +436,9 @@ def comparison_figure(displayed: pd.DataFrame, summary: pd.DataFrame, outcome: s
         # Explicit line breaks keep labels legible in narrow layouts and exports.
         wrap_width = 10 if len(summary) > 6 else 22
         count_label = f"{row['plotted_modules']}<br>modules" if len(summary) > 6 else f"{row['plotted_modules']} modules"
+        if row["component"] == COMBINED_COMPONENT:
+            suffix = "CT/TS<br>scores" if len(summary) > 6 else "CT/TS scores"
+            count_label += f"<br>{row['plotted_score_observations']} {suffix}"
         tick_text.append("<br>".join(textwrap.wrap(str(row["box_label"]), wrap_width)) + f"<br>{count_label}")
         part = displayed.loc[displayed["box_id"].eq(box_id)]
         color = colors[index % len(colors)]
@@ -412,7 +449,7 @@ def comparison_figure(displayed: pd.DataFrame, summary: pd.DataFrame, outcome: s
         ))
         if show_points and not part.empty:
             # Use deterministic jitter; labels/order changes cannot change observations.
-            jitter = np.array([int(hashlib.sha256(key.encode()).hexdigest()[:8], 16) / (2**32 - 1) for key in part["module_key"]])
+            jitter = np.array([int(hashlib.sha256(key.encode()).hexdigest()[:8], 16) / (2**32 - 1) for key in part["observation_key"]])
             source_column = "source_label" if "source_label" in part else "source"
             custom = part[[source_column, "module_key", "component_label", "signed_correlation", "n", "selected_p", "selected_fdr"]].to_numpy()
             figure.add_trace(go.Scatter(
