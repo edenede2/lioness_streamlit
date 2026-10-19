@@ -180,6 +180,11 @@ The app includes three explicitly separated module definitions:
   Each box has a **Box color** picker; dots match it by default. Turn off
   **Match dots to box color** to set an independent **Dot color**. Colors stay with
   their box when it is renamed, reordered or duplicated and are retained in exports.
+  **X-axis tick label** edits only the text below a specific box (line breaks are
+  supported); leave it blank to follow **Box label**. **Show module count in X-axis
+  tick** independently controls the count beneath that label. These presentation
+  settings follow the box when reordered/duplicated and are retained in exports,
+  without renaming boxes in tables or recalculating statistics.
   Top K, FDR display filtering, colors, labels and ordering reuse those statistics without
   rereading scores. BH uses all valid modules before Top K, separately for each
   fixed configuration (and each regional tissue). Summary counts, signed effects,

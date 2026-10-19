@@ -222,6 +222,44 @@ def test_box_and_dot_colors_are_independent_and_use_box_identity_not_label():
     pd.testing.assert_frame_equal(summary, original_summary)
 
 
+def test_custom_ticks_and_counts_follow_box_ids_without_renaming_or_changing_data():
+    from app_helpers.figure_export import ExportConfig, PlotContentConfig, PlotExportSpec
+    from app_helpers.figure_export.adapters import build_artifact
+
+    spec = C.ComparisonSeriesSpec("control_derived")
+    result, _, _ = _fixture(spec)
+    shown, _, summary = C.display_results({spec.key: result}, [("first", "Same name", spec), ("second", "Same name", spec)])
+    original_shown, original_summary = shown.copy(deep=True), summary.copy(deep=True)
+    defaults = C.comparison_figure(shown, summary, "cogn_global", "spearman")
+    labels = {"first": "CT\ncoordination", "second": "TS & <score>"}
+    counts = {"second": False}
+    figure = C.comparison_figure(shown, summary, "cogn_global", "spearman",
+                                 tick_labels=labels, show_module_counts=counts)
+    assert figure.layout.xaxis.ticktext == ("CT<br>coordination<br>3 modules", "TS &amp; &lt;score&gt;")
+    assert list(figure.layout.xaxis.tickvals) == [0, 1]
+    assert all(trace.name == "Same name" for trace in figure.data)
+    assert json.loads(figure.to_json())["data"] == json.loads(defaults.to_json())["data"]
+    reordered = C.comparison_figure(shown, summary.iloc[::-1], "cogn_global", "spearman",
+                                     tick_labels=labels, show_module_counts=counts)
+    assert reordered.layout.xaxis.ticktext == tuple(reversed(figure.layout.xaxis.ticktext))
+    exported = build_artifact(PlotExportSpec.from_figure("comparison.custom_ticks", figure),
+                              ExportConfig(width=180, height=130), PlotContentConfig()).figure
+    assert exported.layout.xaxis.ticktext == figure.layout.xaxis.ticktext
+    pd.testing.assert_frame_equal(shown, original_shown)
+    pd.testing.assert_frame_equal(summary, original_summary)
+
+
+def test_combined_component_custom_tick_can_hide_both_count_lines():
+    spec = C.ComparisonSeriesSpec("control_derived", component=C.COMBINED_COMPONENT)
+    result, _, _ = _combined_fixture(spec)
+    shown, _, summary = C.display_results({spec.key: result}, [("combined", "Original name", spec)])
+    figure = C.comparison_figure(shown, summary, "cogn_global", "spearman",
+                                 tick_labels={"combined": "CT + TS"}, show_module_counts={"combined": False})
+    assert figure.layout.xaxis.ticktext == ("CT + TS",)
+    assert summary.iloc[0]["plotted_modules"] == 3
+    assert summary.iloc[0]["plotted_score_observations"] == 6
+
+
 @pytest.mark.parametrize("source", ["full_cohort", "control_derived", "muscle_control_l4", "muscle_all_donors_l4"])
 @pytest.mark.parametrize("scale", C.SCALE_ORDER)
 def test_projected_multitissue_reader_routes_filters_and_components(monkeypatch, source, scale):
@@ -444,6 +482,41 @@ def test_ui_box_and_dot_colors_follow_defaults_and_survive_reordering_without_re
     app = _widget(app.checkbox, "Show module points").uncheck().run()
     assert all(t["type"] == "box" for t in json.loads(app.get("plotly_chart")[0].proto.spec)["data"])
     assert not app.exception and len(calls) == 5
+
+
+def test_ui_individual_tick_labels_and_counts_reuse_results_and_follow_box_identity(monkeypatch):
+    calls = _mock_ui(monkeypatch)
+    app = AppTest.from_function(_ui_app, default_timeout=30).run()
+    uid = app.session_state[U.BOX_STATE][0]["uid"]
+    prefix = f"module_comparison__{uid}__"
+    app = app.text_area(key=prefix + "x_tick_label").set_value("AC\neigengenes").run()
+    assert not app.exception and not calls
+    app = _widget(app.button, "Calculate comparison").click().run()
+    original_summary = app.dataframe[0].value.copy(deep=True)
+
+    def tick_labels():
+        return json.loads(app.get("plotly_chart")[0].proto.spec)["layout"]["xaxis"]["ticktext"]
+
+    assert tick_labels()[0] == "AC<br>eigengenes<br>3 modules"
+    app = app.checkbox(key=prefix + "show_module_count").uncheck().run()
+    assert tick_labels()[0] == "AC<br>eigengenes"
+    pd.testing.assert_frame_equal(app.dataframe[0].value, original_summary)
+    app = app.text_input(key=prefix + "label").set_value("Renamed AC box").run()
+    assert tick_labels()[0] == "AC<br>eigengenes"
+    assert app.dataframe[0].value.iloc[0]["box_label"] == "Renamed AC box"
+    app = app.text_area(key=prefix + "x_tick_label").set_value("").run()
+    assert tick_labels()[0] == "Renamed AC box"  # Blank follows the current box name.
+    app = app.text_area(key=prefix + "x_tick_label").set_value("Only this tick").run()
+    app = app.button(key=prefix + "down").click().run()
+    assert tick_labels()[1] == "Only this tick"
+    assert tick_labels()[0] != "Only this tick"
+    app = app.button(key=prefix + "duplicate").click().run()
+    copied = app.session_state[U.BOX_STATE][2]
+    assert copied["uid"] != uid and copied["x_tick_label"] == "Only this tick"
+    assert not copied["show_module_count"]
+    app = app.text_area(key=f"module_comparison__{copied['uid']}__x_tick_label").set_value("Copy tick").run()
+    assert tick_labels()[1:3] == ["Only this tick", "Copy tick"]
+    assert len(calls) == 5 and not app.exception
 
 
 def test_ui_changed_outcome_is_stale_until_calculated_and_empty_region_is_safe(monkeypatch):

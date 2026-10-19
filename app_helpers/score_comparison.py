@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 import hashlib
+import html
 import json
 from pathlib import Path
 import textwrap
@@ -430,9 +431,12 @@ def comparison_figure(
     displayed: pd.DataFrame, summary: pd.DataFrame, outcome: str, method: str,
     show_points: bool = True, *, box_colors: Mapping[str, str] | None = None,
     dot_colors: Mapping[str, str] | None = None,
+    tick_labels: Mapping[str, str] | None = None,
+    show_module_counts: Mapping[str, bool] | None = None,
 ) -> go.Figure:
     """Boxplot values are module/component correlations, never donor scores."""
     box_colors, dot_colors = box_colors or {}, dot_colors or {}
+    tick_labels, show_module_counts = tick_labels or {}, show_module_counts or {}
     figure = go.Figure()
     tick_values, tick_text = [], []
     for index, row in summary.reset_index(drop=True).iterrows():
@@ -444,7 +448,14 @@ def comparison_figure(
         if row["component"] == COMBINED_COMPONENT:
             suffix = "CT/TS<br>scores" if len(summary) > 6 else "CT/TS scores"
             count_label += f"<br>{row['plotted_score_observations']} {suffix}"
-        tick_text.append("<br>".join(textwrap.wrap(str(row["box_label"]), wrap_width)) + f"<br>{count_label}")
+        label = str(tick_labels.get(box_id, row["box_label"]))
+        # Accept plain text, including explicit line breaks; never reinterpret
+        # custom labels as Plotly HTML. Box names/identities and data stay intact.
+        lines = [html.escape(chunk) for line in label.split("\n")
+                 for chunk in (textwrap.wrap(line, wrap_width) or [""])]
+        tick_text.append("<br>".join(lines) + (
+            f"<br>{count_label}" if show_module_counts.get(box_id, True) else ""
+        ))
         part = displayed.loc[displayed["box_id"].eq(box_id)]
         color = box_colors.get(box_id, COMPARISON_COLORS[index % len(COMPARISON_COLORS)])
         figure.add_trace(go.Box(

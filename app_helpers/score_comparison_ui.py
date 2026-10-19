@@ -159,6 +159,16 @@ def _box_editor(row: dict, registry: dict, position: int, count: int) -> tuple[d
     prefix = f"module_comparison__{row['uid']}__"
     with st.expander(f"Box {position + 1}: {row['label']}", expanded=False):
         label = st.text_input("Box label", value=row["label"], max_chars=100, key=prefix + "label")
+        tick_label = st.text_area(
+            "X-axis tick label", value=row.get("x_tick_label", ""), max_chars=200,
+            height=80, key=prefix + "x_tick_label",
+            help="Leave blank to follow the Box label. Enter a custom label below this box only; line breaks are supported. The box name in tables and downloads is unchanged.",
+        )
+        show_module_count = st.checkbox(
+            "Show module count in X-axis tick", value=row.get("show_module_count", True),
+            key=prefix + "show_module_count",
+            help="Include the module count and, for CT + TS, score-observation count below this box's tick label. Counts always remain available in the tables.",
+        )
         source = _select("Partition / score source", registry, row["source"], prefix + "source",
                          format_func=lambda value: registry[value]["label"])
         regional = registry[source]["regional"]
@@ -259,6 +269,7 @@ def _box_editor(row: dict, registry: dict, position: int, count: int) -> tuple[d
         updated = dict(
             uid=row["uid"], label=label.strip() or f"Box {position + 1}",
             box_color=box_color, dot_color=dot_color, dots_match_box=dots_match_box, **config,
+            x_tick_label=tick_label, show_module_count=show_module_count,
         )
         if regional and not selected_tissues:
             st.warning("Select at least one completed region for this box.")
@@ -301,7 +312,7 @@ def render_view(data_manifest: dict) -> None:
             boxes.append((new_row["uid"], new_row["label"], spec))
     st.session_state[BOX_STATE] = updated
     st.button("Add box", disabled=len(rows) >= MAX_BOXES, on_click=edit_boxes, args=("add",), key="module_comparison_add")
-    st.caption(f"{len(rows)}/{MAX_BOXES} boxes. Expand a box to change its source, score, component, transformation, edge subset or colors.")
+    st.caption(f"{len(rows)}/{MAX_BOXES} boxes. Expand a box to change its source, score, component, transformation, edge subset, colors or X-axis tick label.")
     valid = len(boxes) == len(rows)
     # Manifest revision invalidates compact caches when an incremental release changes data.
     regional_manifest = R.load_regional_manifest() if any(entry["regional"] for entry in registry.values()) else {}
@@ -363,6 +374,8 @@ def render_view(data_manifest: dict) -> None:
         figure = comparison_figure(
             displayed, summary, outcome, method, points,
             box_colors=box_colors, dot_colors=dot_colors,
+            tick_labels={row["uid"]: row["x_tick_label"].strip() for row in updated if row["x_tick_label"].strip()},
+            show_module_counts={row["uid"]: row["show_module_count"] for row in updated},
         )
         render_exportable_plot(figure, key="module_outcome_comparison_plot")
     filterable_dataframe(summary, table_key="module_comparison_summary", table_name="Box summaries", hide_index=True)
