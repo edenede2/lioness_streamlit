@@ -110,7 +110,14 @@ render_view(render_exportable_plot)
     assert not app.exception and app.get("plotly_chart")
     widget(app.selectbox, "Validation donor group").set_value("All donors")
     app.run()
-    assert not app.exception and any("No comparable associations" in x.value for x in app.info)
+    assert not app.exception
+    if R.manifest().get("original_pooled_shards"):
+        assert app.get("plotly_chart")
+        displayed = next(x.value for x in app.dataframe if "original_fdr" in x.value)
+        assert displayed.original_fdr.notna().any()
+        assert displayed.diagnosis_group.eq("All donors").all()
+    else:
+        assert any("No comparable associations" in x.value for x in app.info)
     app = widget(app.radio, "Validation section").set_value("MDC replication").run()
     assert not app.exception and app.get("plotly_chart")
     app = widget(app.radio, "MDC comparison scale").set_value("Raw MDC").run()
@@ -129,6 +136,42 @@ def test_main_navigation_routes_review_before_single_partition_scoring(stage):
     assert not app.exception
     assert any(x.value == "Validation & replication" for x in app.header)
     assert not any(x.label == "Module definition" for x in app.selectbox)
+
+
+def test_pooled_m1116_asinh_fdr_is_displayed_without_donor_reads(stage, monkeypatch):
+    if not R.manifest().get("original_pooled_shards"):
+        pytest.skip("Original pooled summaries have not been installed")
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Pooled replication must remain aggregate-only in Streamlit")
+    for name in ("scores", "summaries", "metadata"):
+        monkeypatch.setattr(V, name, forbidden)
+    app = AppTest.from_string('''
+from app_helpers.validation_review_ui import render_view
+from app_helpers.figure_export import render_exportable_plot
+render_view(render_exportable_plot)
+''', default_timeout=120).run()
+    app = widget(app.radio, "Validation section").set_value("Association replication").run()
+    assert widget(app.selectbox, "Validation donor group").value == "All donors"
+    rule = "ad_control_discovery_effect__hedges_g__fixed_0.40__either"
+    widget(app.selectbox, "Validation edge set").set_value(rule)
+    widget(app.selectbox, "Validation score scale").set_value("asinh")
+    app.run()
+    widget(app.multiselect, "Validation components").set_value(["CT_AC__DLPFC", "CT_DLPFC__PCGBA23"])
+    widget(app.multiselect, "Focus modules (optional)").set_value([1116])
+    app.run()
+    assert not app.exception and app.get("plotly_chart")
+    displayed = next(x.value for x in app.dataframe if "original_fdr" in x.value)
+    assert len(displayed) == 2 and displayed.module.eq(1116).all()
+    assert displayed.original_n.eq(393).all()
+    assert displayed.original_fdr.notna().all() and displayed.original_family_n.gt(150).all()
+    direct = R.association_effects(R.association_table(rule, "standard_pruned", "connectivity", "cogn_global"), scale="asinh")
+    expected = direct.loc[direct.module.eq(1116) & direct.diagnosis_group.eq("All donors")].set_index("component")
+    for row in displayed.itertuples():
+        assert row.original_fdr == expected.loc[row.component, "original_fdr"]
+    app = widget(app.selectbox, "Validation correlation").set_value("Pearson").run()
+    assert not app.exception
+    displayed = next(x.value for x in app.dataframe if "original_fdr" in x.value)
+    assert displayed.original_fdr.notna().all() and displayed.original_family_n.gt(150).all()
 
 
 def test_new_validation_cohort_and_completed_effect_mask_render_existing_views(stage):

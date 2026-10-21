@@ -1021,3 +1021,29 @@ within each donor-module over its undirected edges and retains `FDR < 0.05`.
 Structurally valid scopes with no retained edge receive zero-valued sparse-network
 features, and the app explicitly warns when a selected score is constant. A
 structurally nonexistent tissue block remains missing.
+
+## Pooled CAMEL replication comparisons
+
+In **Validation & replication → Association replication**, **All donors** is the
+default when its original pooled baselines are installed. The original-cohort
+correlations are computed directly from saved donor scores, not averaged from
+Control/MCI/AD coefficients. The validation cohort remains disjoint, with a
+separate eligible donor count for each tissue/pair and outcome.
+
+Original pooled FDR uses the same `add_across_module_fdr` helper as Associations:
+Pearson and Spearman BH separately across valid modules in the 186-module
+Control-derived definition, holding feature, component, outcome, scale, edge
+filter, normalization and pooled donor subset fixed. Missing/constant tests do
+not enter the denominator. Displaying one module, changing evidence filters or
+downloading a subset never recalculates its FDR. Existing diagnosis-specific
+results are unchanged.
+
+`python scripts/build_camel_original_pooled.py --install` builds/reuses bounded
+module checkpoints, verifies monotone original-scale Spearman agreement, and
+installs aggregate-only sidecars with hashes and an external rollback copy.
+Only already released all-edge/Hedges-mask contexts are included. Sidecars use
+feature/outcome row groups, so the public page reads one narrow compact slice
+and never loads donor scores. No networks, edge masks, predictions, or Drive
+files are recomputed or changed. **Focus modules (optional)** filters the
+displayed plot/table; the complete-context download retains all modules and
+their full-family corrections.

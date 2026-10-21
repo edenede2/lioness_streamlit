@@ -103,13 +103,16 @@ def _associations(m, render):
         st.info("This exact comparison is unavailable.")
         return
     a, b, c = st.columns(3)
-    group = a.selectbox("Validation donor group", ["AD", "Control", "MCI", "All donors", "Unclassified"], key="validation_review_group")
+    group = a.selectbox("Validation donor group", ["All donors", "AD", "Control", "MCI", "Unclassified"],
+                        index=0 if m.get("original_pooled_shards") else 1, key="validation_review_group")
     components = b.multiselect("Validation components", list(COMPONENT_LABELS), default=["CT_AC__DLPFC"],
                                format_func=COMPONENT_LABELS.get, key="validation_review_components")
     alpha = c.selectbox("Evidence cutoff", [.05, .10], format_func=lambda x: f"{x:.2f}" + (" (exploratory)" if x == .10 else ""), key="validation_review_alpha")
     f = R.replication_labels(R.association_effects(f, method, scale), alpha)
     f = f.loc[f.diagnosis_group.eq(group) & f.component.isin(components)].copy()
     st.caption("FDRs were calculated across valid modules in each fixed component/outcome/group/feature/scale/edge set—not across groups × modules. No correction is recalculated after these display filters. Original and validation FDRs have their own tested-module counts.")
+    if group == "All donors":
+        st.caption("Pooled correlations use all original-cohort donors with observed scores and outcomes, and all eligible validation donors for each component. Original pooled FDR uses the same module-only BH calculation as Associations; Pearson and Spearman remain separate. No diagnosis-specific correlations are averaged.")
     st.caption("Same direction alone is not statistical replication. Nominal replication requires original FDR below the cutoff, the same nonzero effect direction, and validation p below the cutoff; FDR replication replaces validation p with validation FDR. These are descriptive replication criteria, not a test that the two correlations are equal.")
     if rule != "all":
         st.warning("These are frozen discovery-selected edges. Original discovery associations can be selection-biased; no validation outcome was used to select edges.")
@@ -132,9 +135,14 @@ def _associations(m, render):
         shown = f.loc[f.original_signal & f.same_direction.fillna(False) & f.validation_fdr_signal]
     elif display == "Unavailable comparisons":
         shown = f.loc[~f.comparison_available]
+    focus = st.multiselect("Focus modules (optional)", sorted(f.module.dropna().astype(int).unique()),
+                           format_func=lambda module: f"M{module}", key="validation_review_module_focus",
+                           help="Filter the plot and displayed table only. FDRs retain their complete module families; the complete-context download includes all modules.")
+    if focus:
+        shown = shown.loc[shown.module.isin(focus)]
     fig = scatter_figure(shown, "original_effect", "validation_effect", f"Original {method} effect", f"Validation {method} effect", bounded=True)
     if fig is None:
-        st.info("No comparable associations in this selection. Pooled/unclassified original rows, small cohorts, constant scores, or empty masks may be unavailable; missing evidence is not counted as failed replication.")
+        st.info("No comparable associations in this selection. Unclassified original rows, uninstalled pooled baselines, small cohorts, constant scores, or empty masks may be unavailable; missing evidence is not counted as failed replication.")
     else:
         render(fig, key="validation_association_replication_scatter")
     columns = [*R.MATCH_KEYS, "original_n", "validation_n", "original_effect", "validation_effect", "effect_difference",

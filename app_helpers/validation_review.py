@@ -43,7 +43,8 @@ def table(name: str) -> pd.DataFrame:
 
 
 def association_table(rule: str, normalization: str, feature: str, outcome: str) -> pd.DataFrame:
-    entry = next((e for e in manifest().get("association_shards", [])
+    registry = manifest()
+    entry = next((e for e in registry.get("association_shards", [])
                   if (e["rule"], e["normalization"], e["feature"], e["outcome"]) ==
                   (rule, normalization, feature, outcome)), None)
     if entry is None:
@@ -51,7 +52,48 @@ def association_table(rule: str, normalization: str, feature: str, outcome: str)
     relative = Path(entry["path"])
     if relative.is_absolute() or ".." in relative.parts:
         raise ValueError("Invalid validation-review shard path")
-    return pd.read_parquet(ensure_data_path(review_root() / relative))
+    result = pd.read_parquet(ensure_data_path(review_root() / relative))
+    pooled = next((e for e in registry.get("original_pooled_shards", [])
+                   if (e["rule"], e["normalization"]) == (rule, normalization)), None)
+    if pooled is not None:
+        relative = Path(pooled["path"])
+        if relative.is_absolute() or ".." in relative.parts:
+            raise ValueError("Invalid original pooled-statistics path")
+        filters = [("metric_family", "=", feature), ("phenotype", "=", outcome)]
+        baseline = pd.read_parquet(ensure_data_path(review_root() / relative, filters), filters=filters)
+        result = merge_original_pooled_statistics(result, baseline)
+    return result
+
+
+def merge_original_pooled_statistics(frame: pd.DataFrame, baseline: pd.DataFrame) -> pd.DataFrame:
+    """Fill exact pooled baselines without changing any diagnosis statistics.
+
+    BH and its tested-module counts were calculated on complete original module
+    families offline. Never adjust them over this selected feature/outcome or
+    after a display filter, and never use validation results to fill a baseline.
+    """
+    if baseline.empty:
+        return frame
+    if not baseline.diagnosis_group.eq("All donors").all():
+        raise ValueError("A pooled baseline cannot replace diagnosis-specific statistics")
+    if baseline.duplicated(MATCH_KEYS).any() or frame.duplicated(MATCH_KEYS).any():
+        raise ValueError("Pooled comparison keys must be unique")
+    columns = [c for c in baseline if c.startswith("original_")]
+    updates = baseline.set_index(MATCH_KEYS)[columns]
+    result = frame.set_index(MATCH_KEYS).copy()
+    shared = result.index.intersection(updates.index)
+    for column in columns:
+        if column not in result:
+            result[column] = np.nan
+        result.loc[shared, column] = updates.loc[shared, column].to_numpy()
+    result = result.reset_index()
+    pooled = result.diagnosis_group.eq("All donors") & result.original_n.notna()
+    result.loc[pooled, "original_comparison_available"] = True
+    result.loc[pooled, "unavailable_reason"] = ""
+    valid = pooled & result.original_rho.notna() & result.validation_rho_raw.notna()
+    result.loc[valid, "same_sign_spearman"] = (
+        np.sign(result.loc[valid, "original_rho"]) == np.sign(result.loc[valid, "validation_rho_raw"]))
+    return result
 
 
 def association_effects(frame: pd.DataFrame, method="Spearman", scale="raw") -> pd.DataFrame:

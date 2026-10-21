@@ -28,6 +28,8 @@ from run_camel_validation import RUN, atomic_json, atomic_parquet, sha
 def build(root: Path) -> dict:
     bundle = root / "public_bundle"
     review = bundle / "review"
+    previous_path = review / "manifest.json"
+    previous = json.loads(previous_path.read_text()) if previous_path.exists() else {}
     audit = json.loads((root / "audit.json").read_text())
     manifest = json.loads((bundle / "manifest.json").read_text())
     reproduction = json.loads((root / "existing_score_reproduction.json").read_text())
@@ -129,6 +131,18 @@ def build(root: Path) -> dict:
                      "Original pooled/unclassified association comparisons are unavailable in the saved stratified catalog.",
                      "RINT uses original-cohort interpolation/clipping and can introduce ties.",
                      "Effect masks are frozen discovery masks; never reselected in validation donors."])
+    # Pooled original statistics are a separately checkpointed, aggregate-only
+    # addition. Rebuilding other review evidence must not silently remove them.
+    pooled = [e for e in previous.get("original_pooled_shards", [])
+              if e["rule"] in generated["completed_rules"]]
+    if pooled:
+        for entry in pooled:
+            path = review / entry["path"]
+            if not path.is_file() or sha(path) != entry["sha256"]:
+                raise ValueError("Original pooled baseline is absent or changed; rebuild it explicitly")
+        generated["original_pooled_shards"] = pooled
+        generated["limitations"].remove("Original pooled/unclassified association comparisons are unavailable in the saved stratified catalog.")
+        generated["limitations"].append("Original Unclassified comparisons are unavailable; pooled original comparisons are restored from saved scores with the original module-only FDR rules.")
     atomic_json(generated, review / "manifest.json")
     for p in review.rglob("*.parquet"):
         import pyarrow.parquet as pq

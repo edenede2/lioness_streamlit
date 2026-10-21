@@ -592,6 +592,15 @@ def _pooled_module_correlations(
         sum_xy = (x * y_matrix).sum(axis=0)
         variance_x = n * sum_xx - np.square(sum_x)
         variance_y = n * sum_yy - np.square(sum_y)
+        # Exact nonzero constants (e.g. asinh(1)) can leave a tiny positive
+        # variance after floating-point subtraction. They are unavailable
+        # tests, not nominal p=1 entries in an across-module BH family.
+        constant_x = (np.min(np.where(valid, x_matrix, np.inf), axis=0)
+                      >= np.max(np.where(valid, x_matrix, -np.inf), axis=0))
+        constant_y = (np.min(np.where(valid, y[:, None], np.inf), axis=0)
+                      >= np.max(np.where(valid, y[:, None], -np.inf), axis=0))
+        variance_x = np.where(constant_x, 0.0, variance_x)
+        variance_y = np.where(constant_y, 0.0, variance_y)
         denominator = np.sqrt(np.maximum(0.0, variance_x * variance_y))
         pearson_r = np.divide(
             n * sum_xy - sum_x * sum_y,

@@ -6491,19 +6491,221 @@
   ],
   "direct_formula_max_absolute_error": 9.663381206337363e-13,
   "excluded_complete_donors": 464,
-  "generated_utc": "2026-10-21T07:19:31.800933+00:00",
+  "generated_utc": "2026-10-21T08:43:42.119696+00:00",
   "limitations": [
     "Non-discovery donors within ROSMAP, not external-cohort validation.",
     "Expression preprocessing and module definitions remain fixed.",
     "Component cohorts overlap; do not sum their donor counts.",
     "No pooled three-region CT/TS score exists for this cohort.",
     "Biological replication is not established by formula/score reproduction.",
-    "Original pooled/unclassified association comparisons are unavailable in the saved stratified catalog.",
     "RINT uses original-cohort interpolation/clipping and can introduce ties.",
-    "Effect masks are frozen discovery masks; never reselected in validation donors."
+    "Effect masks are frozen discovery masks; never reselected in validation donors.",
+    "Original Unclassified comparisons are unavailable; pooled original comparisons are restored from saved scores with the original module-only FDR rules."
   ],
   "mdc_status": "complete",
   "modules": 186,
+  "original_pooled_shards": [
+    {
+      "analysis_subset": "all_donors",
+      "bytes": 8929663,
+      "diagnoses": [
+        "Control",
+        "MCI",
+        "AD"
+      ],
+      "fdr_policy": "Original Associations add_across_module_fdr; separate Pearson/Spearman BH across valid modules per fixed feature, component, outcome, scale and pooled cohort",
+      "module_count": 186,
+      "normalization": "standard_pruned",
+      "original_donors": 450,
+      "path": "original_pooled/all/standard_pruned.parquet",
+      "rows": 100440,
+      "rule": "all",
+      "sha256": "2c7e8f5a23877c01c5eac7d5fd4e43d0e259d9029997d04290c16a3bbd735a7c",
+      "source_fingerprint": "816c67f4009109f61abbc25acf57def92a6524789ddab9d04b7e9d421d5febe0",
+      "source_hashes": {
+        "data/control_derived/resolved_plot_data.parquet": "5ca2b91b08d548f26508e50cf15e50fedca4a972047f3c8fea15ac805b4f0bc1",
+        "data/sample_metadata.parquet": "3d8d17fdf50dc8722841cf9624e78a87bf9b36e5728bdf5c6154e9f3167cbe3c"
+      }
+    },
+    {
+      "analysis_subset": "all_donors",
+      "bytes": 8929663,
+      "diagnoses": [
+        "Control",
+        "MCI",
+        "AD"
+      ],
+      "fdr_policy": "Original Associations add_across_module_fdr; separate Pearson/Spearman BH across valid modules per fixed feature, component, outcome, scale and pooled cohort",
+      "module_count": 186,
+      "normalization": "retained_edge",
+      "original_donors": 450,
+      "path": "original_pooled/all/retained_edge.parquet",
+      "rows": 100440,
+      "rule": "all",
+      "sha256": "2c7e8f5a23877c01c5eac7d5fd4e43d0e259d9029997d04290c16a3bbd735a7c",
+      "source_fingerprint": "816c67f4009109f61abbc25acf57def92a6524789ddab9d04b7e9d421d5febe0",
+      "source_hashes": {
+        "data/control_derived/resolved_plot_data.parquet": "5ca2b91b08d548f26508e50cf15e50fedca4a972047f3c8fea15ac805b4f0bc1",
+        "data/sample_metadata.parquet": "3d8d17fdf50dc8722841cf9624e78a87bf9b36e5728bdf5c6154e9f3167cbe3c"
+      }
+    },
+    {
+      "analysis_subset": "all_donors",
+      "bytes": 8281463,
+      "diagnoses": [
+        "Control",
+        "MCI",
+        "AD"
+      ],
+      "fdr_policy": "Original Associations add_across_module_fdr; separate Pearson/Spearman BH across valid modules per fixed feature, component, outcome, scale and pooled cohort",
+      "module_count": 186,
+      "normalization": "standard_pruned",
+      "original_donors": 450,
+      "path": "original_pooled/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/standard_pruned.parquet",
+      "rows": 100440,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher",
+      "sha256": "e9cfcdb737c26e1cce5d15a477bed61fc76fc5b7063596a2c2be13201292626d",
+      "source_fingerprint": "e9bdc5c59f3df4773cc0ef35715f68f4815f1d0534451b0ef9367ae89c8b02d4",
+      "source_hashes": {
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/resolved_plot_data.parquet/part-00000.parquet": "f0804d2b22378ac6095bec7eb2177371cd67f4d278a8f29652ad1cffc76b8b35",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/resolved_plot_data.parquet/part-00001.parquet": "e65685391217f96a7f8ae7daf9329fecfb7d513a166fb60e234e69c596758ca1",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/resolved_plot_data.parquet/part-00002.parquet": "9e8e5993dadb2172f9ed359a1a434c5f1a4e5c7a5d9e3247c7df8c2729ad6d2a",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/resolved_plot_data.parquet/part-00003.parquet": "1e90651d32d209145939890409a80b349ee6cdd037068774ce4d530f380174a8",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/standard_pruned/resolved_plot_data.parquet/part-00004.parquet": "94b34d1bcfbaebb1f14f4a46a2b3d9e27b83722434b8de68df7584bd890bd6d6",
+        "data/sample_metadata.parquet": "3d8d17fdf50dc8722841cf9624e78a87bf9b36e5728bdf5c6154e9f3167cbe3c"
+      }
+    },
+    {
+      "analysis_subset": "all_donors",
+      "bytes": 8292277,
+      "diagnoses": [
+        "Control",
+        "MCI",
+        "AD"
+      ],
+      "fdr_policy": "Original Associations add_across_module_fdr; separate Pearson/Spearman BH across valid modules per fixed feature, component, outcome, scale and pooled cohort",
+      "module_count": 186,
+      "normalization": "retained_edge",
+      "original_donors": 450,
+      "path": "original_pooled/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/retained_edge.parquet",
+      "rows": 100440,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher",
+      "sha256": "907384384173b8dad4c82893ff985bed18ff5f9970b6d7587d2abb99e5d10e01",
+      "source_fingerprint": "418035e092d0c283c33e8c5d41617de572e01ffc46a90f7d65e5df7c14850080",
+      "source_hashes": {
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/resolved_plot_data.parquet/part-00000.parquet": "8d169874cd3dd124968b24f3664eca06fb7b2d6e06bc98a19c9c84eac797ef27",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/resolved_plot_data.parquet/part-00001.parquet": "111646e38d91dcc5ba9de128b0dc4a752059f75c50659b63dc402420959b37fd",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/resolved_plot_data.parquet/part-00002.parquet": "ecc0b0a3a6aa278f3238290b8c5e4d1bf6d1e7232a86475faf2e34df6b50cfa3",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/resolved_plot_data.parquet/part-00003.parquet": "0b507b72b9eaa5e5acbff579d74c37a779c8bae9c936687e853bff15cbb35b2a",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/all/retained_edge/resolved_plot_data.parquet/part-00004.parquet": "4e1ee5efcb39f13ae5b7ff6bd4e604bc3d513ab0335ee6cc940227fb3b79d8d4",
+        "data/sample_metadata.parquet": "3d8d17fdf50dc8722841cf9624e78a87bf9b36e5728bdf5c6154e9f3167cbe3c"
+      }
+    },
+    {
+      "analysis_subset": "all_donors",
+      "bytes": 8438484,
+      "diagnoses": [
+        "Control",
+        "MCI",
+        "AD"
+      ],
+      "fdr_policy": "Original Associations add_across_module_fdr; separate Pearson/Spearman BH across valid modules per fixed feature, component, outcome, scale and pooled cohort",
+      "module_count": 186,
+      "normalization": "standard_pruned",
+      "original_donors": 450,
+      "path": "original_pooled/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/standard_pruned.parquet",
+      "rows": 100440,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher",
+      "sha256": "6987f0b0a28ea20128163d7eb7d9d125e291ca37f9ed18583dd5e7620f699bf9",
+      "source_fingerprint": "9b366a90019f414bf62ccbb487c31bdb08182a1f2a9bd0aeee9e98d6f1a43a58",
+      "source_hashes": {
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/resolved_plot_data.parquet/part-00000.parquet": "12fa15e8852d1bbcf9604c7f28a2a55c290f0c994cd2c02ccadc8516f2f41128",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/resolved_plot_data.parquet/part-00001.parquet": "c20e36e12a00889dc3d8984c4e015725ed5e3a473055fe242fb88122ea5899ba",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/resolved_plot_data.parquet/part-00002.parquet": "a45c26c3786ccd87363a89502060b91faa332db09de99a7f0183f974862a3f50",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/resolved_plot_data.parquet/part-00003.parquet": "ebf7aaa203a156f49fd137b439d85a0ed39b4f2fdcb858831d54a3c49b472052",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/standard_pruned/resolved_plot_data.parquet/part-00004.parquet": "b3b0dcf1a8be8754322e3db6989fabdb7ac98b2315fa6aa0dc1381fc5eb7ffb9",
+        "data/sample_metadata.parquet": "3d8d17fdf50dc8722841cf9624e78a87bf9b36e5728bdf5c6154e9f3167cbe3c"
+      }
+    },
+    {
+      "analysis_subset": "all_donors",
+      "bytes": 8448785,
+      "diagnoses": [
+        "Control",
+        "MCI",
+        "AD"
+      ],
+      "fdr_policy": "Original Associations add_across_module_fdr; separate Pearson/Spearman BH across valid modules per fixed feature, component, outcome, scale and pooled cohort",
+      "module_count": 186,
+      "normalization": "retained_edge",
+      "original_donors": 450,
+      "path": "original_pooled/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/retained_edge.parquet",
+      "rows": 100440,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher",
+      "sha256": "f01c6e52adb80d0ffa26ff266a7dbd6a6018201051e2336aab06e1ccc5f316bd",
+      "source_fingerprint": "84425c43197e790b34e4e4f8244fc89ea5e602097b307a3ba9927de0e4595bc7",
+      "source_hashes": {
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/resolved_plot_data.parquet/part-00000.parquet": "6e6781e1e2888f99aa52b4a54e323cc948b2693c3678b4af68e89eebc35705a1",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/resolved_plot_data.parquet/part-00001.parquet": "2c9ae2b93762679ee0189013906c1b4871589ba68c888f3f523c5487769471f7",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/resolved_plot_data.parquet/part-00002.parquet": "bb43c003992eb1348739bebe38f42097afde5846f0457c609aa53dcc8c0e8847",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/resolved_plot_data.parquet/part-00003.parquet": "843cd706827584cbdff5ffcb2dfe90050d304ca216a537c3e4c37a03f5ac469f",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/all/retained_edge/resolved_plot_data.parquet/part-00004.parquet": "a5a21cb923a17ad9181befb9960b59c02ca775a64c0b757a8bf0658bc6fddf3c",
+        "data/sample_metadata.parquet": "3d8d17fdf50dc8722841cf9624e78a87bf9b36e5728bdf5c6154e9f3167cbe3c"
+      }
+    },
+    {
+      "analysis_subset": "all_donors",
+      "bytes": 9012549,
+      "diagnoses": [
+        "Control",
+        "MCI",
+        "AD"
+      ],
+      "fdr_policy": "Original Associations add_across_module_fdr; separate Pearson/Spearman BH across valid modules per fixed feature, component, outcome, scale and pooled cohort",
+      "module_count": 186,
+      "normalization": "standard_pruned",
+      "original_donors": 450,
+      "path": "original_pooled/ad_control_discovery_effect__hedges_g__fixed_0.40__either/standard_pruned.parquet",
+      "rows": 100440,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__either",
+      "sha256": "45c0882b858c9b4fcb0c6d7b6fdc13159b538515736c6a0f5dd36383ab06b271",
+      "source_fingerprint": "00a92db0e4c83696fb2ee4efb329862ccd4e1f3a3c4a82ad706e85d39ce74b14",
+      "source_hashes": {
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/resolved_plot_data.parquet/part-00000.parquet": "732e486c16c7456011637603a33f3e49a0261a48c713441fe5ccda00744a5c7a",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/resolved_plot_data.parquet/part-00001.parquet": "5ede7f7ad016c33621a8c894180d2d9e17a88b87217f9190c197a0944c69eea4",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/resolved_plot_data.parquet/part-00002.parquet": "d7e157edfef439f4d8f95a0ef819bfa88bc309d2b71a87da857a1dec195265e6",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/resolved_plot_data.parquet/part-00003.parquet": "ed6a4e8d7cb737dbbcd59ba8164570e44b89d2e2a1933f10f29ec422c61468c8",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/standard_pruned/resolved_plot_data.parquet/part-00004.parquet": "92a911b14e8fb4c5de8e7c05649fc13be99c814922eca3e7c31f3e9f788e112e",
+        "data/sample_metadata.parquet": "3d8d17fdf50dc8722841cf9624e78a87bf9b36e5728bdf5c6154e9f3167cbe3c"
+      }
+    },
+    {
+      "analysis_subset": "all_donors",
+      "bytes": 9019723,
+      "diagnoses": [
+        "Control",
+        "MCI",
+        "AD"
+      ],
+      "fdr_policy": "Original Associations add_across_module_fdr; separate Pearson/Spearman BH across valid modules per fixed feature, component, outcome, scale and pooled cohort",
+      "module_count": 186,
+      "normalization": "retained_edge",
+      "original_donors": 450,
+      "path": "original_pooled/ad_control_discovery_effect__hedges_g__fixed_0.40__either/retained_edge.parquet",
+      "rows": 100440,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__either",
+      "sha256": "eab31f0bed1019276a5cd10d5fa4a2d6fe027fc0446aaac51c5100e577ee4f32",
+      "source_fingerprint": "1f803907307a54bac2b923ac61b614df94811bd0339f493ab5ef00ffb6364be1",
+      "source_hashes": {
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/resolved_plot_data.parquet/part-00000.parquet": "86808e8fd556d7b2d983f5e6436038c6a062db33fd45ce48d2fc2d3474cffc55",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/resolved_plot_data.parquet/part-00001.parquet": "83c5e43c133243146036e64a2076c91b5c7b2cffdf8c01d464841f03fa723b6d",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/resolved_plot_data.parquet/part-00002.parquet": "bb443052e5838cde606b70ff688698108da64b4e965f7d81d129099839df3086",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/resolved_plot_data.parquet/part-00003.parquet": "26402d2a42791898dccdbdffa12aba66f6148a988768b55a8cde4729c65e440b",
+        "data/control_derived/effect_size/lioness/control_anchored/ad_control_discovery_effect__hedges_g__fixed_0.40__either/all/retained_edge/resolved_plot_data.parquet/part-00004.parquet": "c16a082a2b15c53c70e364c968e835c1ce79e8456eee9d7488c50c21a70f1014",
+        "data/sample_metadata.parquet": "3d8d17fdf50dc8722841cf9624e78a87bf9b36e5728bdf5c6154e9f3167cbe3c"
+      }
+    }
+  ],
   "reference_controls": 164,
   "run_id": "20261021_frozen164_incomplete_regions",
   "schema_version": 1,
