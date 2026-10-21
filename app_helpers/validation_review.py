@@ -6,7 +6,9 @@ test. Corrections are copied from the full module families, before UI filtering.
 from __future__ import annotations
 
 import json
+from functools import partial
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pandas as pd
@@ -17,8 +19,8 @@ from app_helpers.drive_data import data_path_available, ensure_data_path
 MATCH_KEYS = ["module", "metric_family", "component", "phenotype", "diagnosis_group"]
 
 
-def review_root() -> Path:
-    return V.root() / "review"
+def review_root(module_set="control_derived", network_method="control_anchored") -> Path:
+    return V.root(module_set,network_method) / "review"
 
 
 def available(path: Path) -> bool:
@@ -30,20 +32,24 @@ def available(path: Path) -> bool:
         return False
 
 
-def manifest() -> dict:
-    path = review_root() / "manifest.json"
-    return json.loads(ensure_data_path(path).read_text()) if available(path) else {}
+def manifest(module_set="control_derived", network_method="control_anchored") -> dict:
+    path = review_root(module_set,network_method) / "manifest.json"
+    result=json.loads(ensure_data_path(path).read_text()) if available(path) else {}
+    # Offline overrides must not make the same review appear under every
+    # module definition. Production paths are namespaced independently too.
+    return result if not result or V.manifest_matches(result,module_set,network_method) else {}
 
 
-def table(name: str) -> pd.DataFrame:
+def table(name: str, *, module_set="control_derived", network_method="control_anchored") -> pd.DataFrame:
     if name not in {"technical_checks", "formula_checks", "score_reproduction", "cohorts", "completion", "mdc_comparison"}:
         raise ValueError("Unknown validation evidence table")
-    path = review_root() / f"{name}.parquet"
+    path = review_root(module_set,network_method) / f"{name}.parquet"
     return pd.read_parquet(ensure_data_path(path)) if available(path) else pd.DataFrame()
 
 
-def association_table(rule: str, normalization: str, feature: str, outcome: str) -> pd.DataFrame:
-    registry = manifest()
+def association_table(rule: str, normalization: str, feature: str, outcome: str, *,
+                      module_set="control_derived", network_method="control_anchored") -> pd.DataFrame:
+    registry = manifest(module_set,network_method)
     entry = next((e for e in registry.get("association_shards", [])
                   if (e["rule"], e["normalization"], e["feature"], e["outcome"]) ==
                   (rule, normalization, feature, outcome)), None)
@@ -52,7 +58,7 @@ def association_table(rule: str, normalization: str, feature: str, outcome: str)
     relative = Path(entry["path"])
     if relative.is_absolute() or ".." in relative.parts:
         raise ValueError("Invalid validation-review shard path")
-    result = pd.read_parquet(ensure_data_path(review_root() / relative))
+    result = pd.read_parquet(ensure_data_path(review_root(module_set,network_method) / relative))
     pooled = next((e for e in registry.get("original_pooled_shards", [])
                    if (e["rule"], e["normalization"]) == (rule, normalization)), None)
     if pooled is not None:
@@ -60,9 +66,15 @@ def association_table(rule: str, normalization: str, feature: str, outcome: str)
         if relative.is_absolute() or ".." in relative.parts:
             raise ValueError("Invalid original pooled-statistics path")
         filters = [("metric_family", "=", feature), ("phenotype", "=", outcome)]
-        baseline = pd.read_parquet(ensure_data_path(review_root() / relative, filters), filters=filters)
+        baseline = pd.read_parquet(ensure_data_path(review_root(module_set,network_method) / relative, filters), filters=filters)
         result = merge_original_pooled_statistics(result, baseline)
     return result
+
+
+def for_dataset(module_set="control_derived", network_method="control_anchored"):
+    V.dataset(module_set,network_method)
+    return SimpleNamespace(**{name:partial(globals()[name],module_set=module_set,network_method=network_method)
+        for name in ("review_root","manifest","table","association_table")})
 
 
 def merge_original_pooled_statistics(frame: pd.DataFrame, baseline: pd.DataFrame) -> pd.DataFrame:

@@ -229,7 +229,7 @@ def _box_editor(row: dict, registry: dict, position: int, count: int) -> tuple[d
             method = _select("Network method", ["not_applicable"] if feature == "eigengene" else registry[source]["methods"], row["method"], prefix + "method",
                              format_func=lambda value: "Not applicable (eigengene)" if value == "not_applicable" else D.METHOD_LABELS[value], disabled=feature == "eigengene")
             from app_helpers import camel_validation as V
-            if source == "control_derived" and feature != "eigengene" and method == "control_anchored" and V.available():
+            if source in V.DATASETS and feature != "eigengene" and method in V.DATASETS[source].methods and V.available(module_set=source,method=method):
                 cohort=_select("Source cohort",["complete_450","incomplete_region_validation"],row.get("cohort_scope","complete_450"),prefix+"cohort",format_func=D.COHORT_SCOPE_LABELS.get)
             components = list(D.module_set_components(source))
             if feature == "eigengene":

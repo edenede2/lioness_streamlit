@@ -17,11 +17,13 @@ from app_helpers.table_controls import filterable_dataframe
 
 
 @st.cache_data(max_entries=1,ttl=1800,show_spinner=False)
-def matched_screen(phenotype,feature,scale,rule,normalization,ct,ts,diagnoses,method,revision):
-    metadata=V.metadata(); metadata=metadata.loc[metadata.diagnosis_group.isin(diagnoses)]
+def matched_screen(phenotype,feature,scale,rule,normalization,ct,ts,diagnoses,method,revision,
+                   module_set="control_derived",network_method="control_anchored"):
+    source=V.for_dataset(module_set,network_method)
+    metadata=source.metadata(); metadata=metadata.loc[metadata.diagnosis_group.isin(diagnoses)]
     rows=[]; nominal=phenotype in CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES
-    for module in V.manifest()["completed_module_ids"]:
-        scores=V.scores(module,feature,rule,normalization,scale=scale,embedded=False)
+    for module in source.manifest()["completed_module_ids"]:
+        scores=source.scores(module,feature,rule,normalization,scale=scale,embedded=False)
         paired=scores.pivot(index="sample_id",columns="component",values=f"metric_{scale}")
         if ct not in paired or ts not in paired: continue
         paired=paired[[ct,ts]].dropna().merge(metadata,on="sample_id",how="inner",validate="one_to_one")
@@ -52,30 +54,33 @@ def matched_screen(phenotype,feature,scale,rule,normalization,ct,ts,diagnoses,me
     return frame
 
 
-def render_component_screen(phenotype,feature,scale,rule,normalization,diagnoses,method,render):
+def render_component_screen(phenotype,feature,scale,rule,normalization,diagnoses,method,render,*,
+                            module_set="control_derived",network_method="control_anchored"):
+    source=V.for_dataset(module_set,network_method); labels=source.config.labels
     st.subheader("Validation CT–TS comparison on identical donors")
     st.caption("Choose a tissue pair and a tissue. Each module uses only donors with both scores and the outcome. A third-region score is unavailable for these donors. Nominal effect differences are descriptive.")
     c1,c2=st.columns(2)
-    ct=c1.selectbox("Validation CT pair",[c for c in COMPONENT_LABELS if c.startswith("CT_")],format_func=COMPONENT_LABELS.get)
-    ts=c2.selectbox("Validation TS region",[c for c in COMPONENT_LABELS if c.startswith("TS_")],format_func=COMPONENT_LABELS.get)
+    ct=c1.selectbox("Validation CT pair",[c for c in labels if c.startswith("CT_")],format_func=labels.get)
+    ts=c2.selectbox("Validation TS region",[c for c in labels if c.startswith("TS_")],format_func=labels.get)
     if not st.button("Calculate matched-donor module comparison",key="camel_matched_screen"): return
     with st.spinner("Scanning one module at a time…"):
         frame=matched_screen(phenotype,feature,scale,rule,normalization,ct,ts,tuple(diagnoses),method,
-                             str(V.manifest().get("generated_utc","")))
+                             str(source.manifest().get("generated_utc","")),module_set,network_method)
     if frame.empty or not frame[["ct_effect","ts_effect"]].notna().any().any():
         st.info("No eligible matched-donor tests. The selected region may be absent from this pair, or group sizes / score variation may be insufficient.")
     else:
         plotted=frame.loc[frame.diagnosis_group.eq("All donors")].dropna(subset=["ct_effect","ts_effect"])
         figure=go.Figure(go.Scatter(x=plotted.ct_effect,y=plotted.ts_effect,mode="markers",text="M"+plotted.module.astype(str),
             customdata=plotted[["n","ct_fdr","ts_fdr"]],hovertemplate="%{text}<br>CT=%{x:.3f}; TS=%{y:.3f}<br>n=%{customdata[0]}<br>CT FDR=%{customdata[1]:.3g}<br>TS FDR=%{customdata[2]:.3g}<extra></extra>"))
-        figure.update_layout(template="plotly_white",xaxis_title=COMPONENT_LABELS[ct]+" association effect",yaxis_title=COMPONENT_LABELS[ts]+" association effect")
+        figure.update_layout(template="plotly_white",xaxis_title=labels[ct]+" association effect",yaxis_title=labels[ts]+" association effect")
         render(figure,key="camel_matched_effects")
     filterable_dataframe(frame.sort_values("effect_difference",key=lambda s:s.abs(),ascending=False),table_key="camel_matched_module_table",table_name="Validation matched-donor effects",hide_index=True)
     st.download_button("Download matched-donor results",frame.to_csv(sep="\t",index=False).encode(),"camel_validation_matched_component_statistics.tsv")
 
 
-def adjacency_figure(module,component,rule):
-    path=ensure_data_path(V.root()/f"mdc/adjacency/{component}/M{module}.npz")
+def adjacency_figure(module,component,rule,*,module_set="control_derived",network_method="control_anchored"):
+    source=V.for_dataset(module_set,network_method)
+    path=ensure_data_path(source.root()/f"mdc/adjacency/{component}/M{module}.npz")
     with np.load(path,allow_pickle=False) as z:
         rules=z["rules"].tolist()
         if rule not in rules: raise ValueError("No matching frozen adjacency mask")
@@ -98,15 +103,16 @@ def adjacency_figure(module,component,rule):
     f.add_trace(go.Scatter(x=[None,None],y=[None,None],mode="markers",showlegend=False,
         marker=dict(color=[0,cap],colorscale=[[0,"#FFFF00"],[.5,"#FF8000"],[1,"#FF0000"]],cmin=0,cmax=cap,showscale=True,
                     colorbar=dict(title="Absolute adjacency weight")),hoverinfo="skip"))
-    f.update_layout(template="plotly_white",title=f"M{module} · {COMPONENT_LABELS[component]} · validation<br>Upper: AD; lower: Control",height=700,
+    f.update_layout(template="plotly_white",title=f"M{module} · {source.config.labels[component]} · validation<br>Upper: AD; lower: Control",height=700,
                     xaxis=dict(showticklabels=False,title="Module genes"),yaxis=dict(showticklabels=False,title="Module genes",scaleanchor="x"))
     return f
 
 
-def render_mdc(module,rule,render):
+def render_mdc(module,rule,render,*,module_set="control_derived",network_method="control_anchored"):
+    source=V.for_dataset(module_set,network_method); labels=source.config.labels
     st.subheader("Resolved MDC in non-discovery validation donors")
-    st.caption("AD/Control mean absolute adjacency ratio; not a single-donor CAMEL score. Masks remain frozen. AC–PCG is descriptive only. No pooled three-region MDC is available.")
-    frame=V.mdc(rule)
+    st.caption("AD/Control mean absolute adjacency ratio; not a single-donor score. Masks remain frozen. Components with fewer than five AD or five Controls are descriptive only. No pooled three-tissue MDC is available.")
+    frame=source.mdc(rule)
     if frame.empty:
         st.info("Validation MDC permutations are not yet complete for this selection. Original-cohort MDC will not be substituted.")
         return
@@ -128,10 +134,10 @@ def render_mdc(module,rule,render):
         heat.update_layout(template="plotly_white",height=950,title="Validation MDC by resolved component")
         render(heat,key="camel_validation_mdc_heatmap")
     else:
-        component=st.selectbox("Validation adjacency component",chosen.component.unique(),format_func=COMPONENT_LABELS.get)
+        component=st.selectbox("Validation adjacency component",chosen.component.unique(),format_func=labels.get)
         if st.checkbox("Show validation AD/Control triangle heatmap",value=False):
             selected=chosen.loc[chosen.component.eq(component)].iloc[0]
             if selected.n_retained_edges==0: st.info("This module/component/mask has no retained edges.")
-            else: render(adjacency_figure(module,component,rule),key="camel_validation_adjacency")
+            else: render(adjacency_figure(module,component,rule,module_set=module_set,network_method=network_method),key="camel_validation_adjacency")
     filterable_dataframe(frame,table_key="camel_validation_mdc_table",table_name="Validation MDC",hide_index=True)
     st.download_button("Download validation MDC",frame.to_csv(sep="\t",index=False).encode(),"camel_validation_mdc.tsv")

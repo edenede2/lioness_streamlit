@@ -272,8 +272,9 @@ def _module_frames(spec: ComparisonSeriesSpec) -> Iterator[tuple[int, str, pd.Da
     """Yield module, regional tissue/combined component, and narrow score vector."""
     if spec.cohort_scope == "incomplete_region_validation":
         from app_helpers import camel_validation as V
-        for module in sorted(V.manifest()["completed_module_ids"]):
-            frame=V.scores(module,spec.feature,spec.differential_edge_rule,spec.score_normalization,
+        source=V.for_dataset(spec.source,spec.method)
+        for module in sorted(source.manifest()["completed_module_ids"]):
+            frame=source.scores(module,spec.feature,spec.differential_edge_rule,spec.score_normalization,
                            spec.component,spec.scale,False)
             frame=frame[["sample_id",f"metric_{spec.scale}"]].rename(columns={f"metric_{spec.scale}":"metric_value"})
             yield int(module),"",frame

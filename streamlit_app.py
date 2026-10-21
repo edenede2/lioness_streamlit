@@ -4087,6 +4087,11 @@ with st.sidebar:
         else 0,
     )
     current_score_framework = score_framework(module_set, method, estimator)
+    validation_source = (
+        _camel_validation.for_dataset(module_set,method)
+        if estimator == "lioness" and module_set in _camel_validation.DATASETS
+        and method in _camel_validation.DATASETS[module_set].methods else None
+    )
     if current_score_framework == "CAMEL":
         st.caption(f"CAMEL: {CAMEL_EXPANSION}. Existing estimator, formulas and internal identifiers are unchanged.")
         if module_set == "control_derived" and not _camel_validation.available() and _camel_validation.manifest():
@@ -4094,16 +4099,19 @@ with st.sidebar:
     cohort_scope_options = ["complete_450"]
     if module_set == "all_donor_corrshrink_l4" and capabilities.get("expanded_components", False) and estimator == "lioness":
         cohort_scope_options.append("maximum_component")
-    if module_set == "control_derived" and estimator == "lioness" and method == "control_anchored" and _camel_validation.available():
+    if validation_source is not None and validation_source.available():
         cohort_scope_options.append(VALIDATION_SCOPE)
     cohort_scope = st.radio(
         "Donor cohort scope", options=cohort_scope_options,
         format_func=lambda value: "Complete VH/SMA/QUAD comparison cohort (357)"
         if module_set in MUSCLE_MODULE_SETS and value == "complete_450" else COHORT_SCOPE_LABELS[value],
-        help="Validation excludes all 464 complete-expression donors. Each resolved component has its own donor set; missing regions are never imputed.",
+        help="Validation excludes the audited complete-expression discovery cohort. Each resolved component has its own donor set; missing regions are never imputed.",
     )
     if cohort_scope == VALIDATION_SCOPE:
-        st.info("793 non-discovery donors within ROSMAP; frozen 164-Control reference. This is not external-cohort validation. AC–PCG has only 14 donors (3 AD / 6 Control): group MDC is descriptive only.")
+        validation_manifest=validation_source.manifest()
+        st.info(f"{validation_source.config.validation_donors} non-discovery donors within ROSMAP; {validation_manifest['reference_policy']}. This is not external-cohort validation. Component cohorts overlap; no pooled three-tissue scores are available.")
+        if not validation_source.config.motor:
+            st.caption("AC–PCG has only 14 donors (3 AD / 6 Control): group MDC is descriptive only.")
         if active_view in {"Prediction", "Edge volcano", "Donor edge explorer"}:
             st.info("No prediction, new differential-edge discovery, or public donor-expression catalog was generated for this validation cohort.")
             st.stop()
@@ -4195,7 +4203,7 @@ with st.sidebar:
         and effect_size_data_available(module_set, estimator, method)
     )
     if cohort_scope == VALIDATION_SCOPE:
-        effect_available = any(r != "all" for r in _camel_validation.manifest().get("completed_rules",[]))
+        effect_available = any(r != "all" for r in validation_source.manifest().get("completed_rules",[]))
     subset_options = ["all"]
     if differential_available:
         subset_options.append("ad_control_discovery_fdr05")
@@ -4247,7 +4255,7 @@ with st.sidebar:
         )
     else:
         effect_manifest = cached_effect_size_manifest(module_set)
-        validation_effect_options = _camel_validation.completed_effect_options() if cohort_scope == VALIDATION_SCOPE else []
+        validation_effect_options = validation_source.completed_effect_options() if cohort_scope == VALIDATION_SCOPE else []
         if validation_effect_options:
             effect_manifest = {
                 "available_effect_statistics": list(dict.fromkeys(e["statistic"] for e in validation_effect_options)),
@@ -4386,7 +4394,7 @@ with st.sidebar:
                     "negative_abs_sum": "Negative contribution per retained edge",
                 }
             )
-    if cohort_scope == VALIDATION_SCOPE and not _camel_validation.available(differential_edge_rule):
+    if cohort_scope == VALIDATION_SCOPE and not validation_source.available(differential_edge_rule):
         st.info("This validation mask is not ready yet; original-cohort results will not be substituted.")
         st.stop()
     if cohort_scope == "maximum_component" and (feature == "eigengene" or differential_edge_rule != "all"):
@@ -6858,7 +6866,7 @@ if active_view == "Feature distributions":
 if cohort_scope == VALIDATION_SCOPE and active_view in {"CT–TS screen", "Module finder"}:
     from app_helpers.camel_validation_ui import render_component_screen
     render_component_screen(phenotype,feature,scale,differential_edge_rule,score_normalization,
-                            tuple(diagnoses),correlation_method,render_plotly_chart)
+                            tuple(diagnoses),correlation_method,render_plotly_chart,module_set=module_set,network_method=method)
     st.stop()
 
 if active_view == "CT–TS screen":
@@ -8542,7 +8550,7 @@ if active_view == "Edge volcano":
 if active_view == "MDC":
     if cohort_scope == VALIDATION_SCOPE:
         from app_helpers.camel_validation_ui import render_mdc as render_validation_mdc
-        render_validation_mdc(module,differential_edge_rule,render_plotly_chart)
+        render_validation_mdc(module,differential_edge_rule,render_plotly_chart,module_set=module_set,network_method=method)
         st.stop()
     st.subheader("Module differential connectivity (MDC)")
     if module_set in MUSCLE_MODULE_SETS and differential_edge_rule == "all":

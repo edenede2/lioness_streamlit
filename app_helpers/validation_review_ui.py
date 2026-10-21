@@ -10,7 +10,8 @@ import streamlit as st
 from app_helpers import camel_validation as V
 from app_helpers import validation_review as R
 from app_helpers.camel import COMPONENT_LABELS
-from app_helpers.data import ASSOCIATION_OUTCOME_LABELS, FEATURE_LABELS
+from app_helpers.data import ASSOCIATION_OUTCOME_LABELS, FEATURE_LABELS, MODULE_SET_LABELS, METHOD_LABELS
+from app_helpers.validation_datasets import DATASETS, MOTOR_LABELS
 from app_helpers.table_controls import filterable_dataframe
 
 COLORS = {
@@ -37,7 +38,7 @@ def scatter_figure(frame, x, y, x_label, y_label, *, bounded=False):
     if f.empty:
         return None
     f["module_label"] = "M" + f.module.astype(str)
-    f["region"] = f.component.map(COMPONENT_LABELS)
+    f["region"] = f.component.map({**COMPONENT_LABELS,**MOTOR_LABELS})
     color = "replication_status" if "replication_status" in f else "region"
     hover = [c for c in ["module_label", "region", "original_n", "validation_n", "original_p",
                          "validation_p", "original_fdr", "validation_fdr", "original_family_n",
@@ -59,17 +60,17 @@ def scatter_figure(frame, x, y, x_label, y_label, *, bounded=False):
     return fig
 
 
-def _technical(m):
+def _technical(m, reader=R):
     st.subheader("Technical reproduction and safeguards")
     st.caption("Passing these checks means the calculation reproduced the intended algorithm. It does not mean an association replicated in different donors.")
-    checks = R.table("technical_checks")
+    checks = reader.table("technical_checks")
     download_table(checks, "validation_technical_checks", "Technical checks")
     with st.expander("Original-score reproduction: sampled modules"):
-        r = R.table("score_reproduction")
+        r = reader.table("score_reproduction")
         st.caption("Recomputed original-donor features versus the unchanged saved R catalog. Error is relative; the test covers sampled donors/modules, not every original value.")
         download_table(r, "validation_original_score_reproduction", "Original score reproduction")
     with st.expander("Direct formula checks by module and component"):
-        f = R.table("formula_checks")
+        f = reader.table("formula_checks")
         download_table(f, "validation_formula_checks", "Direct formula checks")
     with st.expander("Frozen inputs and interpretation limits"):
         for note in m.get("limitations", []):
@@ -78,7 +79,7 @@ def _technical(m):
         download_table(sources, "validation_frozen_sources", "Frozen source hashes")
 
 
-def _associations(m, render):
+def _associations(m, render, reader=R, labels=COMPONENT_LABELS):
     st.subheader("Did the original associations reproduce?")
     entries = m.get("association_shards", [])
     if not entries:
@@ -98,15 +99,15 @@ def _associations(m, render):
                           format_func=lambda x: ASSOCIATION_OUTCOME_LABELS.get(x, x), key="validation_review_outcome")
     method = b.selectbox("Validation correlation", ["Spearman", "Pearson"], key="validation_review_correlation")
     scale = c.selectbox("Validation score scale", ["raw", "asinh", "rint"], format_func=lambda x: x.upper() if x == "rint" else x.capitalize(), key="validation_review_scale")
-    f = R.association_table(rule, norm, feature, outcome)
+    f = reader.association_table(rule, norm, feature, outcome)
     if f.empty:
         st.info("This exact comparison is unavailable.")
         return
     a, b, c = st.columns(3)
     group = a.selectbox("Validation donor group", ["All donors", "AD", "Control", "MCI", "Unclassified"],
                         index=0 if m.get("original_pooled_shards") else 1, key="validation_review_group")
-    components = b.multiselect("Validation components", list(COMPONENT_LABELS), default=["CT_AC__DLPFC"],
-                               format_func=COMPONENT_LABELS.get, key="validation_review_components")
+    components = b.multiselect("Validation components", list(labels), default=[next(c for c in labels if c.startswith("CT_"))],
+                               format_func=labels.get, key="validation_review_components")
     alpha = c.selectbox("Evidence cutoff", [.05, .10], format_func=lambda x: f"{x:.2f}" + (" (exploratory)" if x == .10 else ""), key="validation_review_alpha")
     f = R.replication_labels(R.association_effects(f, method, scale), alpha)
     f = f.loc[f.diagnosis_group.eq(group) & f.component.isin(components)].copy()
@@ -153,15 +154,15 @@ def _associations(m, render):
                        "validation_association_full_context.tsv", key="validation_review_full_associations")
 
 
-def _mdc(render):
+def _mdc(render, reader=R, labels=COMPONENT_LABELS):
     st.subheader("MDC in original versus validation donors")
-    f = R.table("mdc_comparison")
+    f = reader.table("mdc_comparison")
     if f.empty:
         st.info("MDC comparison is not yet available.")
         return
     a, b, c = st.columns(3)
     rule = a.selectbox("MDC validation edge set", list(dict.fromkeys(f.differential_edge_rule)), format_func=rule_label, key="validation_review_mdc_rule")
-    components = b.multiselect("MDC validation components", list(COMPONENT_LABELS), default=["CT_AC__DLPFC"], format_func=COMPONENT_LABELS.get, key="validation_review_mdc_components")
+    components = b.multiselect("MDC validation components", list(labels), default=[next(c for c in labels if c.startswith("CT_"))], format_func=labels.get, key="validation_review_mdc_components")
     scale = c.radio("MDC comparison scale", ["Log2 MDC", "Raw MDC"], key="validation_review_mdc_scale")
     f = f.loc[f.differential_edge_rule.eq(rule) & f.component.isin(components)].copy()
     baseline = 0. if scale == "Log2 MDC" else 1.
@@ -185,29 +186,42 @@ def _mdc(render):
 
 def render_view(render):
     st.header("Validation & replication")
-    st.caption("Control-derived brain modules: CAMEL in donors excluded from the complete-expression cohort.")
-    m = R.manifest()
+    identities=[(key,method) for key,config in DATASETS.items() for method in config.methods
+                if R.manifest(key,method)]
+    if not identities:
+        st.info("Validation-review evidence has not been installed yet. Existing analyses remain unchanged; no result is substituted.")
+        return
+    if len(identities)>1:
+        chosen=st.selectbox("Validation dataset",identities,
+            format_func=lambda item:MODULE_SET_LABELS[item[0]]+" · "+METHOD_LABELS[item[1]],key="validation_review_dataset")
+    else:
+        chosen=identities[0]
+    source=V.for_dataset(*chosen); reader=R.for_dataset(*chosen)
+    labels=source.config.labels
+    st.caption(f"{MODULE_SET_LABELS[chosen[0]]}: {source.config.framework(chosen[1])} in donors excluded from the complete-expression cohort.")
+    m = reader.manifest()
     if not m:
         st.info("Validation-review evidence has not been installed yet. Existing analyses remain unchanged; no result is substituted.")
         return
     c = st.columns(3)
     c[0].metric("Validation donors", m["validation_donors"])
     c[1].metric("Modules scored", f'{m["complete_modules"]}/{m["modules"]}')
-    c[2].metric("Frozen reference Controls", m["reference_controls"])
+    c[2].metric("Frozen reference donors" if chosen[1]=="standard" else "Frozen reference Controls",
+                m.get("reference_donors",m["reference_controls"]))
     st.caption(f'Evidence snapshot: {m["generated_utc"]} · {m["run_id"]}. This is non-discovery-donor validation within ROSMAP, not external validation.')
-    if not V.available():
+    if not source.available():
         st.info("Aggregate validation evidence is available here. Donor-level plots become selectable after the Drive bundle passes readback verification; this page does not load those files.")
     section = st.radio("Validation section", ["Technical checks", "Association replication", "MDC replication", "Coverage & completion"], horizontal=True, key="validation_review_section")
     if section == "Technical checks":
-        _technical(m)
+        _technical(m,reader)
     elif section == "Association replication":
-        _associations(m, render)
+        _associations(m, render,reader,labels)
     elif section == "MDC replication":
-        _mdc(render)
+        _mdc(render,reader,labels)
     else:
         st.subheader("Component-specific donor coverage")
         st.caption(f'All {m["excluded_complete_donors"]} complete-expression donors were excluded. Component cohorts overlap; their counts must not be summed. No absent region is imputed and no pooled three-region CT/TS score is constructed.')
-        f = R.table("cohorts")
+        f = reader.table("cohorts")
         long = f.melt(id_vars=["component", "component_label", "n"], value_vars=["Control", "MCI", "AD", "Unclassified"], var_name="Diagnosis", value_name="Donors")
         fig = px.bar(long, x="component_label", y="Donors", color="Diagnosis", barmode="stack",
                      color_discrete_map={"Control": "#377EB8", "MCI": "#DDAA33", "AD": "#EE7733", "Unclassified": "#999999"},
@@ -216,5 +230,5 @@ def render_view(render):
         render(fig, key="validation_cohort_coverage")
         download_table(f, "validation_component_coverage", "Component coverage")
         st.subheader("Completion by frozen edge mask")
-        download_table(R.table("completion"), "validation_completion", "Validation completion")
+        download_table(reader.table("completion"), "validation_completion", "Validation completion")
         st.caption("Score completion does not imply association or publication completion. Only reconciled combinations are enabled in donor-level analysis views.")
