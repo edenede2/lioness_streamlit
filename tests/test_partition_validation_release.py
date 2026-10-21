@@ -35,6 +35,35 @@ def test_publication_approval_cannot_transfer_to_other_method_or_grain(tmp_path)
         approval_gate(tmp_path,"full_cohort","control_anchored")
 
 
+def test_publication_waiter_requires_completed_release_qa_and_skips_intermediate_masks(tmp_path):
+    from publish_ready_brain_validation import candidate
+    root=tmp_path/"full_cohort/control_anchored"
+    first=["all",*["ad_control_discovery_effect__hedges_g__fixed_0.40__"+d for d in
+        ("ad_higher","control_higher","either")]]
+    rules=[*first,"later_mask_a","later_mask_b"]
+    approval=dict(approved=True,module_set="full_cohort",methods=["control_anchored"],score_rows=7795942,
+        score_files=154,transformation_files=154,transformation_rows=343728,validation_samples=793)
+    report=dict(status="scores_passed",modules=154,score_rows=7795942,transform_rows=343728,samples=793,
+        completed_rules=first,mdc_status="unavailable")
+    manifest=dict(module_set="full_cohort",network_method="control_anchored",completed_rules=first,rules=rules)
+    atomic_json(approval,root/"publication_approval.json")
+    atomic_json(report,root/"public_bundle/release_manifest.json")
+    atomic_json(manifest,root/"public_bundle/manifest.json")
+    assert candidate(tmp_path,"control_anchored",{}) is None
+    report.update(status="passed",mdc_status="complete")
+    atomic_json(report,root/"public_bundle/release_manifest.json")
+    ready=candidate(tmp_path,"control_anchored",{})
+    assert ready["stage"]=="first_release"
+    assert candidate(tmp_path,"control_anchored",{"control_anchored":ready}) is None
+    atomic_json({**manifest,"completed_rules":[*first,"later_mask_a"]},root/"public_bundle/manifest.json")
+    assert candidate(tmp_path,"control_anchored",{}) is None  # audit now stale
+    atomic_json({**report,"completed_rules":[*first,"later_mask_a"]},root/"public_bundle/release_manifest.json")
+    assert candidate(tmp_path,"control_anchored",{}) is None  # deliberate no per-mask uploads
+    atomic_json({**manifest,"completed_rules":rules},root/"public_bundle/manifest.json")
+    atomic_json({**report,"completed_rules":rules},root/"public_bundle/release_manifest.json")
+    assert candidate(tmp_path,"control_anchored",{})["stage"]=="final"
+
+
 def test_brain_queue_finishes_reviewed_brain_before_any_motor_or_publication():
     from run_partition_validation_pipeline import stages
     jobs=stages()

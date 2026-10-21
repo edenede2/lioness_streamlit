@@ -99,7 +99,25 @@ restart. It does not upload, commit or push. After a passing release audit,
 publication step. It verifies upload checksums and representative reads through
 the app's read-only identity before exposing the cohort.
 
+With the separately recorded approval, `publish_ready_brain_validation.py --watch`
+may wait for passing first-release and final QA manifests, then invoke that
+scoped uploader. It never publishes intermediate individual masks, never
+starts motor uploads, and never commits or pushes. A stale audit, analysis
+failure, changed scope, upload/readback failure or concurrent index change
+prevents exposure. Its private `brain_publication_status.json` is separate
+from analysis status. The wait is bounded to 48 hours by default.
+
 Repository review caches are bounded to connectivity and six cognitive/pathology
 outcomes for the four first-release edge contexts. Other features, outcomes and
 edge masks remain lazy backend reads after their registry is published. No
 donor scores or full frozen rank curves are copied to Git.
+
+The extension's targeted regression run passed 118 tests (one skipped).
+A broader run excluding two private Matplotlib-dependent tests passed 480,
+skipped 21 and reported six pre-existing catalog/test-expectation issues:
+motor regional KEGG missing p-values, old fixed twelve-outcome row assertions,
+a legacy manifest entry without a row count, and old UI assertions for sixteen
+outcomes and the pre-CAMEL label. These are not evidence that the entire app
+test suite is green; they must not be hidden or described as new-result QA.
+Existing KEGG, outcome catalogs and their manifests are not modified by this
+validation extension.
