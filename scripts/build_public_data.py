@@ -417,6 +417,8 @@ def write_sample_metadata(
             raise ValueError("Public AD-Control split mapping failed")
     from scripts.build_pathology_outcomes import augment_metadata
     frame = augment_metadata(frame, frame["donor"])
+    from scripts.build_study_metadata import augment_metadata as augment_study_metadata
+    frame = augment_study_metadata(frame, frame["donor"])
     frame.insert(0, "sample_id", frame.pop("donor").map(sample_map))
     if frame["sample_id"].isna().any() or frame["sample_id"].nunique() != 450:
         raise ValueError("Sample metadata did not map cleanly to all 450 pseudonyms")

@@ -3,6 +3,33 @@
 A GitHub-ready Streamlit app for exploring the completed ROSMAP LIONESS and
 BONOBO analyses.
 
+ROS/MAP study membership is available in non-prediction outcome, grouping,
+point-color and hover controls. Use **Study / project (ROS / MAP)** as a categorical
+outcome to compare score distributions with Kruskal–Wallis, epsilon-squared and
+module-only BH FDR, or group numeric phenotype correlations by study. The numeric
+correlation heatmaps exclude nominal study codes; use their study-association
+view, or stratify numeric correlations by study. Module–outcome comparison shows
+module epsilon-squared effects for this outcome, not absolute correlations.
+Study-associated differences are descriptive and may reflect cohort composition,
+technical factors or biology; they do not establish a causal study/batch effect.
+
+Labels come from `study` in the August 13, 2025 cross-sectional release, with only
+whitespace trimming and uppercase normalization. The common brain cohort has
+209 ROS and 241 MAP donors. Both motor partitions (and independent motor tissues)
+contain 357 MAP donors, so between-study tests are explicitly unavailable there.
+Expanded AC/DLPFC/PCG cohorts retain 11/13/8 missing source labels, respectively;
+missing labels are not inferred from pseudonyms or expression. The six approved
+metadata files preserve all existing samples and phenotype values. Source hashes,
+coverage and normalization are recorded in `data/study/manifest.json`. Prediction
+targets, models, fitted results and selectors are unchanged.
+A small `data/study/sample_study.parquet` repository overlay contains only the
+same approved sample labels, isolated into brain/motor namespaces; it supports
+older Drive metadata without extra requests or revealing private mappings.
+`python scripts/build_study_metadata.py --install-local` rebuilds the metadata and
+overlay in the offline analysis environment. After OAuth reauthorization,
+`python scripts/upload_study_metadata.py` can publish immutable verified Drive
+copies and update the local index. Neither command pushes GitHub.
+
 ### Publication figure exports
 
 Every application chart has an **Export figure** button. It opens a native

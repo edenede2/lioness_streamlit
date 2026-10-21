@@ -445,8 +445,9 @@ def cached_resolved(
 def cached_sample_metadata(
     module_set: str = "full_cohort",
     cohort_scope: str = "complete_450",
+    metadata_schema_version: int = 2,
 ) -> pd.DataFrame:
-    """Metadata schema includes the verified August-2025 pathology extension."""
+    """Metadata schema includes pathology and nominal ROS/MAP study membership."""
     return load_sample_metadata(module_set=module_set, cohort_scope=cohort_scope)
 
 
@@ -1079,7 +1080,7 @@ def standardize_stored_associations(
 
 
 @st.cache_data(
-    show_spinner="Calculating nominal cluster associations across modules…",
+    show_spinner="Calculating categorical associations across modules…",
     max_entries=2,
     ttl=1800,
 )
@@ -1100,6 +1101,7 @@ def cached_module_set_cluster_associations(
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
     cohort_scope: str = "complete_450",
+    category_variable: str = "clusters",
 ) -> pd.DataFrame:
     """Return Kruskal/epsilon-squared rows; never correlate cluster codes."""
 
@@ -1107,7 +1109,8 @@ def cached_module_set_cluster_associations(
     if include_pooled:
         selected_groups.append("All donors")
     if (
-        feature != "eigengene"
+        category_variable == "clusters"
+        and feature != "eigengene"
         and differential_edge_rule == "all"
         and cohort_scope == "complete_450"
     ):
@@ -1130,7 +1133,7 @@ def cached_module_set_cluster_associations(
         result = stream_diagnosis_categorical_associations(
             module_ids, cached_sample_metadata(module_set, cohort_scope), module_set=module_set,
             estimator=estimator, method=method, resolved=resolved,
-            feature=feature, category_variable="clusters", scale="raw",
+            feature=feature, category_variable=category_variable, scale="raw",
             components=components, diagnoses=diagnoses,
             include_pooled=include_pooled, min_group_n=5,
             edge_rule=edge_rule, differential_edge_rule=differential_edge_rule,
@@ -1185,13 +1188,13 @@ def cached_module_set_associations(
 ) -> pd.DataFrame:
     """Return Pearson/Spearman statistics with BH applied across modules only."""
 
-    if phenotype == "clusters":
+    if phenotype in {"clusters", "study"}:
         return cached_module_set_cluster_associations(
             module_set, module_count, estimator, method, resolved, feature,
             components, diagnoses, include_pooled, edge_rule,
             differential_edge_rule, differential_fdr_scope,
             differential_fdr_threshold, score_normalization, analysis_subset,
-            cohort_scope,
+            cohort_scope, category_variable=phenotype,
         )
 
     statistic_arguments = {
@@ -4073,7 +4076,7 @@ with st.sidebar:
         options=(
             list(ASSOCIATION_OUTCOME_LABELS)
             if active_view == "Associations"
-            else [*OUTCOME_LABELS, "clusters"]
+            else [*OUTCOME_LABELS, "clusters", "study"]
         ),
         format_func=lambda value: ASSOCIATION_OUTCOME_LABELS[value],
     )
@@ -4100,6 +4103,8 @@ with st.sidebar:
             "Postmortem pathology, August 2025 release. Amyloid and tangles use the "
             "supplied square-root 8-region estimates; no additional outcome transform is applied."
         )
+    if phenotype == "study":
+        st.caption("ROS/MAP is nominal study membership. Comparisons use Kruskal–Wallis and epsilon-squared, not numeric correlation codes. A cohort containing only one study cannot support a between-study test.")
     active_feature_labels = dict(
         FEATURE_LABELS if estimator == "lioness" else BONOBO_FEATURE_LABELS
     )
@@ -5229,31 +5234,33 @@ if active_view == "Correlation heatmaps":
     }
     heatmap_statistic_type = st.radio(
         "Association type",
-        ["Numeric correlations", "Nominal ROSMAP clusters"],
+        ["Numeric correlations", "Nominal ROSMAP clusters", "Study / project (ROS / MAP)"],
         horizontal=True,
         key="heatmap_statistic_type",
     )
-    if heatmap_statistic_type == "Nominal ROSMAP clusters":
-        st.subheader("Network-score associations with nominal ROSMAP clusters")
+    if heatmap_statistic_type != "Numeric correlations":
+        heatmap_category = "study" if heatmap_statistic_type == "Study / project (ROS / MAP)" else "clusters"
+        category_name = "Study" if heatmap_category == "study" else "Cluster"
+        st.subheader(f"Network-score associations with {ASSOCIATION_OUTCOME_LABELS[heatmap_category]}")
         st.caption(
             "This is a separate nonnegative epsilon-squared heatmap. Asterisks mark "
-            "Kruskal–Wallis FDR < 0.05 after BH across modules only. Cluster codes are "
-            "never passed to Pearson or Spearman correlation."
+            "Kruskal–Wallis FDR < 0.05 after BH across modules only. Nominal study/cluster labels are "
+            "never passed to Pearson or Spearman correlation. Single-study cohorts have unavailable study tests."
         )
         cluster_heatmap_scope = st.radio(
-            "Cluster heatmap scope",
+            f"{category_name} heatmap scope",
             ["Selected module", f"All {module_count} modules"],
             horizontal=True,
         )
         cluster_heatmap_diagnosis = st.selectbox(
-            "Diagnosis/cohort in cluster heatmap",
+            f"Diagnosis/cohort in {category_name.lower()} heatmap",
             ["All donors", *diagnosis_options, "All diagnosis groups"],
             index=0,
         )
         cluster_features = st.multiselect(
             "Module scores",
             options=list(heatmap_feature_labels),
-            default=list(heatmap_feature_labels),
+            default=[feature] if heatmap_category == "study" else list(heatmap_feature_labels),
             format_func=lambda value: heatmap_feature_labels[value],
         )
         cluster_components = tuple(selected_components)
@@ -5276,7 +5283,7 @@ if active_view == "Correlation heatmaps":
                 include_cluster_pooled, edge_rule, differential_edge_rule,
                 differential_fdr_scope, differential_fdr_threshold,
                 score_normalization, analysis_subset,
-                cohort_scope,
+                cohort_scope, category_variable=heatmap_category,
             )
             for selected_feature in cluster_features
         ]
@@ -5306,7 +5313,7 @@ if active_view == "Correlation heatmaps":
                 + " · " + cluster_table["feature_label"].astype(str)
             )
         show_cluster_significant = st.checkbox(
-            "Show only rows with at least one cluster FDR < 0.05",
+            f"Show only rows with at least one {category_name.lower()} FDR < 0.05",
             value=False,
         )
         if show_cluster_significant and not cluster_table.empty:
@@ -5318,16 +5325,18 @@ if active_view == "Correlation heatmaps":
                 cluster_table["heatmap_row"].isin(keep_rows)
             ]
         cluster_ordering = st.selectbox(
-            "Cluster heatmap clustering",
+            f"{category_name} heatmap clustering",
             ["None", "Rows", "Columns", "Rows and columns"],
         )
         if cluster_table.empty:
-            st.info("No nominal cluster associations meet the selected filters.")
+            st.info(f"No nominal {category_name.lower()} associations meet the selected filters.")
+        elif not cluster_table["epsilon_squared"].notna().any():
+            st.info("No between-category test is available for the displayed rows. Check that at least two studies/categories meet the minimum sample size; the motor cohort is MAP-only.")
         else:
             render_plotly_chart(
                 cluster_association_heatmap_figure(
                     cluster_table,
-                    title="ROSMAP cluster association effect sizes",
+                    title=f"{ASSOCIATION_OUTCOME_LABELS[heatmap_category]} association effect sizes",
                     cluster_rows=cluster_ordering in {"Rows", "Rows and columns"},
                     cluster_columns=cluster_ordering in {"Columns", "Rows and columns"},
                 ),
@@ -5338,21 +5347,21 @@ if active_view == "Correlation heatmaps":
                     "module_set": module_set,
                     "method": method,
                     "module": f"M{module}",
-                    "outcome": phenotype,
+                    "outcome": heatmap_category,
                     "feature": feature,
                 },
             )
             filterable_dataframe(
                 cluster_table,
                 table_key="complete_cluster_association_table",
-                table_name="Complete nominal cluster association table",
+                table_name=f"Complete nominal {category_name.lower()} association table",
                 use_container_width=True,
                 hide_index=True,
             )
             st.download_button(
-                "Download nominal cluster association table (TSV)",
+                f"Download nominal {category_name.lower()} association table (TSV)",
                 data=dataframe_to_tsv_bytes(cluster_table),
-                file_name=f"{download_prefix}cluster_association_statistics.tsv",
+                file_name=f"{download_prefix}{heatmap_category}_association_statistics.tsv",
                 mime="text/tab-separated-values",
             )
         st.stop()
@@ -6800,7 +6809,8 @@ if active_view == "CT–TS screen":
     st.caption(
         f"Ranks all {module_count} modules for the selected phenotype, feature, diagnosis, "
         "and method by "
-        f"the absolute difference between CT and TS {correlation_method} correlations. "
+        + ("the absolute difference between CT and TS categorical epsilon-squared effects. "
+           if phenotype in {"clusters", "study"} else f"the absolute difference between CT and TS {correlation_method} correlations. ") +
         "This is an exploratory screen, not an independent validation ranking."
     )
     screen_diagnosis = st.selectbox(
@@ -6809,20 +6819,22 @@ if active_view == "CT–TS screen":
         index=diagnoses.index("AD") if "AD" in diagnoses else 0,
         key="screen_diagnosis",
     )
-    if phenotype == "clusters":
+    if phenotype == "study" and cached_sample_metadata(module_set, cohort_scope)["study"].dropna().nunique() < 2:
+        st.info("Between-study CT–TS effects are unavailable: this cohort contains fewer than two observed studies (the motor cohort is MAP-only).")
+        st.stop()
+    if phenotype in {"clusters", "study"}:
         cluster_screen = cached_module_set_cluster_associations(
             module_set, module_count, estimator, method, False, feature,
             ("CT", "TS"), (screen_diagnosis,), False, edge_rule,
             differential_edge_rule, differential_fdr_scope,
             differential_fdr_threshold, score_normalization, analysis_subset,
-            cohort_scope,
-            cohort_scope,
+            cohort_scope, category_variable=phenotype,
         )
         wide = cluster_screen.pivot_table(
             index="module",
             columns="component",
             values=["epsilon_squared", "categorical_p", "categorical_fdr_across_modules"],
-            aggfunc="first",
+            aggfunc="first", dropna=False,
         )
         wide.columns = [f"{value}_{component}" for value, component in wide.columns]
         screen = wide.reset_index()
@@ -6846,13 +6858,13 @@ if active_view == "CT–TS screen":
         )
         filterable_dataframe(
             screen.head(n_screen), table_key="cluster_ct_ts_screen",
-            table_name="Nominal cluster CT–TS screen", use_container_width=True,
+            table_name=f"{ASSOCIATION_OUTCOME_LABELS[phenotype]} CT–TS screen", use_container_width=True,
             hide_index=True,
         )
         st.download_button(
-            f"Download complete {module_count}-module cluster screen (TSV)",
+            f"Download complete {module_count}-module {phenotype} screen (TSV)",
             data=dataframe_to_tsv_bytes(screen),
-            file_name=f"{download_prefix}{method}_{screen_diagnosis}_clusters_{feature}_CT_TS_screen.tsv",
+            file_name=f"{download_prefix}{method}_{screen_diagnosis}_{phenotype}_{feature}_CT_TS_screen.tsv",
             mime="text/tab-separated-values",
         )
         st.stop()
@@ -6993,6 +7005,8 @@ if active_view == "CT–TS screen":
 if active_view == "Module finder":
     st.subheader("Find modules with contrasting association patterns")
     st.caption(
+        "Categorical outcomes are ranked by descriptive CT–TS and Control–AD differences in Kruskal epsilon-squared. Omnibus p-values/FDRs belong to each underlying component, not to the effect-size difference."
+        if phenotype in {"clusters", "study"} else
         "Rank modules by the difference between CT and TS correlations across all donors "
         "or within one diagnosis, by the difference between Control and AD correlations, "
         "or by both. "
@@ -7000,7 +7014,10 @@ if active_view == "Module finder":
         "edge rule, and Spearman/Pearson setting. These are association-pattern "
         "differences; they do not test a raw mean difference in the module score."
     )
-    if phenotype == "clusters":
+    if phenotype == "study" and cached_sample_metadata(module_set, cohort_scope)["study"].dropna().nunique() < 2:
+        st.info("Between-study module ranking is unavailable: this cohort contains fewer than two observed studies (the motor cohort is MAP-only).")
+        st.stop()
+    if phenotype in {"clusters", "study"}:
         cluster_finder_cohort = st.selectbox(
             "Cohort for nominal CT–TS comparison",
             ["All donors", *DIAGNOSIS_ORDER],
@@ -7011,16 +7028,16 @@ if active_view == "Module finder":
             ("CT", "TS"), tuple(DIAGNOSIS_ORDER), True, edge_rule,
             differential_edge_rule, differential_fdr_scope,
             differential_fdr_threshold, score_normalization, analysis_subset,
-            cohort_scope,
+            cohort_scope, category_variable=phenotype,
         )
         effect = cluster_finder_stats.pivot_table(
             index="module", columns=["diagnosis_group", "component"],
-            values="epsilon_squared", aggfunc="first",
+            values="epsilon_squared", aggfunc="first", dropna=False,
         )
         effect.columns = [f"epsilon_squared_{group}_{component}" for group, component in effect.columns]
         fdr = cluster_finder_stats.pivot_table(
             index="module", columns=["diagnosis_group", "component"],
-            values="categorical_fdr_across_modules", aggfunc="first",
+            values="categorical_fdr_across_modules", aggfunc="first", dropna=False,
         )
         fdr.columns = [f"fdr_{group}_{component}" for group, component in fdr.columns]
         finder = effect.join(fdr).reset_index()
@@ -7066,13 +7083,13 @@ if active_view == "Module finder":
         )
         filterable_dataframe(
             finder.head(finder_rows), table_key="cluster_module_finder",
-            table_name="Nominal cluster module finder", use_container_width=True,
+            table_name=f"{ASSOCIATION_OUTCOME_LABELS[phenotype]} module finder", use_container_width=True,
             hide_index=True,
         )
         st.download_button(
-            f"Download complete {module_count}-module cluster finder (TSV)",
+            f"Download complete {module_count}-module {phenotype} finder (TSV)",
             data=dataframe_to_tsv_bytes(finder),
-            file_name=f"{download_prefix}clusters_{feature}_module_finder.tsv",
+            file_name=f"{download_prefix}{phenotype}_{feature}_module_finder.tsv",
             mime="text/tab-separated-values",
         )
         st.stop()
@@ -7930,7 +7947,7 @@ if active_view == "Donor edge explorer":
                     )
                     hover_columns = [
                         column for column in (
-                            "sample_id", "diagnosis_group", phenotype, "clusters", "cogdx",
+                            "sample_id", "diagnosis_group", "study", phenotype, "clusters", "cogdx",
                             "braak_stage", "cerad_score", "adnc", "parkinsonism",
                         ) if column in expression_2d
                     ]
@@ -9662,35 +9679,35 @@ if active_view == "MDC":
 
 if active_view == "Statistics":
     st.subheader("Robust association statistics")
-    if phenotype == "clusters":
+    if phenotype in {"clusters", "study"}:
         cluster_statistics = cached_module_set_cluster_associations(
             module_set, module_count, estimator, method, resolved, feature,
             tuple(selected_components), tuple(diagnoses), True, edge_rule,
             differential_edge_rule, differential_fdr_scope,
             differential_fdr_threshold, score_normalization, analysis_subset,
-            cohort_scope,
+            cohort_scope, category_variable=phenotype,
         )
         cluster_statistics = cluster_statistics.loc[
             cluster_statistics["module"].astype(int).eq(int(module))
         ].copy()
         cluster_statistics.insert(0, "module_definition", module_set_label)
         st.caption(
-            "Nominal Cluster 1–4 statistics use Kruskal–Wallis and epsilon-squared. "
-            "Clusters with fewer than five non-missing donors are excluded from the test "
+            f"{ASSOCIATION_OUTCOME_LABELS[phenotype]} statistics use Kruskal–Wallis and epsilon-squared. "
+            "Categories with fewer than five non-missing donors are excluded from the test "
             "but reported. FDR is BH across modules only; no Pearson/Spearman statistic is "
-            "calculated from cluster codes."
+            "calculated from nominal category codes. A single-study cohort cannot support a study comparison."
         )
         filterable_dataframe(
             cluster_statistics,
             table_key="cluster_robust_statistics",
-            table_name="Nominal cluster statistics",
+            table_name=f"{ASSOCIATION_OUTCOME_LABELS[phenotype]} statistics",
             use_container_width=True,
             hide_index=True,
         )
         st.download_button(
-            "Download nominal cluster statistics (TSV)",
+            f"Download nominal {phenotype} statistics (TSV)",
             data=dataframe_to_tsv_bytes(cluster_statistics),
-            file_name=f"{download_prefix}M{module}_clusters_{feature}_{method}_statistics.tsv",
+            file_name=f"{download_prefix}M{module}_{phenotype}_{feature}_{method}_statistics.tsv",
             mime="text/tab-separated-values",
         )
         st.stop()
@@ -10612,7 +10629,7 @@ if active_view == "Methods & data":
     )
     st.markdown(
         "**Grouped associations** use diagnosis by default and may instead stratify "
-        "correlations by clusters, CogDx, Braak, CERAD, ADNC, Parkinsonism, sex code, "
+        "correlations by ROS/MAP study, clusters, CogDx, Braak, CERAD, ADNC, Parkinsonism, sex code, "
         "or APOE genotype. Pearson and Spearman are calculated separately within each "
         "eligible displayed level. Their BH FDR families contain only the "
         f"{module_count} modules in the selected definition, while holding every other analysis and "
@@ -10634,6 +10651,15 @@ if active_view == "Methods & data":
         "Spearman correlation. Cluster prediction is exploratory because it reuses the "
         "diagnosis-derived tissue-neutral AD panel and cluster membership is strongly "
         "associated with diagnosis in this cohort."
+    )
+    st.markdown(
+        "**ROS/MAP study membership** comes from the August-2025 source `study` field. "
+        "The common brain cohort contains 209 ROS and 241 MAP donors. Both motor partitions "
+        "are MAP-only (357 donors), so between-study effects and p-values are unavailable there. "
+        "Expanded cohorts retain missing study labels without inference. Study is available for "
+        "categorical outcomes, distribution grouping, correlation strata, coloring and hovers; "
+        "study codes never enter numeric correlations or new prediction models. "
+        "An approved, namespace-isolated repository overlay supports older Drive metadata."
     )
     st.markdown("#### AD–Control differential-edge filtering")
     current_effect_manifest = cached_effect_size_manifest(module_set)

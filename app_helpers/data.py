@@ -370,6 +370,7 @@ OUTCOME_LABELS = {
 }
 
 CATEGORICAL_OUTCOME_LABELS = {
+    "study": "Study / project (ROS / MAP)",
     "clusters": "ROSMAP donor cluster (nominal 1–4)",
     "diagnosis_group": "Diagnosis group",
     "sex_code": "Sex code",
@@ -382,6 +383,7 @@ ASSOCIATION_OUTCOME_LABELS = {**OUTCOME_LABELS, **CATEGORICAL_OUTCOME_LABELS}
 ASSOCIATION_GROUP_LABELS = {
     "diagnosis_group": "Diagnosis group",
     "__all__": "All displayed donors",
+    "study": "Study / project (ROS / MAP)",
     "clusters": "ROSMAP clusters",
     "cogdx": "CogDx",
     "braak_stage": "Braak stage",
@@ -393,6 +395,7 @@ ASSOCIATION_GROUP_LABELS = {
 }
 
 CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES = {
+    "study",
     "clusters",
     "diagnosis_group",
     "sex_code",
@@ -407,6 +410,7 @@ SELECTABLE_ASSOCIATION_OUTCOMES = {
 }
 
 ASSOCIATION_LEVEL_ORDERS = {
+    "study": ["ROS", "MAP"],
     "diagnosis_group": ["Control", "MCI", "AD"],
     "clusters": [1, 2, 3, 4],
     "cogdx": [1, 2, 3, 4, 5],
@@ -1495,7 +1499,8 @@ def load_sample_metadata(
             "Maximum-component metadata are available only for the "
             "all-donor CorShrink module definition"
         )
-    return pd.read_parquet(ensure_data_path(path))
+    from app_helpers.study import with_study_metadata
+    return with_study_metadata(pd.read_parquet(ensure_data_path(path)), "motor" if module_set in MUSCLE_MODULE_SETS else "brain")
 
 
 def load_cluster_association_statistics(

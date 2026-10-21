@@ -1001,7 +1001,7 @@
   },
   "metadata_files": {
     "AC": {
-      "bytes": 74497,
+      "bytes": 75067,
       "relative_path": "metadata/maximum_tissue/AC.parquet",
       "rows": 730,
       "schema": {
@@ -1026,12 +1026,13 @@
         "sample_id": "string",
         "sex_code": "string",
         "sqrt_parksc_demog_slope": "double",
+        "study": "string",
         "tangles": "double"
       },
-      "sha256": "c5e3ed9bc340c7261ea672fc96921ef673a5c6f640b899deaead753fe632effe"
+      "sha256": "2fe88c32a32df46b3178d2d6d582d6eedbe214fc60d400a6b91adad77cbe2ef3"
     },
     "DLPFC": {
-      "bytes": 113908,
+      "bytes": 114529,
       "relative_path": "metadata/maximum_tissue/DLPFC.parquet",
       "rows": 1216,
       "schema": {
@@ -1056,12 +1057,13 @@
         "sample_id": "string",
         "sex_code": "string",
         "sqrt_parksc_demog_slope": "double",
+        "study": "string",
         "tangles": "double"
       },
-      "sha256": "960abc252c6f8a92205aee8f08b6948727535f9bf708fbe997504f7ea96d66b6"
+      "sha256": "59ee55d9df5bf2e70c69364b60946d2223c1f022684815beafe99299bf35dc1d"
     },
     "PCG": {
-      "bytes": 68517,
+      "bytes": 69087,
       "relative_path": "metadata/maximum_tissue/PCG.parquet",
       "rows": 659,
       "schema": {
@@ -1086,9 +1088,10 @@
         "sample_id": "string",
         "sex_code": "string",
         "sqrt_parksc_demog_slope": "double",
+        "study": "string",
         "tangles": "double"
       },
-      "sha256": "6031f6d118464fb46a9d0702ef03370fb3a054a9c0c9cceae44cb2ea5711cff7"
+      "sha256": "b627047a401c027ee782b27567b99ba30f07afbaccc1ead0746bc954dc08292b"
     }
   },
   "module_counts": {

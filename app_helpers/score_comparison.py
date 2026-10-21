@@ -24,7 +24,10 @@ import pyarrow.parquet as pq
 import streamlit as st
 
 from app_helpers import data as D
-from app_helpers.correlations import add_across_module_fdr, calculate_correlations
+from app_helpers.correlations import (
+    add_across_module_fdr, calculate_correlations,
+    add_categorical_across_module_fdr, calculate_categorical_associations,
+)
 from app_helpers.drive_data import data_path_available, ensure_data_path
 from app_helpers import regional_modules as R
 from app_helpers.streaming_associations import _serialized_heavy_read
@@ -183,7 +186,8 @@ def _metadata(spec: ComparisonSeriesSpec, outcome: str, analysis_subset: str, ti
         columns = ["sample_id", outcome]
         if analysis_subset != "all_donors":
             columns.append("ad_control_split")
-        result = pq.read_table(ensure_data_path(path), columns=columns).to_pandas()
+        result = (R.regional_metadata(spec.source, spec.cohort_scope, tissue)[columns].copy()
+                  if outcome == "study" else pq.read_table(ensure_data_path(path), columns=columns).to_pandas())
     else:
         source = (
             "muscle_control_l4" if spec.source == R.MOTOR_SOURCE
@@ -290,6 +294,16 @@ def _module_frames(spec: ComparisonSeriesSpec) -> Iterator[tuple[int, str, pd.Da
 
 
 def _module_statistic(frame: pd.DataFrame, metadata: pd.DataFrame, outcome: str, min_n: int) -> dict:
+    if outcome == "study":
+        if "sample_id" in frame and frame["sample_id"].duplicated().any():
+            raise ValueError("More than one score per donor/module/component")
+        joined = frame.merge(metadata, on="sample_id", how="inner", validate="one_to_one") if not frame.empty else pd.DataFrame(columns=["metric_value", outcome])
+        joined["_test"] = "pooled"
+        if joined.empty:
+            row = dict(n=0, eligible=False, unavailable_reason="no saved score / observed study", epsilon_squared=np.nan, categorical_p=np.nan)
+        else:
+            row = calculate_categorical_associations(joined, ["_test"], category_column=outcome, min_group_n=min_n).iloc[0].drop(labels=["_test", "outcome"]).to_dict()
+        return {**row, "minimum_group_n": min_n, "pearson_r": np.nan, "pearson_p": np.nan, "spearman_rho": np.nan, "spearman_p": np.nan}
     if frame.empty:
         return dict(n=0, eligible=False, minimum_group_n=min_n,
                     unavailable_reason="no saved score / structurally unavailable",
@@ -339,6 +353,10 @@ def statistics_from_module_frames(
     result = add_across_module_fdr(
         result, family_columns=["series_key", "tissue", "component"], module_column="module_key",
     )
+    if outcome == "study":
+        result = add_categorical_across_module_fdr(
+            result, family_columns=["series_key", "tissue", "component"], module_column="module_key",
+        )
     return result
 
 
@@ -349,7 +367,7 @@ def calculate_series(
     min_n: int, data_revision: str,
 ) -> pd.DataFrame:
     """Cache compact module/component rows. Failed/partial families never cache."""
-    if outcome not in D.OUTCOME_LABELS:
+    if outcome not in {*D.OUTCOME_LABELS, "study"}:
         raise ValueError("Nominal category codes cannot be correlated")
     if analysis_subset not in D.ANALYSIS_SUBSET_LABELS:
         raise ValueError("Unknown evaluation subset")
@@ -368,26 +386,29 @@ def display_results(
     """Pure display operation: no reads, recomputation or FDR re-adjustment."""
     if correlation_method not in CORRELATION_LABELS or (top_k is not None and top_k <= 0):
         raise ValueError("Invalid correlation method or Top K")
-    coefficient = "spearman_rho" if correlation_method == "spearman" else "pearson_r"
-    p_column = f"{correlation_method}_p"
-    fdr_column = f"{correlation_method}_fdr_across_modules"
     displayed, complete, summaries = [], [], []
     for position, (box_id, label, spec) in enumerate(boxes):
         frame = catalogs[spec.key].copy()
+        nominal = frame["outcome"].eq("study").all()
+        coefficient = "epsilon_squared" if nominal else ("spearman_rho" if correlation_method == "spearman" else "pearson_r")
+        p_column = "categorical_p" if nominal else f"{correlation_method}_p"
+        fdr_column = "categorical_fdr_across_modules" if nominal else f"{correlation_method}_fdr_across_modules"
         if frame.duplicated(["module_key", "component"]).any():
             raise ValueError("Duplicate module/component observations in comparison box")
         # Also normalize compact results retained in a session from the previous
         # single-component schema; display edits must not trigger donor reads.
         frame["observation_key"] = frame["module_key"] + ":" + frame["component"]
         frame["box_id"], frame["box_label"], frame["box_order"] = box_id, label, position
-        frame["signed_correlation"] = frame[coefficient]
-        frame["absolute_correlation"] = frame[coefficient].abs()
+        frame["signed_correlation"] = np.nan if nominal else frame[coefficient]
+        frame["absolute_correlation"] = np.nan if nominal else frame[coefficient].abs()
+        frame["association_effect"] = frame[coefficient] if nominal else frame[coefficient].abs()
+        frame["association_measure"] = "Kruskal epsilon-squared" if nominal else f"Absolute {correlation_method} correlation"
         frame["selected_p"], frame["selected_fdr"] = frame[p_column], frame[fdr_column]
-        frame["correlation_method"] = correlation_method
+        frame["correlation_method"] = "not_applicable" if nominal else correlation_method
         eligible = frame.loc[frame["eligible"] & np.isfinite(frame[coefficient])].copy()
         qualified = eligible if fdr_cutoff is None else eligible.loc[eligible[fdr_column].lt(fdr_cutoff)]
         selected = qualified.sort_values(
-            ["absolute_correlation", "module_key", "component"], ascending=[False, True, True], kind="stable",
+            ["association_effect", "module_key", "component"], ascending=[False, True, True], kind="stable",
         )
         if top_k is not None:
             # K always counts biological modules. In a CT + TS box, rank each
@@ -417,9 +438,12 @@ def display_results(
             "plotted_score_observations": len(selected), "excluded_score_observations": len(frame) - len(selected),
             "eligible_donor_n_min": eligible["n"].min(), "eligible_donor_n_max": eligible["n"].max(),
             "plotted_donor_n_min": selected["n"].min(), "plotted_donor_n_max": selected["n"].max(),
-            "median_absolute_correlation": selected["absolute_correlation"].median(),
-            "q1_absolute_correlation": selected["absolute_correlation"].quantile(.25),
-            "q3_absolute_correlation": selected["absolute_correlation"].quantile(.75),
+            "median_absolute_correlation": np.nan if nominal else selected["absolute_correlation"].median(),
+            "median_association_effect": selected["association_effect"].median(),
+            "q1_absolute_correlation": np.nan if nominal else selected["absolute_correlation"].quantile(.25),
+            "q3_absolute_correlation": np.nan if nominal else selected["absolute_correlation"].quantile(.75),
+            "q1_association_effect": selected["association_effect"].quantile(.25),
+            "q3_association_effect": selected["association_effect"].quantile(.75),
             "requested_top_k": top_k, "association_fdr_cutoff": fdr_cutoff,
         })
     if not boxes:
@@ -439,6 +463,8 @@ def comparison_figure(
     tick_labels, show_module_counts = tick_labels or {}, show_module_counts or {}
     figure = go.Figure()
     tick_values, tick_text = [], []
+    nominal = outcome == "study"
+    effect_column = "association_effect" if "association_effect" in displayed else "absolute_correlation"
     for index, row in summary.reset_index(drop=True).iterrows():
         box_id = row["box_id"]
         tick_values.append(index)
@@ -459,7 +485,7 @@ def comparison_figure(
         part = displayed.loc[displayed["box_id"].eq(box_id)]
         color = box_colors.get(box_id, COMPARISON_COLORS[index % len(COMPARISON_COLORS)])
         figure.add_trace(go.Box(
-            x=[index] * len(part), y=part["absolute_correlation"], name=row["box_label"], width=.5,
+            x=[index] * len(part), y=part[effect_column], name=row["box_label"], width=.5,
             marker_color=color, line_color=color, boxpoints=False, showlegend=False,
             hoverinfo="y", quartilemethod="linear",
         ))
@@ -467,19 +493,19 @@ def comparison_figure(
             # Use deterministic jitter; labels/order changes cannot change observations.
             jitter = np.array([int(hashlib.sha256(key.encode()).hexdigest()[:8], 16) / (2**32 - 1) for key in part["observation_key"]])
             source_column = "source_label" if "source_label" in part else "source"
-            custom = part[[source_column, "module_key", "component_label", "signed_correlation", "n", "selected_p", "selected_fdr"]].to_numpy()
+            custom = part[[source_column, "module_key", "component_label", effect_column if nominal else "signed_correlation", "n", "selected_p", "selected_fdr"]].to_numpy()
             figure.add_trace(go.Scatter(
-                x=index + (jitter - .5) * .36, y=part["absolute_correlation"], mode="markers",
+                x=index + (jitter - .5) * .36, y=part[effect_column], mode="markers",
                 marker=dict(color=dot_colors.get(box_id, color), size=6, opacity=.65), showlegend=False,
                 customdata=custom, name=row["box_label"],
                 hovertemplate=("%{customdata[1]}<br>Partition: %{customdata[0]}<br>Component: %{customdata[2]}"
-                               "<br>Signed correlation: %{customdata[3]:.4f}<br>|correlation|: %{y:.4f}"
+                               + ("<br>Kruskal epsilon-squared: %{y:.4f}" if nominal else "<br>Signed correlation: %{customdata[3]:.4f}<br>|correlation|: %{y:.4f}") +
                                "<br>Donors: %{customdata[4]}<br>p=%{customdata[5]:.3g}"
                                "<br>Module-set FDR=%{customdata[6]:.3g}<extra></extra>"),
             ))
     figure.update_layout(
-        template="plotly_white", title=f"Module associations with {D.OUTCOME_LABELS.get(outcome, outcome)}",
-        yaxis=dict(title="|Spearman ρ|" if method == "spearman" else "|Pearson r|", range=[0, 1]),
+        template="plotly_white", title=f"Module associations with {D.ASSOCIATION_OUTCOME_LABELS.get(outcome, outcome)}",
+        yaxis=dict(title="Kruskal epsilon-squared (ROS vs MAP)" if nominal else "|Spearman ρ|" if method == "spearman" else "|Pearson r|", range=[0, 1]),
         xaxis=dict(title="Score / partition combination", type="linear", range=[-.6, len(summary) - .4],
                    tickmode="array", tickvals=tick_values, ticktext=tick_text, automargin=True,
                    tickfont=dict(size=12 if len(summary) > 6 else 14)),

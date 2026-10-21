@@ -1,0 +1,232 @@
+{
+  "generated_utc": "2026-10-21T05:39:31.564045+00:00",
+  "interpretation": "Nominal study membership, not a numerical phenotype or causal batch effect",
+  "metadata": {
+    "muscle_all_donors_l4/sample_metadata.parquet": {
+      "bytes": 40914,
+      "rows": 357,
+      "schema": {
+        "ad_control_split": "string",
+        "adnc": "double",
+        "age_at_death": "double",
+        "amyloid": "double",
+        "apoe_genotype": "string",
+        "braak_stage": "double",
+        "cerad_score": "double",
+        "clusters": "int64",
+        "cogdx": "double",
+        "cogn_global": "double",
+        "cogng_demog_slope": "double",
+        "cogng_path_slope": "double",
+        "diagnosis_group": "string",
+        "education_years": "double",
+        "gpath": "double",
+        "motor10_demog_slope": "double",
+        "parkinsonism": "double",
+        "parkinsonism_label": "string",
+        "sample_id": "string",
+        "sex_code": "string",
+        "sqrt_parksc_demog_slope": "double",
+        "study": "string",
+        "tangles": "double"
+      },
+      "sha256": "08780cd131f42f63a44466ea92edc075946834028d84951fcef18f2dcee81738",
+      "study_counts": {
+        "MAP": 357
+      }
+    },
+    "muscle_control_l4/sample_metadata.parquet": {
+      "bytes": 40914,
+      "rows": 357,
+      "schema": {
+        "ad_control_split": "string",
+        "adnc": "double",
+        "age_at_death": "double",
+        "amyloid": "double",
+        "apoe_genotype": "string",
+        "braak_stage": "double",
+        "cerad_score": "double",
+        "clusters": "int64",
+        "cogdx": "double",
+        "cogn_global": "double",
+        "cogng_demog_slope": "double",
+        "cogng_path_slope": "double",
+        "diagnosis_group": "string",
+        "education_years": "double",
+        "gpath": "double",
+        "motor10_demog_slope": "double",
+        "parkinsonism": "double",
+        "parkinsonism_label": "string",
+        "sample_id": "string",
+        "sex_code": "string",
+        "sqrt_parksc_demog_slope": "double",
+        "study": "string",
+        "tangles": "double"
+      },
+      "sha256": "08780cd131f42f63a44466ea92edc075946834028d84951fcef18f2dcee81738",
+      "study_counts": {
+        "MAP": 357
+      }
+    },
+    "regional_modules/metadata/maximum_tissue/AC.parquet": {
+      "bytes": 75067,
+      "rows": 730,
+      "schema": {
+        "ad_control_split": "string",
+        "adnc": "double",
+        "age_at_death": "double",
+        "amyloid": "double",
+        "apoe_genotype": "string",
+        "braak_stage": "double",
+        "cerad_score": "double",
+        "clusters": "int64",
+        "cogdx": "double",
+        "cogn_global": "double",
+        "cogng_demog_slope": "double",
+        "cogng_path_slope": "double",
+        "diagnosis_group": "string",
+        "education_years": "double",
+        "gpath": "double",
+        "motor10_demog_slope": "double",
+        "parkinsonism": "double",
+        "parkinsonism_label": "string",
+        "sample_id": "string",
+        "sex_code": "string",
+        "sqrt_parksc_demog_slope": "double",
+        "study": "string",
+        "tangles": "double"
+      },
+      "sha256": "2fe88c32a32df46b3178d2d6d582d6eedbe214fc60d400a6b91adad77cbe2ef3",
+      "study_counts": {
+        "MAP": 382,
+        "Missing": 11,
+        "ROS": 337
+      }
+    },
+    "regional_modules/metadata/maximum_tissue/DLPFC.parquet": {
+      "bytes": 114529,
+      "rows": 1216,
+      "schema": {
+        "ad_control_split": "string",
+        "adnc": "double",
+        "age_at_death": "double",
+        "amyloid": "double",
+        "apoe_genotype": "string",
+        "braak_stage": "double",
+        "cerad_score": "double",
+        "clusters": "int64",
+        "cogdx": "double",
+        "cogn_global": "double",
+        "cogng_demog_slope": "double",
+        "cogng_path_slope": "double",
+        "diagnosis_group": "string",
+        "education_years": "double",
+        "gpath": "double",
+        "motor10_demog_slope": "double",
+        "parkinsonism": "double",
+        "parkinsonism_label": "string",
+        "sample_id": "string",
+        "sex_code": "string",
+        "sqrt_parksc_demog_slope": "double",
+        "study": "string",
+        "tangles": "double"
+      },
+      "sha256": "59ee55d9df5bf2e70c69364b60946d2223c1f022684815beafe99299bf35dc1d",
+      "study_counts": {
+        "MAP": 686,
+        "Missing": 13,
+        "ROS": 517
+      }
+    },
+    "regional_modules/metadata/maximum_tissue/PCG.parquet": {
+      "bytes": 69087,
+      "rows": 659,
+      "schema": {
+        "ad_control_split": "string",
+        "adnc": "double",
+        "age_at_death": "double",
+        "amyloid": "double",
+        "apoe_genotype": "string",
+        "braak_stage": "double",
+        "cerad_score": "double",
+        "clusters": "int64",
+        "cogdx": "double",
+        "cogn_global": "double",
+        "cogng_demog_slope": "double",
+        "cogng_path_slope": "double",
+        "diagnosis_group": "string",
+        "education_years": "double",
+        "gpath": "double",
+        "motor10_demog_slope": "double",
+        "parkinsonism": "double",
+        "parkinsonism_label": "string",
+        "sample_id": "string",
+        "sex_code": "string",
+        "sqrt_parksc_demog_slope": "double",
+        "study": "string",
+        "tangles": "double"
+      },
+      "sha256": "b627047a401c027ee782b27567b99ba30f07afbaccc1ead0746bc954dc08292b",
+      "study_counts": {
+        "MAP": 388,
+        "Missing": 8,
+        "ROS": 263
+      }
+    },
+    "sample_metadata.parquet": {
+      "bytes": 51372,
+      "rows": 450,
+      "schema": {
+        "ad_control_split": "string",
+        "adnc": "double",
+        "age_at_death": "double",
+        "amyloid": "double",
+        "apoe_genotype": "string",
+        "braak_stage": "double",
+        "cerad_score": "double",
+        "clusters": "int64",
+        "cogdx": "double",
+        "cogn_global": "double",
+        "cogng_demog_slope": "double",
+        "cogng_path_slope": "double",
+        "diagnosis_group": "string",
+        "education_years": "double",
+        "gpath": "double",
+        "motor10_demog_slope": "double",
+        "parkinsonism": "double",
+        "parkinsonism_label": "string",
+        "sample_id": "string",
+        "sex_code": "string",
+        "sqrt_parksc_demog_slope": "double",
+        "study": "string",
+        "tangles": "double"
+      },
+      "sha256": "3d8d17fdf50dc8722841cf9624e78a87bf9b36e5728bdf5c6154e9f3167cbe3c",
+      "study_counts": {
+        "MAP": 241,
+        "ROS": 209
+      }
+    }
+  },
+  "normalization": "Trim whitespace and uppercase only; missing values remain missing",
+  "prediction_changed": false,
+  "privacy": "Existing pseudonyms only; no donor/projid/new samples",
+  "repository_overlay": {
+    "bytes": 15669,
+    "path": "study/sample_study.parquet",
+    "rows": 1614,
+    "schema": {
+      "metadata_namespace": "string",
+      "sample_id": "string",
+      "study": "string"
+    },
+    "sha256": "22dfc1bb3dd3ffb1ef42844937a012428acaf7cb69ddf248fec0414048733542"
+  },
+  "schema_version": 1,
+  "source_column": "study",
+  "source_donors": 3987,
+  "source_file": "dataset_1593_cross-sectional_08-13-2025 (1).xlsx",
+  "source_release": "2025-08-13",
+  "source_sha256": "fbf58995bae76da2af2502fc1fc41442d685d8a1d174a27160e0e88213e4b96f",
+  "status": "complete"
+}

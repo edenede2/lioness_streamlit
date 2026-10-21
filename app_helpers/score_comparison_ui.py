@@ -284,7 +284,7 @@ def _box_editor(row: dict, registry: dict, position: int, count: int) -> tuple[d
 
 def render_view(data_manifest: dict) -> None:
     st.header("Module–outcome comparison")
-    st.caption("Each observation is a module's absolute score–outcome correlation, not an individual donor. All regions pools distinct regional modules; CT + TS includes separate component correlations per module. Comparisons are descriptive and use each source's own cohort.")
+    st.caption("Each observation is one module, not an individual donor: absolute score–outcome correlation for numeric outcomes, or Kruskal epsilon-squared for ROS/MAP study membership. All regions pools distinct regional modules; CT + TS includes separate component effects per module. Comparisons are descriptive and use each source's own cohort.")
     registry = source_registry(data_manifest)
     if not registry:
         st.info("No completed score sources are available.")
@@ -293,9 +293,9 @@ def render_view(data_manifest: dict) -> None:
         st.session_state[BOX_STATE] = default_boxes(registry)
     with st.sidebar:
         st.header("Comparison controls")
-        outcome = st.selectbox("Comparison outcome", list(D.OUTCOME_LABELS), format_func=D.OUTCOME_LABELS.get, key="module_comparison_outcome")
-        method = st.selectbox("Correlation statistic", list(CORRELATION_LABELS), format_func=CORRELATION_LABELS.get, key="module_comparison_correlation")
-        st.caption("Spearman usually agrees for Raw and asinh because asinh preserves ranks. Pearson can change. RINT ties or missingness can affect agreement.")
+        outcome = st.selectbox("Comparison outcome", [*D.OUTCOME_LABELS, "study"], format_func=D.ASSOCIATION_OUTCOME_LABELS.get, key="module_comparison_outcome")
+        method = st.selectbox("Correlation statistic", list(CORRELATION_LABELS), format_func=CORRELATION_LABELS.get, key="module_comparison_correlation", disabled=outcome == "study")
+        st.caption("ROS/MAP is nominal: boxes contain module Kruskal epsilon-squared effects, not correlations of study codes. Single-study sources have unavailable tests." if outcome == "study" else "Spearman usually agrees for Raw and asinh because asinh preserves ranks. Pearson can change. RINT ties or missingness can affect agreement.")
         subset_labels = dict(D.ANALYSIS_SUBSET_LABELS, all_donors="All source donors (pooled)")
         subset = st.selectbox("Evaluation subset", list(subset_labels), format_func=subset_labels.get, key="module_comparison_subset")
         min_n = st.selectbox("Minimum donor N per module", [5, 10, 20], index=1, key="module_comparison_min_n")

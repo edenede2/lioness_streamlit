@@ -121,7 +121,8 @@ def regional_metadata(source: str, cohort_scope: str, tissue: str | None = None)
         return load_sample_metadata()
     if cohort_scope == "maximum_tissue" and tissue in regional_tissues(source):
         path = REGIONAL_ROOT / "metadata" / cohort_scope / f"{tissue}.parquet"
-        return pd.read_parquet(ensure_data_path(path))
+        from app_helpers.study import with_study_metadata
+        return with_study_metadata(pd.read_parquet(ensure_data_path(path)), "motor" if source == MOTOR_SOURCE else "brain")
     raise ValueError("No donor metadata registered for this regional source/cohort")
 
 
@@ -188,6 +189,7 @@ def load_regional_scores(
     network_method: str,
     tissue: str,
     module: int | None = None,
+    metadata_schema_version: int = 2,
 ) -> pd.DataFrame:
     path = regional_score_path(
         source, cohort_scope, score_variant, network_method, tissue

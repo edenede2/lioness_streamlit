@@ -531,6 +531,27 @@ def test_ui_changed_outcome_is_stale_until_calculated_and_empty_region_is_safe(m
     assert _widget(app.button, "Calculate comparison").disabled
 
 
+def test_ui_study_comparison_is_explicitly_categorical(monkeypatch):
+    _mock_ui(monkeypatch)
+    calls = []
+    def calculate(spec, outcome, *args):
+        calls.append((spec,outcome))
+        _, metadata, frames = _fixture(spec, spec.tissues if spec.is_regional else ("",))
+        metadata["study"] = ["ROS"] * 15 + ["MAP"] * 15
+        return C.statistics_from_module_frames(spec,iter(frames),{t:metadata for t in (spec.tissues if spec.is_regional else ("",))},outcome,10)
+    monkeypatch.setattr(U,"calculate_series",calculate)
+    app = AppTest.from_function(_ui_app,default_timeout=30).run()
+    app = _widget(app.selectbox,"Comparison outcome").set_value("study").run()
+    assert _widget(app.selectbox,"Correlation statistic").disabled
+    app = _widget(app.button,"Calculate comparison").click().run()
+    assert not app.exception and len(calls) == 5
+    figure = json.loads(app.get("plotly_chart")[0].proto.spec)
+    assert "epsilon-squared" in figure["layout"]["yaxis"]["title"]["text"]
+    table = next(e.value for e in app.dataframe if "correlation_method" in e.value)
+    assert table.correlation_method.eq("not_applicable").all()
+    assert table.pearson_r.isna().all() and table.spearman_rho.isna().all()
+
+
 def test_ui_all_regions_and_ct_ts_combined_boxes_render_and_do_not_reread_for_top_k(monkeypatch):
     calls = _mock_ui(monkeypatch)
     app = AppTest.from_function(_ui_app, default_timeout=30).run()

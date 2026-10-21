@@ -44,6 +44,7 @@ def default_reference_level(
     selected = list(levels)
     preferred = {
         "diagnosis_group": "Control",
+        "study": "ROS",
         "clusters": 1,
         "cogdx": 1,
         "cerad_score": 4,
