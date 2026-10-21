@@ -1,0 +1,542 @@
+{
+  "assignment_rows": 46898,
+  "association_shards": [
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "amyloid",
+      "path": "associations/all/standard_pruned/connectivity/amyloid.parquet",
+      "rows": 4620,
+      "rule": "all",
+      "sha256": "c7f3cef81629a6c679596fca04d20de60e43b6cb83af3f7a63920238c8e809b6"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "cogn_global",
+      "path": "associations/all/standard_pruned/connectivity/cogn_global.parquet",
+      "rows": 4620,
+      "rule": "all",
+      "sha256": "c4ca1ca71fef1c1e3742f28b33843f7ee14f9b03bd3b529dd2e632ec7029875a"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "cogng_demog_slope",
+      "path": "associations/all/standard_pruned/connectivity/cogng_demog_slope.parquet",
+      "rows": 4620,
+      "rule": "all",
+      "sha256": "a03f2c8250aac1d679703520321a94354ec336ce785627c00775ed462b6f82d0"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "cogng_path_slope",
+      "path": "associations/all/standard_pruned/connectivity/cogng_path_slope.parquet",
+      "rows": 4620,
+      "rule": "all",
+      "sha256": "b6cd81a37af4041f21d29d9989dac3db2fcbf28cc271b0005ee8f6f076c24686"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "gpath",
+      "path": "associations/all/standard_pruned/connectivity/gpath.parquet",
+      "rows": 4620,
+      "rule": "all",
+      "sha256": "52e21f8a389a05548e3fcc70b9a180242782855b30264961e763cd4f72f6cabf"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "tangles",
+      "path": "associations/all/standard_pruned/connectivity/tangles.parquet",
+      "rows": 4620,
+      "rule": "all",
+      "sha256": "f3bd8936fc37b27ad8d31826cacdcf188fb41368b9690df5312e55436537df88"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "amyloid",
+      "path": "associations/all/retained_edge/connectivity/amyloid.parquet",
+      "rows": 4620,
+      "rule": "all",
+      "sha256": "16e79edd4e740ca4ad3b66bfead4a454431e4cf203715852619ce39afac53679"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "cogn_global",
+      "path": "associations/all/retained_edge/connectivity/cogn_global.parquet",
+      "rows": 4620,
+      "rule": "all",
+      "sha256": "e42f317815c8e2047a79bb4fdf97f9d8788aeebc54e40a219ee884a615c0842f"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "cogng_demog_slope",
+      "path": "associations/all/retained_edge/connectivity/cogng_demog_slope.parquet",
+      "rows": 4620,
+      "rule": "all",
+      "sha256": "1962b190e148325660891273a222cc5575db8baecb04cdbeb86076e966623eb7"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "cogng_path_slope",
+      "path": "associations/all/retained_edge/connectivity/cogng_path_slope.parquet",
+      "rows": 4620,
+      "rule": "all",
+      "sha256": "745621e3023eabc78dfbc4752665c9e3eb41e036ae1ac3cabec39384247e08ce"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "gpath",
+      "path": "associations/all/retained_edge/connectivity/gpath.parquet",
+      "rows": 4620,
+      "rule": "all",
+      "sha256": "ea08b43057fb18da5d2b829bb0500d814d18a980b3ec36754be422fb3b046885"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "tangles",
+      "path": "associations/all/retained_edge/connectivity/tangles.parquet",
+      "rows": 4620,
+      "rule": "all",
+      "sha256": "76ccf870d4c843d731a6ac24c4d3f89029bac130d8ab2d55dbbf727ac6c14fc1"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "amyloid",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/standard_pruned/connectivity/amyloid.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher",
+      "sha256": "cdecc3958c948091f4fd442a3c63013c692fba251d4b80ecfca3ceae90a31b3a"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "cogn_global",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/standard_pruned/connectivity/cogn_global.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher",
+      "sha256": "478368e273ad3da8436c5891d3c70f164ca00b9ddd0ab5469cada7a7030623f0"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "cogng_demog_slope",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/standard_pruned/connectivity/cogng_demog_slope.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher",
+      "sha256": "7ed94c9e6333f376dee9d3f3e377cd30bb96a20f889317ac1f7a06b7d0bc86b7"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "cogng_path_slope",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/standard_pruned/connectivity/cogng_path_slope.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher",
+      "sha256": "fa7f712513f1bf6434f84db236d87959670d28bb84145f0b03a55d8cffee7265"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "gpath",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/standard_pruned/connectivity/gpath.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher",
+      "sha256": "e744f7195c22bc8c7da7dbdc0a9e6cf65d781b1f6e1423540d4876d57d94f462"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "tangles",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/standard_pruned/connectivity/tangles.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher",
+      "sha256": "361153edf4f852e63fabf65f28f9bda736b2bdf339827c6e0799a8f337288a95"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "amyloid",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/retained_edge/connectivity/amyloid.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher",
+      "sha256": "5d0503f1c29909f573d0afb408a05da3dd00f42439ddf42aa17c46aa3584c0a3"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "cogn_global",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/retained_edge/connectivity/cogn_global.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher",
+      "sha256": "b9c4e71aa83c1b98ca7b9d5361b6052741f2deb9eb32e50f96d98056d6d7b8c2"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "cogng_demog_slope",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/retained_edge/connectivity/cogng_demog_slope.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher",
+      "sha256": "1244b8690218104f44a9d2d9eac7d3015c5327c0c90a39509d07d9eacdd1acab"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "cogng_path_slope",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/retained_edge/connectivity/cogng_path_slope.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher",
+      "sha256": "294f7cab8b7fd004b0e2210784b8ba75ba9d72ad14791c0b7caf6b8378e4630a"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "gpath",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/retained_edge/connectivity/gpath.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher",
+      "sha256": "c61af503f4ddae6a4f51b57338d30413b924d5ac4c18eaf300b05ed4ab542a38"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "tangles",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher/retained_edge/connectivity/tangles.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher",
+      "sha256": "464818f55499fd1d8929a6c2132e807a2d18e940b81d4eab86672d85e41abb9a"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "amyloid",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/standard_pruned/connectivity/amyloid.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher",
+      "sha256": "5f137f382748b2e91d4ac8b879086558f598d6d4b7ab4d5c21ca5891bcc045fc"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "cogn_global",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/standard_pruned/connectivity/cogn_global.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher",
+      "sha256": "a39387fe753b7ffe1bb598c1a2cef0077a8dce76113dbc066a94b82af4fa5a35"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "cogng_demog_slope",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/standard_pruned/connectivity/cogng_demog_slope.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher",
+      "sha256": "359bd393d58322a8922f9ac4ca28b7f8365b87bf13ba166cccc740741c3ceca4"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "cogng_path_slope",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/standard_pruned/connectivity/cogng_path_slope.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher",
+      "sha256": "fa772b3700c412551bde8c658f1d623e554d09968063c994a7cead5df51ed7b3"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "gpath",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/standard_pruned/connectivity/gpath.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher",
+      "sha256": "f1cb77404a7fdb22ad6bfd83e9642cf3e0cbb318c79b018faf8b921aafaf4dc5"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "tangles",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/standard_pruned/connectivity/tangles.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher",
+      "sha256": "bf063ba8e694537691a674b56b1294de0b688e6e6a97efb3f7faac3cd9bc93cf"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "amyloid",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/retained_edge/connectivity/amyloid.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher",
+      "sha256": "fe68da278d6135ba8ea24af645cb07a751ea8a80f31a7074f9cf36a00b4d614a"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "cogn_global",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/retained_edge/connectivity/cogn_global.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher",
+      "sha256": "699c6531c68f4886055b8d6b1f113c8ce0ec5d3966e6566702f32d3270cd8a75"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "cogng_demog_slope",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/retained_edge/connectivity/cogng_demog_slope.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher",
+      "sha256": "627ecc5785877e4a82980ad1b2e7c7d2a897847e087de5ccd490ff9117028bcd"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "cogng_path_slope",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/retained_edge/connectivity/cogng_path_slope.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher",
+      "sha256": "1789741575b1869b7bd90f33711d09283101c3eb220b2e3129c0d745fd4e8db0"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "gpath",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/retained_edge/connectivity/gpath.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher",
+      "sha256": "83e15717f7c5486b7faba6f852f1d342eb8c7c99a938451cbc99c619dc6dcf91"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "tangles",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher/retained_edge/connectivity/tangles.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher",
+      "sha256": "779e3ea933e82028a3ce6758c4d607627725d7b22c39c94994a63ee09ef778e7"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "amyloid",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__either/standard_pruned/connectivity/amyloid.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__either",
+      "sha256": "0a28c073672034218e72b3d93062d87152263ba396b040883b937af55c703cfd"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "cogn_global",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__either/standard_pruned/connectivity/cogn_global.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__either",
+      "sha256": "f0966473a0700d1a3e52e0fd35721c79e95f4de5511849c3a6d1fef178cd61d0"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "cogng_demog_slope",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__either/standard_pruned/connectivity/cogng_demog_slope.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__either",
+      "sha256": "ab22b406f5b6cee7d8b6e9805c9608139210a12f52da8da356c4b1634c8357c3"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "cogng_path_slope",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__either/standard_pruned/connectivity/cogng_path_slope.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__either",
+      "sha256": "fea4cfc8d5c81e25c98d975c205f985f4b5fbffc5488d6c737ee5c4dd4c27f45"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "gpath",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__either/standard_pruned/connectivity/gpath.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__either",
+      "sha256": "aae03e9050ff19af640e20b49c4d55f599ef634a8873534cf8dbfdaf0c72e426"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "standard_pruned",
+      "original_pooled_included": true,
+      "outcome": "tangles",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__either/standard_pruned/connectivity/tangles.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__either",
+      "sha256": "6c80e165a4ec9cc78f255237042b5289d49c115e6ed8c7be7c6eeff2a2ad63f3"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "amyloid",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__either/retained_edge/connectivity/amyloid.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__either",
+      "sha256": "de3dd29e86873e2e186572407f2277a5d5bf946534cfa4dc21da2d741619877b"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "cogn_global",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__either/retained_edge/connectivity/cogn_global.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__either",
+      "sha256": "9a7ee28c1a0468cce7d6b16d4c347a2506dd44f6e9af1ead6161855d6f43a562"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "cogng_demog_slope",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__either/retained_edge/connectivity/cogng_demog_slope.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__either",
+      "sha256": "a6509b829b644b453489841f7ebeb92421f948ed1cb79761c395c5f237156cf0"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "cogng_path_slope",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__either/retained_edge/connectivity/cogng_path_slope.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__either",
+      "sha256": "a08d73fc1e2ac876d41ee2e5bb31592340f0ff9d18ca5ec82779ac3104b606d2"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "gpath",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__either/retained_edge/connectivity/gpath.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__either",
+      "sha256": "66c22c0631cc93fd65c582354c7ca443f2a149c90c03572addf3437ddd8ab11f"
+    },
+    {
+      "feature": "connectivity",
+      "normalization": "retained_edge",
+      "original_pooled_included": true,
+      "outcome": "tangles",
+      "path": "associations/ad_control_discovery_effect__hedges_g__fixed_0.40__either/retained_edge/connectivity/tangles.parquet",
+      "rows": 4620,
+      "rule": "ad_control_discovery_effect__hedges_g__fixed_0.40__either",
+      "sha256": "5681217f9ac6ff6dc0a63ae459dff89106f27a6899d5b2e2ae129e1d1f95712a"
+    }
+  ],
+  "complete_modules": 154,
+  "completed_rules": [
+    "all",
+    "ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher",
+    "ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher",
+    "ad_control_discovery_effect__hedges_g__fixed_0.40__either"
+  ],
+  "cross_filter_node_convention_modules": [
+    56,
+    65,
+    66,
+    158,
+    188,
+    637,
+    644,
+    736,
+    1014,
+    1263,
+    1312,
+    1547,
+    1567,
+    1572,
+    1643,
+    1757
+  ],
+  "excluded_complete_donors": 464,
+  "generated_utc": "2026-10-21T14:57:27.979259+00:00",
+  "limitations": [
+    "Non-discovery donors within ROSMAP, not external-cohort validation.",
+    "Expression preprocessing, references, module definitions and discovery edge masks remain frozen.",
+    "Original reference donors use leave-one-out scoring; validation donors use add-one scoring. Formula QA alone does not rule out reference-role artifacts.",
+    "No missing region is imputed; component cohorts overlap and no pooled three-tissue score is available.",
+    "Original and validation FDRs are separate module-only BH families, calculated before display filters.",
+    "Pooled associations are calculated directly on pooled donors, not averages of subgroup correlations.",
+    "Frozen validation RINT clipping may introduce ties.",
+    "Effect-filtered original discovery associations are selection-biased; replication is descriptive.",
+    "Sixteen full-cohort brain modules use different node conventions across unfiltered and filtered analyses.",
+    "Missing original filtered-MDC counterparts are unavailable; no all-edge result is substituted."
+  ],
+  "mdc_status": "unavailable",
+  "module_set": "full_cohort",
+  "modules": 154,
+  "network_method": "standard",
+  "original_pooled_included": true,
+  "reference_controls": 164,
+  "reference_donors": 450,
+  "run_id": "20261021_frozen_references_legacy_conventions",
+  "schema_version": 2,
+  "source_hashes": {
+    "data/proccessed/se2_filtered/se2_rosmap_full_signed_alt/se2_table_filtered_4.csv": "cbb2e9878bd65ec0d1325ba4eae1e02345785ee6a898b93a4b111126684e8492",
+    "data/raw/ROSMAP_brain/ROSMAP_fixed_AC.csv": "ad8f5011eeffe89942afe1ed56304affc21fffe6393b0d379483dea26e2d4af9",
+    "data/raw/ROSMAP_brain/ROSMAP_fixed_DLPFC.csv": "097e9d3f92982d808f4b40f4c410d5ec02f2011b00464a77f63ce3b1124b639e",
+    "data/raw/ROSMAP_brain/ROSMAP_fixed_PCGBA23.csv": "3d866666a5a34ea6e5a45c8ee760043c581a682d34361c87e45b077bf17db90f",
+    "out/lioness_reference_comparison_rosmap/20260817_standard_control_anchored_allmodules_5phenotypes_6features/standard/data/phenotypes.parquet": "60adcceb9966b597057235a0286923eab69f1f80324a049f6e93bacb9193c30a"
+  },
+  "unpublished_association_shards": 672,
+  "validation_donors": 793
+}
