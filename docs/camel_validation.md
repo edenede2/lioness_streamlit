@@ -67,6 +67,10 @@ Interrupted uploads resume with `--snapshot` pointing to that private snapshot.
 Rollback copies remain outside the public app directory. No script commits or
 pushes Git automatically.
 
+Later releases reuse unchanged, checksum-verified Drive files rather than
+uploading the large score/curve bundle again. Keep older immutable backend
+folders: the current index may still reference their unchanged files.
+
 Only compact metadata, coverage/QA/default review tables and manifests should be
 force-added from the ignored `data/` tree. All donor scores, frozen curves and
 non-default review shards are lazy-loaded from Drive; do not add the whole data

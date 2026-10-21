@@ -62,3 +62,13 @@ def test_inventory_is_scoped_to_exact_upload_folder_and_paginated():
     assert set(P.list_own_folder(session, "exact-approved-folder")) == {"one", "two"}
     assert all(p["q"] == "'exact-approved-folder' in parents and trashed = false" for p in session.queries)
     assert session.queries[1]["pageToken"] == "second"
+
+
+def test_incremental_release_reuses_only_exact_verified_content_in_this_prefix():
+    entry = dict(id="verified-file", size=100, md5="checksum")
+    index = dict(files={P.PREFIX + "/modules/M121.parquet": entry,
+                        "other_dataset/modules/M122.parquet": entry})
+    assert P.verified_existing_entry(index, "modules/M121.parquet", 100, "checksum") == entry
+    assert P.verified_existing_entry(index, "modules/M121.parquet", 101, "checksum") is None
+    assert P.verified_existing_entry(index, "modules/M121.parquet", 100, "changed") is None
+    assert P.verified_existing_entry(index, "modules/M122.parquet", 100, "checksum") is None

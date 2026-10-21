@@ -102,6 +102,15 @@ def list_own_folder(s, folder):
             return found
 
 
+def verified_existing_entry(index, relative, size, digest):
+    """Reuse unchanged, previously verified content in later incremental releases."""
+    entry = index.get("files", {}).get(PREFIX + "/" + relative)
+    if (entry and entry.get("id") and entry.get("md5") == digest
+            and int(entry.get("size", -1)) == size):
+        return entry.copy()
+    return None
+
+
 def install(snapshot_root: Path, index, root: Path):
     stamp = snapshot_root.name
     rollback = root / "rollback" / ("publication_" + stamp)
@@ -178,6 +187,11 @@ def main():
     def upload(path):
         relative = path.relative_to(sroot).as_posix()
         digest = md5_file(path)
+        existing = verified_existing_entry(index, relative, path.stat().st_size, digest)
+        if existing is not None:
+            # Never re-upload the unchanged scores/curves merely because a new
+            # association mask finished. Old immutable backend files are kept.
+            return relative, existing
         name = relative.replace("/", "__") + "__" + digest[:12]
         remote = inventory.get(name)
         if remote is None:
