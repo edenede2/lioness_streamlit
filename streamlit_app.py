@@ -3964,6 +3964,7 @@ view_options = [
     "Module details",
     "Partition comparison",
     "Validation & replication",
+    "Donor explorer",
     "Methods & data",
 ]
 active_view = st.pills(
@@ -3993,6 +3994,11 @@ if active_view == "Validation & replication":
     from app_helpers.validation_review_ui import render_view as render_validation_review
 
     render_validation_review(render_plotly_chart)
+    st.stop()
+if active_view == "Donor explorer":
+    from app_helpers.donor_explorer_ui import render_view as render_donor_explorer
+
+    render_donor_explorer(render_plotly_chart)
     st.stop()
 
 if active_view in REGIONAL_ANALYSIS_VIEWS:
