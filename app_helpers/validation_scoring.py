@@ -54,7 +54,8 @@ def formula_checks(reference, targets, rows, columns, power, positions, original
 
 def score_component(*, reference, original, validation, reference_positions,
                     rows, columns, masks, power, module, component, n_features,
-                    original_ids, validation_ids, edge_batch=2048):
+                    original_ids, validation_ids, edge_batch=2048,
+                    possible_edges=None, node_conventions=None, source_n_features=None):
     if edge_batch < 1:
         raise ValueError("edge_batch must be positive")
     targets = np.vstack([original, validation])
@@ -83,14 +84,26 @@ def score_component(*, reference, original, validation, reference_positions,
     for k, rule in enumerate(rules):
         pos, neg, pc, nc, ss = acc[:, k].T
         count = int(retained[k])
+        possible=int(possible_edges[rule]) if possible_edges is not None else len(rows)
+        effective=int(n_features[rule]) if isinstance(n_features,dict) else n_features
+        if count>possible:
+            raise ValueError("Retained edges exceed this analysis's possible edges")
         frame = pd.DataFrame(dict(sample_id=[*original_ids, *validation_ids], module=int(module),
-            component=component, differential_edge_rule=rule, n_features=n_features,
-            n_possible_edges=len(rows), n_retained_edges=count,
+            component=component, differential_edge_rule=rule, n_features=effective,
+            n_possible_edges=possible, n_retained_edges=count,
             n_positive_edges=np.rint(pc).astype(int), n_negative_edges=np.rint(nc).astype(int),
-            n_zero_edges=count-np.rint(pc+nc).astype(int), n_pruned_edges=len(rows)-count,
+            n_zero_edges=count-np.rint(pc+nc).astype(int), n_pruned_edges=possible-count,
             positive_weight_sum=pos, negative_weight_magnitude=neg, signed_weight_sum=pos-neg,
             absolute_weight_sum=pos+neg, weight_squared_sum=ss))
-        if not len(rows):
+        if node_conventions is not None:
+            frame["node_convention"]=node_conventions[rule]
+            frame["n_source_assignment_rows"]=int(source_n_features)
+            frame["cross_filter_node_convention_warning"]=int(source_n_features)!=effective
+            # Filtered rows also need the warning when their module's all-edge
+            # comparator uses a different node convention.
+            if isinstance(n_features,dict) and len(set(n_features.values()))>1:
+                frame["cross_filter_node_convention_warning"]=True
+        if not possible:
             frame.loc[:, ["positive_weight_sum", "negative_weight_magnitude", "signed_weight_sum",
                           "absolute_weight_sum", "weight_squared_sum"]] = np.nan
         if not (frame.n_positive_edges+frame.n_negative_edges+frame.n_zero_edges == count).all():

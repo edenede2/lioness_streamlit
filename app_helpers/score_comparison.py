@@ -276,7 +276,8 @@ def _module_frames(spec: ComparisonSeriesSpec) -> Iterator[tuple[int, str, pd.Da
         for module in sorted(source.manifest()["completed_module_ids"]):
             frame=source.scores(module,spec.feature,spec.differential_edge_rule,spec.score_normalization,
                            spec.component,spec.scale,False)
-            frame=frame[["sample_id",f"metric_{spec.scale}"]].rename(columns={f"metric_{spec.scale}":"metric_value"})
+            frame=frame[["sample_id",f"metric_{spec.scale}",*[c for c in
+                ("node_convention","n_features","n_source_assignment_rows","cross_filter_node_convention_warning") if c in frame]]].rename(columns={f"metric_{spec.scale}":"metric_value"})
             yield int(module),"",frame
         return
     if spec.is_regional:
@@ -366,6 +367,14 @@ def statistics_from_module_frames(
             "score_normalization": spec.score_normalization,
             **_module_statistic(frame, metadata_by_tissue[tissue], outcome, min_n),
         })
+        for field in ("node_convention","n_features","n_source_assignment_rows","cross_filter_node_convention_warning"):
+            if field in frame and not frame.empty:
+                rows[-1][field]=frame[field].iloc[0]
+        if spec.source=="full_cohort" and spec.feature!="eigengene":
+            from app_helpers.validation_datasets import LEGACY_DUPLICATE_BRAIN_MODULES
+            rows[-1]["cross_filter_node_convention_warning"]=int(module) in LEGACY_DUPLICATE_BRAIN_MODULES
+            rows[-1]["node_convention"]=("legacy_unfiltered_unique_tissue_gene" if spec.differential_edge_rule=="all"
+                                          else "legacy_effect_positional_assignment_rows")
     result = pd.DataFrame(rows)
     if result.empty:
         raise ValueError("No module assignments are available for this series")

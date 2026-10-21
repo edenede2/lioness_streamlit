@@ -189,6 +189,7 @@ def test_new_validation_cohort_and_completed_effect_mask_render_existing_views(s
 
 def test_uninstalled_review_is_explicit_not_fake_results(monkeypatch, tmp_path):
     monkeypatch.setenv("CAMEL_VALIDATION_DATA_ROOT", str(tmp_path))
+    monkeypatch.setenv("PARTITION_VALIDATION_DATA_ROOT", str(tmp_path))
     app = AppTest.from_string('''
 from app_helpers.validation_review_ui import render_view
 render_view(lambda *args, **kwargs: None)

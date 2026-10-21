@@ -16,6 +16,19 @@ from app_helpers.drive_data import DATA_DIR, data_path_available, ensure_data_pa
 from app_helpers.validation_datasets import DATASETS, dataset, manifest_matches
 
 
+def _available_path(path: Path) -> bool:
+    if path.exists():
+        return True
+    try:
+        return data_path_available(path)
+    except ValueError:
+        # A private offline preview may not have this stage yet. It is not a
+        # Drive-relative key and must never trigger a remote fallback.
+        if os.environ.get("CAMEL_VALIDATION_DATA_ROOT") or os.environ.get("PARTITION_VALIDATION_DATA_ROOT"):
+            return False
+        raise
+
+
 def root(module_set="control_derived", method="control_anchored") -> Path:
     # Explicit offline preview only. Production uses the indexed Drive backend.
     config=dataset(module_set,method)
@@ -27,7 +40,7 @@ def root(module_set="control_derived", method="control_anchored") -> Path:
 
 def manifest(module_set="control_derived", method="control_anchored") -> dict:
     p=root(module_set,method)/"manifest.json"
-    result=json.loads(ensure_data_path(p).read_text()) if data_path_available(p) else {}
+    result=json.loads(ensure_data_path(p).read_text()) if _available_path(p) else {}
     if result and not manifest_matches(result,module_set,method):
         raise ValueError("Validation manifest belongs to a different partition or method")
     return result
@@ -105,7 +118,7 @@ def scores(module: int, feature: str | None="connectivity", rule="all", normaliz
             for c in source.component.unique() for f in ([feature] if feature else FEATURES)])
     else:
         scales=root(module_set,method)/"scales.parquet"
-        if scale=="asinh" and data_path_available(scales):
+        if scale=="asinh" and _available_path(scales):
             filters.append(("module","=",int(module)))
             path=ensure_data_path(scales,filters)
         else:
@@ -119,7 +132,8 @@ def scores(module: int, feature: str | None="connectivity", rule="all", normaliz
         record=mapping.iloc[0]
         part=source.loc[source.component.eq(comp)].copy()
         raw=feature_values(part,family,normalization)
-        part=part[["sample_id","module","component","n_possible_edges","n_retained_edges"]]
+        part=part[["sample_id","module","component","n_possible_edges","n_retained_edges",
+                   *[c for c in ("n_features","n_source_assignment_rows","node_convention","cross_filter_node_convention_warning") if c in part]]]
         part["metric_family"]=family
         if scale in (None,"raw"): part["metric_raw"]=raw
         if scale in (None,"asinh"): part["metric_asinh"]=np.arcsinh(raw/float(record.asinh_scale))
@@ -138,7 +152,7 @@ def scores(module: int, feature: str | None="connectivity", rule="all", normaliz
 
 def statistics(rule="all", normalization="standard_pruned", *, module_set="control_derived", method="control_anchored", **selections) -> pd.DataFrame:
     path=root(module_set,method)/"statistics"/rule/f"{normalization}.parquet"
-    if not data_path_available(path):
+    if not _available_path(path):
         raise ValueError("Validated robustness statistics are not available for this validation mask yet")
     filters=[(name,"=",value) for name,value in selections.items() if value is not None]
     columns=None
@@ -151,7 +165,7 @@ def statistics(rule="all", normalization="standard_pruned", *, module_set="contr
 
 def mdc(rule="all", *, module_set="control_derived", method="control_anchored") -> pd.DataFrame:
     path=root(module_set,method)/"mdc/resolved.parquet"
-    if not data_path_available(path): return pd.DataFrame()
+    if not _available_path(path): return pd.DataFrame()
     return pd.read_parquet(ensure_data_path(path,[("differential_edge_rule","=",rule)]),
         filters=[("differential_edge_rule","=",rule)])
 

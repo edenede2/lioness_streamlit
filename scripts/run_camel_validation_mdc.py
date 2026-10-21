@@ -52,13 +52,13 @@ def atomic_npz(path, **values):
     tmp.replace(path)
 
 
-def mdc_job(module,component,root,permutations):
+def mdc_job(module,component,root,permutations,source_context=""):
     started=time.monotonic(); root=Path(root)
     checkpoint=root/f"mdc_checkpoints/{component}/M{module}.npz"
     output=root/f"mdc_parts/{component}/M{module}.parquet"
     qa=output.with_suffix(".json")
     a,_,ri,ci,masks,source=module_source(module)
-    signature=hashlib.sha256((sha(source)+component+str(permutations)+"v1").encode()).hexdigest()
+    signature=hashlib.sha256((sha(source)+component+str(permutations)+"v1"+source_context).encode()).hexdigest()
     if output.exists() and qa.exists() and json.loads(qa.read_text()).get("fingerprint")==signature:
         return str(output)
     tissues=a.public_tissue.to_numpy(); wanted=COMPONENT_TISSUES[component]
@@ -118,7 +118,11 @@ def mdc_job(module,component,root,permutations):
             mean_abs_ad=numerator[k],mean_abs_control=denominator[k],inferential=bool(inferential and available),
             unavailable_reason=reason,p_loss_sample=pl_s[k],p_loss_gene=pl_g[k],
             p_gain_sample=pg_s[k],p_gain_gene=pg_g[k],sample_permutations=permutations if inferential else 0,
-            gene_permutations=permutations if inferential else 0,seed=42,cohort_scope="incomplete_region_validation"))
+            gene_permutations=permutations if inferential else 0,
+            sample_null_valid_draws=int(np.isfinite(sample[k]).sum()),gene_null_valid_draws=int(np.isfinite(gene[k]).sum()),
+            sample_p_resolution=1/(1+np.isfinite(sample[k]).sum()) if np.isfinite(sample[k]).any() else np.nan,
+            gene_p_resolution=1/(1+np.isfinite(gene[k]).sum()) if np.isfinite(gene[k]).any() else np.nan,
+            seed=42,cohort_scope="incomplete_region_validation"))
     atomic_parquet(pd.DataFrame(rows),output)
     # Group-level adjacencies, not donor expression/edge networks. Bit masks
     # permit the selected view to render without storing 31 duplicate matrices.

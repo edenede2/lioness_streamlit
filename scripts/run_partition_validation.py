@@ -31,9 +31,9 @@ from app_helpers.validation_scoring import score_component
 from models.differential_edges import EffectMaskSpec, effect_mask_specs, effect_rule_key, effect_size_mask
 from run_camel_validation import atomic_json, atomic_parquet, canon, sha
 
-RUN = REPO / "out/partition_validation/20261021_frozen_references"
+RUN = REPO / "out/partition_validation/20261021_frozen_references_legacy_conventions"
 _STATE = None
-VERSION = 1
+VERSION = 2
 
 
 def assignments_and_edges(key, method):
@@ -113,6 +113,8 @@ def audit(root, state):
         source_hashes={str(p.relative_to(REPO)):sha(p) for p in state["sources"]},
         reference_policy=f"Frozen original {len(reference)} {'donors' if state['method']=='standard' else 'Controls'}; every validation donor add-one",
         beta_ts=state["beta_ts"], beta_ct=state["beta_ct"], predictions_unchanged=True)
+    record["node_convention_policy"]="User-approved source-specific legacy conventions: unfiltered unique tissue-gene nodes; effect-filtered positional assignment rows"
+    record["node_convention_approval"]="Explicit user selection, 2026-10-21"
     previous=root/"audit.json"
     if previous.exists() and json.loads(previous.read_text()) != record:
         raise ValueError("Frozen audit changed; do not mix checkpoints")
@@ -121,6 +123,20 @@ def audit(root, state):
     atomic_parquet(state["original_meta"], root/"private/original_metadata.parquet")
     pd.DataFrame(counts).to_csv(root/"public_bundle/cohort_counts.tsv", sep="\t", index=False)
     return record
+
+
+def audit_discovery_membership(root,state):
+    """Check actual discovery donors, not just the later scoring cohort."""
+    if state["config"].module_set!="full_cohort":
+        raise ValueError("Register and verify the dataset's actual discovery artifact first")
+    source=REPO/"data/proccessed/se2_filtered/se2_rosmap_full_signed_alt/se2_4_rosmap_full_signed_alt_global2_global2_ME_commonDonors_cross_tissue.tsv"
+    ids=pd.read_csv(source,sep="\t",usecols=[0]).iloc[:,0].map(canon)
+    if ids.duplicated().any() or set(ids)!=state["complete"] or set(ids)&state["incomplete"]:
+        raise ValueError("Validation donors overlap actual full-cohort module discovery")
+    report=dict(passed=True,discovery_donors=len(ids),validation_overlap=0,
+        source=str(source.relative_to(REPO)),source_sha256=sha(source),excluded_all_discovery_donors=True)
+    atomic_json(report,Path(root)/"discovery_membership_audit.json")
+    return report
 
 
 def matrix_for(a, donor_ids, state):
@@ -145,7 +161,10 @@ def module_source(module, state):
     edge=pd.read_parquet(source)
     if not np.array_equal(edge.row_index,rows) or not np.array_equal(edge.column_index,columns) or not np.array_equal(edge.edge_index,np.arange(len(rows))):
         raise ValueError("Frozen edge table does not match positional module assignments")
-    masks={"all":np.ones(len(rows),bool)}
+    canonical=~a.duplicated(["Tissue","Gene Symbol"]).to_numpy()
+    # R's named gene-to-module map selects unique expression columns. Preserve
+    # the Python effect-table multiplicity separately, without changing masks.
+    masks={"all":canonical[rows]&canonical[columns]}
     specs=[EffectMaskSpec("hedges_g","fixed",.4)] if state["config"].motor else effect_mask_specs()
     for spec in specs:
         values=edge["discovery_"+spec.statistic].to_numpy(float)
@@ -214,7 +233,11 @@ def module_job(module, root, edge_batch=2048):
         power=state["beta_ts"][tissues[0]] if len(tissues)==1 else state["beta_ct"][component]
         old,new,anchor,qa=score_component(reference=ref, original=full[:,nodes], validation=new,
             reference_positions=roles, rows=lr, columns=lc, masks={r:m[keep] for r,m in masks.items()},
-            power=power,module=module,component=component,n_features=len(a),
+            power=power,module=module,component=component,
+            n_features={r:int(a.feature_id.nunique()) if r=="all" else len(a) for r in masks},
+            possible_edges={r:int(masks["all"][keep].sum()) if r=="all" else int(keep.sum()) for r in masks},
+            node_conventions={r:"legacy_unfiltered_unique_tissue_gene" if r=="all" else "legacy_effect_positional_assignment_rows" for r in masks},
+            source_n_features=len(a),
             original_ids=[state["mapping"][d] for d in original], validation_ids=[state["mapping"][d] for d in new_ids], edge_batch=edge_batch)
         orig_parts.append(old); parts.append(new); maps.append(anchor)
         checks.extend([dict(component=component,**q) for q in qa])
@@ -254,6 +277,9 @@ def update_manifest(root, state):
         "pooled_scores_available":False,"backend_verified":False,"publication_approved":False,
         "reference_policy":json.loads((root/"audit.json").read_text())["reference_policy"],
         "mdc_status":previous.get("mdc_status","unavailable"),
+        "node_convention_policy":"source_specific_legacy",
+        "cross_filter_node_convention_modules":sorted(state["assignment"].loc[
+            state["assignment"].duplicated(["Tissue","Gene Symbol"],keep=False),"module"].astype(int).unique().tolist()),
         "rint_policy":"Original-cohort fitted average ranks; frozen interpolation and boundary clipping",
         "generated_utc":datetime.now(timezone.utc).isoformat()}
     atomic_json(manifest,path)
@@ -271,6 +297,7 @@ def main():
     p.add_argument("--edge-batch",type=int,default=2048)
     args=p.parse_args(); state=load_inputs(args.module_set,args.method)
     root=args.root/args.module_set/args.method; report=audit(root,state)
+    audit_discovery_membership(root,state)
     print(json.dumps(dict(stage="audit",module_set=args.module_set,method=args.method,status=report["status"])),flush=True)
     if args.stage=="audit": return
     if args.stage=="score" and not (root/"pilot_passed.json").exists():

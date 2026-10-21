@@ -87,6 +87,11 @@ def adjacency_figure(module,component,rule,*,module_set="control_derived",networ
         n=int(z["n_nodes"]); e=int(z["n_edges"])
         ri,ci=z["row"],z["column"]
         mask=np.unpackbits(z["mask_bits"][rules.index(rule)])[:e].astype(bool)
+        if rule=="all" and "canonical_nodes" in z.files:
+            canonical=z["canonical_nodes"].astype(bool)
+            positions=np.full(n,-1,int);positions[canonical]=np.arange(canonical.sum())
+            mask &= canonical[ri]&canonical[ci]
+            ri,ci=positions[ri],positions[ci];n=int(canonical.sum())
         matrix=np.full((n,n),np.nan,dtype=np.float32)
         matrix[ri[mask],ci[mask]]=np.abs(z["control"][mask])
         matrix[ci[mask],ri[mask]]=np.abs(z["ad"][mask])

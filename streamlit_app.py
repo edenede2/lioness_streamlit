@@ -4122,6 +4122,8 @@ with st.sidebar:
         index=default_module,
         format_func=module_label,
     )
+    if cohort_scope == VALIDATION_SCOPE and module in validation_source.manifest().get("cross_filter_node_convention_modules",[]):
+        st.warning("Legacy node-convention difference: this module's unfiltered scores use unique gene–tissue nodes, while effect-filtered scores retain repeated assignment rows. Each reproduces its original analysis. Treat cross-filter differences cautiously; effective node counts are included in score/edge-summary downloads.")
     phenotype = st.selectbox(
         "Association outcome",
         options=(

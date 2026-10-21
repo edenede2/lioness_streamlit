@@ -16,6 +16,7 @@ MOTOR_COMPONENTS = {
     "CT_SMA__QUAD": ("SMA", "QUAD"),
 }
 MOTOR_LABELS = {c: "–".join(ts) for c, ts in MOTOR_COMPONENTS.items()}
+LEGACY_DUPLICATE_BRAIN_MODULES=frozenset({56,65,66,158,188,637,644,736,1014,1263,1312,1547,1567,1572,1643,1757})
 
 
 @dataclass(frozen=True)

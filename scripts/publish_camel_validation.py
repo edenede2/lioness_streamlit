@@ -48,7 +48,7 @@ def snapshot(root: Path) -> Path:
     completed = set(manifest["completed_rules"])
     for relative, info in report["files"].items():
         path = Path(relative)
-        if path.parts[0] == "concordance":
+        if path.parts[0] in {"concordance","original_statistics"}:
             # The app uses narrow review shards, not duplicate 59-MiB tables.
             continue
         if path.parts[0] in {"statistics", "concordance"} and path.parts[1] not in completed:
@@ -211,7 +211,13 @@ def main():
                 print(json.dumps(dict(uploaded=len(uploaded), total=len(paths))), flush=True)
     # Independent reader identity verifies content, not merely OAuth write access.
     reader = AuthorizedSession(service_account.Credentials.from_service_account_file(str(args.reader_credentials), scopes=[READ_SCOPE]))
-    samples = ["sample_metadata.parquet", "modules/M121.parquet", "rint/M121.parquet", "mdc/adjacency/TS_DLPFC/M121.npz"]
+    snapshot_manifest=json.loads((sroot/"manifest.json").read_text())
+    ids=snapshot_manifest.get("completed_module_ids",[121])
+    sample_module=121 if 121 in ids else 1918 if 1918 in ids else ids[0]
+    components=snapshot_manifest.get("components",["TS_DLPFC"])
+    sample_component="TS_DLPFC" if "TS_DLPFC" in components else components[0]
+    samples = ["sample_metadata.parquet", f"modules/M{sample_module}.parquet", f"rint/M{sample_module}.parquet",
+               f"mdc/adjacency/{sample_component}/M{sample_module}.npz"]
     for relative in samples:
         info = uploaded[relative]
         response = reader.get(DRIVE + "/" + info["id"], params={"alt": "media"}, timeout=90)

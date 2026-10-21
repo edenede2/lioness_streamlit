@@ -103,9 +103,11 @@ def _associations(m, render, reader=R, labels=COMPONENT_LABELS):
     if f.empty:
         st.info("This exact comparison is unavailable.")
         return
+    if "cross_filter_node_convention_warning" in f and f.cross_filter_node_convention_warning.any():
+        st.warning("Some modules have different historical node conventions for unfiltered versus effect-filtered scores. Original and validation values use the same convention within this comparison; cross-filter comparisons of flagged modules require caution.")
     a, b, c = st.columns(3)
     group = a.selectbox("Validation donor group", ["All donors", "AD", "Control", "MCI", "Unclassified"],
-                        index=0 if m.get("original_pooled_shards") else 1, key="validation_review_group")
+                        index=0 if m.get("original_pooled_shards") or m.get("original_pooled_included") else 1, key="validation_review_group")
     components = b.multiselect("Validation components", list(labels), default=[next(c for c in labels if c.startswith("CT_"))],
                                format_func=labels.get, key="validation_review_components")
     alpha = c.selectbox("Evidence cutoff", [.05, .10], format_func=lambda x: f"{x:.2f}" + (" (exploratory)" if x == .10 else ""), key="validation_review_alpha")
@@ -149,6 +151,7 @@ def _associations(m, render, reader=R, labels=COMPONENT_LABELS):
     columns = [*R.MATCH_KEYS, "original_n", "validation_n", "original_effect", "validation_effect", "effect_difference",
                "original_p", "validation_p", "original_fdr", "validation_fdr", "original_family_n", "validation_family_n",
                "same_direction", "replication_status", "unavailable_reason"]
+    columns += [c for c in ("node_convention","cross_filter_node_convention_warning") if c in shown]
     download_table(shown[columns], "validation_association_comparison", "Displayed association comparison")
     st.download_button("Download complete selected-context comparison", f.to_csv(sep="\t", index=False).encode(),
                        "validation_association_full_context.tsv", key="validation_review_full_associations")

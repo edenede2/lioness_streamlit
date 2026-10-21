@@ -7,6 +7,7 @@ import hashlib
 import json
 import uuid
 
+import pandas as pd
 import streamlit as st
 
 from app_helpers import data as D
@@ -323,7 +324,10 @@ def render_view(data_manifest: dict) -> None:
     valid = len(boxes) == len(rows)
     # Manifest revision invalidates compact caches when an incremental release changes data.
     regional_manifest = R.load_regional_manifest() if any(entry["regional"] for entry in registry.values()) else {}
-    revision = hashlib.sha256(json.dumps([data_manifest, regional_manifest], sort_keys=True).encode()).hexdigest()
+    from app_helpers import camel_validation as validation
+    validation_revisions=[validation.for_dataset(spec.source,spec.method).manifest()
+        for _,_,spec in boxes if spec.cohort_scope=="incomplete_region_validation"]
+    revision = hashlib.sha256(json.dumps([data_manifest, regional_manifest,validation_revisions], sort_keys=True).encode()).hexdigest()
     context = (outcome, subset, min_n, revision)
     if st.button("Calculate comparison", type="primary", disabled=not valid, key="module_comparison_calculate"):
         catalogs = {}
@@ -369,6 +373,8 @@ def render_view(data_manifest: dict) -> None:
         st.warning("Top K is selected using this outcome. These are outcome-selected descriptive distributions, not independent evidence of predictive superiority.")
     if any(spec.differential_edge_rule != "all" for _, _, spec in boxes):
         st.warning("Edge masks were selected using discovery AD–Control differences. Discovery/all-donor associations can be selection-biased; held-out validation is an exploratory check, not external validation.")
+    if displayed.get("cross_filter_node_convention_warning",pd.Series(False,index=displayed.index)).fillna(False).any():
+        st.warning("Flagged full-cohort brain modules use unique nodes for historical unfiltered scores and repeated assignment rows for effect-filtered scores. Cross-filter differences can therefore also reflect node conventions; inspect the flag and convention columns in the module table.")
     st.caption("BH FDR uses all valid modules before display filtering, separately per component and regional tissue partition. Pooling regions or CT + TS does not combine FDR families. No between-box significance tests are performed.")
     if displayed.empty:
         st.info("No modules meet the current eligibility and FDR display filters. Summary counts and complete calculated results remain available.")
