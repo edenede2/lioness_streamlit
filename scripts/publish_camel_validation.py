@@ -119,7 +119,11 @@ def install(snapshot_root: Path, index, root: Path):
     index_path = APP / "drive_file_index.json"
     rollback.mkdir(parents=True, exist_ok=True)
     shutil.copy2(index_path, rollback / "drive_file_index.json")
-    atomic_json(index, index_path)
+    # Preserve the existing compact index format; only semantic additions to
+    # the approved prefix should enlarge this already substantial registry.
+    temporary_index = index_path.with_suffix(".json.partial")
+    temporary_index.write_text(json.dumps(index, separators=(",", ":")) + "\n")
+    temporary_index.replace(index_path)
     for relative in [*chosen, "manifest.json"]:
         p = snapshot_root / relative
         if not p.exists():

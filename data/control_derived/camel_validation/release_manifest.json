@@ -1,0 +1,12 @@
+{
+  "completed_rules": [
+    "ad_control_discovery_effect__hedges_g__fixed_0.40__ad_higher",
+    "ad_control_discovery_effect__hedges_g__fixed_0.40__control_higher",
+    "ad_control_discovery_effect__hedges_g__fixed_0.40__either",
+    "all"
+  ],
+  "publication_approved": true,
+  "source_audit_sha256": "aa24f006a15d7ec13fc55c671f85c728fe7c8db65d62e9988550a8abe716f2a3",
+  "source_manifest_sha256": "5a3eed937e35f4c64d8a0f8440ac054b239ac567655622b42fb262c5ee94c128",
+  "status": "passed"
+}

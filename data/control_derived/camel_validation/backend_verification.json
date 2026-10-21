@@ -1,0 +1,13 @@
+{
+  "files_verified_by_upload_checksum": 2228,
+  "generated_utc": "2026-10-21T07:35:29.904650+00:00",
+  "immutable_snapshot": "20261021T072041943917Z",
+  "read_only_identity_content_samples": [
+    "sample_metadata.parquet",
+    "modules/M121.parquet",
+    "rint/M121.parquet",
+    "mdc/adjacency/TS_DLPFC/M121.npz"
+  ],
+  "sharing_changes": false,
+  "status": "passed"
+}
