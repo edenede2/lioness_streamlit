@@ -84,6 +84,8 @@ def _select(label, options, default, key, **kwargs):
 
 
 def _cohort_label(spec: ComparisonSeriesSpec, entry: dict) -> str:
+    if spec.cohort_scope == "incomplete_region_validation":
+        return "Non-discovery validation donors (component-specific N)"
     if spec.is_regional:
         return R.COHORT_LABELS[spec.cohort_scope]
     donors = entry.get("donors", 450)
@@ -92,14 +94,14 @@ def _cohort_label(spec: ComparisonSeriesSpec, entry: dict) -> str:
     return f"Source complete-tissue cohort ({donors} donors)"
 
 
-def _edge_controls(row: dict, source: str, method: str, feature: str, prefix: str) -> dict:
+def _edge_controls(row: dict, source: str, method: str, feature: str, prefix: str, cohort_scope="complete_450") -> dict:
     settings = effect_settings(source)
     completed_networks = settings.get("completed_networks", [])
     has_effect = settings.get("status") == "complete" and (
         not completed_networks or f"lioness/{method}" in completed_networks
     )
     choices = ["all"]
-    if D.differential_data_available(source):
+    if cohort_scope == "complete_450" and D.differential_data_available(source):
         choices.append("fdr")
     if has_effect:
         choices.append("effect")
@@ -226,16 +228,21 @@ def _box_editor(row: dict, registry: dict, position: int, count: int) -> tuple[d
             cohort = "complete_450"  # Legacy key names this cohort; muscle has 357 donors.
             method = _select("Network method", ["not_applicable"] if feature == "eigengene" else registry[source]["methods"], row["method"], prefix + "method",
                              format_func=lambda value: "Not applicable (eigengene)" if value == "not_applicable" else D.METHOD_LABELS[value], disabled=feature == "eigengene")
+            from app_helpers import camel_validation as V
+            if source == "control_derived" and feature != "eigengene" and method == "control_anchored" and V.available():
+                cohort=_select("Source cohort",["complete_450","incomplete_region_validation"],row.get("cohort_scope","complete_450"),prefix+"cohort",format_func=D.COHORT_SCOPE_LABELS.get)
             components = list(D.module_set_components(source))
             if feature == "eigengene":
                 components = [value for value in components if value.startswith("TS_")]
             else:
-                components = ["CT", "TS", COMBINED_COMPONENT, *components]
+                components = components if cohort == "incomplete_region_validation" else ["CT", "TS", COMBINED_COMPONENT, *components]
             component = _select("Score component", components, row["component"], prefix + "component", format_func=COMPONENT_LABELS.get)
             if component == COMBINED_COMPONENT:
                 st.caption("CT + TS pools two correlations per module, one for each component; donor scores are not summed or averaged. BH remains separate for CT and TS. Top K ranks modules by their strongest eligible component and includes both qualifying scores.")
             selected_tissues = ()
-            edges = _edge_controls(row, source, method, feature, prefix)
+            edges = _edge_controls(row, source, method, feature, prefix, cohort)
+            if cohort == "incomplete_region_validation" and edges["differential_edge_rule"] == "all":
+                edges["score_normalization"]=_select("Score handling",D.SCORE_NORMALIZATION_LABELS,row.get("score_normalization","standard_pruned"),prefix+"normalization",format_func=D.SCORE_NORMALIZATION_LABELS.get)
             st.caption("This partition's own donor cohort is used; it is not intersected with other boxes.")
         scale = _select("Score transformation", SCALE_ORDER, row["scale"], prefix + "scale",
                         format_func=lambda value: {"raw": "Raw", "asinh": "asinh", "rint": "RINT"}[value])

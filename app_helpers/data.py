@@ -79,6 +79,7 @@ MODULE_SET_COMPONENTS["muscle_all_donors_l4"] = MODULE_SET_COMPONENTS["muscle_co
 COHORT_SCOPE_LABELS = {
     "complete_450": "Complete-tissue comparison cohort (450)",
     "maximum_component": "Maximum component cohort",
+    "incomplete_region_validation": "Incomplete-region validation donors",
 }
 ESTIMATOR_LABELS = {
     "lioness": "LIONESS",
@@ -1094,6 +1095,10 @@ def load_resolved(
     score_normalization: str = "standard_pruned",
     cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
+    if cohort_scope == "incomplete_region_validation":
+        from app_helpers import camel_validation as V
+        V.validate_identity(module_set, estimator, method, metric_family, differential_edge_rule)
+        return V.scores(module, metric_family, differential_edge_rule, score_normalization)
     if (
         estimator == "lioness"
         and metric_family == "eigengene"
@@ -1224,6 +1229,11 @@ def load_resolved_scope(
     include_embedded_metadata: bool = True,
     cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
+    if cohort_scope == "incomplete_region_validation":
+        from app_helpers import camel_validation as V
+        V.validate_identity(module_set, estimator, method, metric_family, differential_edge_rule)
+        return V.scores(module, metric_family, differential_edge_rule, score_normalization,
+                        component, metric_scale, include_embedded_metadata)
     if (
         estimator == "lioness"
         and metric_family == "eigengene"
@@ -1376,6 +1386,11 @@ def load_resolved_statistics(
     diagnosis_group: str | None = None,
     cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
+    if cohort_scope == "incomplete_region_validation":
+        from app_helpers import camel_validation as V
+        V.validate_identity(module_set, estimator, method, metric_family, differential_edge_rule)
+        return V.statistics(differential_edge_rule,score_normalization,module=module,phenotype=phenotype,
+                            metric_family=metric_family,component=component,diagnosis_group=diagnosis_group)
     from app_helpers.pathology import PATHOLOGY_OUTCOMES, load_statistics
     if phenotype in PATHOLOGY_OUTCOMES:
         return load_statistics(resolved=True, method=method, module=module,
@@ -1486,6 +1501,11 @@ def load_sample_metadata(
     namespaced prevents accidental joins between cohort scopes.
     """
 
+    if cohort_scope == "incomplete_region_validation":
+        if module_set != "control_derived":
+            raise ValueError("Incomplete-region validation is available only for Control-derived brain modules")
+        from app_helpers.camel_validation import metadata
+        return metadata()
     if cohort_scope == "complete_450":
         path = (
             module_set_data_dir(module_set) / "sample_metadata.parquet"
@@ -1691,7 +1711,12 @@ def load_edge_summaries(
     differential_edge_rule: str = "all",
     differential_fdr_scope: str = "global",
     differential_fdr_threshold: float = 0.05,
+    cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
+    if cohort_scope == "incomplete_region_validation":
+        from app_helpers import camel_validation as V
+        V.validate_identity(module_set,estimator,method,rule=differential_edge_rule)
+        return V.summaries(module,differential_edge_rule)
     if is_effect_rule(differential_edge_rule):
         path = (
             module_set_data_dir(module_set)

@@ -173,6 +173,15 @@ def availability_reason(spec: ComparisonSeriesSpec, registry: dict) -> str:
     else:
         if spec.feature != "eigengene" and spec.method not in entry["methods"]:
             return "This network method is unavailable for the selected partition."
+        if spec.cohort_scope == "incomplete_region_validation":
+            from app_helpers import camel_validation as V
+            try:
+                V.validate_identity(spec.source,"lioness",spec.method,spec.feature,spec.differential_edge_rule)
+            except ValueError as error:
+                return str(error)
+            if spec.component in {"CT","TS",COMBINED_COMPONENT}:
+                return "Validation donors do not have pooled three-region scores. Select one resolved component."
+            return ""
         if spec.cohort_scope != "complete_450":
             return "No expanded cohort is registered for this multi-tissue source."
         if not data_path_available(score_path(spec)):
@@ -194,7 +203,8 @@ def _metadata(spec: ComparisonSeriesSpec, outcome: str, analysis_subset: str, ti
             else "full_cohort" if spec.is_regional else spec.source
         )
         # This metadata table is small (357–450 rows); never load expression here.
-        result = D.load_sample_metadata(source)
+        result = (D.load_sample_metadata(source,cohort_scope=spec.cohort_scope)
+                  if spec.cohort_scope == "incomplete_region_validation" else D.load_sample_metadata(source))
         columns = ["sample_id", outcome]
         if analysis_subset != "all_donors":
             columns.append("ad_control_split")
@@ -260,6 +270,14 @@ def _scan_score_vectors(path, filters: list[tuple], value: str | tuple[str, ...]
 
 def _module_frames(spec: ComparisonSeriesSpec) -> Iterator[tuple[int, str, pd.DataFrame]]:
     """Yield module, regional tissue/combined component, and narrow score vector."""
+    if spec.cohort_scope == "incomplete_region_validation":
+        from app_helpers import camel_validation as V
+        for module in sorted(V.manifest()["completed_module_ids"]):
+            frame=V.scores(module,spec.feature,spec.differential_edge_rule,spec.score_normalization,
+                           spec.component,spec.scale,False)
+            frame=frame[["sample_id",f"metric_{spec.scale}"]].rename(columns={f"metric_{spec.scale}":"metric_value"})
+            yield int(module),"",frame
+        return
     if spec.is_regional:
         details = R.load_regional_details()
         for tissue in spec.tissues:

@@ -17,6 +17,8 @@ from app_helpers import data as _data_helpers
 if getattr(_data_helpers, "PATHOLOGY_OUTCOME_API_VERSION", 0) < 1:
     _data_helpers = importlib.reload(_data_helpers)
 from app_helpers.pathology import PATHOLOGY_OUTCOMES
+from app_helpers.camel import score_framework, CAMEL_EXPANSION, VALIDATION_SCOPE
+from app_helpers import camel_validation as _camel_validation
 
 # Streamlit Community Cloud may hot-reload this entrypoint while retaining an older
 # app_helpers.charts module in memory. Reload the helper when its current public API
@@ -541,12 +543,14 @@ def cached_edge_summaries(
     differential_edge_rule: str = "all",
     differential_fdr_scope: str = "global",
     differential_fdr_threshold: float = 0.05,
+    cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
     return load_edge_summaries(
         estimator, method, module, module_set=module_set, edge_rule=edge_rule,
         differential_edge_rule=differential_edge_rule,
         differential_fdr_scope=differential_fdr_scope,
         differential_fdr_threshold=differential_fdr_threshold,
+        cohort_scope=cohort_scope,
     )
 
 
@@ -1041,8 +1045,8 @@ def standardize_stored_associations(
         result = statistics.loc[statistics["component"].isin(components)].copy()
         result["pearson_r"] = result[f"r_{scale}"]
         result["pearson_p"] = result[f"p_{scale}"]
-        result["spearman_rho"] = result["rho"]
-        result["spearman_p"] = result["p_spearman"]
+        result["spearman_rho"] = result.get(f"rho_{scale}", result["rho"])
+        result["spearman_p"] = result.get(f"p_spearman_{scale}", result["p_spearman"])
     else:
         parts: list[pd.DataFrame] = []
         for component in components:
@@ -1244,6 +1248,12 @@ def cached_module_set_associations(
     if not include_pooled:
         return group_statistics
 
+    if cohort_scope == VALIDATION_SCOPE and set(diagnoses) == set(cached_sample_metadata(module_set,cohort_scope).diagnosis_group.dropna()):
+        pooled=standardize_stored_associations(stored,resolved=resolved,scale=scale,components=components,phenotype=phenotype)
+        pooled=pooled.loc[pooled.diagnosis_group.eq("All donors")].copy()
+        pooled=add_across_module_fdr(pooled,family_columns=["component","diagnosis_group","outcome"])
+        return pd.concat([group_statistics,pooled],ignore_index=True)
+
     module_ids = tuple(
         sorted(cached_annotations(module_set)["module"].astype(int).unique())
     )
@@ -1315,7 +1325,7 @@ def cached_grouped_module_set_associations(
     """
 
     min_group_n = int(min_group_n)
-    if grouping_variable == "diagnosis_group" and feature != "eigengene":
+    if grouping_variable == "diagnosis_group" and feature != "eigengene" and (cohort_scope != VALIDATION_SCOPE or min_group_n==10):
         result = cached_module_set_associations(
             module_set, module_count, estimator, method, resolved, feature,
             phenotype, scale, components, tuple(str(value) for value in grouping_levels),
@@ -1851,7 +1861,7 @@ def cached_all_module_correlations(
         )
         if diagnosis == "All diagnosis groups":
             stored_diagnoses = [*DIAGNOSIS_ORDER]
-            if cohort_scope == "maximum_component":
+            if cohort_scope != "complete_450":
                 stored_diagnoses.append("Unclassified")
             group_summary = group_summary.loc[
                 group_summary["diagnosis_group"].isin(stored_diagnoses)
@@ -1910,7 +1920,7 @@ def cached_all_module_correlations(
                 outcomes=tuple(NUMERIC_OUTCOMES), scale="rint",
                 diagnoses=tuple(
                     [*DIAGNOSIS_ORDER]
-                    + (["Unclassified"] if cohort_scope == "maximum_component" else [])
+                    + (["Unclassified"] if cohort_scope != "complete_450" else [])
                 ), edge_rule=edge_rule,
                 differential_edge_rule=differential_edge_rule,
                 differential_fdr_scope=differential_fdr_scope,
@@ -3953,6 +3963,7 @@ view_options = [
     "KEGG enrichment",
     "Module details",
     "Partition comparison",
+    "Validation & replication",
     "Methods & data",
 ]
 active_view = st.pills(
@@ -3977,6 +3988,11 @@ if active_view == "Module–outcome comparison":
     st.stop()
 if active_view == "Partition comparison":
     render_partition_comparison_view()
+    st.stop()
+if active_view == "Validation & replication":
+    from app_helpers.validation_review_ui import render_view as render_validation_review
+
+    render_validation_review(render_plotly_chart)
     st.stop()
 
 if active_view in REGIONAL_ANALYSIS_VIEWS:
@@ -4038,7 +4054,7 @@ with st.sidebar:
     estimator = st.radio(
         "Network estimator",
         options=allowed_estimators,
-        format_func=lambda value: ESTIMATOR_LABELS[value],
+        format_func=lambda value: score_framework(module_set, "control_anchored", value),
         horizontal=True,
     )
     allowed_methods = (
@@ -4064,6 +4080,27 @@ with st.sidebar:
         if "control_anchored" in allowed_methods
         else 0,
     )
+    current_score_framework = score_framework(module_set, method, estimator)
+    if current_score_framework == "CAMEL":
+        st.caption(f"CAMEL: {CAMEL_EXPANSION}. Existing estimator, formulas and internal identifiers are unchanged.")
+        if module_set == "control_derived" and not _camel_validation.available() and _camel_validation.manifest():
+            st.caption("Incomplete-region CAMEL validation is being prepared. It becomes selectable only after the matching data and statistics are verified in the backend.")
+    cohort_scope_options = ["complete_450"]
+    if module_set == "all_donor_corrshrink_l4" and capabilities.get("expanded_components", False) and estimator == "lioness":
+        cohort_scope_options.append("maximum_component")
+    if module_set == "control_derived" and estimator == "lioness" and method == "control_anchored" and _camel_validation.available():
+        cohort_scope_options.append(VALIDATION_SCOPE)
+    cohort_scope = st.radio(
+        "Donor cohort scope", options=cohort_scope_options,
+        format_func=lambda value: "Complete VH/SMA/QUAD comparison cohort (357)"
+        if module_set in MUSCLE_MODULE_SETS and value == "complete_450" else COHORT_SCOPE_LABELS[value],
+        help="Validation excludes all 464 complete-expression donors. Each resolved component has its own donor set; missing regions are never imputed.",
+    )
+    if cohort_scope == VALIDATION_SCOPE:
+        st.info("793 non-discovery donors within ROSMAP; frozen 164-Control reference. This is not external-cohort validation. AC–PCG has only 14 donors (3 AD / 6 Control): group MDC is descriptive only.")
+        if active_view in {"Prediction", "Edge volcano", "Donor edge explorer"}:
+            st.info("No prediction, new differential-edge discovery, or public donor-expression catalog was generated for this validation cohort.")
+            st.stop()
     default_module = modules.index(935) if 935 in modules else 0
     module = st.selectbox(
         "Module",
@@ -4110,6 +4147,7 @@ with st.sidebar:
     )
     descriptive_eigengenes_available = (
         estimator == "lioness"
+        and cohort_scope == "complete_450"
         and active_view in {
             "Associations", "Feature distributions", "Correlation heatmaps",
         }
@@ -4143,13 +4181,15 @@ with st.sidebar:
         bonobo_edge_subset = "All edges"
         edge_rule = "all"
     differential_available = (
-        feature != "eigengene" and differential_data_available(module_set)
+        cohort_scope == "complete_450" and feature != "eigengene" and differential_data_available(module_set)
     )
     effect_available = (
         feature != "eigengene"
-        and active_view != "MDC"
+        and (active_view != "MDC" or cohort_scope == VALIDATION_SCOPE)
         and effect_size_data_available(module_set, estimator, method)
     )
+    if cohort_scope == VALIDATION_SCOPE:
+        effect_available = any(r != "all" for r in _camel_validation.manifest().get("completed_rules",[]))
     subset_options = ["all"]
     if differential_available:
         subset_options.append("ad_control_discovery_fdr05")
@@ -4201,6 +4241,13 @@ with st.sidebar:
         )
     else:
         effect_manifest = cached_effect_size_manifest(module_set)
+        validation_effect_options = _camel_validation.completed_effect_options() if cohort_scope == VALIDATION_SCOPE else []
+        if validation_effect_options:
+            effect_manifest = {
+                "available_effect_statistics": list(dict.fromkeys(e["statistic"] for e in validation_effect_options)),
+                "available_cutoff_modes": {s: list(dict.fromkeys(e["mode"] for e in validation_effect_options if e["statistic"] == s))
+                                           for s in {e["statistic"] for e in validation_effect_options}},
+            }
         available_effect_statistics = effect_manifest.get(
             "available_effect_statistics", list(EFFECT_STATISTIC_LABELS)
         )
@@ -4236,6 +4283,8 @@ with st.sidebar:
                 "available_fixed_hedges_g", list(HEDGES_FIXED_THRESHOLDS)
             )
             fixed_options = [float(value) for value in fixed_options]
+            if validation_effect_options:
+                fixed_options = sorted({e["value"] for e in validation_effect_options if e["statistic"] == effect_statistic and e["mode"] == "fixed"})
             default_fixed = 0.40 if 0.40 in fixed_options else fixed_options[0]
             effect_cutoff_value = st.select_slider(
                 "Absolute Hedges’ g cutoff",
@@ -4248,6 +4297,8 @@ with st.sidebar:
                 "available_module_top_fractions", list(MODULE_TOP_FRACTIONS)
             )
             fraction_options = [float(value) for value in fraction_options]
+            if validation_effect_options:
+                fraction_options = sorted({e["value"] for e in validation_effect_options if e["statistic"] == effect_statistic and e["mode"] == "module_top_fraction"})
             effect_cutoff_value = st.radio(
                 "Retained module edges",
                 options=fraction_options,
@@ -4262,6 +4313,9 @@ with st.sidebar:
             value for value in available_directions
             if value in EFFECT_DIRECTION_LABELS
         ] or list(EFFECT_DIRECTION_LABELS)
+        if validation_effect_options:
+            available_directions = [d for d in available_directions if any(e["statistic"] == effect_statistic and e["mode"] == effect_cutoff_mode
+                                    and e["value"] == effect_cutoff_value and e["direction"] == d for e in validation_effect_options)]
         effect_direction = st.radio(
             "Effect direction",
             options=available_directions,
@@ -4285,6 +4339,8 @@ with st.sidebar:
     if differential_edge_rule == "all":
         score_normalization = "standard_pruned"
         analysis_subset = "all_donors"
+        if cohort_scope == VALIDATION_SCOPE and active_view != "MDC":
+            score_normalization = st.radio("Score handling",list(SCORE_NORMALIZATION_LABELS),format_func=SCORE_NORMALIZATION_LABELS.get)
     else:
         available_score_normalizations = (
             cached_effect_size_manifest(module_set).get(
@@ -4306,12 +4362,15 @@ with st.sidebar:
                 "normalization divides edge sums by the number of retained edges."
             ),
         )
-        analysis_subset = st.selectbox(
-            "Evaluation cohort",
-            options=list(ANALYSIS_SUBSET_LABELS),
-            format_func=lambda value: ANALYSIS_SUBSET_LABELS[value],
-            index=list(ANALYSIS_SUBSET_LABELS).index("validation_ad_control"),
-        )
+        if cohort_scope == VALIDATION_SCOPE:
+            analysis_subset = "all_donors"
+            st.caption("Evaluation uses only non-discovery validation donors. Original Discovery/Validation split controls do not apply.")
+        else:
+            analysis_subset = st.selectbox(
+                "Evaluation cohort", options=list(ANALYSIS_SUBSET_LABELS),
+                format_func=lambda value: ANALYSIS_SUBSET_LABELS[value],
+                index=list(ANALYSIS_SUBSET_LABELS).index("validation_ad_control"),
+            )
         if score_normalization == "retained_edge":
             active_feature_labels.update(
                 {
@@ -4321,36 +4380,15 @@ with st.sidebar:
                     "negative_abs_sum": "Negative contribution per retained edge",
                 }
             )
-    cohort_scope_options = ["complete_450"]
-    if (
-        feature != "eigengene"
-        and module_set == "all_donor_corrshrink_l4"
-        and capabilities.get("expanded_components", False)
-        and estimator == "lioness"
-        and differential_edge_rule == "all"
-    ):
-        cohort_scope_options.append("maximum_component")
-    cohort_scope = st.radio(
-        "Donor cohort scope",
-        options=cohort_scope_options,
-        format_func=lambda value: (
-            "Complete VH/SMA/QUAD comparison cohort (357)"
-            if module_set in MUSCLE_MODULE_SETS and value == "complete_450"
-            else COHORT_SCOPE_LABELS[value]
-        ),
-        help=(
-            "The maximum-component sensitivity uses every donor available separately "
-            "for each tissue or tissue pair. Pooled CT/TS remains restricted to the "
-            + (
-                "same 357 complete-tissue donors in the VH/SMA/QUAD comparison cohort."
-                if module_set in MUSCLE_MODULE_SETS
-                else "same 450 complete-tissue donors used by the matched-partition comparison."
-            )
-        ),
-    )
+    if cohort_scope == VALIDATION_SCOPE and not _camel_validation.available(differential_edge_rule):
+        st.info("This validation mask is not ready yet; original-cohort results will not be substituted.")
+        st.stop()
+    if cohort_scope == "maximum_component" and (feature == "eigengene" or differential_edge_rule != "all"):
+        st.info("Maximum-component data are available only for all-edge network features.")
+        st.stop()
     resolution_options = (
         ["Tissue resolved"]
-        if cohort_scope == "maximum_component" or feature == "eigengene"
+        if cohort_scope != "complete_450" or feature == "eigengene"
         else ["Aggregate CT / TS", "Tissue resolved"]
     )
     resolution = st.radio("Resolution", resolution_options)
@@ -4374,7 +4412,7 @@ with st.sidebar:
         "Feature scale",
         options=list(SCALE_LABELS),
         format_func=lambda value: SCALE_LABELS[value],
-        index=0,
+        index=list(SCALE_LABELS).index("raw") if cohort_scope == VALIDATION_SCOPE else 0,
     )
     correlation_method = st.radio(
         "Association correlation",
@@ -4387,7 +4425,7 @@ with st.sidebar:
         disabled=association_interpretation == "categorical",
     )
     diagnosis_options = [*DIAGNOSIS_ORDER]
-    if cohort_scope == "maximum_component":
+    if cohort_scope != "complete_450":
         diagnosis_options.append("Unclassified")
     diagnoses = st.multiselect(
         "Diagnosis groups",
@@ -4717,7 +4755,7 @@ else:
     )
 st.caption(
     f"Module definition: **{module_set_label}** · Estimator: "
-    f"**{ESTIMATOR_LABELS[estimator]}** · Edge subset: "
+    f"**{current_score_framework}** · Edge subset: "
     f"**{effect_rule_label(differential_edge_rule)}** · Differential FDR: "
     f"**{differential_caption}**"
 )
@@ -4780,6 +4818,8 @@ if differential_edge_rule != "all" and analysis_subset != "all_donors":
     plot_data = plot_data.loc[plot_data["ad_control_split"].eq(selected_split)].copy()
 if differential_edge_rule != "all":
     st.warning(
+        "The edge mask is frozen from the original discovery cohort. Every displayed donor is outside the complete-expression cohort; no validation labels select edges. This remains within-ROSMAP validation, not external-cohort validation."
+        if cohort_scope == VALIDATION_SCOPE else
         "The AD–Control edge mask was selected in the discovery donors. Use the held-out "
         "validation view for diagnostic-group evaluation. This validates edge selection, "
         "not a fully external network model: Control-referenced LIONESS still uses its "
@@ -4853,6 +4893,11 @@ if plot_data.empty or not selected_components:
 component_variation = plot_data.groupby("component", observed=True)["metric_value"].agg(
     nonmissing="count", distinct=lambda values: values.nunique(dropna=True)
 )
+if cohort_scope == VALIDATION_SCOPE and "n_retained_edges" in plot_data:
+    empty_validation_components=plot_data.groupby("component")["n_retained_edges"].max()
+    empty_validation_components=empty_validation_components.loc[empty_validation_components.eq(0)].index
+    if len(empty_validation_components):
+        st.warning("No retained edges in: "+", ".join(component_labels.get(c,c) for c in empty_validation_components)+". Standard pruned scores are zero for valid empty masks; retained-edge means are unavailable. Structurally nonexistent blocks are always unavailable.")
 structurally_unavailable_components = component_variation.loc[
     component_variation["nonmissing"].eq(0)
 ].index.tolist()
@@ -6804,6 +6849,12 @@ if active_view == "Feature distributions":
                     mime="text/tab-separated-values",
                 )
 
+if cohort_scope == VALIDATION_SCOPE and active_view in {"CT–TS screen", "Module finder"}:
+    from app_helpers.camel_validation_ui import render_component_screen
+    render_component_screen(phenotype,feature,scale,differential_edge_rule,score_normalization,
+                            tuple(diagnoses),correlation_method,render_plotly_chart)
+    st.stop()
+
 if active_view == "CT–TS screen":
     st.subheader("Descriptive CT–TS pattern screen")
     st.caption(
@@ -7413,7 +7464,7 @@ if active_view == "Edge summaries":
         cached_edge_summaries(
             module_set, estimator, method, module, edge_rule,
             differential_edge_rule, differential_fdr_scope,
-            differential_fdr_threshold,
+            differential_fdr_threshold, cohort_scope,
         ), module_set=module_set, cohort_scope=cohort_scope,
     )
     if differential_edge_rule != "all" and analysis_subset != "all_donors":
@@ -7650,7 +7701,7 @@ if active_view == "Donor edge explorer":
             cached_edge_summaries(
                 module_set, estimator, method, module, edge_rule,
                 differential_edge_rule, differential_fdr_scope,
-                differential_fdr_threshold,
+                differential_fdr_threshold, cohort_scope,
             ), module_set=module_set, cohort_scope=cohort_scope,
         )
         edge_data = edge_data.loc[edge_data["sample_id"].isin(selected_pair)].copy()
@@ -8483,6 +8534,10 @@ if active_view == "Edge volcano":
         )
 
 if active_view == "MDC":
+    if cohort_scope == VALIDATION_SCOPE:
+        from app_helpers.camel_validation_ui import render_mdc as render_validation_mdc
+        render_validation_mdc(module,differential_edge_rule,render_plotly_chart)
+        st.stop()
     st.subheader("Module differential connectivity (MDC)")
     if module_set in MUSCLE_MODULE_SETS and differential_edge_rule == "all":
         mdc_catalog = st.radio(
@@ -9722,7 +9777,12 @@ if active_view == "Statistics":
         "global FDR is the current primary correction; primary-five global FDR is "
         "retained for backward comparison and is unavailable for the seven added outcomes."
     )
-    if resolved and correlation_method == "Spearman":
+    if cohort_scope == VALIDATION_SCOPE:
+        display_columns = ["component_label","diagnosis_group","n","unavailable_reason",
+            f"rho_{scale}",f"p_spearman_{scale}",f"q_spearman_{scale}_across_modules",
+            f"r_{scale}",f"p_{scale}",f"q_{scale}_across_modules",
+            "r_winsor","p_winsor","loo_rint_max_delta","loo_rint_sign_flip"]
+    elif resolved and correlation_method == "Spearman":
         display_columns = [
             "component_label",
             "diagnosis_group",
