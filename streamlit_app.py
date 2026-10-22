@@ -3952,6 +3952,7 @@ view_options = [
     "Feature distributions",
     "Correlation heatmaps",
     "Module–outcome comparison",
+    "Gene & edge associations",
     "Prediction",
     "Module finder",
     "CT–TS screen",
@@ -3970,7 +3971,8 @@ view_options = [
 active_view = st.pills(
     "Analysis view",
     options=view_options,
-    default="Associations",
+    default=st.query_params.get("view", "Associations")
+    if st.query_params.get("view", "Associations") in view_options else "Associations",
     selection_mode="single",
     help=(
         "Only the selected view is calculated. This avoids loading unrelated large "
@@ -3986,6 +3988,11 @@ if active_view == "Module–outcome comparison":
     from app_helpers.score_comparison_ui import render_view as render_score_comparison_view
 
     render_score_comparison_view(data_manifest)
+    st.stop()
+if active_view == "Gene & edge associations":
+    from app_helpers.outcome_screening_ui import render_view as render_outcome_screening
+
+    render_outcome_screening()
     st.stop()
 if active_view == "Partition comparison":
     render_partition_comparison_view()
@@ -4027,7 +4034,8 @@ with st.sidebar:
         "Module definition",
         options=list(available_module_sets()),
         format_func=lambda value: MODULE_SET_LABELS[value],
-        index=0,
+        index=list(available_module_sets()).index(st.query_params["screen_partition"])
+        if st.query_params.get("screen_partition") in available_module_sets() else 0,
         help=(
             "Identically numbered modules in different definitions have different gene "
             "memberships and are always loaded from separate data bundles."
@@ -4082,7 +4090,8 @@ with st.sidebar:
         "Network method",
         options=allowed_methods,
         format_func=readable_method,
-        index=allowed_methods.index("control_anchored")
+        index=allowed_methods.index(st.query_params["screen_method"])
+        if st.query_params.get("screen_method") in allowed_methods else allowed_methods.index("control_anchored")
         if "control_anchored" in allowed_methods
         else 0,
     )
@@ -4116,6 +4125,10 @@ with st.sidebar:
             st.info("No prediction, new differential-edge discovery, or public donor-expression catalog was generated for this validation cohort.")
             st.stop()
     default_module = modules.index(935) if 935 in modules else 0
+    if (st.query_params.get("screen_partition") == module_set
+            and str(st.query_params.get("screen_module", "")).isdigit()
+            and int(st.query_params["screen_module"]) in modules):
+        default_module = modules.index(int(st.query_params["screen_module"]))
     module = st.selectbox(
         "Module",
         options=modules,

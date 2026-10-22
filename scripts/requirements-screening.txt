@@ -1,0 +1,4 @@
+# Private/offline analysis only. Do not include from Streamlit requirements.
+duckdb==1.4.3
+openpyxl==3.1.5
+psutil==7.1.3
