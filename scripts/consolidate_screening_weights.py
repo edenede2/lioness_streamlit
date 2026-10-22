@@ -43,7 +43,7 @@ def consolidate(root=RUN):
                 # Sorted min is deterministic. No averaging across donors,
                 # cohorts, methods or independent normalization profiles.
                 query="SELECT sample_id,identity,cohort,component,min(weight) AS weight FROM weights WHERE component=? GROUP BY sample_id,identity,cohort,component ORDER BY cohort,sample_id,identity"
-                connection.execute(f"COPY ({query}) TO ? (FORMAT PARQUET,COMPRESSION ZSTD,ROW_GROUP_SIZE 32768)",[component,str(temporary)])
+                connection.sql(query,params=[component]).write_parquet(str(temporary),compression='zstd',row_group_size=32768)
                 target=temporary.with_suffix('.parquet');temporary.replace(target)
                 record.append(dict(method=method,component=component,bytes=target.stat().st_size,sha256=sha(target)))
         finally:

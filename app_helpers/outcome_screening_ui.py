@@ -13,11 +13,14 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from app_helpers.data import OUTCOME_LABELS, MODULE_SET_LABELS
-from app_helpers.drive_data import DATA_DIR
+from app_helpers.drive_data import DATA_DIR, LOCAL_DATA_DIR
 from app_helpers.figure_export import render_exportable_plot
 from app_helpers.table_controls import filterable_dataframe
 
-ROOT = DATA_DIR/"outcome_screening"
+# Compact approved aggregate summaries are the repository hot cache, even when
+# large donor catalogs live in the Drive cache and root data_manifest is absent.
+ROOT = (LOCAL_DATA_DIR/"outcome_screening" if (LOCAL_DATA_DIR/"outcome_screening/manifest.json").is_file()
+        else DATA_DIR/"outcome_screening")
 
 
 def load_manifest(root=ROOT):
