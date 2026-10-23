@@ -15,6 +15,14 @@ from app_helpers.camel import COMPONENT_LABELS, FEATURES, FrozenRINT, feature_va
 from app_helpers.drive_data import DATA_DIR, data_path_available, ensure_data_path
 from app_helpers.validation_datasets import DATASETS, dataset, manifest_matches
 
+VALIDATION_DATASET_API_VERSION = 1
+
+
+def supports_dataset(module_set: str, method: str) -> bool:
+    """Check routing support without reading data or substituting a dataset."""
+    config = DATASETS.get(module_set)
+    return config is not None and method in config.methods
+
 
 def _available_path(path: Path) -> bool:
     if path.exists():

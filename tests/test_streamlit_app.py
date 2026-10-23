@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 import pandas as pd
+import pytest
 from streamlit.testing.v1 import AppTest
 
 from app_helpers.correlations import (
@@ -13,6 +14,7 @@ from app_helpers.correlations import (
 )
 
 import app_helpers.charts as chart_helpers
+import app_helpers.camel_validation as validation_helpers
 import app_helpers.correlations as correlation_helpers
 import app_helpers.streaming_associations as streaming_helpers
 
@@ -86,6 +88,41 @@ def test_streamlit_hot_reload_recovers_stale_streaming_helper(monkeypatch) -> No
     assert_app_clean(app)
     assert streaming_helpers.STREAMING_ASSOCIATION_API_VERSION == 2
     assert hasattr(streaming_helpers, "stream_pairwise_distribution_associations")
+
+
+@pytest.mark.parametrize(
+    "missing_attribute",
+    ["DATASETS", "for_dataset", "supports_dataset", "VALIDATION_DATASET_API_VERSION"],
+)
+def test_streamlit_hot_reload_recovers_stale_validation_helper(
+    monkeypatch, missing_attribute
+) -> None:
+    monkeypatch.delattr(validation_helpers, missing_attribute)
+    app = AppTest.from_file(APP, default_timeout=180).run()
+    assert_app_clean(app)
+    assert hasattr(validation_helpers, missing_attribute)
+    assert validation_helpers.VALIDATION_DATASET_API_VERSION == 1
+    assert validation_helpers.supports_dataset("control_derived", "control_anchored")
+    assert validation_helpers.supports_dataset("full_cohort", "standard")
+
+
+@pytest.mark.parametrize(
+    "module_set,method,expected",
+    [
+        ("control_derived", "control_anchored", True),
+        ("full_cohort", "standard", True),
+        ("full_cohort", "control_anchored", True),
+        ("muscle_control_l4", "control_anchored", True),
+        ("muscle_all_donors_l4", "control_anchored", True),
+        ("control_derived", "standard", False),
+        ("muscle_all_donors_l4", "standard", False),
+        ("all_donor_corrshrink", "control_anchored", False),
+        ("unknown", "control_anchored", False),
+        ("full_cohort", "bonobo", False),
+    ],
+)
+def test_validation_dataset_routing_is_explicit(module_set, method, expected) -> None:
+    assert validation_helpers.supports_dataset(module_set, method) is expected
 
 
 def test_streamlit_table_value_filter_filters_rows_and_resets() -> None:

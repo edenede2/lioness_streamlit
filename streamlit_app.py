@@ -20,6 +20,19 @@ from app_helpers.pathology import PATHOLOGY_OUTCOMES
 from app_helpers.camel import score_framework, CAMEL_EXPANSION, VALIDATION_SCOPE
 from app_helpers import camel_validation as _camel_validation
 
+# A deployed entrypoint can be refreshed while Streamlit still holds the old
+# validation reader. Refresh its complete API before routing any dataset;
+# otherwise even the original-cohort default can fail before rendering a page.
+if (
+    getattr(_camel_validation, "VALIDATION_DATASET_API_VERSION", 0) < 1
+    or not hasattr(_camel_validation, "DATASETS")
+    or not all(
+        callable(getattr(_camel_validation, name, None))
+        for name in ("supports_dataset", "for_dataset", "available", "manifest")
+    )
+):
+    _camel_validation = importlib.reload(_camel_validation)
+
 # Streamlit Community Cloud may hot-reload this entrypoint while retaining an older
 # app_helpers.charts module in memory. Reload the helper when its current public API
 # is absent so a repository update cannot leave the two modules out of sync.
@@ -4098,8 +4111,8 @@ with st.sidebar:
     current_score_framework = score_framework(module_set, method, estimator)
     validation_source = (
         _camel_validation.for_dataset(module_set,method)
-        if estimator == "lioness" and module_set in _camel_validation.DATASETS
-        and method in _camel_validation.DATASETS[module_set].methods else None
+        if estimator == "lioness"
+        and _camel_validation.supports_dataset(module_set, method) else None
     )
     if current_score_framework == "CAMEL":
         st.caption(f"CAMEL: {CAMEL_EXPANSION}. Existing estimator, formulas and internal identifiers are unchanged.")
