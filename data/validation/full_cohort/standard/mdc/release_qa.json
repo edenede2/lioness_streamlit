@@ -1,0 +1,140 @@
+{
+  "adjacency_files": 924,
+  "backend_verification": {
+    "api_file_requests": 6,
+    "files": [
+      {
+        "bytes": 8179,
+        "md5": "8a8915513ec59c1e56923903a85e800c",
+        "path": "validation/full_cohort/standard/manifest.json"
+      },
+      {
+        "bytes": 1146746,
+        "md5": "fb6fe9622ef74a726171d0564cd531d2",
+        "path": "validation/full_cohort/standard/mdc/resolved.parquet"
+      },
+      {
+        "bytes": 108000,
+        "md5": "9ef88383ffea5fd62cbac0088276763a",
+        "path": "validation/full_cohort/standard/mdc/adjacency/TS_DLPFC/M1918.npz"
+      }
+    ],
+    "read_only_identity": true,
+    "sharing_changes": false,
+    "status": "passed",
+    "uploads": 0
+  },
+  "checked_utc": "2026-10-25T11:56:13.468938+00:00",
+  "component_counts": [
+    {
+      "AD": 108,
+      "Control": 79,
+      "MCI": 71,
+      "Unclassified": 8,
+      "component": "TS_AC",
+      "component_label": "AC",
+      "n": 266
+    },
+    {
+      "AD": 339,
+      "Control": 229,
+      "MCI": 165,
+      "Unclassified": 19,
+      "component": "TS_DLPFC",
+      "component_label": "DLPFC",
+      "n": 752
+    },
+    {
+      "AD": 80,
+      "Control": 74,
+      "MCI": 35,
+      "Unclassified": 6,
+      "component": "TS_PCGBA23",
+      "component_label": "PCG",
+      "n": 195
+    },
+    {
+      "AD": 97,
+      "Control": 67,
+      "MCI": 61,
+      "Unclassified": 5,
+      "component": "CT_AC__DLPFC",
+      "component_label": "AC\u2013DLPFC",
+      "n": 230
+    },
+    {
+      "AD": 3,
+      "Control": 6,
+      "MCI": 4,
+      "Unclassified": 1,
+      "component": "CT_AC__PCGBA23",
+      "component_label": "AC\u2013PCG",
+      "n": 14
+    },
+    {
+      "AD": 77,
+      "Control": 65,
+      "MCI": 29,
+      "Unclassified": 5,
+      "component": "CT_DLPFC__PCGBA23",
+      "component_label": "DLPFC\u2013PCG",
+      "n": 176
+    }
+  ],
+  "components": 6,
+  "edge_sets": 31,
+  "excluded_complete_donors": 464,
+  "fdr": "Separate BH across valid modules for every component, frozen mask, direction, and null; conservative maximum across nulls",
+  "gene_permutations": 200,
+  "max_existing_direct_adjacency_error": 5.218048215738236e-15,
+  "mdc_rows": 28644,
+  "mdc_sha256": "291c50045697442b4179e2d866c99a6dd6e6e5dabe978c4f150f3641a9e31085",
+  "module_set": "full_cohort",
+  "modules": 154,
+  "network_method": "standard",
+  "privacy": "Group/module aggregates only; no new donor fields or scores",
+  "sample_permutations": 200,
+  "sampled_independent_reproduction": [
+    {
+      "component": "TS_DLPFC",
+      "masks_checked": 31,
+      "max_ratio_error": 2.886579864025407e-15,
+      "module": 188
+    },
+    {
+      "component": "CT_AC__DLPFC",
+      "masks_checked": 31,
+      "max_ratio_error": 5.551115123125783e-16,
+      "module": 188
+    },
+    {
+      "component": "CT_AC__PCGBA23",
+      "masks_checked": 31,
+      "max_ratio_error": 3.552713678800501e-15,
+      "module": 188
+    },
+    {
+      "component": "TS_DLPFC",
+      "masks_checked": 31,
+      "max_ratio_error": 2.6645352591003757e-15,
+      "module": 1918
+    },
+    {
+      "component": "CT_AC__DLPFC",
+      "masks_checked": 31,
+      "max_ratio_error": 5.551115123125783e-16,
+      "module": 1918
+    },
+    {
+      "component": "CT_AC__PCGBA23",
+      "masks_checked": 31,
+      "max_ratio_error": 1.3322676295501878e-15,
+      "module": 1918
+    }
+  ],
+  "seed": 42,
+  "sparse_component": "AC\u2013PCG: 3 AD/6 Controls; no inferential p-values or FDR",
+  "status": "passed",
+  "total_mdc_bytes": 113108427,
+  "validation_donors": 793
+}
