@@ -144,6 +144,65 @@ def test_known_module_common_case_matches_direct_scipy():
         assert stats.loc[spec.key,"spearman_rho"]==pytest.approx(spearmanr(x,y).statistic,abs=1e-12)
 
 
+@pytest.mark.parametrize("coefficients", [(.2,.6,.4),(-.2,-.6,-.4),(-.2,.6,-.4),(.4,.4,0),(.2,np.nan,-.4)])
+def test_composite_preserves_coefficients_orders_weakest_front_and_never_sums(coefficients):
+    series,metadata,columns=fixture_data()
+    stats=comparison_statistics(common_case_scores(metadata,columns,series,["outcome"],121),"outcome")
+    for spec,value in zip(series[:3],coefficients):
+        stats.loc[stats.component.eq(spec.key),"spearman_rho"] = value
+    original_stats=stats.copy(deep=True)
+    fig=score_comparison_figure(stats,series,method="spearman",module=121,
+        outcome_label="Outcome",y_title="Correlation",composite_keys=[s.key for s in series[:3]])
+    assert fig.layout.barmode=="overlay"
+    assert list(fig.layout.xaxis.categoryarray)==["Regional eigengenes","Pooled TS","Pooled CT"]
+    overlaid=[t for t in fig.data if t.x[0]=="Regional eigengenes"]
+    finite=[t for t in overlaid if np.isfinite(t.y[0])]
+    assert [abs(t.y[0]) for t in finite]==sorted([abs(x) for x in coefficients if np.isfinite(x)],reverse=True)
+    assert all(t.base==0 for t in overlaid)
+    assert all(a.width>b.width for a,b in zip(overlaid,overlaid[1:]))
+    assert all(a.zorder<b.zorder for a,b in zip(overlaid,overlaid[1:]))
+    for spec,value in zip(series[:3],coefficients):
+        trace=next(t for t in overlaid if t.name==spec.label)
+        np.testing.assert_allclose(trace.y,[value],equal_nan=True)
+        assert trace.marker.color==spec.color
+        assert trace.text==("",)  # Header statistics avoid overlapping near-equal endpoints.
+    annotation=next(a for a in fig.layout.annotations if a.name=="publication-panel-title-score-groups")
+    assert "N=12" in annotation.text and "ρ=" in annotation.text
+    pd.testing.assert_frame_equal(stats,original_stats)
+
+
+def test_composite_export_filter_colors_and_combined_panels_preserve_overlay():
+    series,metadata,columns=fixture_data()
+    stats=comparison_statistics(common_case_scores(metadata,columns,series,["outcome"],121),"outcome")
+    fig=score_comparison_figure(stats,series,method="spearman",module=121,
+        outcome_label="Outcome",y_title="Correlation",composite_keys=[s.key for s in series[:3]])
+    spec=PlotExportSpec.from_figure("overlay",fig)
+    config=preset_config("Grant figure",spec.aspect_ratio)
+    content=replace(PlotContentConfig(),bar_series=(series[2].label,series[0].label),
+        bar_categories=("Regional eigengenes",),bar_series_colors=((series[2].label,"#AA1177"),))
+    exported=build_artifact(spec,config,content).figure
+    assert len(exported.data)==2 and exported.layout.barmode=="overlay"
+    for trace in exported.data:
+        original=next(t for t in fig.data if t.name==trace.name)
+        assert trace.zorder==original.zorder and trace.width==original.width
+        np.testing.assert_allclose(trace.y,original.y)
+    annotation=next(a for a in exported.layout.annotations if a.name=="publication-panel-title-score-groups")
+    assert "#AA1177" in annotation.text and series[1].label not in annotation.text
+    assert "N=12" in annotation.text and "ρ=" in annotation.text
+    # Color changes without bar selection must refresh the same legend/key too.
+    recolored=build_artifact(spec,config,replace(PlotContentConfig(),bar_series_colors=((series[0].label,"#112233"),))).figure
+    assert "#112233" in next(a.text for a in recolored.layout.annotations if a.name=="publication-panel-title-score-groups")
+    combined=combine_panels([("Bars",fig),("Bars",fig)],title="Composite")
+    assert combined.layout.barmode=="overlay"
+    assert len(combined.data)==2*len(series)
+    with pytest.raises(ValueError,match="at least two"):
+        score_comparison_figure(stats,series,method="spearman",module=121,
+            outcome_label="Outcome",y_title="Correlation",composite_keys=[series[0].key])
+    with pytest.raises(ValueError,match="distinct"):
+        score_comparison_figure(stats,series,method="spearman",module=121,
+            outcome_label="Outcome",y_title="Correlation",composite_keys=[s.key for s in series[:3]],composite_label=series[-1].label)
+
+
 @pytest.mark.skipif(os.environ.get("LIONESS_EXPORT_INTEGRATION")!="1",reason="Requires real Chrome/Kaleido")
 def test_known_module_real_exports(tmp_path):
     from app_helpers.data import load_aggregate,load_resolved,load_sample_metadata,load_kegg,selected_kegg_table_annotation
@@ -169,9 +228,16 @@ def test_known_module_real_exports(tmp_path):
         grouping_labels={g:g for g in options["grouping_levels"]},
         categorical_color_fields=["diagnosis_group"],annotation_fields=["n","coefficient","p"],**options)
     combined=combine_panels([("CT connectivity",scatter),("Score comparison",bars)],title="Module M121: score–outcome comparison")
+    overlay=score_comparison_figure(statistics,series,method="spearman",module=121,
+        outcome_label="Global cognition",y_title="Correlation to clinical cognition",
+        subtitle=selected_kegg_table_annotation(load_kegg(121,"control_derived")) or "KEGG enrichment: unavailable",
+        composite_keys=[s.key for s in series if s.family=="eigengene"])
+    overlay_combined=combine_panels([("CT connectivity",scatter),("Score comparison",overlay)],title="Module M121: score–outcome comparison")
     content_defaults=PlotContentConfig(statistic_fields=("n","coefficient","p"))
     for name,figure,content in [("bars",bars,content_defaults),("combined",combined,content_defaults),
-        ("separate_bars",combined,replace(content_defaults,panel_order=("x2:y2",)))]:
+        ("separate_bars",combined,replace(content_defaults,panel_order=("x2:y2",))),
+        ("overlay",overlay,content_defaults),("overlay_combined",overlay_combined,content_defaults),
+        ("overlay_separate",overlay_combined,replace(content_defaults,panel_order=("x2:y2",)))]:
         spec=PlotExportSpec.from_figure(name,figure)
         config=replace(preset_config("Grant figure",spec.aspect_ratio),dpi=150,width=240,height=165,format="png")
         config=fit_automatic_config(spec,config,content)
@@ -179,8 +245,14 @@ def test_known_module_real_exports(tmp_path):
         (tmp_path/f"M121_{name}.png").write_bytes(data)
         assert Image.open(io.BytesIO(data)).size==config.pixel_dimensions
         exported=[trace for trace in artifact.figure.data if trace.type=="bar"]
-        assert len(exported)==1
-        np.testing.assert_allclose(exported[0].y,bars.data[0].y,atol=1e-12)
+        expected=overlay if "overlay" in name else bars
+        assert len(exported)==len(expected.data)
+        for actual,original in zip(exported,expected.data):
+            np.testing.assert_allclose(actual.y,original.y,atol=1e-12)
+            if "overlay" in name:
+                assert actual.zorder==original.zorder
+        if "overlay" in name:
+            assert artifact.figure.layout.barmode=="overlay"
     statistics.to_csv(tmp_path/"M121_common_donor_statistics.tsv",sep="\t",index=False)
 
 
@@ -204,6 +276,30 @@ def test_associations_default_scatter_and_score_comparison_render():
     assert not app.exception and len(app.get("plotly_chart"))==2
     app=_widget(app.checkbox,"Show separate panels too").set_value(True).run()
     assert not app.exception and len(app.get("plotly_chart"))==5
+
+
+def test_composite_column_controls_and_statistics_render_without_recalculation_changes():
+    import json
+    app=AppTest.from_file(APP/"streamlit_app.py",default_timeout=180).run()
+    app=_widget(app.selectbox,"Module definition").set_value("control_derived").run()
+    app=_widget(app.selectbox,"Module").set_value(121).run()
+    app=_widget(app.selectbox,"Plot type").set_value("Score comparison").run()
+    before=next(d.value for d in app.dataframe if "pearson_r" in d.value.columns).copy()
+    assert _widget(app.radio,"Bar arrangement").value=="Separate bars"
+    app=_widget(app.radio,"Bar arrangement").set_value("Overlaid composite column").run()
+    assert not app.exception and app.get("plotly_chart")
+    assert _widget(app.multiselect,"Series in composite column").value==["eigengene:AC","eigengene:DLPFC","eigengene:PCG"]
+    after=next(d.value for d in app.dataframe if "pearson_r" in d.value.columns)
+    pd.testing.assert_frame_equal(before,after)
+    figure=json.loads(app.get("plotly_chart")[0].proto.spec)
+    assert figure["layout"]["barmode"]=="overlay" and len(figure["data"])==5
+    app=_widget(app.radio,"Score comparison layout").set_value("CT scatter beside comparison bars").run()
+    assert not app.exception
+    figure=json.loads(app.get("plotly_chart")[0].proto.spec)
+    assert figure["layout"]["barmode"]=="overlay"
+    app=_widget(app.multiselect,"Series in composite column").set_value(["eigengene:AC"]).run()
+    assert not app.exception and not app.get("plotly_chart")
+    assert any("at least two" in str(i.value) for i in app.info)
 
 
 def test_comparison_reuses_outcome_group_scale_and_effect_filter_controls():

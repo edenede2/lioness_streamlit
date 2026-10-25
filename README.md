@@ -30,6 +30,22 @@ overlay in the offline analysis environment. After OAuth reauthorization,
 `python scripts/upload_study_metadata.py` can publish immutable verified Drive
 copies and update the local index. Neither command pushes GitHub.
 
+### Same-module score comparison
+
+In **Associations → Plot type → Score comparison**, keep separate score bars or
+choose **Bar arrangement → Overlaid composite column**. Select at least two
+visible series to share a column (the default is AC/DLPFC/PCG eigengenes), and
+edit its label. These are overlapping full signed correlations, never a sum or
+stack: larger absolute correlations are behind smaller ones. Narrower front
+bars keep ties visible. Mixed signs remain on opposite sides of zero.
+The color key above the plot lists every composite coefficient and sample size;
+hover retains both methods and p-values. Correlations, common-donor inclusion,
+and downloadable statistics are unchanged by this presentation setting.
+
+The existing figure exporter preserves the composite in standalone, combined,
+and separate-panel exports. Its bar-series controls can hide/recolor individual
+constituents while keeping their exact heights, draw depth and color-key labels.
+
 ### Publication figure exports
 
 Every application chart has an **Export figure** button. It opens a native

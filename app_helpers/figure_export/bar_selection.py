@@ -149,6 +149,34 @@ def apply_bar_colors(figure: go.Figure, content: Any) -> None:
         # Literal color arrays also prevent a global export palette from
         # overriding the user's explicit model/per-bar choices.
         trace.marker.coloraxis = None
+    _refresh_group_key(figure)
+
+
+def _refresh_group_key(figure: go.Figure) -> None:
+    """Keep optional score keys aligned with selected bars and export colors."""
+    metadata = figure.layout.meta if isinstance(figure.layout.meta, dict) else {}
+    settings = metadata.get("figure_export", {}).get("bar_selection", {})
+    annotation_name = settings.get("group_label_annotation")
+    if not annotation_name:
+        return
+    group_column = int(settings["group_customdata_index"])
+    item_column = settings.get("group_item_customdata_index")
+    display_labels = settings.get("category_display_labels", {})
+    groups = {}
+    for index, trace in enumerate(figure.data):
+        colors = _original_colors(figure, trace, index) if settings.get("group_item_colors") else None
+        for i, (category, record) in enumerate(zip(getattr(trace, _category_axis(trace)), trace.customdata)):
+            label = str(record[int(item_column)]) if item_column is not None else display_labels.get(category, category)
+            label = html.escape(label)
+            if colors:
+                label = f'<span style="color:{html.escape(colors[i], quote=True)}">■</span> {label}'
+            groups.setdefault(str(record[group_column]), []).append(label)
+    separator = "<br />" if settings.get("group_items_multiline") else ", "
+    text = "<br />".join(f"<b>{html.escape(group)}</b>: {separator.join(labels)}"
+                         for group, labels in groups.items())
+    for annotation in figure.layout.annotations:
+        if annotation.name == annotation_name:
+            annotation.text = text
 
 
 def _slice_trace(trace: Any, positions: list[int], count: int) -> None:
@@ -210,21 +238,7 @@ def select_bars(figure: go.Figure, content: Any) -> None:
     figure.data = tuple(trace for _, trace in sorted(retained, key=lambda item: item[0]))
     # Optional structured group keys must describe the exported bars, not bars
     # removed by the existing series/category/item selectors.
-    metadata = figure.layout.meta if isinstance(figure.layout.meta, dict) else {}
-    settings = metadata.get("figure_export", {}).get("bar_selection", {})
-    annotation_name = settings.get("group_label_annotation")
-    if annotation_name:
-        group_column = int(settings["group_customdata_index"])
-        display_labels = settings.get("category_display_labels", {})
-        groups = {}
-        for trace in figure.data:
-            for category, record in zip(getattr(trace, _category_axis(trace)), trace.customdata):
-                groups.setdefault(str(record[group_column]), []).append(display_labels.get(category, category))
-        text = "<br />".join(f"<b>{html.escape(group)}</b>: {html.escape(', '.join(labels))}"
-                            for group, labels in groups.items())
-        for annotation in figure.layout.annotations:
-            if annotation.name == annotation_name:
-                annotation.text = text
+    _refresh_group_key(figure)
     for reference, values in axis_values.items():
         axis = figure.layout[_layout_axis(reference)]
         reversed_axis = axis.autorange == "reversed" or (
