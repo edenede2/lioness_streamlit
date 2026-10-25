@@ -10,6 +10,7 @@ from typing import Any
 import numpy as np
 import plotly.graph_objects as go
 from PIL import ImageColor
+from app_helpers.composite_bars import LABEL_PREFIX, composite_settings
 
 
 @dataclass(frozen=True)
@@ -54,6 +55,8 @@ def bar_options(figure: go.Figure) -> BarOptions | None:
         return None
     if any(reference != "paper" and not reference.endswith(" domain")
            for annotation in figure.layout.annotations
+           if not ((annotation.name or "").startswith(LABEL_PREFIX) and
+                   any(composite_settings(t) for t in figure.data))
            for reference in (annotation.xref or "x", annotation.yref or "y")):
         return None  # Do not leave point-specific labels on omitted bars.
     items, series, observed, category_order = [], [], [], []

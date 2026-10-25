@@ -18,6 +18,7 @@ from plotly.subplots import make_subplots
 
 from app_helpers.charts import aggregate_to_long, resolved_to_long, grouped_association_figure
 from app_helpers.correlations import calculate_correlations
+from app_helpers.composite_bars import refresh_composite_bars
 
 
 @dataclass(frozen=True)
@@ -139,11 +140,12 @@ def _wrapped(text, width=76):
 
 def score_comparison_figure(statistics, series, *, method, module, outcome_label,
                             y_title, subtitle="", composite_keys=(),
-                            composite_label="Regional eigengenes"):
+                            composite_label="Regional eigengenes", show_values=True,
+                            show_significance=False, significance_cutoff=.05):
     series = adjacent_series(series)
     stats = statistics.set_index("component").reindex([s.key for s in series])
     values = stats["spearman_rho" if method == "spearman" else "pearson_r"]
-    coefficient = "ρ" if method == "spearman" else "r"
+    p_values = stats["spearman_p" if method == "spearman" else "pearson_p"]
     labels = [s.label for s in series]
     if len(labels) != len(set(labels)):
         raise ValueError("Give each displayed series a distinct label")
@@ -156,8 +158,8 @@ def score_comparison_figure(statistics, series, *, method, module, outcome_label
     details = np.array([[s.group, int(row.n), row.pearson_r, row.spearman_rho,
                          row.pearson_p, row.spearman_p, row.unavailable_reason]
                         for s, row in zip(series, stats.itertuples())], dtype=object)
-    texts = [f"{coefficient}={v:+.3f}<br>N={int(n)}" if pd.notna(v) else f"Unavailable<br>N={int(n)}"
-             for v, n in zip(values, stats.n)]
+    texts = [(f"{abs(v):.3f}" + ("*" if show_significance and pd.notna(p) and p < significance_cutoff else ""))
+             if pd.notna(v) else "Unavailable" for v, p in zip(values, p_values)]
     hover = ("%{x}<br>%{customdata[0]}<br>N=%{customdata[1]}"
              "<br>Pearson r=%{customdata[2]:.4f}; p=%{customdata[4]:.3g}"
              "<br>Spearman ρ=%{customdata[3]:.4f}; p=%{customdata[5]:.3g}"
@@ -166,25 +168,20 @@ def score_comparison_figure(statistics, series, *, method, module, outcome_label
     if not composite:
         figure.add_trace(go.Bar(x=labels, y=values, marker_color=[s.color for s in series],
             name="Outcome correlation", showlegend=False, cliponaxis=False,
-            text=texts, textposition="outside", customdata=details, hovertemplate=hover))
+            text=texts if show_values else [""]*len(texts), textposition="outside",
+            customdata=details, hovertemplate=hover))
     else:
-        # Full signed values, all based at zero: never stacked or summed. Larger
-        # magnitudes are drawn first and wider; ties still leave visible rims.
-        back_to_front = sorted([i for i,s in enumerate(series) if s.key in composite],
-            key=lambda i: (-abs(values.iloc[i]) if pd.notna(values.iloc[i]) else np.inf, i))
-        depth = {i:rank for rank,i in enumerate(back_to_front)}
-        for i in [j for j,s in enumerate(series) if s.key not in composite]+back_to_front:
-            spec = series[i]
-            overlaid = spec.key in composite
-            summary = (f"{spec.label} · {coefficient}={values.iloc[i]:+.3f} · N={int(stats.n.iloc[i])}"
-                       if pd.notna(values.iloc[i]) else f"{spec.label} · unavailable · N={int(stats.n.iloc[i])}")
-            record = [*details[i], summary if overlaid else spec.label, spec.label]
-            figure.add_trace(go.Bar(x=[composite_label if overlaid else spec.label], y=[values.iloc[i]],
+        for i, spec in enumerate(series):
+            grouped = spec.key in composite
+            summary = spec.label + (f" · {texts[i]}" if show_values and grouped else "")
+            record = [*details[i], summary, spec.label]
+            figure.add_trace(go.Bar(x=[composite_label if grouped else spec.label], y=[values.iloc[i]],
                 name=spec.label, legendgroup=spec.label, showlegend=False,
-                marker=dict(color=spec.color, line=dict(color="white", width=0.7)), base=0,
-                width=0.72-0.40*depth[i]/max(1,len(depth)-1) if overlaid else 0.62,
-                zorder=depth[i]+1 if overlaid else 0,
-                text=[""] if overlaid else [texts[i]], textposition="outside", cliponaxis=False,
+                marker=dict(color=spec.color, line=dict(color="white", width=0 if grouped else 0.7)), base=0,
+                width=.62, text=[texts[i]] if show_values and not grouped else [""],
+                textposition="outside", cliponaxis=False,
+                meta={"score_composite": dict(value=float(values.iloc[i]), order=i, id=spec.key,
+                    label=texts[i], show_value=show_values)} if grouped else None,
                 customdata=np.array([record], dtype=object),
                 hovertemplate=hover.replace("%{x}", "%{customdata[8]}")))
         figure.update_layout(barmode="overlay")
@@ -196,11 +193,9 @@ def score_comparison_figure(statistics, series, *, method, module, outcome_label
             for spec in series:
                 if spec.group != group:
                     continue
-                row = stats.loc[spec.key]
                 label = spec.label
-                if spec.key in composite:
-                    label += (f" · {coefficient}={row[values.name]:+.3f} · N={int(row.n)}"
-                              if pd.notna(row[values.name]) else f" · unavailable · N={int(row.n)}")
+                if spec.key in composite and show_values:
+                    label += f" · {texts[[s.key for s in series].index(spec.key)]}"
                 items.append(f'<span style="color:{spec.color}">■</span> {escape(label)}')
             group_key.append(f"<b>{escape(group)}</b>: " + "<br />".join(items))
         else:
@@ -214,11 +209,14 @@ def score_comparison_figure(statistics, series, *, method, module, outcome_label
         title += f"<br><sup>{_wrapped(subtitle,100)}</sup>"
     figure.update_layout(template="plotly_white", height=720 if composite else 660,
         title=dict(text=title,x=0.01,xanchor="left"),
-        margin=dict(l=70, r=25, t=180+18*(len(series)-3) if composite else 180, b=150), bargap=0.35,
+        margin=dict(l=70, r=80 if composite else 25, t=180+18*(len(series)-3) if composite else 180, b=150), bargap=0.35,
         meta={"figure_export": {"bar_selection": {"category_label": "Score series"}},
               "score_comparison": {"module": int(module), "common_case": True, "subtitle": subtitle,
                   "composite_keys": [s.key for s in series if s.key in composite],
-                  "composite_label": composite_label if composite else None}})
+                  "composite_label": composite_label if composite else None,
+                  "composite_style": "vertical_deltas" if composite else None,
+                  "value_labels": "absolute correlation; direction retained by signed axis",
+                  "significance": f"nominal p < {significance_cutoff:g}" if show_significance else None}})
     ticktext = []
     tick_seen = set()
     for spec in series:
@@ -245,6 +243,7 @@ def score_comparison_figure(statistics, series, *, method, module, outcome_label
             group_items_multiline=True, group_item_colors=True)
     figure.update_yaxes(title_text=y_title, range=[-1.15, 1.15], tickvals=[-1,-0.5,0,0.5,1],
                         zeroline=True, zerolinecolor="#333333", zerolinewidth=1)
+    refresh_composite_bars(figure)
     return figure
 
 
@@ -309,6 +308,7 @@ def combine_panels(panels, *, title):
         meta={"figure_export": export_meta or {}})
     if any(f.layout.barmode == "overlay" for _,f in panels):
         result.update_layout(barmode="overlay")
+    refresh_composite_bars(result)
     return result
 
 
@@ -339,12 +339,14 @@ def render_score_comparison(*, modules, selected_module, tissues, component_labe
         defaults = [s.key for s in (first_ts,first_ct) if s is not None]
     visible = st.multiselect("Visible score series (display order)", list(lookup), default=defaults,
         format_func=lambda key:lookup[key].label,
-        help="Remove/add series to change order. Same-family bars stay adjacent; correlations are never summed or stacked.")
+        help="Remove/add series to change order. Same-family bars stay adjacent; individual correlations are never added together.")
     series = adjacent_series([lookup[key] for key in visible])
-    arrangement = st.radio("Bar arrangement", ["Separate bars", "Overlaid composite column"],
-        help="Composite bars share one zero baseline. Strongest absolute correlations are behind the weaker ones; the height is not a sum.")
+    arrangement = st.radio("Bar arrangement", ["Separate bars", "Vertical composite column"],
+        help="Equal-width segments end at each correlation. Their heights are successive differences, not summed correlations.")
+    show_values = st.checkbox("Show correlation values", value=True)
+    show_significance = st.checkbox("Show significance asterisks (nominal p < 0.05)", value=False)
     composite_keys, composite_label = (), "Regional eigengenes"
-    if arrangement == "Overlaid composite column":
+    if arrangement == "Vertical composite column":
         default_composite = [s.key for s in series if s.family == "eigengene"]
         if len(default_composite) < 2:
             default_composite = [s.key for s in series[:2]]
@@ -352,7 +354,8 @@ def render_score_comparison(*, modules, selected_module, tissues, component_labe
             default=default_composite, format_func=lambda key:lookup[key].label)
         composite_label = st.text_input("Composite column label", "Regional eigengenes"
             if composite_keys and all(lookup[key].family == "eigengene" for key in composite_keys) else "Selected scores")
-        st.caption("Overlapping, not stacked: each color retains its signed coefficient. The weakest absolute correlation is in front, and visible extensions show differences between series. Mixed signs stay on opposite sides of zero; exact coefficients and N are listed above the plot and on hover.")
+        st.caption("Equal-width vertical segments: the column ends at the strongest correlation, not their sum. Each segment is the difference from the preceding value; tied values share a boundary. Opposite signs remain on opposite sides of zero.")
+    st.caption("Value labels show correlation magnitude only, without signs or N; bar position retains direction. Signed correlations, p-values and N remain in hover text and the statistics table. Optional * means recalculated nominal p < 0.05, not module-set FDR.")
     with st.expander("Score labels and colors"):
         edited = []
         for spec in series:
@@ -377,7 +380,7 @@ def render_score_comparison(*, modules, selected_module, tissues, component_labe
     if not selected or not series:
         st.info("Select at least one module and score series.")
         return
-    if arrangement == "Overlaid composite column" and len(composite_keys) < 2:
+    if arrangement == "Vertical composite column" and len(composite_keys) < 2:
         st.info("Select at least two visible score series for a composite column.")
         return
     if composite_keys and (not composite_label.strip() or composite_label in
@@ -411,7 +414,8 @@ def render_score_comparison(*, modules, selected_module, tissues, component_labe
         subtitle = subtitles.get("CT") or next(iter(subtitles.values()), "KEGG enrichment: unavailable")
         bars = score_comparison_figure(statistics, series, method=correlation_method,
             module=module, outcome_label=outcome_labels[outcome], y_title=y_title, subtitle=subtitle,
-            composite_keys=composite_keys, composite_label=composite_label)
+            composite_keys=composite_keys, composite_label=composite_label,
+            show_values=show_values, show_significance=show_significance)
         def scatter(frame, target):
             options = dict(scatter_options)
             options["annotation_fields"] = [v for v in options["annotation_fields"] if v != "fdr"]

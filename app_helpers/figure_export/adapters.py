@@ -35,6 +35,7 @@ from .config import (
     restore_figure,
 )
 from .bar_selection import apply_bar_colors, select_bars
+from app_helpers.composite_bars import refresh_composite_bars
 
 SAFE_COLORS = [
     "#0072B2",
@@ -820,6 +821,7 @@ def build_figure(
             bar_legends[group] = bar_legends.get(group, False) or trace.showlegend is not False
     apply_bar_colors(figure, content_config)
     select_bars(figure, content_config)
+    refresh_composite_bars(figure)
     if not content_config.show_selected_module_annotation:
         for trace in figure.data:
             if trace_role(trace) == "selected_module":
@@ -1271,6 +1273,8 @@ def build_figure(
     minimum_height = _physical_panel_layout(
         figure, selected, config, content, title_row, legend_row, bottom_legend_row, warnings
     )
+    refresh_composite_bars(figure, canvas_height=height, canvas_width=width,
+        label_font=dict(size=fonts.annotation * pt, family=family, color=fonts.color))
     margin = figure.layout.margin.to_plotly_json()
     if min(fonts.tick, fonts.annotation, fonts.legend) < 7:
         warnings.append("Some text is smaller than 7 pt at the final physical size.")

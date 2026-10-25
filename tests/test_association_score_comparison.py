@@ -109,7 +109,7 @@ def test_series_visibility_order_is_adjacent_not_stacked_or_summed():
     assert len(fig.data)==1 and len(fig.data[0].y)==4
     assert fig.layout.barmode not in {"stack","relative"}
     assert list(fig.data[0].marker.color)==[s.color for s in ordered]
-    assert all("N=" in text for text in fig.data[0].text)
+    assert all(text == "1.000" for text in fig.data[0].text)
     spec=PlotExportSpec.from_figure("comparison",fig)
     artifact=build_artifact(spec,preset_config("Grant figure",spec.aspect_ratio),PlotContentConfig())
     np.testing.assert_allclose(artifact.figure.data[0].y,fig.data[0].y)
@@ -144,8 +144,8 @@ def test_known_module_common_case_matches_direct_scipy():
         assert stats.loc[spec.key,"spearman_rho"]==pytest.approx(spearmanr(x,y).statistic,abs=1e-12)
 
 
-@pytest.mark.parametrize("coefficients", [(.2,.6,.4),(-.2,-.6,-.4),(-.2,.6,-.4),(.4,.4,0),(.2,np.nan,-.4)])
-def test_composite_preserves_coefficients_orders_weakest_front_and_never_sums(coefficients):
+@pytest.mark.parametrize("coefficients", [(.2,.6,.4),(-.2,-.6,-.4),(-.2,.6,-.4),(.4,.4,0),(.2,np.nan,-.4),(.19,.192,.3)])
+def test_composite_equal_width_deltas_preserve_endpoints_and_never_sum(coefficients):
     series,metadata,columns=fixture_data()
     stats=comparison_statistics(common_case_scores(metadata,columns,series,["outcome"],121),"outcome")
     for spec,value in zip(series[:3],coefficients):
@@ -157,17 +157,30 @@ def test_composite_preserves_coefficients_orders_weakest_front_and_never_sums(co
     assert list(fig.layout.xaxis.categoryarray)==["Regional eigengenes","Pooled TS","Pooled CT"]
     overlaid=[t for t in fig.data if t.x[0]=="Regional eigengenes"]
     finite=[t for t in overlaid if np.isfinite(t.y[0])]
-    assert [abs(t.y[0]) for t in finite]==sorted([abs(x) for x in coefficients if np.isfinite(x)],reverse=True)
-    assert all(t.base==0 for t in overlaid)
-    assert all(a.width>b.width for a,b in zip(overlaid,overlaid[1:]))
-    assert all(a.zorder<b.zorder for a,b in zip(overlaid,overlaid[1:]))
+    assert all(t.width==.62 for t in overlaid)
+    for positive in (True,False):
+        part=sorted([t for t in finite if (t.meta['score_composite']['value']>=0)==positive],
+            key=lambda t:abs(t.meta['score_composite']['value']))
+        previous=0.
+        for trace in part:
+            assert trace.base==pytest.approx(previous)
+            previous=trace.base+trace.y[0]
+        assert sum(t.y[0] for t in part)==pytest.approx(previous)
     for spec,value in zip(series[:3],coefficients):
         trace=next(t for t in overlaid if t.name==spec.label)
-        np.testing.assert_allclose(trace.y,[value],equal_nan=True)
+        np.testing.assert_allclose([trace.base+trace.y[0]],[value],equal_nan=True)
         assert trace.marker.color==spec.color
-        assert trace.text==("",)  # Header statistics avoid overlapping near-equal endpoints.
+        assert trace.text==("",)  # Exact values have collision-separated callouts.
     annotation=next(a for a in fig.layout.annotations if a.name=="publication-panel-title-score-groups")
-    assert "N=12" in annotation.text and "ρ=" in annotation.text
+    assert "N=" not in annotation.text and "ρ=" not in annotation.text
+    callouts=[a for a in fig.layout.annotations if a.name.startswith('score-composite-value-')]
+    assert len(callouts)==sum(np.isfinite(coefficients))
+    assert len({round(a.ay,8) for a in callouts})==len(callouts)
+    assert all('+' not in a.text and '-' not in a.text and 'N=' not in a.text for a in callouts)
+    assert sorted(a.text for a in callouts)==sorted(f'{abs(v):.3f}' for v in coefficients if np.isfinite(v))
+    spec=PlotExportSpec.from_figure('including_missing',fig)
+    exported=build_artifact(spec,preset_config('Grant figure',spec.aspect_ratio),PlotContentConfig()).figure
+    assert len([a for a in exported.layout.annotations if a.name.startswith('score-composite-value-')])==len(callouts)
     pd.testing.assert_frame_equal(stats,original_stats)
 
 
@@ -188,7 +201,10 @@ def test_composite_export_filter_colors_and_combined_panels_preserve_overlay():
         np.testing.assert_allclose(trace.y,original.y)
     annotation=next(a for a in exported.layout.annotations if a.name=="publication-panel-title-score-groups")
     assert "#AA1177" in annotation.text and series[1].label not in annotation.text
-    assert "N=12" in annotation.text and "ρ=" in annotation.text
+    assert "N=" not in annotation.text and "ρ=" not in annotation.text
+    callouts=[a for a in exported.layout.annotations if a.name.startswith('score-composite-value-')]
+    assert len(callouts)==2 and any(a.arrowcolor=='#AA1177' for a in callouts)
+    assert all(series[1].key not in a.name for a in callouts)
     # Color changes without bar selection must refresh the same legend/key too.
     recolored=build_artifact(spec,config,replace(PlotContentConfig(),bar_series_colors=((series[0].label,"#112233"),))).figure
     assert "#112233" in next(a.text for a in recolored.layout.annotations if a.name=="publication-panel-title-score-groups")
@@ -231,7 +247,7 @@ def test_known_module_real_exports(tmp_path):
     overlay=score_comparison_figure(statistics,series,method="spearman",module=121,
         outcome_label="Global cognition",y_title="Correlation to clinical cognition",
         subtitle=selected_kegg_table_annotation(load_kegg(121,"control_derived")) or "KEGG enrichment: unavailable",
-        composite_keys=[s.key for s in series if s.family=="eigengene"])
+        composite_keys=[s.key for s in series if s.family=="eigengene"],show_significance=True)
     overlay_combined=combine_panels([("CT connectivity",scatter),("Score comparison",overlay)],title="Module M121: score–outcome comparison")
     content_defaults=PlotContentConfig(statistic_fields=("n","coefficient","p"))
     for name,figure,content in [("bars",bars,content_defaults),("combined",combined,content_defaults),
@@ -286,13 +302,19 @@ def test_composite_column_controls_and_statistics_render_without_recalculation_c
     app=_widget(app.selectbox,"Plot type").set_value("Score comparison").run()
     before=next(d.value for d in app.dataframe if "pearson_r" in d.value.columns).copy()
     assert _widget(app.radio,"Bar arrangement").value=="Separate bars"
-    app=_widget(app.radio,"Bar arrangement").set_value("Overlaid composite column").run()
+    app=_widget(app.radio,"Bar arrangement").set_value("Vertical composite column").run()
     assert not app.exception and app.get("plotly_chart")
     assert _widget(app.multiselect,"Series in composite column").value==["eigengene:AC","eigengene:DLPFC","eigengene:PCG"]
     after=next(d.value for d in app.dataframe if "pearson_r" in d.value.columns)
     pd.testing.assert_frame_equal(before,after)
     figure=json.loads(app.get("plotly_chart")[0].proto.spec)
     assert figure["layout"]["barmode"]=="overlay" and len(figure["data"])==5
+    assert len([a for a in figure['layout']['annotations'] if a.get('name','').startswith('score-composite-value-')])==3
+    app=_widget(app.checkbox,"Show significance asterisks (nominal p < 0.05)").check().run()
+    assert not app.exception
+    figure=json.loads(app.get("plotly_chart")[0].proto.spec)
+    assert any('*' in a['text'] for a in figure['layout']['annotations'] if a.get('name','').startswith('score-composite-value-'))
+    pd.testing.assert_frame_equal(before,next(d.value for d in app.dataframe if 'pearson_r' in d.value))
     app=_widget(app.radio,"Score comparison layout").set_value("CT scatter beside comparison bars").run()
     assert not app.exception
     figure=json.loads(app.get("plotly_chart")[0].proto.spec)
@@ -300,6 +322,45 @@ def test_composite_column_controls_and_statistics_render_without_recalculation_c
     app=_widget(app.multiselect,"Series in composite column").set_value(["eigengene:AC"]).run()
     assert not app.exception and not app.get("plotly_chart")
     assert any("at least two" in str(i.value) for i in app.info)
+
+
+def test_composite_export_rebases_retained_series_without_changing_correlations():
+    series,metadata,columns=fixture_data()
+    stats=comparison_statistics(common_case_scores(metadata,columns,series,['outcome'],121),'outcome')
+    for spec,value in zip(series[:3],[.2,.6,.4]):
+        stats.loc[stats.component.eq(spec.key),'spearman_rho']=value
+    fig=score_comparison_figure(stats,series,method='spearman',module=121,
+        outcome_label='Outcome',y_title='Correlation',composite_keys=[s.key for s in series[:3]])
+    spec=PlotExportSpec.from_figure('composite',fig)
+    content=replace(PlotContentConfig(),bar_series=(series[1].label,series[2].label),bar_categories=('Regional eigengenes',))
+    exported=build_artifact(spec,preset_config('Grant figure',spec.aspect_ratio),content).figure
+    retained=sorted(exported.data,key=lambda t:t.meta['score_composite']['value'])
+    assert [t.base for t in retained]==pytest.approx([0,.4])
+    assert [t.y[0] for t in retained]==pytest.approx([.4,.2])
+    assert [t.base+t.y[0] for t in retained]==pytest.approx([.4,.6])
+    pooled=build_artifact(spec,preset_config('Grant figure',spec.aspect_ratio),
+        replace(PlotContentConfig(),bar_categories=('Pooled TS',))).figure
+    assert not any(a.name.startswith('score-composite-value-') for a in pooled.layout.annotations)
+
+
+@pytest.mark.parametrize('method',['pearson','spearman'])
+def test_value_labels_hide_sign_and_n_and_stars_use_selected_nominal_p(method):
+    series,metadata,columns=fixture_data()
+    stats=comparison_statistics(common_case_scores(metadata,columns,series,['outcome'],121),'outcome')
+    stats['spearman_rho']=-.4;stats['pearson_r']=.6
+    stats['spearman_p']=[.01,.05,np.nan,.001,.9]
+    stats['pearson_p']=[.5,.001,.01,np.nan,.05]
+    stats['spearman_fdr_across_modules']=.001  # Must never recycle this FDR.
+    options=dict(method=method,module=121,outcome_label='Outcome',y_title='Correlation',show_significance=True)
+    p=stats.set_index('component').reindex([s.key for s in series])[method+'_p']
+    separate=score_comparison_figure(stats,series,**options)
+    assert [text.endswith('*') for text in separate.data[0].text]==[pd.notna(v) and v<.05 for v in p]
+    assert all('+' not in t and '-' not in t and 'N=' not in t and '=' not in t for t in separate.data[0].text)
+    composite=score_comparison_figure(stats,series,composite_keys=[s.key for s in series[:3]],**options)
+    assert len([a for a in composite.layout.annotations if a.name.startswith('score-composite-value-')])==3
+    hidden=score_comparison_figure(stats,series,composite_keys=[s.key for s in series[:3]],show_values=False,**options)
+    assert not any(a.name.startswith('score-composite-value-') for a in hidden.layout.annotations)
+    assert all(t.text==('',) for t in hidden.data)
 
 
 def test_comparison_reuses_outcome_group_scale_and_effect_filter_controls():
