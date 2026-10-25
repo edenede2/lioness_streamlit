@@ -37,6 +37,14 @@ def stage(root=RUN, destination=None):
         for col in f.select_dtypes(include=["object", "string"]):
             if f[col].dropna().astype(str).str.contains(ENSEMBL_PATTERN).any():
                 raise ValueError("Ensembl identifier in public catalog")
+    modules = [entry for entry in manifest["files"] if entry["path"].startswith("module_edges/")]
+    if modules:
+        reconciliation = json.loads((root/"qa/catalog_reconciliation.json").read_text())
+        if reconciliation.get("status") != "passed" or reconciliation.get("audit_identity") != manifest.get("audit_identity"):
+            raise ValueError("Completed-module catalog reconciliation is required")
+        checked = {e["path"]:e["sha256"] for e in reconciliation["files"] if e.get("status") == "passed"}
+        if any(checked.get(e["path"]) != e["sha256"] for e in modules):
+            raise ValueError("A completed module catalog does not match its FDR reconciliation")
     if destination.exists():
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
         shutil.copytree(destination, root/"rollback"/stamp)
@@ -59,7 +67,25 @@ def stage(root=RUN, destination=None):
         if "module" in frame:
             selectors["modules"] = sorted(map(int, frame.module.dropna().unique()))
         completed.append(dict(entry, catalog_id=entry["path"], path=new_relative.as_posix(), **selectors))
-    atomic_json(dict(manifest, files=completed), destination/"manifest.json")
+    updated = dict(manifest, files=completed)
+    if "pilot_review_file" in manifest:
+        review = manifest["pilot_review_file"]
+        path = source/review["path"]
+        if not path.resolve().is_relative_to(source.resolve()) or sha(path) != review["sha256"] or path.stat().st_size > 1024**2:
+            raise ValueError("Pilot review hash/path/size gate failed")
+        payload = json.loads(path.read_text())
+        def private_key(value):
+            if isinstance(value, dict):
+                return any(k in {"donor", "projid", "sample_id"} or private_key(v) for k,v in value.items())
+            if isinstance(value,list):
+                return any(private_key(v) for v in value)
+            return False
+        if private_key(payload) or payload.get("audit_identity") != manifest.get("audit_identity") or payload.get("genome_launch_authorized") is not False:
+            raise ValueError("Only aggregate, non-authorizing pilot reviews may be staged")
+        relative = Path(path.stem+"__"+review["sha256"][:12]+".json")
+        atomic_json(payload,destination/relative)
+        updated["pilot_review_file"] = dict(review,path=relative.as_posix())
+    atomic_json(updated, destination/"manifest.json")
     return dict(status="staged_locally", files=len(completed), rows=sum(e["rows"] for e in completed), donor_level_published=False)
 
 

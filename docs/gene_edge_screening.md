@@ -132,3 +132,64 @@ uses an outdated one-argument availability mock; this screen does not change it.
 Initial milestone: all six gene catalogs (6,241 frozen outcome–gene hits) are
 locally available. Brain module-edge stages run and release independently; motor
 and whole-network statuses remain explicitly unfinished. No automatic Git push.
+
+## 2026-10-23 brain release and measured motor pilot
+
+All brain module-edge catalogs are complete, including every outcome's separate
+Pearson/Spearman top 10, module BH and partition BH, and frozen-hit validation:
+
+| Partition / network | Modules | Physical edges tested | Selected outcome–edge union rows |
+| --- | ---: | ---: | ---: |
+| Control-derived / Control-referenced | 186 | 10,922,344 | 50,930 |
+| Full-cohort / Control-referenced | 154 | 13,193,607 | 42,746 |
+| Full-cohort / Standard | 154 | 13,193,607 | 42,378 |
+
+The release has 142,295 aggregate rows including gene hits, nine Parquets, and
+no public donor-level expression/weights. Module catalogs are approximately
+13.4–16.2 MiB each and use outcome/module predicate reads, not full-table app
+caching. AppTest exercised all three catalogs in original/validation views and
+both FDR scopes. An isolated main-app startup/navigation measurement peaked at
+462,440 KiB RSS (about 452 MiB); this is not a multi-session Cloud memory bound.
+
+Independent SciPy QA reconciles all selected-validation BH families, and
+full-search module/partition BH for three sampled outcomes × two correlations
+in each catalog (18 partition families, every module). It does not claim an
+independent recomputation of every original full-search outcome.
+
+The full no-q90 motor pilot completed eight configurations and 48 donor fits,
+with zero direct-formula discrepancy and approximately 5.06 GiB peak RAM. Some
+large Standard donor-edge vectors are seed-sensitive (lowest seed-to-seed
+Pearson agreement 0.187). This is **not an outcome correlation**. A bounded
+B=1000 diagnostic barely changed the corresponding agreement (0.203), so a
+larger bootstrap count alone does not resolve the observed issue. Neither pilot
+authorizes a genome-wide launch or changes the production B=200 settings.
+
+An additional, explicitly diagnostic null-coupling candidate is tested separately:
+restrict a uniform permutation's **cycles** from a frozen, label-independent
+source-ID universe. Deleting one reference donor then changes at most one
+surviving donor's null partner; deleting a position from independently sorted
+one-line partner lists can change many partners. The restricted marginal
+permutation remains uniform (exhaustive small-universe test), and all eligible
+null edges, null moments, bootstrap factors and adjacencies are still recomputed.
+Only an aggregate universe hash may be public; never the private identity list.
+The default legacy coupling and all completed brain results are unchanged.
+
+The aggregate pilot review contains measured timings and clearly labeled linear
+cost extrapolations. Dense module timing does not validate whole-network runtime:
+eligible CT-null scanning, out-of-core construction, ranking, and global sorting
+must be reviewed before expansion. Motor and whole-network entries remain
+unavailable pending this review. No push or donor-level publication is automatic.
+
+## Availability controls and deployment
+
+The screening selector labels uncomputed searches **not yet available**. Whole-network
+searches are not the completed within-module edge search: select **Module edges**
+for the three brain catalogs listed above. The motor numerical/resource gate
+does not block those brain catalogs. A pending option shows an availability notice,
+not an exception, and users can switch back to ready results.
+
+Deploy `data/outcome_screening/manifest.json` together with every file it references.
+In particular, the three brain module-edge Parquets must be included despite the
+repository's general `data/` ignore rule. A missing manifest-referenced file now
+produces a specific deployment message rather than an unfinished-search notice.
+Publication contains aggregate statistics only; donor edge weights remain private.

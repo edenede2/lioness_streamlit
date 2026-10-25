@@ -33,6 +33,59 @@ def load_manifest(root=ROOT):
     return record
 
 
+def catalog_label(entry):
+    parts = Path(entry.get("catalog_id",entry["path"])).parts
+    if parts[0] == "genes":
+        return f"{'Brain' if parts[1]=='brain' else 'Motor'} — {Path(parts[-1]).stem.split('__')[0]} expression"
+    if parts[0] == "module_edges":
+        method = Path(parts[-1]).stem.split("__")[0]
+        return f"{MODULE_SET_LABELS.get(parts[1],parts[1])} — {'Standard LIONESS' if method=='standard' else 'Control-referenced'}"
+    return entry.get("catalog_id",entry["path"])
+
+
+SCREENING_LABELS = {"genes": "Genes", "module_edges": "Module edges", "whole_network": "Whole-network edges"}
+
+
+def completed_catalogs(manifest, analysis):
+    """Readiness is catalog-specific; a motor pilot must not block brain hits."""
+    return [e for e in manifest.get("files", [])
+            if e["path"].startswith(analysis + "/") and e.get("status") == "complete"]
+
+
+def pending_catalog_message(analysis):
+    if analysis == "whole_network":
+        return ("Whole-network edge searches have not been run yet. This is an availability notice, "
+                "not a plotting error. They require a validated numerical/resource pilot before execution. "
+                "Choose Module edges for completed within-module brain results, or Genes for expression results.")
+    if analysis == "module_edges":
+        return ("No completed within-module edge catalog is included in this deployment yet. "
+                "Brain module-edge catalogs are released separately from the motor full-M5 pilot; "
+                "a pending motor search does not invalidate completed brain results. Choose Genes for available expression results.")
+    return "No completed gene-expression catalog is included in this deployment yet."
+
+
+def render_pilot_review(manifest,root):
+    entry = manifest.get("pilot_review_file")
+    if not entry:
+        return
+    path = Path(root)/entry["path"]
+    if not path.resolve().is_relative_to(Path(root).resolve()) or path.stat().st_size > 1024**2:
+        raise ValueError("Invalid pilot-review path/size")
+    if hashlib.sha256(path.read_bytes()).hexdigest() != entry["sha256"]:
+        raise ValueError("Pilot review hash mismatch")
+    report = json.loads(path.read_text())
+    if report.get("genome_launch_authorized") is not False:
+        raise ValueError("A pilot report cannot authorize genome-wide execution")
+    with st.expander("Full-M5 pilot: resources and seed stability"):
+        st.warning("Some large-module Standard donor networks were strongly seed-sensitive. Full-M5 expansion remains under review; existing brain catalogs are unaffected.")
+        st.caption("Seed agreement is Pearson correlation between the same donor's edge-weight vectors under different random seeds—not correlation with a phenotype. The pilot used two original donors and three seeds; it does not establish stability of all donor or outcome rankings.")
+        columns = ["partition","method","module","nodes","reference_n","median_donor_seconds","seed_edge_pearson_min","seed_edge_pearson_max","max_peak_rss_gib"]
+        frame = pd.DataFrame(report["measured_configs"])[columns]
+        filterable_dataframe(frame,table_key="screen_m5_pilot_review",table_name="Measured M5 pilot configurations")
+        st.download_button("Download aggregate pilot review (JSON)",path.read_bytes(),"screening_m5_pilot_review.json",mime="application/json")
+        st.caption("Production settings remain B=200. Linear cost extrapolations in the download are illustrative, not validated whole-network forecasts; no genome-wide search was authorized.")
+
+
 @st.cache_data(max_entries=3, ttl=900, show_spinner=False)
 def load_catalog(path, expected_hash, expected_rows, outcome=None, modules=()):
     path = Path(path)
@@ -65,13 +118,22 @@ def render_view(root=ROOT):
     if not manifest.get("files"):
         st.info("Screening catalogs are not available yet. Existing module analyses are unchanged.")
         return
-    analysis = st.radio("Screening view", ["genes", "module_edges", "whole_network"], horizontal=True,
-        format_func=lambda v:{"genes":"Genes", "module_edges":"Module edges", "whole_network":"Whole-network edges"}[v])
-    available = [e for e in manifest["files"] if e["path"].startswith(analysis+"/") and e.get("status") == "complete"]
+    render_pilot_review(manifest,root)
+    catalogs = {kind: completed_catalogs(manifest, kind) for kind in SCREENING_LABELS}
+    ready = [f"{SCREENING_LABELS[kind]} ({len(entries)} catalogs)" for kind, entries in catalogs.items() if entries]
+    st.caption("Ready in this release: " + "; ".join(ready) + ". Pending searches are labeled below.")
+    analysis = st.radio("Screening view", list(SCREENING_LABELS), horizontal=True,
+        format_func=lambda v: SCREENING_LABELS[v] + (" — not yet available" if not catalogs[v] else ""))
+    available = catalogs[analysis]
     if not available:
-        st.info("This catalog is unfinished and cannot be selected. Motor full M5 and whole-network searches require their numerical/resource pilot.")
+        st.info(pending_catalog_message(analysis))
         return
-    entry = st.selectbox("Completed catalog", available, format_func=lambda e:e.get("catalog_id",e["path"]).removeprefix(analysis+"/").removesuffix(".parquet").replace("control_anchored", "Control-referenced").replace("_", " "))
+    if analysis == "module_edges" and manifest.get("motor_module_edges_status", "").startswith("unavailable"):
+        st.caption("Brain module-edge results are available below. Motor module-edge screening remains pending full-M5 seed-stability/resource review.")
+    entry = st.selectbox("Completed catalog", available, format_func=catalog_label)
+    if not (Path(root)/entry["path"]).is_file():
+        st.error("This completed catalog's data file is missing from the deployment. Deploy the manifest and its referenced catalog files together; restarting the app cannot create missing results.")
+        return
     outcomes = [o for o in OUTCOME_LABELS if o in entry.get("outcomes",manifest.get("outcomes",[]))]
     if not outcomes:
         st.info("This completed search has no eligible outcomes.")
@@ -123,6 +185,12 @@ def render_view(root=ROOT):
         return
     view["display_correlation"] = view[r_col]
     view["label"] = view["gene_symbol"] if analysis == "genes" else view.gene_symbol_left+" — "+view.gene_symbol_right+" ("+view[component_col]+")"
+    if analysis == "module_edges" and view.module.nunique()>1:
+        view["label"] = "M"+view.module.astype(str)+": "+view.label
+    # Multiple internal transcript/gene IDs may have one official symbol. Keep
+    # distinct tests as distinct bars; never sum correlations or reveal IDs.
+    duplicate_label = view.label.duplicated(keep=False)
+    view.loc[duplicate_label,"label"] += " ["+view.loc[duplicate_label,"identity"].astype(str).str[:6]+"]"
     view = view.sort_values("display_correlation", key=lambda x:x.abs(), ascending=False, kind="stable")
     limit = st.number_input("Maximum plotted hits", min_value=1, max_value=200, value=min(30, len(view)))
     plotted = view.loc[view.display_correlation.notna()].head(int(limit))
@@ -132,9 +200,12 @@ def render_view(root=ROOT):
         hover = [component_col, p_col, f"{prefix}n"]
         if q_col:
             hover.append(q_col)
-        fig = px.bar(plotted.iloc[::-1], x="display_correlation", y="label", orientation="h", color=component_col,
+        fig = px.bar(plotted.iloc[::-1], x="display_correlation", y="identity", orientation="h", color=component_col,
+            hover_name="label",
             hover_data=[c for c in hover if c in plotted], labels={"display_correlation":f"{correlation.title()} correlation", "label":""}, height=max(450, min(1400, 24*len(plotted)+160)))
         fig.update_layout(legend=dict(orientation="h", y=1.1), margin=dict(t=90, l=80))
+        fig.update_yaxes(title="",tickmode="array",tickvals=plotted.iloc[::-1].identity.tolist(),ticktext=plotted.iloc[::-1].label.tolist(),
+            categoryorder="array",categoryarray=plotted.iloc[::-1].identity.tolist())
         fig.update_xaxes(range=[-1, 1], zeroline=True)
         render_exportable_plot(fig, plot_id="screen_ranking")
     if group == "pooled":

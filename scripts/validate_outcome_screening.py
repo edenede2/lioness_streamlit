@@ -9,11 +9,12 @@ from pathlib import Path
 import sys
 import numpy as np
 import pandas as pd
+import pyarrow.parquet as pq
 from scipy.stats import pearsonr, spearmanr, false_discovery_control
 
 APP = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(APP), str(APP.parents[1]), str(APP/"scripts")]
-from scripts.screening_sources import load_sources, OUTCOMES, assignments
+from scripts.screening_sources import load_sources, OUTCOMES, assignments, sha
 from scripts.run_gene_edge_screen import RUN, atomic_json, require_audit
 
 
@@ -95,6 +96,83 @@ def validate_module_samples(root, partition, method):
     return checked
 
 
+def validate_completed_catalogs(root, search_outcomes=("cogn_global", "gpath", "sqrt_parksc_demog_slope")):
+    """Reconcile every completed hit family and sampled full-search BH families.
+
+    Independent SciPy correction materializes one p-value column (not weights)
+    at a time: <=13.2 million float64 p-values for current brain partitions.
+    The remaining full-search outcomes are covered by the same tested sorter;
+    this is explicitly a sampled, not exhaustive independent recomputation.
+    """
+    root = Path(root)
+    manifest = json.loads((root/"public_bundle/manifest.json").read_text())
+    checked = []
+    for entry in manifest["files"]:
+        if not entry["path"].startswith("module_edges/"):
+            continue
+        path = root/"public_bundle"/entry["path"]
+        frame = pd.read_parquet(path)
+        _, partition, filename = entry["path"].split("/")
+        method = Path(filename).stem
+        table = assignments(partition)
+        assert len(frame) == entry["rows"] and sha(path) == entry["sha256"]
+        assert set(frame.module) == set(table.module)
+        assert not frame.duplicated(["module", "outcome", "identity"]).any()
+        assert set(frame.outcome) == set(OUTCOMES)
+        assert {"donor", "projid", "sample_id"}.isdisjoint(frame.columns)
+        sparse = frame.validation_n.lt(10)
+        for correlation in ("pearson", "spearman"):
+            for (_, _), group in frame.groupby(["module", "outcome"]):
+                ranks = sorted(group[f"{correlation}_rank"].dropna().astype(int))
+                assert ranks == list(range(1, 11))
+                valid = group[f"validation_{correlation}_p"].notna()
+                p = group.loc[valid, f"validation_{correlation}_p"].to_numpy(float)
+                expected = false_discovery_control(p) if len(p) else np.array([])
+                close(group.loc[valid, f"validation_{correlation}_selected_fdr"], expected)
+                assert set(group[f"validation_{correlation}_tested_n"]) == {int(valid.sum())}
+            assert frame.loc[sparse, f"validation_{correlation}_p"].isna().all()
+            for _, group in frame.groupby("outcome"):
+                valid = group[f"validation_{correlation}_p"].notna()
+                p = group.loc[valid, f"validation_{correlation}_p"].to_numpy(float)
+                expected = false_discovery_control(p) if len(p) else np.array([])
+                close(group.loc[valid, f"validation_{correlation}_partition_selected_fdr"], expected)
+                assert set(group[f"validation_{correlation}_partition_tested_n"]) == {int(valid.sum())}
+        independent = []
+        ppaths = sorted((root/"scratch/module_pvalues"/partition/method).glob("M*.parquet"))
+        assert len(ppaths) == table.module.nunique()
+        for outcome in search_outcomes:
+            for correlation in ("pearson", "spearman"):
+                column = f"{outcome}__{correlation}_p"
+                pieces = [pq.read_table(p, columns=["test_id", column], use_threads=False).to_pandas() for p in ppaths]
+                all_tests = pd.concat(pieces, ignore_index=True)
+                assert not all_tests.test_id.duplicated().any()
+                valid = all_tests[column].notna()
+                expected = pd.Series(false_discovery_control(all_tests.loc[valid, column].to_numpy(float)),
+                    index=all_tests.loc[valid, "test_id"])
+                hits = frame.loc[frame.outcome.eq(outcome)]
+                close(hits[f"{correlation}_partition_fdr"], hits.test_id.map(expected))
+                assert set(hits[f"{correlation}_partition_tested_n"]) == {int(valid.sum())}
+                # Independent within-module correction from the full tests,
+                # covering all modules for these sampled outcome families.
+                for p, tests in zip(ppaths, pieces, strict=True):
+                    module = int(p.stem.removeprefix("M"))
+                    module_hits = hits.loc[hits.module.eq(module)]
+                    valid_m = tests[column].notna()
+                    adjusted = pd.Series(false_discovery_control(tests.loc[valid_m, column].to_numpy(float)),
+                        index=tests.loc[valid_m, "test_id"])
+                    close(module_hits[f"{correlation}_fdr"], module_hits.test_id.map(adjusted))
+                independent.append(dict(outcome=outcome, correlation=correlation, tested_edges=int(valid.sum())))
+                print(json.dumps(dict(stage="independent_catalog_QA", partition=partition, method=method,
+                    outcome=outcome, correlation=correlation, status="passed")), flush=True)
+        checked.append(dict(path=entry["path"], sha256=entry["sha256"], rows=len(frame), modules=int(frame.module.nunique()),
+            selected_validation_families="all outcomes/modules and partition families",
+            independent_full_search_families=independent, status="passed"))
+    record = dict(status="passed", audit_identity=require_audit(root), files=checked,
+        independent_scope="All selected-set families; six full-search corrections per catalog, sampled outcomes, all modules")
+    atomic_json(record, root/"qa/catalog_reconciliation.json")
+    return record
+
+
 def validate(root=RUN):
     root = Path(root)
     record = dict(status="passed",audit_identity=require_audit(root),gene_families=validate_genes(root),module_samples=[])
@@ -106,4 +184,9 @@ def validate(root=RUN):
 
 if __name__ == "__main__":
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument("--root",type=Path,default=RUN)
-    print(json.dumps(validate(parser.parse_args().root)))
+    parser.add_argument("--completed-catalogs", action="store_true")
+    args = parser.parse_args()
+    print(json.dumps(validate(args.root)))
+    if args.completed_catalogs:
+        result = validate_completed_catalogs(args.root)
+        print(json.dumps(dict(status=result["status"], completed_catalogs=len(result["files"]))))
