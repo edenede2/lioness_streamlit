@@ -40,6 +40,10 @@ def catalog_label(entry):
     if parts[0] == "module_edges":
         method = Path(parts[-1]).stem.split("__")[0]
         return f"{MODULE_SET_LABELS.get(parts[1],parts[1])} — {'Standard LIONESS' if method=='standard' else 'Control-referenced'}"
+    if parts[0] == "whole_network":
+        method,component = Path(parts[-1]).stem.split("__",1)
+        label = component.replace("TS_","Within ").replace("CT_","Between ").replace("__","–")
+        return f"Brain whole network — {'Standard LIONESS' if method=='standard' else 'Control-referenced'} — {label}"
     return entry.get("catalog_id",entry["path"])
 
 
@@ -173,7 +177,12 @@ def render_view(root=ROOT):
         q_col = None
     else:
         q_col = f"{correlation}_fdr" if cohort == "original" else f"validation_{correlation}_selected_fdr"
-        if analysis != "genes":
+        if analysis == "whole_network":
+            scope = st.radio("FDR scope", ["component", "network"], horizontal=True,
+                format_func=lambda v:"Tissue / tissue-pair" if v == "component" else "Whole-network")
+            if scope == "network":
+                q_col = f"{correlation}_network_fdr" if cohort == "original" else f"validation_{correlation}_network_selected_fdr"
+        elif analysis == "module_edges":
             scope = st.radio("FDR scope", ["within_module", "partition"], horizontal=True, format_func=lambda v:"Original module / selected module hits" if v == "within_module" else "Partition-wide")
             if scope == "partition":
                 q_col = f"{correlation}_partition_fdr" if cohort == "original" else f"validation_{correlation}_partition_selected_fdr"

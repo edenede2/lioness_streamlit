@@ -45,6 +45,15 @@ def stage(root=RUN, destination=None):
         checked = {e["path"]:e["sha256"] for e in reconciliation["files"] if e.get("status") == "passed"}
         if any(checked.get(e["path"]) != e["sha256"] for e in modules):
             raise ValueError("A completed module catalog does not match its FDR reconciliation")
+    for entry in manifest["files"]:
+        if not entry["path"].startswith("whole_network/"):
+            continue
+        method = Path(entry["path"]).stem.split("__",1)[0]
+        receipt = json.loads((root/"qa"/f"whole_network_brain_{method}.json").read_text())
+        checked = {e["path"]:e["sha256"] for e in receipt["files"]}
+        if (receipt.get("status") != "passed" or receipt.get("audit_identity") != manifest.get("audit_identity")
+                or checked.get(entry["path"]) != entry["sha256"]):
+            raise ValueError("Whole-network catalog lacks matching numerical/FDR reconciliation")
     if destination.exists():
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
         shutil.copytree(destination, root/"rollback"/stamp)

@@ -193,3 +193,47 @@ In particular, the three brain module-edge Parquets must be included despite the
 repository's general `data/` ignore rule. A missing manifest-referenced file now
 produces a specific deployment message rather than an unfinished-search notice.
 Publication contains aggregate statistics only; donor edge weights remain private.
+
+## Brain whole-network execution (2026-10-25)
+
+The user authorized a brain numerical/resource pilot followed automatically by
+the exhaustive search **only if that pilot passes**. Motor full-M5 expansion is
+not authorized by a brain pilot and remains gated separately.
+
+```bash
+python scripts/run_brain_whole_screen.py --workers 2 --detach
+```
+
+The separate `--pilot-only` flag runs the same pilot without expansion. The
+runner holds an exclusive lock, uses background priority and one BLAS thread per
+worker, and preserves the prediction jobs. Its status, logs, immutable settings,
+source/code hashes and pilot receipt are under the existing upstream root's
+`whole_network_brain/` directory. Repeating the command resumes valid completed
+262,144-edge shards; a code/source mismatch stops rather than mixing releases.
+
+Coverage is 1,347,713,403 physical edges per method, six components, and all 15
+outcomes, with Control-referenced first and Standard second. Methods are
+serialized so two complete sets of full-search p-values never accumulate.
+Maximum concurrent numerical workers: two; combined RAM: 32 GiB; scratch: 500 GiB.
+
+The pilot checks direct standard/Control LOO and add-one calculations, validation
+Control add-one scoring, independence from unrelated validation donors, direct
+SciPy statistics, measured shard throughput and compression, and all 60 actual
+pilot FDR families. The resource gate conservatively budgets p-values, 80 bytes
+per edge for sort space, and 20 GiB for candidate/checkpoint data.
+
+A single external descending-p sort computes exact BH both globally and within
+each component using separate cumulative minima and valid-test denominators.
+Each outcome/correlation gets a resumable FDR checkpoint. This reduces duplicated
+sorting; it does not change the correction families or use top-hit-only FDR.
+Spearman ranks are shared only when outcomes have identical observed donors.
+
+After frozen-hit validation, original statistics are rechecked against the
+existing kernel, ranks/family sizes and selected-hit validation BH are reconciled,
+and component-sharded aggregate catalogs can be staged locally. No Git push or
+Drive upload occurs. New donor-weight shards remain private and require separate
+publication approval. The app exposes a method only after its complete six-block
+search and full-network FDR have finished; components cannot masquerade as a
+complete genome-wide search. Temporary p-values are recycled only after a
+validated method release, with exact-path checks and a recorded deletion receipt.
+They are regenerable from the frozen inputs; selected results and provenance remain.
