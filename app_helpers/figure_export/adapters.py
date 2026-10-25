@@ -588,6 +588,9 @@ def _physical_panel_layout(
         )
         axis.title.standoff = 4 * pt
         ticks = fonts.tick * pt * 1.6 + 6 * pt if axis.showticklabels is not False else 0
+        if ticks and axis.ticktext is not None:
+            tick_lines = max((str(label).count("<br>") + 1 for label in axis.ticktext), default=1)
+            ticks += (tick_lines - 1) * fonts.tick * pt * 1.3
         axis_band = (
             axis_line * (str(axis.title.text).count("<br>") + 1) + 8 * pt if axis.title.text else 0
         )

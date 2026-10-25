@@ -4510,6 +4510,11 @@ with st.sidebar:
             ),
         )
     if active_view == "Associations":
+        association_plot_type = st.selectbox(
+            "Plot type", ["Scatter", "Score comparison"], index=0,
+            key="association_plot_type",
+            help="Compare same-module eigengenes and coordination on common complete-case donors.",
+        )
         association_metadata = cached_sample_metadata(module_set, cohort_scope)
         association_metadata = association_metadata.loc[
             association_metadata["diagnosis_group"].isin(diagnoses)
@@ -5083,6 +5088,77 @@ with st.expander(
         "least two module genes for a within-tissue (TS) edge; one gene can still participate "
         "in cross-tissue (CT) edges."
     )
+
+if active_view == "Associations" and association_plot_type == "Score comparison":
+    if association_interpretation != "numeric":
+        st.info("Score comparison requires a numeric/ordinal correlation outcome. Nominal category codes are never correlated.")
+        st.stop()
+    from app_helpers.association_score_comparison import render_score_comparison
+
+    comparison_metadata = association_metadata.copy()
+    if grouping_variable != "__all__":
+        comparison_metadata = comparison_metadata.loc[
+            comparison_metadata[grouping_variable].notna()
+            & comparison_metadata[grouping_variable].isin(selected_group_levels)
+        ].copy()
+
+    def comparison_load_scores(comparison_module, family, tissue_resolved):
+        if family == "eigengene":
+            return cached_resolved(module_set, "lioness", method, comparison_module,
+                family, "all", "all", "global", 0.05, "standard_pruned", cohort_scope)
+        common_args = (module_set, estimator, method, comparison_module, family,
+            edge_rule, differential_edge_rule, differential_fdr_scope,
+            differential_fdr_threshold, score_normalization)
+        return (cached_resolved(*common_args, cohort_scope) if tissue_resolved
+                else cached_aggregate(*common_args))
+
+    def comparison_enrichment(comparison_module, components):
+        table = (cached_effect_endpoint_kegg(module_set, method, effect_direction, comparison_module)
+                 if match_effect_kegg_subtitle else cached_kegg(module_set, comparison_module))
+        aggregate_annotation = (selected_kegg_table_annotation(table) if match_effect_kegg_subtitle
+                                else selected_annotation(annotations, comparison_module))
+        subtitles = {}
+        for is_resolved in (False, True):
+            selected = [c for c in components if (c not in {"CT", "TS"}) == is_resolved]
+            subtitles.update(association_kegg_subtitles(table, selected, resolved=is_resolved,
+                aggregate_annotation=aggregate_annotation))
+        if association_kegg_context:
+            subtitles = {c:s.replace("KEGG enrichment", f"KEGG enrichment [{association_kegg_context}]", 1)
+                         for c,s in subtitles.items()}
+        return subtitles
+
+    render_score_comparison(modules=modules, selected_module=module, tissues=active_tissues,
+        default_regions=tissue_composition.loc[tissue_composition["Genes"].gt(0),"Tissue"].tolist(),
+        default_network_components=tuple(
+            c for c,available in (("TS",tissue_composition["Genes"].ge(2).any()),
+                                 ("CT",tissue_composition["Genes"].gt(0).sum()>=2)) if available),
+        component_labels={c:EDGE_SCOPE_LABELS[c] for c in active_component_order},
+        cohort_scope=cohort_scope,
+        eigengenes_available=cohort_scope == "complete_450" and descriptive_eigengene_data_available(module_set),
+        metadata=comparison_metadata, load_scores=comparison_load_scores,
+        outcome=phenotype, outcome_labels=OUTCOME_LABELS, scale=scale,
+        scale_label=SCALE_LABELS[scale], correlation_method=correlation_method.lower(),
+        minimum_n=minimum_group_n, enrichment=comparison_enrichment,
+        render_plot=render_plotly_chart, table_renderer=filterable_dataframe,
+        module_definition=module_set_label,
+        analysis_context=dict(module_set=module_set, estimator=estimator, network_method=method,
+            cohort_scope=cohort_scope, score_scale=scale, edge_rule=edge_rule,
+            differential_edge_rule=differential_edge_rule, differential_fdr_scope=differential_fdr_scope,
+            differential_fdr_threshold=differential_fdr_threshold, score_normalization=score_normalization,
+            evaluation_subset=analysis_subset, diagnosis_filter=" / ".join(diagnoses),
+            grouping_variable=grouping_variable, grouping_levels=" / ".join(map(str,selected_group_levels))),
+        scatter_options=dict(grouping_variable=grouping_variable,
+            grouping_levels=selected_group_levels,
+            grouping_labels={str(v):association_level_label(grouping_variable,v) for v in selected_group_levels},
+            color_by=color_by, color_label=point_color_labels[color_by], hover_fields=HOVER_LABELS,
+            correlation_method=correlation_method.lower(), annotation_fields=annotation_fields,
+            trend_line_rule=trend_line_rule, significance_cutoff=association_significance_cutoff,
+            minimum_group_n=minimum_group_n, show_group_trends=show_group_trend_lines,
+            show_pooled=show_pooled_association, pooled_label="All displayed donors (pooled)",
+            continuous_colorscale=continuous_colorscale, reverse_colorscale=reverse_colorscale,
+            single_point_color=single_point_color if color_by == "__single_color__" else None,
+            pooled_line_dash=pooled_line_dash, categorical_color_fields=CATEGORICAL_ONLY_ASSOCIATION_OUTCOMES))
+    st.stop()
 
 if active_view == "Associations":
     if association_interpretation == "numeric":
