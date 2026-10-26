@@ -141,10 +141,12 @@ def _wrapped(text, width=76):
 def score_comparison_figure(statistics, series, *, method, module, outcome_label,
                             y_title, subtitle="", composite_keys=(),
                             composite_label="Regional eigengenes", show_values=True,
-                            show_significance=False, significance_cutoff=.05):
+                            show_significance=False, significance_cutoff=.05,
+                            absolute_values=False):
     series = adjacent_series(series)
     stats = statistics.set_index("component").reindex([s.key for s in series])
-    values = stats["spearman_rho" if method == "spearman" else "pearson_r"]
+    signed_values = stats["spearman_rho" if method == "spearman" else "pearson_r"]
+    values = signed_values.abs() if absolute_values else signed_values
     p_values = stats["spearman_p" if method == "spearman" else "pearson_p"]
     labels = [s.label for s in series]
     if len(labels) != len(set(labels)):
@@ -215,7 +217,8 @@ def score_comparison_figure(statistics, series, *, method, module, outcome_label
                   "composite_keys": [s.key for s in series if s.key in composite],
                   "composite_label": composite_label if composite else None,
                   "composite_style": "vertical_deltas" if composite else None,
-                  "value_labels": "absolute correlation; direction retained by signed axis",
+                  "y_axis_mode": "absolute" if absolute_values else "signed",
+                  "value_labels": "absolute correlation; original sign retained in hover/statistics",
                   "significance": f"nominal p < {significance_cutoff:g}" if show_significance else None}})
     ticktext = []
     tick_seen = set()
@@ -241,7 +244,8 @@ def score_comparison_figure(statistics, series, *, method, module, outcome_label
         figure.layout.meta["figure_export"]["bar_selection"].update(
             series_label="Individual score series", group_item_customdata_index=7,
             group_items_multiline=True, group_item_colors=True)
-    figure.update_yaxes(title_text=y_title, range=[-1.15, 1.15], tickvals=[-1,-0.5,0,0.5,1],
+    figure.update_yaxes(title_text=y_title, range=[0, 1.15] if absolute_values else [-1.15, 1.15],
+                        tickvals=[0,.25,.5,.75,1] if absolute_values else [-1,-0.5,0,0.5,1],
                         zeroline=True, zerolinecolor="#333333", zerolinewidth=1)
     refresh_composite_bars(figure)
     return figure
@@ -343,6 +347,8 @@ def render_score_comparison(*, modules, selected_module, tissues, component_labe
     series = adjacent_series([lookup[key] for key in visible])
     arrangement = st.radio("Bar arrangement", ["Separate bars", "Vertical composite column"],
         help="Equal-width segments end at each correlation. Their heights are successive differences, not summed correlations.")
+    absolute_values = st.checkbox("Show absolute correlations on Y-axis", value=False,
+        help="Plot |r| or |ρ| above zero. The original signs, p-values and sample counts remain in hover text and tables; scatter panels are unchanged.")
     show_values = st.checkbox("Show correlation values", value=True)
     show_significance = st.checkbox("Show significance asterisks (nominal p < 0.05)", value=False)
     composite_keys, composite_label = (), "Regional eigengenes"
@@ -354,8 +360,11 @@ def render_score_comparison(*, modules, selected_module, tissues, component_labe
             default=default_composite, format_func=lambda key:lookup[key].label)
         composite_label = st.text_input("Composite column label", "Regional eigengenes"
             if composite_keys and all(lookup[key].family == "eigengene" for key in composite_keys) else "Selected scores")
-        st.caption("Equal-width vertical segments: the column ends at the strongest correlation, not their sum. Each segment is the difference from the preceding value; tied values share a boundary. Opposite signs remain on opposite sides of zero.")
-    st.caption("Value labels show correlation magnitude only, without signs or N; bar position retains direction. Signed correlations, p-values and N remain in hover text and the statistics table. Optional * means recalculated nominal p < 0.05, not module-set FDR.")
+        st.caption("Equal-width vertical segments: the column ends at the strongest correlation, not their sum. Each segment is the difference from the preceding value; tied values share a boundary. " +
+            ("Absolute mode combines both signs above zero." if absolute_values else "Opposite signs remain on opposite sides of zero."))
+    st.caption("Value labels show correlation magnitude only, without signs or N. " +
+        ("Absolute mode hides direction on the axis. " if absolute_values else "Bar position retains direction. ") +
+        "Signed correlations, p-values and N remain in hover text and the statistics table. Optional * means recalculated nominal p < 0.05, not module-set FDR.")
     with st.expander("Score labels and colors"):
         edited = []
         for spec in series:
@@ -364,9 +373,13 @@ def render_score_comparison(*, modules, selected_module, tissues, component_labe
             color = right.color_picker(f"Color · {spec.label}", spec.color, key=f"comparison_color::{spec.key}")
             edited.append(replace(spec, label=label, color=color))
         series = edited
-    y_title = st.text_input("Correlation axis label",
-        "Correlation to clinical cognition" if outcome == "cogn_global" else f"Correlation to {outcome_labels[outcome]}",
-        key=f"comparison_y_label::{outcome}")
+    signed_title = "Correlation to clinical cognition" if outcome == "cogn_global" else f"Correlation to {outcome_labels[outcome]}"
+    absolute_title = "Absolute " + signed_title[0].lower() + signed_title[1:]
+    label_key = f"comparison_y_label::{outcome}"
+    default_title = absolute_title if absolute_values else signed_title
+    if label_key not in st.session_state or st.session_state[label_key] in {signed_title, absolute_title}:
+        st.session_state[label_key] = default_title
+    y_title = st.text_input("Correlation axis label", key=label_key)
     layout = st.radio("Score comparison layout", ["Comparison bars", "CT scatter beside comparison bars"])
     combined = layout != "Comparison bars"
     ct_options = [s for s in catalog if s.component == "CT" or s.component.startswith("CT_")]
@@ -376,7 +389,7 @@ def render_score_comparison(*, modules, selected_module, tissues, component_labe
         disabled=not combined or "cogng_path_slope" not in metadata)
     overview = st.checkbox("Show score-scatter overview above", value=False)
     separate = st.checkbox("Show separate panels too", value=False, disabled=not combined)
-    st.caption("Each bar is a signed correlation across the same complete-case donors for that module, after the active cohort and donor filters. Eigengenes belong to this module definition and are not edge-filtered. Network bars use the active method and edge rule. Nominal p-values are recalculated; FDRs from a different donor set are not reused.")
+    st.caption("Each bar shows a " + ("correlation magnitude" if absolute_values else "signed correlation") + " across the same complete-case donors for that module, after the active cohort and donor filters. Eigengenes belong to this module definition and are not edge-filtered. Network bars use the active method and edge rule. Nominal p-values are recalculated; FDRs from a different donor set are not reused.")
     if not selected or not series:
         st.info("Select at least one module and score series.")
         return
@@ -415,7 +428,7 @@ def render_score_comparison(*, modules, selected_module, tissues, component_labe
         bars = score_comparison_figure(statistics, series, method=correlation_method,
             module=module, outcome_label=outcome_labels[outcome], y_title=y_title, subtitle=subtitle,
             composite_keys=composite_keys, composite_label=composite_label,
-            show_values=show_values, show_significance=show_significance)
+            show_values=show_values, show_significance=show_significance, absolute_values=absolute_values)
         def scatter(frame, target):
             options = dict(scatter_options)
             options["annotation_fields"] = [v for v in options["annotation_fields"] if v != "fdr"]
@@ -430,7 +443,8 @@ def render_score_comparison(*, modules, selected_module, tissues, component_labe
             return grouped_association_figure(frame, scatter_statistics(frame,target,options), **kwargs, **options)
         context = dict(**(analysis_context or {}), module=f"M{module}", outcome=outcome, module_definition=module_definition,
                        scale=scale, common_case_n=common.sample_id.nunique(),
-                       bar_arrangement=arrangement, composite_score_series=list(composite_keys))
+                       bar_arrangement=arrangement, composite_score_series=list(composite_keys),
+                       bar_y_axis="absolute" if absolute_values else "signed")
         def show(fig, suffix):
             render_plot(fig, plot_id=f"associations.score_comparison.M{module}.{suffix}",
                 metadata=context, use_container_width=True, config={"displaylogo":False})

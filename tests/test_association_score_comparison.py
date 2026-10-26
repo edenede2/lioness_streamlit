@@ -249,11 +249,17 @@ def test_known_module_real_exports(tmp_path):
         subtitle=selected_kegg_table_annotation(load_kegg(121,"control_derived")) or "KEGG enrichment: unavailable",
         composite_keys=[s.key for s in series if s.family=="eigengene"],show_significance=True)
     overlay_combined=combine_panels([("CT connectivity",scatter),("Score comparison",overlay)],title="Module M121: score–outcome comparison")
+    absolute=score_comparison_figure(statistics,series,method="spearman",module=121,
+        outcome_label="Global cognition",y_title="Absolute correlation to clinical cognition",
+        composite_keys=[s.key for s in series if s.family=="eigengene"],show_significance=True,
+        absolute_values=True)
+    absolute_combined=combine_panels([("CT connectivity",scatter),("Score comparison",absolute)],title="Module M121: absolute score comparison")
     content_defaults=PlotContentConfig(statistic_fields=("n","coefficient","p"))
     for name,figure,content in [("bars",bars,content_defaults),("combined",combined,content_defaults),
         ("separate_bars",combined,replace(content_defaults,panel_order=("x2:y2",))),
         ("overlay",overlay,content_defaults),("overlay_combined",overlay_combined,content_defaults),
-        ("overlay_separate",overlay_combined,replace(content_defaults,panel_order=("x2:y2",)))]:
+        ("overlay_separate",overlay_combined,replace(content_defaults,panel_order=("x2:y2",))),
+        ("absolute_overlay",absolute,content_defaults),("absolute_overlay_combined",absolute_combined,content_defaults)]:
         spec=PlotExportSpec.from_figure(name,figure)
         config=replace(preset_config("Grant figure",spec.aspect_ratio),dpi=150,width=240,height=165,format="png")
         config=fit_automatic_config(spec,config,content)
@@ -261,7 +267,7 @@ def test_known_module_real_exports(tmp_path):
         (tmp_path/f"M121_{name}.png").write_bytes(data)
         assert Image.open(io.BytesIO(data)).size==config.pixel_dimensions
         exported=[trace for trace in artifact.figure.data if trace.type=="bar"]
-        expected=overlay if "overlay" in name else bars
+        expected=absolute if "absolute" in name else overlay if "overlay" in name else bars
         assert len(exported)==len(expected.data)
         for actual,original in zip(exported,expected.data):
             np.testing.assert_allclose(actual.y,original.y,atol=1e-12)
@@ -361,6 +367,82 @@ def test_value_labels_hide_sign_and_n_and_stars_use_selected_nominal_p(method):
     hidden=score_comparison_figure(stats,series,composite_keys=[s.key for s in series[:3]],show_values=False,**options)
     assert not any(a.name.startswith('score-composite-value-') for a in hidden.layout.annotations)
     assert all(t.text==('',) for t in hidden.data)
+
+
+@pytest.mark.parametrize('method',['pearson','spearman'])
+@pytest.mark.parametrize('composite',[False,True])
+def test_absolute_bar_axis_preserves_signed_statistics_p_values_and_exports(method,composite):
+    series,metadata,columns=fixture_data()
+    stats=comparison_statistics(common_case_scores(metadata,columns,series,['outcome'],121),'outcome')
+    coefficient='spearman_rho' if method=='spearman' else 'pearson_r'
+    expected=np.array([-.2,.6,-.4,0,np.nan])
+    for spec,value in zip(series,expected):
+        stats.loc[stats.component.eq(spec.key),coefficient]=value
+    before=stats.copy(deep=True)
+    kwargs=dict(method=method,module=121,outcome_label='Outcome',y_title='Absolute correlation',
+        composite_keys=[s.key for s in series[:3]] if composite else (),show_significance=True)
+    signed=score_comparison_figure(stats,series,**kwargs)
+    absolute=score_comparison_figure(stats,series,absolute_values=True,**kwargs)
+    assert signed.layout.yaxis.range==(-1.15,1.15)
+    assert absolute.layout.yaxis.range==(0,1.15)
+    assert absolute.layout.yaxis.tickvals==(0,.25,.5,.75,1)
+    assert absolute.layout.meta['score_comparison']['y_axis_mode']=='absolute'
+    if composite:
+        for trace,value in zip(absolute.data,expected):
+            np.testing.assert_allclose([trace.base+trace.y[0]],[abs(value)],equal_nan=True)
+        assert max(t.base+t.y[0] for t in absolute.data[:3])==pytest.approx(.6)
+        assert all(a.ay>=0 for a in absolute.layout.annotations if a.name.startswith('score-composite-value-'))
+    else:
+        np.testing.assert_allclose(absolute.data[0].y,np.abs(expected),equal_nan=True)
+    for original,displayed in zip(signed.data,absolute.data):
+        pd.testing.assert_frame_equal(pd.DataFrame(original.customdata),pd.DataFrame(displayed.customdata))
+        assert original.text==displayed.text  # Asterisks and labels are unchanged.
+    spec=PlotExportSpec.from_figure('absolute',absolute)
+    exported=build_artifact(spec,preset_config('Grant figure',spec.aspect_ratio),PlotContentConfig()).figure
+    assert exported.layout.yaxis.range==(0,1.15)
+    for trace,original in zip(exported.data,absolute.data):
+        np.testing.assert_allclose(np.asarray(trace.y,float),np.asarray(original.y,float),equal_nan=True)
+        if composite:assert trace.base==original.base
+    combined=combine_panels([('Signed',signed),('Absolute',absolute)],title='Comparison')
+    assert combined.layout.yaxis.range==signed.layout.yaxis.range
+    assert combined.layout.yaxis2.range==absolute.layout.yaxis.range
+    pd.testing.assert_frame_equal(stats,before)
+
+
+def test_ui_absolute_y_axis_toggles_bars_and_keeps_statistics_and_composite():
+    from app_helpers.figure_export.config import restore_figure
+    app=AppTest.from_file(APP/'streamlit_app.py',default_timeout=180).run()
+    app=_widget(app.selectbox,'Module definition').set_value('control_derived').run()
+    app=_widget(app.selectbox,'Module').set_value(121).run()
+    app=_widget(app.selectbox,'Plot type').set_value('Score comparison').run()
+    assert not _widget(app.checkbox,'Show absolute correlations on Y-axis').value
+    before=next(d.value for d in app.dataframe if 'pearson_r' in d.value).copy(deep=True)
+    signed=restore_figure(app.get('plotly_chart')[0].proto.spec)
+    assert min(signed.data[0].y)<0
+    app=_widget(app.checkbox,'Show absolute correlations on Y-axis').check().run()
+    assert not app.exception
+    absolute=restore_figure(app.get('plotly_chart')[0].proto.spec)
+    np.testing.assert_allclose(absolute.data[0].y,np.abs(signed.data[0].y))
+    assert 'Absolute correlation' in absolute.layout.yaxis.title.text
+    pd.testing.assert_frame_equal(before,next(d.value for d in app.dataframe if 'pearson_r' in d.value))
+    app=_widget(app.radio,'Bar arrangement').set_value('Vertical composite column').run()
+    assert not app.exception
+    composite=restore_figure(app.get('plotly_chart')[0].proto.spec)
+    assert all(t.y[0]>=0 and t.base>=0 for t in composite.data)
+    app=_widget(app.radio,'Score comparison layout').set_value('CT scatter beside comparison bars').run()
+    assert not app.exception
+    combined=restore_figure(app.get('plotly_chart')[0].proto.spec)
+    assert combined.layout.yaxis2.range==(0,1.15)
+    assert all(a.ay>=0 for a in combined.layout.annotations if a.name.startswith('score-composite-value-'))
+    app=_widget(app.text_input,'Correlation axis label').set_value('Custom axis label').run()
+    app=_widget(app.checkbox,'Show absolute correlations on Y-axis').uncheck().run()
+    restored=restore_figure(app.get('plotly_chart')[0].proto.spec)
+    assert restored.layout.yaxis2.range==(-1.15,1.15)
+    assert restored.layout.yaxis2.title.text=='Custom axis label'
+    for original,current in zip([t for t in combined.data if t.type!='bar'],
+                                [t for t in restored.data if t.type!='bar']):
+        np.testing.assert_allclose(np.asarray(original.y,float),np.asarray(current.y,float),equal_nan=True)
+    pd.testing.assert_frame_equal(before,next(d.value for d in app.dataframe if 'pearson_r' in d.value))
 
 
 def test_comparison_reuses_outcome_group_scale_and_effect_filter_controls():

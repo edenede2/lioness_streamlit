@@ -1,6 +1,7 @@
 """Equal-width delta segments for correlation composites, including exports.
 
-Segment endpoints are original signed correlations, not additive correlations.
+Segment endpoints are signed correlations or their displayed magnitudes, never
+additive correlations. Original signed statistics remain in trace hover data.
 Explicit label identities let exports remove/recolor series without stale labels
 or gaps left behind by an omitted segment.
 """
@@ -63,11 +64,12 @@ def refresh_composite_bars(figure, *, canvas_height=None, canvas_width=None, lab
         limits = ylayout.range or (-1.15, 1.15)
         panel_height = max(50, (height - (margins.t or 0) - (margins.b or 0)) * (domain[1] - domain[0]))
         desired_gap = (float(font["size"]) * 1.5 + 3) * abs(limits[1] - limits[0]) / panel_height
-        gap = min(max(.12, desired_gap), 1.9 / max(1, len(labels) - 1))
-        positions = np.array([np.clip(value, -1.05, 1.05) for value, _, _ in labels])
+        lower, upper = max(-1.05, limits[0]+.05), min(1.05, limits[1]-.05)
+        gap = min(max(.12, desired_gap), .9*(upper-lower) / max(1, len(labels) - 1))
+        positions = np.array([np.clip(value, lower, upper) for value, _, _ in labels])
         for i in range(1, len(positions)):
             positions[i] = max(positions[i], positions[i - 1] + gap)
-        positions[-1] = min(positions[-1], 1.05)
+        positions[-1] = min(positions[-1], upper)
         for i in range(len(positions) - 2, -1, -1):
             positions[i] = min(positions[i], positions[i + 1] - gap)
         axis = figure.layout[xaxis[0] + "axis" + xaxis[1:]]
