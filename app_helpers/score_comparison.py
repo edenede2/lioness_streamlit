@@ -485,12 +485,15 @@ def comparison_figure(
     dot_colors: Mapping[str, str] | None = None,
     tick_labels: Mapping[str, str] | None = None,
     show_module_counts: Mapping[str, bool] | None = None,
+    plot_type: str = "box", x_groups: Mapping[str, str] | None = None,
 ) -> go.Figure:
-    """Boxplot values are module/component correlations, never donor scores."""
+    """Distribution values are module/component effects, never donor scores."""
+    if plot_type not in {"box", "violin"}:
+        raise ValueError("Comparison plot type must be box or violin")
     box_colors, dot_colors = box_colors or {}, dot_colors or {}
     tick_labels, show_module_counts = tick_labels or {}, show_module_counts or {}
     figure = go.Figure()
-    tick_values, tick_text = [], []
+    tick_values, tick_text, density_unavailable = [], [], []
     nominal = outcome == "study"
     effect_column = "association_effect" if "association_effect" in displayed else "absolute_correlation"
     for index, row in summary.reset_index(drop=True).iterrows():
@@ -512,11 +515,20 @@ def comparison_figure(
         ))
         part = displayed.loc[displayed["box_id"].eq(box_id)]
         color = box_colors.get(box_id, COMPARISON_COLORS[index % len(COMPARISON_COLORS)])
-        figure.add_trace(go.Box(
+        common = dict(
             x=[index] * len(part), y=part[effect_column], name=row["box_label"], width=.5,
             marker_color=color, line_color=color, boxpoints=False, showlegend=False,
             hoverinfo="y", quartilemethod="linear",
-        ))
+        )
+        if plot_type == "violin" and part[effect_column].nunique() >= 2:
+            common.pop("boxpoints")
+            common.pop("quartilemethod")
+            figure.add_trace(go.Violin(**common, points=False, box_visible=True,
+                spanmode="hard", scalemode="width", fillcolor=color, opacity=.55))
+        else:
+            figure.add_trace(go.Box(**common))
+            if plot_type == "violin":
+                density_unavailable.append(box_id)
         if show_points and not part.empty:
             # Use deterministic jitter; labels/order changes cannot change observations.
             jitter = np.array([int(hashlib.sha256(key.encode()).hexdigest()[:8], 16) / (2**32 - 1) for key in part["observation_key"]])
@@ -535,9 +547,42 @@ def comparison_figure(
         template="plotly_white", title=f"Module associations with {D.ASSOCIATION_OUTCOME_LABELS.get(outcome, outcome)}",
         yaxis=dict(title="Kruskal epsilon-squared (ROS vs MAP)" if nominal else "|Spearman ρ|" if method == "spearman" else "|Pearson r|", range=[0, 1]),
         xaxis=dict(title="Score / partition combination", type="linear", range=[-.6, len(summary) - .4],
-                   tickmode="array", tickvals=tick_values, ticktext=tick_text, automargin=True,
+                   tickmode="array", tickvals=tick_values, ticktext=tick_text, tickangle=0, automargin=True,
                    tickfont=dict(size=12 if len(summary) > 6 else 14)),
         height=740 if len(summary) > 6 else 640, font=dict(size=15),
         margin=dict(t=75, b=210 if len(summary) > 6 else 150, l=65, r=25),
+        meta={"module_comparison_distribution": dict(plot_type=plot_type,
+            density_unavailable_boxes=density_unavailable)},
     )
+    # A second label row groups adjacent boxes without changing order, pooling
+    # observations, or collapsing identically named boxes into one category.
+    spans = []
+    for index, row in summary.reset_index(drop=True).iterrows():
+        label = str((x_groups or {}).get(row["box_id"], "")).strip()
+        if not label:
+            continue
+        if spans and spans[-1]["last"] == index-1 and spans[-1]["label"] == label:
+            spans[-1]["last"] = index
+        else:
+            spans.append(dict(first=index, last=index, label=label))
+    if spans:
+        tick_size = figure.layout.xaxis.tickfont.size
+        ticks = max(text.count("<br>")+1 for text in tick_text) * tick_size * 1.3 + 12
+        group_lines = 1
+        for i, span in enumerate(spans):
+            text = "<br>".join(html.escape(line) for line in textwrap.wrap(
+                span["label"], max(12, 18*(span["last"]-span["first"]+1))))
+            group_lines = max(group_lines, text.count("<br>")+1)
+            figure.add_annotation(name=f"module-comparison-xgroup-{i}",
+                x=(span["first"]+span["last"])/2, y=0, xref="x", yref="y domain",
+                yshift=-ticks-8, text=f"<b>{text}</b>", showarrow=False,
+                xanchor="center", yanchor="top", font=dict(size=14))
+            figure.add_shape(name=f"module-comparison-xgroup-line-{i}",type="line",
+                x0=span["first"]-.35,x1=span["last"]+.35,xref="x",yref="y domain",
+                ysizemode="pixel",yanchor=0,y0=-ticks,y1=-ticks,
+                line=dict(color="#555555",width=1))
+        band = group_lines*18+20
+        figure.update_xaxes(title_standoff=band+12)
+        figure.update_layout(height=figure.layout.height+band,
+            margin_b=figure.layout.margin.b+band)
     return figure

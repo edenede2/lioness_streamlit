@@ -172,6 +172,11 @@ def _box_editor(row: dict, registry: dict, position: int, count: int) -> tuple[d
             key=prefix + "show_module_count",
             help="Include the module count and, for CT + TS, score-observation count below this box's tick label. Counts always remain available in the tables.",
         )
+        x_group_label = st.text_input(
+            "X-axis group label", value=row.get("x_group_label", ""), max_chars=120,
+            key=prefix + "x_group_label",
+            help="Used when Group distributions on X-axis is enabled. Leave blank to use the partition/source name. Adjacent distributions with the same label share a heading; Move up/down changes their order.",
+        )
         source = _select("Partition / score source", registry, row["source"], prefix + "source",
                          format_func=lambda value: registry[value]["label"])
         regional = registry[source]["regional"]
@@ -277,7 +282,7 @@ def _box_editor(row: dict, registry: dict, position: int, count: int) -> tuple[d
         updated = dict(
             uid=row["uid"], label=label.strip() or f"Box {position + 1}",
             box_color=box_color, dot_color=dot_color, dots_match_box=dots_match_box, **config,
-            x_tick_label=tick_label, show_module_count=show_module_count,
+            x_tick_label=tick_label, show_module_count=show_module_count, x_group_label=x_group_label,
         )
         if regional and not selected_tissues:
             st.warning("Select at least one completed region for this box.")
@@ -311,6 +316,14 @@ def render_view(data_manifest: dict) -> None:
         k = st.number_input("K per box", min_value=1, value=20, step=1, disabled=selection != "Top K", key="module_comparison_k")
         fdr = st.selectbox("Module-association FDR filter", [None, .05, .10], format_func=lambda value: "None" if value is None else f"FDR < {value:.2f}" + (" (exploratory)" if value == .10 else ""), key="module_comparison_fdr")
         points = st.checkbox("Show module points", value=True, key="module_comparison_points")
+        plot_type = st.selectbox("Distribution plot type", ["box", "violin"],
+            format_func=lambda value: {"box": "Box plot", "violin": "Violin plot"}[value],
+            key="module_comparison_plot_type")
+        grouped_axis = st.checkbox("Group distributions on X-axis", value=False,
+            key="module_comparison_grouped_axis",
+            help="Add a second row of X-axis group labels below individual ticks. Edit X-axis group label inside each box; blank labels use the partition/source name.")
+        if plot_type == "violin":
+            st.caption("Violin width shows the module-effect density, not donor counts. Distributions with fewer than two distinct values use a box/median instead.")
     rows = st.session_state[BOX_STATE]
     boxes, updated = [], []
     for position, row in enumerate(rows):
@@ -320,7 +333,7 @@ def render_view(data_manifest: dict) -> None:
             boxes.append((new_row["uid"], new_row["label"], spec))
     st.session_state[BOX_STATE] = updated
     st.button("Add box", disabled=len(rows) >= MAX_BOXES, on_click=edit_boxes, args=("add",), key="module_comparison_add")
-    st.caption(f"{len(rows)}/{MAX_BOXES} boxes. Expand a box to change its source, score, component, transformation, edge subset, colors or X-axis tick label.")
+    st.caption(f"{len(rows)}/{MAX_BOXES} distributions. Expand a box to change its source, score, component, transformation, edge subset, colors, X-axis tick or group label.")
     valid = len(boxes) == len(rows)
     # Manifest revision invalidates compact caches when an incremental release changes data.
     regional_manifest = R.load_regional_manifest() if any(entry["regional"] for entry in registry.values()) else {}
@@ -369,6 +382,9 @@ def render_view(data_manifest: dict) -> None:
     for table in (displayed, complete, summary):
         table["source_label"] = table["source"].map(lambda value: registry[value]["label"])
     summary["cohort_label"] = [_cohort_label(spec, registry[spec.source]) for _, _, spec in boxes]
+    groups = {row["uid"]: row["x_group_label"].strip() or registry[row["source"]]["label"] for row in updated}
+    for table in (displayed, complete, summary):
+        table["x_axis_group"] = table["box_id"].map(groups) if grouped_axis else ""
     if selection == "Top K":
         st.warning("Top K is selected using this outcome. These are outcome-selected descriptive distributions, not independent evidence of predictive superiority.")
     if any(spec.differential_edge_rule != "all" for _, _, spec in boxes):
@@ -389,6 +405,7 @@ def render_view(data_manifest: dict) -> None:
             box_colors=box_colors, dot_colors=dot_colors,
             tick_labels={row["uid"]: row["x_tick_label"].strip() for row in updated if row["x_tick_label"].strip()},
             show_module_counts={row["uid"]: row["show_module_count"] for row in updated},
+            plot_type=plot_type, x_groups=groups if grouped_axis else None,
         )
         render_exportable_plot(figure, key="module_outcome_comparison_plot")
     filterable_dataframe(summary, table_key="module_comparison_summary", table_name="Box summaries", hide_index=True)

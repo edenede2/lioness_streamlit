@@ -588,6 +588,16 @@ def _physical_panel_layout(
             axis.title.text or "", max(20, panel_width - 8 * pt), fonts.axis_title * pt, family
         )
         axis.title.standoff = 4 * pt
+        if (isinstance(figure.layout.meta,dict) and figure.layout.meta.get("module_comparison_distribution")
+                and axis.ticktext):
+            # Keep both levels of grouping horizontal in narrow exports. Let
+            # labels wrap at their actual final font size instead of Plotly's
+            # automatic diagonal ticks colliding with the lower group row.
+            tick_width = max(_text_width("modules",fonts.tick*pt,family)+4*pt,
+                             panel_width/max(1,len(axis.ticktext))-4*pt)
+            axis.ticktext = [_wrap_annotation(str(text),tick_width,fonts.tick*pt,family)
+                             for text in axis.ticktext]
+            axis.tickangle = 0
         ticks = fonts.tick * pt * 1.6 + 6 * pt if axis.showticklabels is not False else 0
         if ticks and axis.ticktext is not None:
             tick_lines = max((str(label).count("<br>") + 1 for label in axis.ticktext), default=1)
@@ -603,8 +613,28 @@ def _physical_panel_layout(
             ticks = max(
                 ticks, abs(math.sin(math.radians(axis.tickangle))) * tick_extent + fonts.tick * pt
             )
-        panel_footer = ticks + axis_band
         owned = [a for a, owner in zip(figure.layout.annotations, owners) if owner == p.identifier]
+        group_labels = [a for a in owned if (a.name or "").startswith("module-comparison-xgroup-")]
+        group_band = 0.
+        if group_labels:
+            visible = axis.showticklabels is not False
+            for annotation in group_labels:
+                shape = next((s for s in figure.layout.shapes
+                    if s.name == "module-comparison-xgroup-line-"+annotation.name.removeprefix("module-comparison-xgroup-")), None)
+                if shape is not None:
+                    limits = axis.range or (-.5,len(axis.ticktext)-.5)
+                    group_width = max(20,panel_width*(shape.x1-shape.x0+.3)/abs(limits[1]-limits[0])-4*pt)
+                    annotation.text = _wrap_annotation(annotation.text,group_width,fonts.subtitle*pt,family)
+            group_band = (max(str(a.text).count("<br>")+1 for a in group_labels) * subtitle_line + 16*pt) if visible else 0.
+            axis.title.standoff = group_band + 4*pt
+            for annotation in group_labels:
+                annotation.visible = visible
+                annotation.yshift = -ticks-6*pt
+            for shape in figure.layout.shapes:
+                if (shape.name or "").startswith("module-comparison-xgroup-line-") and shape.xref == p.xaxis:
+                    shape.visible = visible
+                    shape.y0 = shape.y1 = -ticks
+        panel_footer = ticks + group_band + axis_band
         stats = [
             a
             for a in owned

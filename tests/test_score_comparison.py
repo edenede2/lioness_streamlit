@@ -260,6 +260,113 @@ def test_combined_component_custom_tick_can_hide_both_count_lines():
     assert summary.iloc[0]["plotted_score_observations"] == 6
 
 
+@pytest.mark.parametrize("points", [True, False])
+def test_violin_reuses_exact_module_effects_colors_and_points(points):
+    spec = C.ComparisonSeriesSpec("control_derived")
+    result, _, _ = _fixture(spec)
+    shown, _, summary = C.display_results({spec.key: result}, [("a", "CT", spec), ("b", "TS", spec)])
+    original_shown, original_summary = shown.copy(deep=True), summary.copy(deep=True)
+    kwargs = dict(box_colors={"a": "#112233", "b": "#AA4455"}, dot_colors={"b": "#000000"})
+    boxes = C.comparison_figure(shown, summary, "cogn_global", "spearman", points, **kwargs)
+    violins = C.comparison_figure(shown, summary, "cogn_global", "spearman", points, plot_type="violin", **kwargs)
+    assert len(violins.data) == len(boxes.data)
+    for before, after in zip(boxes.data, violins.data):
+        np.testing.assert_array_equal(after.y, before.y)
+        np.testing.assert_array_equal(after.x, before.x)
+        if before.type == "box":
+            assert after.type == "violin" and after.spanmode == "hard" and after.scalemode == "width"
+            assert after.box.visible and after.points is False
+            assert after.line.color == before.line.color == after.fillcolor
+        else:
+            assert after.marker.color == before.marker.color
+            np.testing.assert_array_equal(after.customdata, before.customdata)
+    assert violins.layout.yaxis.range == (0, 1)
+    pd.testing.assert_frame_equal(shown, original_shown)
+    pd.testing.assert_frame_equal(summary, original_summary)
+
+
+def test_violin_sparse_constant_and_empty_distributions_have_explicit_fallback():
+    spec = C.ComparisonSeriesSpec("control_derived")
+    result, _, _ = _fixture(spec)
+    shown, _, summary = C.display_results({spec.key: result}, [("a", "One module", spec)], top_k=1)
+    figure = C.comparison_figure(shown, summary, "cogn_global", "spearman", plot_type="violin")
+    assert figure.data[0].type == "box" and len(figure.data[0].y) == 1
+    assert figure.layout.meta["module_comparison_distribution"]["density_unavailable_boxes"] == ["a"]
+    with pytest.raises(ValueError, match="plot type"):
+        C.comparison_figure(shown, summary, "cogn_global", "spearman", plot_type="invalid")
+
+
+@pytest.mark.parametrize("plot_type", ["box", "violin"])
+def test_grouped_axis_spans_adjacent_boxes_without_merging_or_reordering(plot_type):
+    from app_helpers.figure_export import ExportConfig, PlotContentConfig, PlotExportSpec
+    from app_helpers.figure_export.adapters import build_artifact
+    spec = C.ComparisonSeriesSpec("control_derived")
+    result, _, _ = _fixture(spec)
+    boxes = [(str(i), "Same name", spec) for i in range(4)]
+    shown, _, summary = C.display_results({spec.key: result}, boxes)
+    plain = C.comparison_figure(shown, summary, "cogn_global", "spearman", plot_type=plot_type)
+    groups = {"0": "Regional <genes>", "1": "Regional <genes>", "2": "Coordination", "3": "Regional <genes>"}
+    figure = C.comparison_figure(shown, summary, "cogn_global", "spearman", plot_type=plot_type, x_groups=groups)
+    assert json.loads(figure.to_json())["data"] == json.loads(plain.to_json())["data"]
+    assert figure.layout.xaxis.ticktext == plain.layout.xaxis.ticktext
+    labels = [a for a in figure.layout.annotations if a.name.startswith("module-comparison-xgroup-")]
+    assert len(labels) == 3 and [a.x for a in labels] == [.5, 2, 3]
+    assert "&lt;genes&gt;" in labels[0].text
+    assert len(figure.layout.shapes) == 3
+    assert figure.layout.shapes[0].x0 == -.35 and figure.layout.shapes[0].x1 == 1.35
+    exported = build_artifact(PlotExportSpec.from_figure("grouped", figure),
+        ExportConfig(width=180, height=140), PlotContentConfig()).figure
+    assert len(exported.layout.annotations) == 3
+    assert exported.layout.xaxis.title.standoff > 20
+    assert all(a.yshift < -20 for a in exported.layout.annotations)
+    hidden = build_artifact(PlotExportSpec.from_figure("grouped", figure),
+        ExportConfig(width=180, height=140), PlotContentConfig(show_x_ticks=False)).figure
+    assert all(a.visible is False for a in hidden.layout.annotations)
+    assert all(s.visible is False for s in hidden.layout.shapes)
+
+
+def test_ui_violin_and_axis_groups_are_display_only_and_follow_box_identity(monkeypatch):
+    calls = _mock_ui(monkeypatch)
+    app = AppTest.from_function(_ui_app, default_timeout=30).run()
+    assert _widget(app.selectbox, "Distribution plot type").value == "box"
+    assert not _widget(app.checkbox, "Group distributions on X-axis").value
+    app = _widget(app.button, "Calculate comparison").click().run()
+    original = app.dataframe[0].value.copy(deep=True)
+    app = _widget(app.selectbox, "Distribution plot type").set_value("violin").run()
+    app = _widget(app.checkbox, "Group distributions on X-axis").check().run()
+    assert not app.exception and len(calls) == 5
+    figure = json.loads(app.get("plotly_chart")[0].proto.spec)
+    assert sum(t["type"] == "violin" for t in figure["data"]) == 5
+    assert len(figure["layout"]["annotations"]) == 2
+    uid = app.session_state[U.BOX_STATE][0]["uid"]
+    prefix = f"module_comparison__{uid}__"
+    app = app.text_input(key=prefix + "x_group_label").set_value("Custom genes").run()
+    figure = json.loads(app.get("plotly_chart")[0].proto.spec)
+    assert "Custom genes" in figure["layout"]["annotations"][0]["text"]
+    app = app.button(key=prefix + "down").click().run()
+    assert next(row for row in app.session_state[U.BOX_STATE] if row["uid"] == uid)["x_group_label"] == "Custom genes"
+    pd.testing.assert_frame_equal(
+        original.drop(columns="x_axis_group").sort_values("box_id").reset_index(drop=True),
+        app.dataframe[0].value.drop(columns="x_axis_group").sort_values("box_id").reset_index(drop=True))
+    assert not app.exception and len(calls) == 5
+
+
+def test_narrow_grouped_export_keeps_words_and_group_rows_legible():
+    from app_helpers.figure_export import PlotContentConfig, PlotExportSpec, preset_config
+    from app_helpers.figure_export.adapters import build_artifact
+    spec = C.ComparisonSeriesSpec("control_derived")
+    result, _, _ = _fixture(spec)
+    boxes = [(str(i), "CT" if i%2 == 0 else "TS", spec) for i in range(6)]
+    shown, _, summary = C.display_results({spec.key: result}, boxes)
+    groups = {str(i): ("Connectivity", "Positive Density", "Negative Density")[i//2] for i in range(6)}
+    figure = C.comparison_figure(shown, summary, "cogn_global", "spearman", plot_type="violin", x_groups=groups)
+    config = dataclasses.replace(preset_config("Grant figure"), width=150, height=160)
+    exported = build_artifact(PlotExportSpec.from_figure("narrow", figure),config,PlotContentConfig()).figure
+    assert exported.layout.xaxis.tickangle == 0
+    assert all("module<br>s" not in text for text in exported.layout.xaxis.ticktext)
+    assert "Connectivity" in exported.layout.annotations[0].text
+
+
 @pytest.mark.parametrize("source", ["full_cohort", "control_derived", "muscle_control_l4", "muscle_all_donors_l4"])
 @pytest.mark.parametrize("scale", C.SCALE_ORDER)
 def test_projected_multitissue_reader_routes_filters_and_components(monkeypatch, source, scale):
