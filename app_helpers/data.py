@@ -29,6 +29,9 @@ MODULE_SET_LABELS = {
     "all_donor_corrshrink_l4": "All-donor CorShrink M1 L4 modules",
     "muscle_control_l4": "Control-derived VH/SMA/QUAD M5 L4 modules (155)",
     "muscle_all_donors_l4": "All-donor VH/SMA/QUAD M5 L4 modules (173)",
+    # A new namespace; available_module_sets keeps this hidden until a
+    # validated public manifest and module-details bundle are deployed.
+    "matched_control_brain_l4": "Matched 70/30 Control-discovery brain L4 modules",
 }
 MODULE_SET_DIRS = {
     "full_cohort": DATA_DIR,
@@ -36,6 +39,7 @@ MODULE_SET_DIRS = {
     "all_donor_corrshrink_l4": DATA_DIR / "all_donor_corrshrink_l4",
     "muscle_control_l4": DATA_DIR / "muscle_control_l4",
     "muscle_all_donors_l4": DATA_DIR / "muscle_all_donors_l4",
+    "matched_control_brain_l4": DATA_DIR / "matched_control_brain_l4",
 }
 MODULE_SET_METHODS = {
     "full_cohort": ("standard", "control_anchored"),
@@ -45,6 +49,7 @@ MODULE_SET_METHODS = {
     # LIONESS analysis is a supported public method for this module set.
     "muscle_control_l4": ("control_anchored",),
     "muscle_all_donors_l4": ("control_anchored",),
+    "matched_control_brain_l4": ("control_anchored",),
 }
 MODULE_SET_TISSUES = {
     "full_cohort": ("AC", "DLPFC", "PCG"),
@@ -52,6 +57,7 @@ MODULE_SET_TISSUES = {
     "all_donor_corrshrink_l4": ("AC", "DLPFC", "PCG"),
     "muscle_control_l4": ("VH", "SMA", "QUAD"),
     "muscle_all_donors_l4": ("VH", "SMA", "QUAD"),
+    "matched_control_brain_l4": ("AC", "DLPFC", "PCG"),
 }
 _BRAIN_COMPONENTS = (
     "CT_AC__DLPFC",
@@ -65,6 +71,7 @@ MODULE_SET_COMPONENTS = {
     "full_cohort": _BRAIN_COMPONENTS,
     "control_derived": _BRAIN_COMPONENTS,
     "all_donor_corrshrink_l4": _BRAIN_COMPONENTS,
+    "matched_control_brain_l4": _BRAIN_COMPONENTS,
     "muscle_control_l4": (
         "CT_VH__SMA",
         "CT_VH__QUAD",

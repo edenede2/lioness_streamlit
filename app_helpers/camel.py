@@ -15,7 +15,7 @@ CAMEL_NAME = "CAMEL"
 CAMEL_EXPANSION = "Contrastive Anchored Modular Edge-type LIONESS"
 VALIDATION_SCOPE = "incomplete_region_validation"
 VALIDATION_LABEL = "Incomplete-region validation donors"
-CAMEL_MODULE_SETS = frozenset({"control_derived", "muscle_control_l4"})
+CAMEL_MODULE_SETS = frozenset({"control_derived", "muscle_control_l4", "matched_control_brain_l4"})
 COMPONENT_TISSUES = {
     "TS_AC": ("AC",), "TS_DLPFC": ("DLPFC",), "TS_PCGBA23": ("PCGBA23",),
     "CT_AC__DLPFC": ("AC", "DLPFC"),
