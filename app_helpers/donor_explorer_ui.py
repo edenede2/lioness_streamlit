@@ -198,8 +198,19 @@ def _details(frame, regional, original, dataset, context):
 
 def render_view(render):
     st.header("Donor explorer")
+    from app_helpers.control_calibrated import registry as CC,adapter as CA
+    if CC.ready():
+        source=st.radio('Donor explorer content',['metadata',*CC.ESTIMATORS],format_func=lambda v:'Donor metadata and tissue coverage' if v=='metadata' else 'Control-calibrated connectivity · beta'+str(CC.ESTIMATORS[v]),horizontal=True,key='donor_explorer_calibrated_source')
+        if CC.is_calibrated(source):
+            from app_helpers.control_calibrated.ui import render_view as calibrated_view
+            catalog=CA.catalog();family=st.selectbox('Donor connectivity partition',list(catalog['families']),format_func=lambda v:catalog['families'][v]['label'],key='donor_explorer_calibrated_partition');calibrated_view('Donor explorer',family,source,render);return
     st.caption("Explore packaged donor metadata and expression-region coverage. No expression, edge, score or prediction files are loaded.")
     dataset = st.radio("Donor dataset", list(D.DATASET_LABELS), format_func=D.DATASET_LABELS.get, horizontal=True, key="donor_explorer_dataset")
+    if CC.ready():
+        with st.expander('Frozen B role and independent-score availability'):
+            roles=CA.role_status(dataset);st.dataframe(roles.groupby('role').size().rename('donors').reset_index(),hide_index=True)
+            sample=st.selectbox('Check donor protocol role',roles.sample_id.tolist(),key='donor_explorer_cc_role_'+dataset);row=roles[roles.sample_id.eq(sample)].iloc[0]
+            st.write('Eligible independent-target role under B; component and edge coverage determine score availability.' if row.independent_B_score_available else row.independent_B_unavailable_reason)
     st.caption("Brain and motor public sample IDs have separate namespaces; identical IDs are not evidence of the same person. This page never links the datasets.")
     try:
         catalog, original = cached_catalog(dataset, D.source_revision(dataset))

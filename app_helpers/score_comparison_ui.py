@@ -19,6 +19,7 @@ from app_helpers.score_comparison import (
     effect_settings, source_registry,
 )
 from app_helpers.table_controls import filterable_dataframe
+from app_helpers.control_calibrated import registry as CC, adapter as CA
 
 
 BOX_STATE = "module_comparison_boxes"
@@ -85,6 +86,7 @@ def _select(label, options, default, key, **kwargs):
 
 
 def _cohort_label(spec: ComparisonSeriesSpec, entry: dict) -> str:
+    if CC.is_calibrated(spec.estimator):return 'Frozen B independent targets · '+spec.cohort_scope
     if spec.cohort_scope == "incomplete_region_validation":
         return "Non-discovery validation donors (component-specific N)"
     if spec.is_regional:
@@ -180,12 +182,24 @@ def _box_editor(row: dict, registry: dict, position: int, count: int) -> tuple[d
         source = _select("Partition / score source", registry, row["source"], prefix + "source",
                          format_func=lambda value: registry[value]["label"])
         regional = registry[source]["regional"]
-        features = ["eigengene", "connectivity"] if regional else list(D.FEATURE_LABELS)
-        if not regional and D.descriptive_eigengene_data_available(source):
+        estimators=['lioness']+ (list(CC.ESTIMATORS) if CC.ready(source) else [])
+        estimator=_select('Donor score source',estimators,row.get('estimator','lioness'),prefix+'estimator',format_func=lambda v:'Existing Connectivity / eigengene' if v=='lioness' else 'Control-calibrated connectivity · beta'+str(CC.ESTIMATORS[v]))
+        calibrated=CC.is_calibrated(estimator)
+        features = list(CC.METRICS) if calibrated else ["eigengene", "connectivity"] if regional else list(D.FEATURE_LABELS)
+        if not calibrated and not regional and D.descriptive_eigengene_data_available(source):
             features.append("eigengene")
         feature = _select("Module score", features, row["feature"], prefix + "feature",
-                          format_func=lambda value: {**D.FEATURE_LABELS, **D.EIGENGENE_FEATURE_LABELS}[value])
-        if regional:
+                          format_func=lambda value: {**D.FEATURE_LABELS, **D.EIGENGENE_FEATURE_LABELS,**CC.feature_labels()}[value])
+        if calibrated:
+            method='control_anchored';cohort=_select('Source cohort',['complete_450','incomplete_region_validation','maximum_component'],row.get('cohort_scope','complete_450'),prefix+'cohort',format_func=lambda v:'Independent targets · '+v)
+            selected_tissues=st.multiselect('Regions in this box',R.regional_tissues(source),default=list(R.regional_tissues(source)),key=prefix+'cc_tissues') if regional else ()
+            component='regional' if regional else _select('Score component',['CT','TS','all',COMBINED_COMPONENT,*D.module_set_components(source)],row.get('component','CT'),prefix+'component',format_func=lambda v:COMPONENT_LABELS.get(v,v))
+            edges=dict(differential_edge_rule='all',differential_fdr_scope='per_module',differential_fdr_threshold=.05,score_normalization='common_eligible_physical_edges')
+            if not regional:
+                from app_helpers.control_calibrated.masks import family_options
+                options=family_options(source);selected_mask=_select('Frozen physical-edge mask',options,row.get('calibrated_mask','all'),prefix+'cc_mask',format_func=lambda k:options[k]['label']);chosen=options[selected_mask];edges.update(differential_edge_rule=chosen['rule'],differential_fdr_scope=chosen.get('fdr_scope','global'),differential_fdr_threshold=chosen.get('threshold',.05))
+            st.caption('Frozen B independent-target scores. Paired source comparisons use shared independent donors within each dataset. Native units are the default; transformations use frozen R diagnostics. Baseline q_scan does not cover this comparison search.')
+        elif regional:
             completed = registry[source]["combinations"]
             cohorts = [scope for scope in R.COHORT_LABELS if any(record["cohort_scope"] == scope and record["score_variant"] == feature for record in completed)]
             cohort = _select("Source cohort", cohorts, row.get("cohort_scope", "common_450"), prefix + "cohort", format_func=R.COHORT_LABELS.get)
@@ -277,7 +291,7 @@ def _box_editor(row: dict, registry: dict, position: int, count: int) -> tuple[d
         buttons[1].button("Move down", key=prefix + "down", disabled=position == count - 1, on_click=edit_boxes, args=("down", row["uid"]))
         buttons[2].button("Duplicate", key=prefix + "duplicate", disabled=count >= MAX_BOXES, on_click=edit_boxes, args=("duplicate", row["uid"]))
         buttons[3].button("Remove", key=prefix + "remove", disabled=count == 1, on_click=edit_boxes, args=("remove", row["uid"]))
-        config = dict(source=source, feature=feature, method=method, component=component,
+        config = dict(source=source, estimator=estimator, feature=feature, method=method, component=component,
                       scale=scale, cohort_scope=cohort, tissues=tuple(selected_tissues), **edges)
         updated = dict(
             uid=row["uid"], label=label.strip() or f"Box {position + 1}",
@@ -297,7 +311,7 @@ def _box_editor(row: dict, registry: dict, position: int, count: int) -> tuple[d
 
 def render_view(data_manifest: dict) -> None:
     st.header("Module–outcome comparison")
-    st.caption("Each observation is one module, not an individual donor: absolute score–outcome correlation for numeric outcomes, or Kruskal epsilon-squared for ROS/MAP study membership. All regions pools distinct regional modules; CT + TS includes separate component effects per module. Comparisons are descriptive and use each source's own cohort.")
+    st.caption("Each observation is one module: absolute score–outcome correlation for numeric outcomes, or Kruskal epsilon-squared for nominal outcomes. All regions pools distinct regional modules; CT + TS includes separate component effects per module. When a calibrated source is selected, comparisons use shared independent target donors within each dataset; source-specific reference exposure remains explicit.")
     registry = source_registry(data_manifest)
     if not registry:
         st.info("No completed score sources are available.")
@@ -306,9 +320,10 @@ def render_view(data_manifest: dict) -> None:
         st.session_state[BOX_STATE] = default_boxes(registry)
     with st.sidebar:
         st.header("Comparison controls")
-        outcome = st.selectbox("Comparison outcome", [*D.OUTCOME_LABELS, "study"], format_func=D.ASSOCIATION_OUTCOME_LABELS.get, key="module_comparison_outcome")
-        method = st.selectbox("Correlation statistic", list(CORRELATION_LABELS), format_func=CORRELATION_LABELS.get, key="module_comparison_correlation", disabled=outcome == "study")
-        st.caption("ROS/MAP is nominal: boxes contain module Kruskal epsilon-squared effects, not correlations of study codes. Single-study sources have unavailable tests." if outcome == "study" else "Spearman usually agrees for Raw and asinh because asinh preserves ranks. Pearson can change. RINT ties or missingness can affect agreement.")
+        has_calibrated=any(CC.is_calibrated(row.get('estimator','lioness')) for row in st.session_state[BOX_STATE])
+        outcome = st.selectbox("Comparison outcome", list(D.ASSOCIATION_OUTCOME_LABELS) if has_calibrated else [*D.OUTCOME_LABELS,'study'], format_func=D.ASSOCIATION_OUTCOME_LABELS.get, key="module_comparison_outcome")
+        method = st.selectbox("Correlation statistic", list(CORRELATION_LABELS), format_func=CORRELATION_LABELS.get, key="module_comparison_correlation", disabled=outcome in D.CATEGORICAL_OUTCOME_LABELS)
+        st.caption("ROS/MAP is nominal: boxes contain module Kruskal epsilon-squared effects, not correlations of study codes. Single-study sources have unavailable tests." if outcome in D.CATEGORICAL_OUTCOME_LABELS else "Spearman usually agrees for Raw and asinh because asinh preserves ranks. Pearson can change. RINT ties or missingness can affect agreement.")
         subset_labels = dict(D.ANALYSIS_SUBSET_LABELS, all_donors="All source donors (pooled)")
         subset = st.selectbox("Evaluation subset", list(subset_labels), format_func=subset_labels.get, key="module_comparison_subset")
         min_n = st.selectbox("Minimum donor N per module", [5, 10, 20], index=1, key="module_comparison_min_n")
@@ -339,17 +354,34 @@ def render_view(data_manifest: dict) -> None:
     regional_manifest = R.load_regional_manifest() if any(entry["regional"] for entry in registry.values()) else {}
     from app_helpers import camel_validation as validation
     validation_revisions=[validation.for_dataset(spec.source,spec.method).manifest()
-        for _,_,spec in boxes if spec.cohort_scope=="incomplete_region_validation"]
+        for _,_,spec in boxes if spec.cohort_scope=="incomplete_region_validation" and not CC.is_calibrated(spec.estimator)]
     revision = hashlib.sha256(json.dumps([data_manifest, regional_manifest,validation_revisions], sort_keys=True).encode()).hexdigest()
     context = (outcome, subset, min_n, revision)
     if st.button("Calculate comparison", type="primary", disabled=not valid, key="module_comparison_calculate"):
         catalogs = {}
         try:
+            shared={}
+            if any(CC.is_calibrated(spec.estimator) for _,_,spec in boxes):
+                from app_helpers.score_comparison import _metadata
+                for _,_,spec in boxes:
+                    dataset='motor' if spec.source in (*D.MUSCLE_MODULE_SETS,R.MOTOR_SOURCE) else 'brain'
+                    for tissue in (spec.tissues if spec.is_regional else ('',)):
+                        ids=set(_metadata(spec,outcome,subset,tissue).sample_id)
+                        shared[dataset]=ids if dataset not in shared else shared[dataset]&ids
+                st.caption('Shared comparison donors: '+', '.join(f'{dataset}: {len(ids)}' for dataset,ids in shared.items())+'. Brain and motor remain separate identity namespaces.')
+                from app_helpers.control_calibrated.core import canonical_hash
+                from app_helpers.control_calibrated.inputs import atomic_json,atomic_parquet
+                intent=dict(boxes=[asdict(spec) for _,_,spec in boxes],outcome=outcome,subset=subset,minimum_n=min_n,donor_hashes={ds:canonical_hash(sorted(ids)) for ds,ids in shared.items()},correction='BH across all unique selected series/module/component tests and both supported numeric methods, before display filtering; q_comparison, not baseline q_scan');comparison_id=canonical_hash(intent);comparison_path=CC.ROOT/'associations/saved'/comparison_id;atomic_json(comparison_path.with_suffix('.json'),intent)
             with st.spinner("Calculating pooled correlations from narrow, serialized score batches…"):
                 for _, _, spec in boxes:
                     if spec.key not in catalogs:
-                        table = calculate_series(spec, outcome, subset, min_n, revision)
-                        if spec.is_regional:
+                        dataset='motor' if spec.source in (*D.MUSCLE_MODULE_SETS,R.MOTOR_SOURCE) else 'brain'
+                        table = calculate_series(spec, outcome, subset, min_n, revision,tuple(sorted(shared[dataset])),allow_nominal=True) if dataset in shared else calculate_series(spec,outcome,subset,min_n,revision)
+                        if spec.is_regional and CC.is_calibrated(spec.estimator):
+                            jobs=[j for j in CA.catalog()['modules'] if j['family']==spec.source and j['regional_tissue'] in spec.tissues]
+                            expected={t:sum(j['regional_tissue']==t for j in jobs) for t in spec.tissues};observed=table.groupby('tissue')['module_key'].nunique().to_dict()
+                            if observed!=expected:raise ValueError('Calibrated regional namespace counts differ from catalog')
+                        elif spec.is_regional:
                             expected = {
                                 record["tissue"]: int(record["modules"])
                                 for record in registry[spec.source]["combinations"]
@@ -369,6 +401,19 @@ def render_view(data_manifest: dict) -> None:
                             if observed != expected or table.duplicated(["module_key", "component"]).any():
                                 raise ValueError("Module/component counts do not reconcile with the selected partition manifest")
                         catalogs[spec.key] = table
+            if shared:
+                import numpy as np
+                from app_helpers.control_calibrated.analysis import bh
+                membership=[];values=[]
+                for series,table in catalogs.items():
+                    for col in (['categorical_p'] if outcome in D.CATEGORICAL_OUTCOME_LABELS else ['pearson_p','spearman_p']):
+                        for row_index,p in table[col].items():membership.append((series,row_index,col));values.append(p)
+                adjusted=bh(values)
+                for (series,row_index,col),q in zip(membership,adjusted):
+                    table=catalogs[series];prefix=col.removesuffix('_p');target=prefix+'_fdr_across_modules';legacy='series_only_'+target
+                    if legacy not in table:table[legacy]=table[target]
+                    table.loc[row_index,'q_comparison_'+prefix]=q;table.loc[row_index,target]=q;table.loc[row_index,'comparison_analysis_id']=comparison_id
+                atomic_parquet(comparison_path.with_suffix('.parquet'),pd.concat(catalogs.values(),ignore_index=True));st.caption('The displayed FDR filter uses q_comparison across all selected series and numeric methods before Top K; series-only corrections are preserved separately. This search does not use baseline q_scan.')
             # Atomic replacement: do not expose partial BH families on an I/O error.
             st.session_state[RESULT_STATE] = {"context": context, "catalogs": catalogs}
         except (ValueError, FileNotFoundError, OSError, RuntimeError) as error:
@@ -391,7 +436,7 @@ def render_view(data_manifest: dict) -> None:
         st.warning("Edge masks were selected using discovery AD–Control differences. Discovery/all-donor associations can be selection-biased; held-out validation is an exploratory check, not external validation.")
     if displayed.get("cross_filter_node_convention_warning",pd.Series(False,index=displayed.index)).fillna(False).any():
         st.warning("Flagged full-cohort brain modules use unique nodes for historical unfiltered scores and repeated assignment rows for effect-filtered scores. Cross-filter differences can therefore also reflect node conventions; inspect the flag and convention columns in the module table.")
-    st.caption("BH FDR uses all valid modules before display filtering, separately per component and regional tissue partition. Pooling regions or CT + TS does not combine FDR families. No between-box significance tests are performed.")
+    st.caption("q_comparison combines all selected score series, modules, components and supported numeric methods before display filtering. It is separate from baseline q_scan; original series-only corrections remain in the download. No between-box significance tests are performed." if any(CC.is_calibrated(spec.estimator) for _, _, spec in boxes) else "BH FDR uses all valid modules before display filtering, separately per component and regional tissue partition. Pooling regions or CT + TS does not combine FDR families. No between-box significance tests are performed.")
     if displayed.empty:
         st.info("No modules meet the current eligibility and FDR display filters. Summary counts and complete calculated results remain available.")
     else:

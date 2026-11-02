@@ -15,6 +15,8 @@ import pyarrow.parquet as pq
 
 from app_helpers.drive_data import DATA_DIR, data_path_available, ensure_data_path
 from app_helpers.gene_symbols import public_gene_labels
+from app_helpers.control_calibrated.registry import is_calibrated as _is_calibrated
+from app_helpers.control_calibrated import adapter as _calibrated
 
 
 APP_ROOT = Path(__file__).resolve().parents[1]
@@ -991,7 +993,12 @@ def load_aggregate(
     differential_fdr_scope: str = "global",
     differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
+    cohort_scope: str = "complete_450",
+    regional_tissue: str | None = None,
 ) -> pd.DataFrame:
+    if _is_calibrated(estimator):
+        return _calibrated.aggregate(**locals())
+
     columns = [
         "sample_id",
         "module",
@@ -1047,7 +1054,12 @@ def load_aggregate_scope(
     score_normalization: str = "standard_pruned",
     metric_scale: str | None = None,
     include_embedded_metadata: bool = True,
+    cohort_scope: str = "complete_450",
+    regional_tissue: str | None = None,
 ) -> pd.DataFrame:
+    if _is_calibrated(estimator):
+        return _calibrated.aggregate(**locals())
+
     filters: list[tuple[str, str, object]] = [("lioness_method", "=", method)]
     if module is not None:
         filters.append(("module", "=", int(module)))
@@ -1101,7 +1113,11 @@ def load_resolved(
     differential_fdr_threshold: float = 0.05,
     score_normalization: str = "standard_pruned",
     cohort_scope: str = "complete_450",
+    regional_tissue: str | None = None,
 ) -> pd.DataFrame:
+    if _is_calibrated(estimator):
+        return _calibrated.scores(**locals())
+
     if cohort_scope == "incomplete_region_validation":
         from app_helpers import camel_validation as V
         V.validate_identity(module_set, estimator, method, metric_family, differential_edge_rule)
@@ -1236,7 +1252,11 @@ def load_resolved_scope(
     metric_scale: str | None = None,
     include_embedded_metadata: bool = True,
     cohort_scope: str = "complete_450",
+    regional_tissue: str | None = None,
 ) -> pd.DataFrame:
+    if _is_calibrated(estimator):
+        return _calibrated.scores(**locals())
+
     if cohort_scope == "incomplete_region_validation":
         from app_helpers import camel_validation as V
         V.validate_identity(module_set, estimator, method, metric_family, differential_edge_rule)
@@ -1340,7 +1360,12 @@ def load_aggregate_statistics(
     score_normalization: str = "standard_pruned",
     analysis_subset: str = "all_donors",
     diagnosis_group: str | None = None,
+    cohort_scope: str = "complete_450",
+    regional_tissue: str | None = None,
 ) -> pd.DataFrame:
+    if _is_calibrated(estimator):
+        return _calibrated.statistics(**locals())
+
     from app_helpers.pathology import PATHOLOGY_OUTCOMES, load_statistics
     pathology = phenotype in PATHOLOGY_OUTCOMES
     if pathology:
@@ -1393,7 +1418,11 @@ def load_resolved_statistics(
     component: str | None = None,
     diagnosis_group: str | None = None,
     cohort_scope: str = "complete_450",
+    regional_tissue: str | None = None,
 ) -> pd.DataFrame:
+    if _is_calibrated(estimator):
+        return _calibrated.statistics(**locals())
+
     if cohort_scope == "incomplete_region_validation":
         from app_helpers import camel_validation as V
         V.validate_identity(module_set, estimator, method, metric_family, differential_edge_rule)
@@ -1501,7 +1530,11 @@ def load_tissue_mapping() -> pd.DataFrame:
 def load_sample_metadata(
     module_set: str = "full_cohort",
     cohort_scope: str = "complete_450",
+    estimator: str = "lioness",
 ) -> pd.DataFrame:
+    if _is_calibrated(estimator):
+        return _calibrated.metadata(**locals())
+
     """Load pseudonymized donor metadata for the selected cohort grain.
 
     The shared 450-donor table remains the default for every existing module
@@ -1722,6 +1755,9 @@ def load_edge_summaries(
     differential_fdr_threshold: float = 0.05,
     cohort_scope: str = "complete_450",
 ) -> pd.DataFrame:
+    if _is_calibrated(estimator):
+        return _calibrated.edge_summaries(**locals())
+
     if cohort_scope == "incomplete_region_validation":
         from app_helpers import camel_validation as V
         V.validate_identity(module_set,estimator,method,rule=differential_edge_rule)
@@ -1772,7 +1808,18 @@ def load_effect_drivers(
     edge_rule: str,
     differential_edge_rule: str,
     sample_ids: Iterable[str] | None = None,
+    cohort_scope: str = "complete_450",
+    component: str = "all",
+    regional_tissue: str | None = None,
 ) -> pd.DataFrame:
+    if _is_calibrated(estimator):
+        from app_helpers.control_calibrated.inspection import ranked_edges
+        if method!="control_anchored" or edge_rule!="all":raise ValueError("Calibrated edge drivers require the frozen control protocol and verified physical-edge masks")
+        ids=[] if sample_ids is None else list(sample_ids)
+        if not ids:return pd.DataFrame()
+        if len(ids)>5:raise ValueError('Select at most five donors for bounded calibrated edge inspection')
+        return pd.concat([ranked_edges(module_set=module_set,module=module,sample_ids=[sample],estimator=estimator,mask=differential_edge_rule,top=20,cohort_scope=cohort_scope,component=component,regional_tissue=regional_tissue) for sample in ids],ignore_index=True)
+
     """Load the bounded pseudonymous driver cache for selected donors."""
 
     if not is_effect_rule(differential_edge_rule):

@@ -26,6 +26,16 @@ def widget_with_label(elements, label: str):
     return next(element for element in elements if element.label == label)
 
 
+def assert_estimator_options(app: AppTest, family: str) -> None:
+    from app_helpers import data as D
+    from app_helpers.camel import score_framework
+    from app_helpers.control_calibrated import registry as CC
+    estimators = list(D.load_data_manifest()["module_sets"][family].get("estimators", ["lioness", "bonobo"]))
+    if CC.ready(family):
+        estimators += list(CC.ESTIMATORS)
+    assert widget_with_label(app.radio,"Network estimator").options == [score_framework(family,"control_anchored",v) for v in estimators]
+
+
 def pills(app: AppTest):
     """Support Streamlit releases that expose pills as a generic button group."""
     return app.pills if hasattr(app, "pills") else app.get("button_group")
@@ -713,7 +723,8 @@ def test_streamlit_smoke_lioness_and_bonobo_module_definitions() -> None:
     app = preserve_legacy_pills_state(app)
 
     outcome = widget_with_label(app.selectbox, "Association outcome")
-    assert len(outcome.options) == 16
+    from app_helpers.data import ASSOCIATION_OUTCOME_LABELS
+    assert outcome.options == list(ASSOCIATION_OUTCOME_LABELS.values())
     outcome.set_value("adnc")
     app = widget_with_label(app.selectbox, "Color points by").set_value(
         "age_at_death"
@@ -751,9 +762,10 @@ def test_streamlit_muscle_module_set_core_views_render() -> None:
     ).run()
     app = preserve_legacy_pills_state(app)
     assert_app_clean(app)
-    assert widget_with_label(app.radio, "Network estimator").options == ["LIONESS"]
+    assert_estimator_options(app, "muscle_control_l4")
     method = widget_with_label(app.radio, "Network method")
-    assert method.options == ["Control-referenced LIONESS"]
+    from app_helpers.data import METHOD_LABELS
+    assert method.options == [METHOD_LABELS["control_anchored"]]
     assert any("Method 5 extended SFN" in info.value for info in app.info)
 
     for view in (
@@ -784,8 +796,9 @@ def test_streamlit_all_donor_muscle_core_views_render() -> None:
     app=widget_with_label(app.selectbox,'Module definition').set_value('muscle_all_donors_l4').run()
     app=preserve_legacy_pills_state(app)
     assert_app_clean(app)
-    assert widget_with_label(app.radio,'Network estimator').options==['LIONESS']
-    assert widget_with_label(app.radio,'Network method').options==['Control-referenced LIONESS']
+    assert_estimator_options(app, 'muscle_all_donors_l4')
+    from app_helpers.data import METHOD_LABELS
+    assert widget_with_label(app.radio,'Network method').options==[METHOD_LABELS['control_anchored']]
     for view in ('Associations','Feature distributions','Correlation heatmaps','KEGG enrichment','MDC','Statistics','Module details'):
         app=select_view(app,view)
         assert_app_clean(app)

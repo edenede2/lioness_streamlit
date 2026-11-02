@@ -41,6 +41,8 @@ def robust_asinh_scale(values: np.ndarray) -> float:
 
 
 def score_framework(module_set: str, method: str = "control_anchored", estimator: str = "lioness") -> str:
+    from app_helpers.control_calibrated.registry import is_calibrated, beta_for
+    if is_calibrated(estimator):return f"Control-calibrated connectivity · beta{beta_for(estimator)}"
     return "CAMEL" if module_set in CAMEL_MODULE_SETS and method == "control_anchored" and estimator == "lioness" else ("BONOBO" if estimator == "bonobo" else "LIONESS")
 
 

@@ -31,6 +31,7 @@ from app_helpers.correlations import (
 from app_helpers.drive_data import data_path_available, ensure_data_path
 from app_helpers import regional_modules as R
 from app_helpers.streaming_associations import _serialized_heavy_read
+from app_helpers.control_calibrated import registry as CC, adapter as CA
 
 
 MAX_BOXES = 12
@@ -59,8 +60,19 @@ class ComparisonSeriesSpec:
     differential_fdr_scope: str = "per_module"
     differential_fdr_threshold: float = 0.05
     score_normalization: str = "standard_pruned"
+    estimator: str = "lioness"
 
     def __post_init__(self) -> None:
+        if CC.is_calibrated(self.estimator):
+            CC.require_capability(self.estimator,'comparisons')
+            if self.feature not in CC.METRICS:raise ValueError('Unsupported calibrated comparison measure')
+            if self.method!='control_anchored':raise ValueError('Calibrated comparisons require frozen B control roles')
+            if self.is_regional and not self.tissues:raise ValueError('Regional calibrated module IDs require a tissue namespace')
+            if self.source not in {*D.MODULE_SET_LABELS,*R.REGIONAL_SOURCE_ORDER}:raise ValueError('Unknown calibrated module partition')
+            if self.is_regional and (len(set(self.tissues))!=len(self.tissues) or not set(self.tissues)<=set(R.regional_tissues(self.source))):raise ValueError('Select distinct, valid regional tissues')
+            if not self.is_regional and self.component not in {'all','CT','TS',COMBINED_COMPONENT,*D.module_set_components(self.source)}:raise ValueError('Unknown calibrated physical-edge component')
+            if self.scale not in SCALE_ORDER:raise ValueError('Unsupported calibrated score scale')
+            return
         if self.scale not in SCALE_ORDER:
             raise ValueError("Unsupported score scale")
         if self.feature not in {*D.FEATURE_LABELS, "eigengene"}:
@@ -155,6 +167,8 @@ def score_path(spec: ComparisonSeriesSpec):
 
 
 def availability_reason(spec: ComparisonSeriesSpec, registry: dict) -> str:
+    if CC.is_calibrated(spec.estimator):
+        return '' if CC.ready(spec.source) else 'The exact calibrated partition is not complete.'
     entry = registry.get(spec.source)
     if entry is None:
         return "This partition has no completed public catalog."
@@ -190,6 +204,14 @@ def availability_reason(spec: ComparisonSeriesSpec, registry: dict) -> str:
 
 
 def _metadata(spec: ComparisonSeriesSpec, outcome: str, analysis_subset: str, tissue: str = "") -> pd.DataFrame:
+    if CC.is_calibrated(spec.estimator):
+        result=CA.metadata(spec.source,spec.cohort_scope)
+        component=CA.component_public(spec.component)
+        required=[tissue] if spec.is_regional else component[3:].split('__') if component.startswith(('TS_','CT_')) else CA.catalog()['datasets'][CA.variant_for(spec.source)]['tissues']
+        for t in required:
+            if 'has_'+t in result:result=result[result['has_'+t]]
+        if analysis_subset!='all_donors':result=result[result.ad_control_split.eq(SPLIT_VALUES[analysis_subset])]
+        return result[['sample_id',outcome]]
     if spec.is_regional and spec.cohort_scope == "maximum_tissue":
         path = R.REGIONAL_ROOT / "metadata" / spec.cohort_scope / f"{tissue}.parquet"
         columns = ["sample_id", outcome]
@@ -270,6 +292,14 @@ def _scan_score_vectors(path, filters: list[tuple], value: str | tuple[str, ...]
 
 def _module_frames(spec: ComparisonSeriesSpec) -> Iterator[tuple[int, str, pd.DataFrame]]:
     """Yield module, regional tissue/combined component, and narrow score vector."""
+    if CC.is_calibrated(spec.estimator):
+        jobs=[j for j in CA.catalog()['modules'] if j['family']==spec.source and (not spec.is_regional or j['regional_tissue'] in spec.tissues)]
+        for job in jobs:
+            components=['TS_'+job['regional_tissue']] if spec.is_regional else ['CT','TS'] if spec.combines_ct_ts else [spec.component]
+            for component in components:
+                f=CA.scores(module_set=spec.source,estimator=spec.estimator,module=job['module'],metric_family=spec.feature,component=component,metric_scale=spec.scale,cohort_scope=spec.cohort_scope,regional_tissue=job['regional_tissue'],differential_edge_rule=spec.differential_edge_rule,differential_fdr_scope=spec.differential_fdr_scope,differential_fdr_threshold=spec.differential_fdr_threshold,include_embedded_metadata=False)
+                yield job['module'],job['regional_tissue'] if spec.is_regional else component if spec.combines_ct_ts else '',f[['sample_id','metric_'+spec.scale]].rename(columns={'metric_'+spec.scale:'metric_value'})
+        return
     if spec.cohort_scope == "incomplete_region_validation":
         from app_helpers import camel_validation as V
         source=V.for_dataset(spec.source,spec.method)
@@ -314,7 +344,7 @@ def _module_frames(spec: ComparisonSeriesSpec) -> Iterator[tuple[int, str, pd.Da
 
 
 def _module_statistic(frame: pd.DataFrame, metadata: pd.DataFrame, outcome: str, min_n: int) -> dict:
-    if outcome == "study":
+    if outcome in D.CATEGORICAL_OUTCOME_LABELS:
         if "sample_id" in frame and frame["sample_id"].duplicated().any():
             raise ValueError("More than one score per donor/module/component")
         joined = frame.merge(metadata, on="sample_id", how="inner", validate="one_to_one") if not frame.empty else pd.DataFrame(columns=["metric_value", outcome])
@@ -359,6 +389,8 @@ def statistics_from_module_frames(
             "observation_key": f"{module_key}:{component}",
             "component_label": tissue if spec.is_regional else D.EDGE_SCOPE_LABELS.get(component, component),
             "feature": spec.feature, "method": spec.method, "scale": spec.scale,
+            "estimator":spec.estimator,
+            "reference_protocol":('Frozen B seed611010; independent targets' if CC.is_calibrated(spec.estimator) else 'Historical stored '+spec.method),
             "cohort_scope": spec.cohort_scope, "outcome": outcome,
             "analysis_subset": analysis_subset,
             "differential_edge_rule": spec.differential_edge_rule,
@@ -370,7 +402,7 @@ def statistics_from_module_frames(
         for field in ("node_convention","n_features","n_source_assignment_rows","cross_filter_node_convention_warning"):
             if field in frame and not frame.empty:
                 rows[-1][field]=frame[field].iloc[0]
-        if spec.source=="full_cohort" and spec.feature!="eigengene":
+        if spec.source=="full_cohort" and spec.feature!="eigengene" and not CC.is_calibrated(spec.estimator):
             from app_helpers.validation_datasets import LEGACY_DUPLICATE_BRAIN_MODULES
             rows[-1]["cross_filter_node_convention_warning"]=int(module) in LEGACY_DUPLICATE_BRAIN_MODULES
             rows[-1]["node_convention"]=("legacy_unfiltered_unique_tissue_gene" if spec.differential_edge_rule=="all"
@@ -381,7 +413,7 @@ def statistics_from_module_frames(
     result = add_across_module_fdr(
         result, family_columns=["series_key", "tissue", "component"], module_column="module_key",
     )
-    if outcome == "study":
+    if outcome in D.CATEGORICAL_OUTCOME_LABELS:
         result = add_categorical_across_module_fdr(
             result, family_columns=["series_key", "tissue", "component"], module_column="module_key",
         )
@@ -392,17 +424,25 @@ def statistics_from_module_frames(
 @_serialized_heavy_read
 def calculate_series(
     spec: ComparisonSeriesSpec, outcome: str, analysis_subset: str,
-    min_n: int, data_revision: str,
+    min_n: int, data_revision: str, shared_donors: tuple[str,...] | None = None, allow_nominal: bool = False,
 ) -> pd.DataFrame:
     """Cache compact module/component rows. Failed/partial families never cache."""
-    if outcome not in {*D.OUTCOME_LABELS, "study"}:
+    if outcome not in D.ASSOCIATION_OUTCOME_LABELS:
         raise ValueError("Nominal category codes cannot be correlated")
+    if not allow_nominal and not CC.is_calibrated(spec.estimator) and outcome in D.CATEGORICAL_OUTCOME_LABELS and outcome!='study':
+        raise ValueError('Nominal outcomes in the historical comparison remain limited to the saved study comparison; calibrated sources use Kruskal-Wallis for all nominal outcomes')
     if analysis_subset not in D.ANALYSIS_SUBSET_LABELS:
         raise ValueError("Unknown evaluation subset")
     if min_n not in (5, 10, 20):
         raise ValueError("Minimum N must be 5, 10 or 20")
     tissues = spec.tissues if spec.is_regional else ("",)
     metadata = {tissue: _metadata(spec, outcome, analysis_subset, tissue) for tissue in tissues}
+    if shared_donors is not None:metadata={t:f[f.sample_id.isin(shared_donors)].copy() for t,f in metadata.items()}
+    if CC.is_calibrated(spec.estimator):
+        from app_helpers.control_calibrated.inputs import atomic_json,atomic_parquet
+        intent=dict(spec=asdict(spec),outcome=outcome,analysis_subset=analysis_subset,minimum_n=min_n,donor_hash=hashlib.sha256(json.dumps({t:sorted(f.sample_id.tolist()) for t,f in metadata.items()},sort_keys=True).encode()).hexdigest(),correction='Full series/module/component family before Top K; distinct comparison search, not baseline q_scan')
+        path=CC.ROOT/'associations/saved'/hashlib.sha256(json.dumps(intent,sort_keys=True).encode()).hexdigest();atomic_json(path.with_suffix('.json'),intent)
+        result=statistics_from_module_frames(spec,_module_frames(spec),metadata,outcome,min_n,analysis_subset);result['estimator']=spec.estimator;result['correction_scope']=intent['correction'];atomic_parquet(path.with_suffix('.parquet'),result);return result
     return statistics_from_module_frames(spec, _module_frames(spec), metadata, outcome, min_n, analysis_subset)
 
 
@@ -417,7 +457,7 @@ def display_results(
     displayed, complete, summaries = [], [], []
     for position, (box_id, label, spec) in enumerate(boxes):
         frame = catalogs[spec.key].copy()
-        nominal = frame["outcome"].eq("study").all()
+        nominal = frame["outcome"].isin(D.CATEGORICAL_OUTCOME_LABELS).all()
         coefficient = "epsilon_squared" if nominal else ("spearman_rho" if correlation_method == "spearman" else "pearson_r")
         p_column = "categorical_p" if nominal else f"{correlation_method}_p"
         fdr_column = "categorical_fdr_across_modules" if nominal else f"{correlation_method}_fdr_across_modules"
@@ -494,7 +534,7 @@ def comparison_figure(
     tick_labels, show_module_counts = tick_labels or {}, show_module_counts or {}
     figure = go.Figure()
     tick_values, tick_text, density_unavailable = [], [], []
-    nominal = outcome == "study"
+    nominal = outcome in D.CATEGORICAL_OUTCOME_LABELS
     effect_column = "association_effect" if "association_effect" in displayed else "absolute_correlation"
     for index, row in summary.reset_index(drop=True).iterrows():
         box_id = row["box_id"]
@@ -533,7 +573,10 @@ def comparison_figure(
             # Use deterministic jitter; labels/order changes cannot change observations.
             jitter = np.array([int(hashlib.sha256(key.encode()).hexdigest()[:8], 16) / (2**32 - 1) for key in part["observation_key"]])
             source_column = "source_label" if "source_label" in part else "source"
+            part=part.copy()
+            if 'estimator' in part and part.estimator.isin(CC.ESTIMATORS).any():part[source_column]=part[source_column].astype(str)+' · '+part.feature.map(CC.feature_labels()).fillna(part.feature)+' · '+part.estimator+' · '+part.scale+' · '+part.cohort_scope
             custom = part[[source_column, "module_key", "component_label", effect_column if nominal else "signed_correlation", "n", "selected_p", "selected_fdr"]].to_numpy()
+            fdr_label='Comparison-search BH q' if 'comparison_analysis_id' in part else 'Module-set FDR'
             figure.add_trace(go.Scatter(
                 x=index + (jitter - .5) * .36, y=part[effect_column], mode="markers",
                 marker=dict(color=dot_colors.get(box_id, color), size=6, opacity=.65), showlegend=False,
@@ -541,11 +584,11 @@ def comparison_figure(
                 hovertemplate=("%{customdata[1]}<br>Partition: %{customdata[0]}<br>Component: %{customdata[2]}"
                                + ("<br>Kruskal epsilon-squared: %{y:.4f}" if nominal else "<br>Signed correlation: %{customdata[3]:.4f}<br>|correlation|: %{y:.4f}") +
                                "<br>Donors: %{customdata[4]}<br>p=%{customdata[5]:.3g}"
-                               "<br>Module-set FDR=%{customdata[6]:.3g}<extra></extra>"),
+                               f"<br>{fdr_label}=%{{customdata[6]:.3g}}<extra></extra>"),
             ))
     figure.update_layout(
         template="plotly_white", title=f"Module associations with {D.ASSOCIATION_OUTCOME_LABELS.get(outcome, outcome)}",
-        yaxis=dict(title="Kruskal epsilon-squared (ROS vs MAP)" if nominal else "|Spearman ρ|" if method == "spearman" else "|Pearson r|", range=[0, 1]),
+        yaxis=dict(title=("Kruskal epsilon-squared (ROS vs MAP)" if outcome=='study' else 'Kruskal epsilon-squared') if nominal else "|Spearman ρ|" if method == "spearman" else "|Pearson r|", range=[0, 1]),
         xaxis=dict(title="Score / partition combination", type="linear", range=[-.6, len(summary) - .4],
                    tickmode="array", tickvals=tick_values, ticktext=tick_text, tickangle=0, automargin=True,
                    tickfont=dict(size=12 if len(summary) > 6 else 14)),

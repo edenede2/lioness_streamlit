@@ -77,8 +77,7 @@ def _module_score_frames(
         "metric_scale": scale,
         "include_embedded_metadata": False,
     }
-    if resolved:
-        common["cohort_scope"] = cohort_scope
+    common["cohort_scope"] = cohort_scope
     selected_components = set(components or ())
     for module in modules:
         if resolved:

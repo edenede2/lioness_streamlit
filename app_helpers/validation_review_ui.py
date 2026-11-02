@@ -188,6 +188,12 @@ def _mdc(render, reader=R, labels=COMPONENT_LABELS):
 
 
 def render_view(render):
+    from app_helpers.control_calibrated import registry as CC,adapter as CA
+    if CC.ready():
+        source=st.radio('Validation score source',['legacy',*CC.ESTIMATORS],format_func=lambda v:'Historical validation / MDC review' if v=='legacy' else 'Control-calibrated connectivity · beta'+str(CC.ESTIMATORS[v]),horizontal=True,key='validation_calibrated_source')
+        if CC.is_calibrated(source):
+            from app_helpers.control_calibrated.ui import render_view as calibrated_view
+            c=CA.catalog();family=st.selectbox('Validation partition',list(c['families']),key='validation_calibrated_partition');calibrated_view('Validation & replication',family,source,render,default_scope='incomplete_region_validation');return
     st.header("Validation & replication")
     identities=[(key,method) for key,config in DATASETS.items() for method in config.methods
                 if R.manifest(key,method)]

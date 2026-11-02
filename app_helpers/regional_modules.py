@@ -1431,6 +1431,7 @@ def render_regional_analysis_view(active_view: str) -> None:
         return
     details = load_regional_details()
     kegg = load_regional_kegg()
+    calibrated_body=st.container()
     with st.sidebar:
         st.subheader("Independent regional modules")
         source_options = [
@@ -1444,6 +1445,13 @@ def render_regional_analysis_view(active_view: str) -> None:
             key="regional_partition_source",
         )
         source_label = manifest.get("source_labels", {}).get(source, source)
+        from app_helpers.control_calibrated import registry as CC
+        if CC.ready(source):
+            estimator=st.radio('Regional donor score source',['legacy',*CC.ESTIMATORS],format_func=lambda v:'Existing Connectivity / eigengene' if v=='legacy' else 'Control-calibrated connectivity · beta'+str(CC.ESTIMATORS[v]),key='regional_calibrated_source')
+            if CC.is_calibrated(estimator):
+                from app_helpers.control_calibrated.ui import render_view
+                with calibrated_body:render_view(active_view,source,estimator)
+                return
         source_rows = completed.loc[completed["partition_source"].eq(source)]
         cohort_options = [
             value for value in COHORT_LABELS

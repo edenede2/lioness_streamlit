@@ -363,6 +363,9 @@ def default_filename(spec: PlotExportSpec, config: ExportConfig) -> str:
         for k, v in spec.metadata
         if k in {"module", "module_set", "method", "component", "outcome", "feature"}
     ]
+    metadata=dict(spec.metadata)
+    if metadata.get('score_version','').startswith('control_calibrated_connectivity.'):
+        fields.extend(str(metadata[key]) for key in ('score_version','cohort_scope','transform') if metadata.get(key))
     width = f"{convert_length(config.width, config.unit, 'mm'):.3f}".rstrip("0").rstrip(".")
     return sanitize_filename(
         "_".join([*fields, spec.plot_id, width + "mm", f"{config.dpi}dpi"]), config.format

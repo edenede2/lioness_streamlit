@@ -186,6 +186,12 @@ def aggregate_to_long(frame: pd.DataFrame, scale: str) -> pd.DataFrame:
         part["component_class"] = component
         part["component_label"] = f"{component} aggregate"
         part["metric_value"] = part[value_column]
+        # Calibrated pooled CT and TS have different physical denominators.
+        # Their wide-table provenance must follow the selected long component.
+        for column in frame:
+            prefix=component+'_'
+            if column.startswith(prefix) and column[len(prefix):] not in ('raw','asinh','rint'):
+                part[column[len(prefix):]]=part[column]
         parts.append(part)
     return pd.concat(parts, ignore_index=True)
 

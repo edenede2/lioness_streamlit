@@ -4040,6 +4040,7 @@ if active_view in REGIONAL_ANALYSIS_VIEWS:
         render_regional_analysis_view(active_view)
         st.stop()
 
+calibrated_body = st.container()
 with st.sidebar:
     st.header("Plot controls")
     st.caption(f"Data source: {data_source_label()}")
@@ -4064,8 +4065,9 @@ with st.sidebar:
             "These muscle partitions were discovered with Method 5 extended "
             "SFN (bootstrap stability, CT null excess, signed block powers, and blockwise "
             "q90 normalization). The MDC context is rebuilt with that same M5 functional. "
-            "The donor-specific LIONESS scores remain the separately labeled Pearson "
-            "signedAlt analysis with the selected partition's frozen block powers."
+            "The historical donor-specific LIONESS comparator uses Pearson signedAlt "
+            "with the partition's frozen block powers. Control-calibrated connectivity "
+            "reuses these fixed memberships with uniform scoring beta3 or beta1."
         )
     annotations = cached_annotations(module_set)
     modules = sorted(annotations["module"].astype(int).unique().tolist())
@@ -4078,12 +4080,24 @@ with st.sidebar:
         st.stop()
     module_details = cached_module_details(module_set)
     allowed_estimators = list(module_manifest.get("estimators", ["lioness", "bonobo"]))
+    from app_helpers.control_calibrated import registry as calibrated_registry
+    if active_view != "MDC" and calibrated_registry.ready(module_set):
+        allowed_estimators += list(calibrated_registry.ESTIMATORS)
+    if "network_estimator" in st.session_state and st.session_state["network_estimator"] not in allowed_estimators:
+        del st.session_state["network_estimator"]
     estimator = st.radio(
         "Network estimator",
         options=allowed_estimators,
         format_func=lambda value: score_framework(module_set, "control_anchored", value),
         horizontal=True,
+        key="network_estimator",
+        index=allowed_estimators.index(st.query_params.get('score_source','lioness')) if st.query_params.get('score_source','lioness') in allowed_estimators else 0,
     )
+    if calibrated_registry.is_calibrated(estimator):
+        from app_helpers.control_calibrated.ui import render_view as render_calibrated_view
+        with calibrated_body:
+            render_calibrated_view(active_view, module_set, estimator, render_plotly_chart)
+        st.stop()
     allowed_methods = (
         list(module_manifest.get("methods", MODULE_SET_METHODS[module_set]))
         if estimator == "lioness"

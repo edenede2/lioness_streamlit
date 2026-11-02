@@ -1063,3 +1063,6 @@ and never loads donor scores. No networks, edge masks, predictions, or Drive
 files are recomputed or changed. **Focus modules (optional)** filters the
 displayed plot/table; the complete-context download retains all modules and
 their full-family corrections.
+
+
+Control-calibrated connectivity (uniform beta3 default, beta1 sensitivity) is documented in [the method and reproduction guide](docs/control_calibrated_connectivity.md). It uses frozen B independent targets and is excluded from prediction.

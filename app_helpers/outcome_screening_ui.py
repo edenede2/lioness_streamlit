@@ -117,6 +117,12 @@ def load_catalog(path, expected_hash, expected_rows, outcome=None, modules=()):
 
 def render_view(root=ROOT):
     st.subheader("Gene & edge associations")
+    from app_helpers.control_calibrated import registry as CC,adapter as CA
+    if CC.ready():
+        source=st.radio('Edge association source',['legacy',*CC.ESTIMATORS],format_func=lambda v:'Historical full-search gene / edge catalogs' if v=='legacy' else 'Control-calibrated edge contributions · beta'+str(CC.ESTIMATORS[v]),horizontal=True,key='screening_calibrated_source')
+        if CC.is_calibrated(source):
+            from app_helpers.control_calibrated.ui import render_view as calibrated_view
+            c=CA.catalog();family=st.selectbox('Edge association partition',list(c['families']),key='screening_calibrated_partition');calibrated_view('Gene & edge associations',family,source);return
     st.caption("Hits are ranked by absolute original-cohort correlation, retaining their sign. Validation evaluates the frozen union of Pearson and Spearman hits; its selected-hit FDR is not the original full-search FDR.")
     manifest = load_manifest(root)
     if not manifest.get("files"):
