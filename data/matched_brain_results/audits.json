@@ -1,0 +1,1810 @@
+{
+  "balanced_validation": {
+    "cohort_label": "Balanced incomplete-region validation (AD\u2013Control)",
+    "component_counts_overlap": true,
+    "components": [
+      {
+        "all_validation_donors": 266,
+        "available_AD_Control": {
+          "AD": 108,
+          "Control": 79
+        },
+        "balance": [
+          {
+            "ad_mean": 88.69565012155114,
+            "control_mean": 88.5578134957162,
+            "covariate": "age_at_death",
+            "standardized_difference": 0.026399039664027294
+          },
+          {
+            "ad_mean": 16.137931034482758,
+            "control_mean": 16.413793103448278,
+            "covariate": "education_years",
+            "standardized_difference": -0.08585439758093007
+          },
+          {
+            "ad_proportion": 0.46551724137931033,
+            "control_proportion": 0.46551724137931033,
+            "covariate": "study",
+            "level": "MAP",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.5344827586206896,
+            "control_proportion": 0.5344827586206896,
+            "covariate": "study",
+            "level": "ROS",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.8448275862068966,
+            "control_proportion": 0.8448275862068966,
+            "covariate": "sex_code",
+            "level": "Code 0",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.15517241379310345,
+            "control_proportion": 0.15517241379310345,
+            "covariate": "sex_code",
+            "level": "Code 1",
+            "standardized_difference": 0.0
+          }
+        ],
+        "balance_target_met": true,
+        "comparison_with_discovery_and_heldout": [
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Discovery",
+            "reference_mean": 89.96988364134154,
+            "standardized_difference": -0.23460626397315032,
+            "validation_mean": 88.69565012155114
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Discovery",
+            "reference_mean": 16.075,
+            "standardized_difference": 0.019801932679513027,
+            "validation_mean": 16.137931034482758
+          },
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Discovery",
+            "reference_mean": 89.76827515400412,
+            "standardized_difference": -0.22265635894930172,
+            "validation_mean": 88.5578134957162
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Discovery",
+            "reference_mean": 16.0875,
+            "standardized_difference": 0.10570880197654696,
+            "validation_mean": 16.413793103448278
+          },
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 89.7733220598301,
+            "standardized_difference": -0.2128140728281273,
+            "validation_mean": 88.69565012155114
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 15.970588235294118,
+            "standardized_difference": 0.0536149487491974,
+            "validation_mean": 16.137931034482758
+          },
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 89.58908080686075,
+            "standardized_difference": -0.20378753797312305,
+            "validation_mean": 88.5578134957162
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 16.0,
+            "standardized_difference": 0.13965704278170832,
+            "validation_mean": 16.413793103448278
+          }
+        ],
+        "component": "TS_AC",
+        "insufficient_reason": "",
+        "matched_AD": 58,
+        "matched_Control": 58,
+        "matched_pairs": 58,
+        "max_abs_within_group_SMD": 0.08585439758093007,
+        "missing_by_covariate": {
+          "age_at_death": 0,
+          "education_years": 0,
+          "sex_code": 0,
+          "study": 0
+        },
+        "missing_covariate_donors": 0,
+        "nonfinite_balance_checks": 0,
+        "sufficient_for_inferential_MDC": true,
+        "tissues": [
+          "AC"
+        ],
+        "total_matched_donors": 116
+      },
+      {
+        "all_validation_donors": 752,
+        "available_AD_Control": {
+          "AD": 339,
+          "Control": 229
+        },
+        "balance": [
+          {
+            "ad_mean": 89.15288014697937,
+            "control_mean": 88.88673223098816,
+            "covariate": "age_at_death",
+            "standardized_difference": 0.047887766088625584
+          },
+          {
+            "ad_mean": 16.16842105263158,
+            "control_mean": 16.126315789473683,
+            "covariate": "education_years",
+            "standardized_difference": 0.012686706242451332
+          },
+          {
+            "ad_proportion": 0.6105263157894737,
+            "control_proportion": 0.6105263157894737,
+            "covariate": "study",
+            "level": "MAP",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.3894736842105263,
+            "control_proportion": 0.3894736842105263,
+            "covariate": "study",
+            "level": "ROS",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.7210526315789474,
+            "control_proportion": 0.7210526315789474,
+            "covariate": "sex_code",
+            "level": "Code 0",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.2789473684210526,
+            "control_proportion": 0.2789473684210526,
+            "covariate": "sex_code",
+            "level": "Code 1",
+            "standardized_difference": 0.0
+          }
+        ],
+        "balance_target_met": true,
+        "comparison_with_discovery_and_heldout": [
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Discovery",
+            "reference_mean": 89.96988364134154,
+            "standardized_difference": -0.14742583033400466,
+            "validation_mean": 89.15288014697937
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Discovery",
+            "reference_mean": 16.075,
+            "standardized_difference": 0.02953653611979105,
+            "validation_mean": 16.16842105263158
+          },
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Discovery",
+            "reference_mean": 89.76827515400412,
+            "standardized_difference": -0.1559089078648564,
+            "validation_mean": 88.88673223098816
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Discovery",
+            "reference_mean": 16.0875,
+            "standardized_difference": 0.012086202663328436,
+            "validation_mean": 16.126315789473683
+          },
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 89.7733220598301,
+            "standardized_difference": -0.11972623523187953,
+            "validation_mean": 89.15288014697937
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 15.970588235294118,
+            "standardized_difference": 0.06369800311495226,
+            "validation_mean": 16.16842105263158
+          },
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 89.58908080686075,
+            "standardized_difference": -0.13267502689193789,
+            "validation_mean": 88.88673223098816
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 16.0,
+            "standardized_difference": 0.04084205677208265,
+            "validation_mean": 16.126315789473683
+          }
+        ],
+        "component": "TS_DLPFC",
+        "insufficient_reason": "",
+        "matched_AD": 190,
+        "matched_Control": 190,
+        "matched_pairs": 190,
+        "max_abs_within_group_SMD": 0.047887766088625584,
+        "missing_by_covariate": {
+          "age_at_death": 0,
+          "education_years": 0,
+          "sex_code": 0,
+          "study": 0
+        },
+        "missing_covariate_donors": 0,
+        "nonfinite_balance_checks": 0,
+        "sufficient_for_inferential_MDC": true,
+        "tissues": [
+          "DLPFC"
+        ],
+        "total_matched_donors": 380
+      },
+      {
+        "all_validation_donors": 195,
+        "available_AD_Control": {
+          "AD": 80,
+          "Control": 74
+        },
+        "balance": [
+          {
+            "ad_mean": 91.91045224620623,
+            "control_mean": 92.00828032920985,
+            "covariate": "age_at_death",
+            "standardized_difference": -0.018220150201856328
+          },
+          {
+            "ad_mean": 15.536585365853659,
+            "control_mean": 15.317073170731707,
+            "covariate": "education_years",
+            "standardized_difference": 0.08130965474745053
+          },
+          {
+            "ad_proportion": 0.8780487804878049,
+            "control_proportion": 0.8780487804878049,
+            "covariate": "study",
+            "level": "MAP",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.12195121951219512,
+            "control_proportion": 0.12195121951219512,
+            "covariate": "study",
+            "level": "ROS",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.7073170731707317,
+            "control_proportion": 0.7073170731707317,
+            "covariate": "sex_code",
+            "level": "Code 0",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.2926829268292683,
+            "control_proportion": 0.2926829268292683,
+            "covariate": "sex_code",
+            "level": "Code 1",
+            "standardized_difference": 0.0
+          }
+        ],
+        "balance_target_met": true,
+        "comparison_with_discovery_and_heldout": [
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Discovery",
+            "reference_mean": 89.96988364134154,
+            "standardized_difference": 0.3540145919406677,
+            "validation_mean": 91.91045224620623
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Discovery",
+            "reference_mean": 16.075,
+            "standardized_difference": -0.18297709850725538,
+            "validation_mean": 15.536585365853659
+          },
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Discovery",
+            "reference_mean": 89.76827515400412,
+            "standardized_difference": 0.40511185650317166,
+            "validation_mean": 92.00828032920985
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Discovery",
+            "reference_mean": 16.0875,
+            "standardized_difference": -0.27352856330655184,
+            "validation_mean": 15.317073170731707
+          },
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 89.7733220598301,
+            "standardized_difference": 0.4175911777412934,
+            "validation_mean": 91.91045224620623
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 15.970588235294118,
+            "standardized_difference": -0.15064025535446937,
+            "validation_mean": 15.536585365853659
+          },
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 89.58908080686075,
+            "standardized_difference": 0.4688218705968206,
+            "validation_mean": 92.00828032920985
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 16.0,
+            "standardized_difference": -0.2547869002530646,
+            "validation_mean": 15.317073170731707
+          }
+        ],
+        "component": "TS_PCGBA23",
+        "insufficient_reason": "",
+        "matched_AD": 41,
+        "matched_Control": 41,
+        "matched_pairs": 41,
+        "max_abs_within_group_SMD": 0.08130965474745053,
+        "missing_by_covariate": {
+          "age_at_death": 0,
+          "education_years": 0,
+          "sex_code": 0,
+          "study": 0
+        },
+        "missing_covariate_donors": 0,
+        "nonfinite_balance_checks": 0,
+        "sufficient_for_inferential_MDC": true,
+        "tissues": [
+          "PCG"
+        ],
+        "total_matched_donors": 82
+      },
+      {
+        "all_validation_donors": 230,
+        "available_AD_Control": {
+          "AD": 97,
+          "Control": 67
+        },
+        "balance": [
+          {
+            "ad_mean": 88.51424993082557,
+            "control_mean": 88.38626996956324,
+            "covariate": "age_at_death",
+            "standardized_difference": 0.02632583319698183
+          },
+          {
+            "ad_mean": 16.170212765957448,
+            "control_mean": 16.46808510638298,
+            "covariate": "education_years",
+            "standardized_difference": -0.09051492909412456
+          },
+          {
+            "ad_proportion": 0.48936170212765956,
+            "control_proportion": 0.48936170212765956,
+            "covariate": "study",
+            "level": "MAP",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.5106382978723404,
+            "control_proportion": 0.5106382978723404,
+            "covariate": "study",
+            "level": "ROS",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.8723404255319149,
+            "control_proportion": 0.8723404255319149,
+            "covariate": "sex_code",
+            "level": "Code 0",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.1276595744680851,
+            "control_proportion": 0.1276595744680851,
+            "covariate": "sex_code",
+            "level": "Code 1",
+            "standardized_difference": 0.0
+          }
+        ],
+        "balance_target_met": true,
+        "comparison_with_discovery_and_heldout": [
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Discovery",
+            "reference_mean": 89.96988364134154,
+            "standardized_difference": -0.2771186793988752,
+            "validation_mean": 88.51424993082557
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Discovery",
+            "reference_mean": 16.075,
+            "standardized_difference": 0.02938951280846306,
+            "validation_mean": 16.170212765957448
+          },
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Discovery",
+            "reference_mean": 89.76827515400412,
+            "standardized_difference": -0.26194804336367955,
+            "validation_mean": 88.38626996956324
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Discovery",
+            "reference_mean": 16.0875,
+            "standardized_difference": 0.1225932813721368,
+            "validation_mean": 16.46808510638298
+          },
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 89.7733220598301,
+            "standardized_difference": -0.25843909167597723,
+            "validation_mean": 88.51424993082557
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 15.970588235294118,
+            "standardized_difference": 0.06269698168156773,
+            "validation_mean": 16.170212765957448
+          },
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 89.58908080686075,
+            "standardized_difference": -0.2460951542380889,
+            "validation_mean": 88.38626996956324
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 16.0,
+            "standardized_difference": 0.15700196170070757,
+            "validation_mean": 16.46808510638298
+          }
+        ],
+        "component": "CT_AC__DLPFC",
+        "insufficient_reason": "",
+        "matched_AD": 47,
+        "matched_Control": 47,
+        "matched_pairs": 47,
+        "max_abs_within_group_SMD": 0.09051492909412456,
+        "missing_by_covariate": {
+          "age_at_death": 0,
+          "education_years": 0,
+          "sex_code": 0,
+          "study": 0
+        },
+        "missing_covariate_donors": 0,
+        "nonfinite_balance_checks": 0,
+        "sufficient_for_inferential_MDC": true,
+        "tissues": [
+          "AC",
+          "DLPFC"
+        ],
+        "total_matched_donors": 94
+      },
+      {
+        "all_validation_donors": 14,
+        "available_AD_Control": {
+          "AD": 3,
+          "Control": 6
+        },
+        "balance": [],
+        "balance_target_met": false,
+        "comparison_with_discovery_and_heldout": [
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Discovery",
+            "reference_mean": 89.96988364134154,
+            "standardized_difference": null,
+            "validation_mean": null
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Discovery",
+            "reference_mean": 16.075,
+            "standardized_difference": null,
+            "validation_mean": null
+          },
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Discovery",
+            "reference_mean": 89.76827515400412,
+            "standardized_difference": null,
+            "validation_mean": null
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Discovery",
+            "reference_mean": 16.0875,
+            "standardized_difference": null,
+            "validation_mean": null
+          },
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 89.7733220598301,
+            "standardized_difference": null,
+            "validation_mean": null
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 15.970588235294118,
+            "standardized_difference": null,
+            "validation_mean": null
+          },
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 89.58908080686075,
+            "standardized_difference": null,
+            "validation_mean": null
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 16.0,
+            "standardized_difference": null,
+            "validation_mean": null
+          }
+        ],
+        "component": "CT_AC__PCGBA23",
+        "insufficient_reason": "No pairs satisfy the prespecified calipers",
+        "matched_AD": 0,
+        "matched_Control": 0,
+        "matched_pairs": 0,
+        "max_abs_within_group_SMD": null,
+        "missing_by_covariate": {
+          "age_at_death": 0,
+          "education_years": 0,
+          "sex_code": 0,
+          "study": 0
+        },
+        "missing_covariate_donors": 0,
+        "nonfinite_balance_checks": 0,
+        "sufficient_for_inferential_MDC": false,
+        "tissues": [
+          "AC",
+          "PCG"
+        ],
+        "total_matched_donors": 0
+      },
+      {
+        "all_validation_donors": 176,
+        "available_AD_Control": {
+          "AD": 77,
+          "Control": 65
+        },
+        "balance": [
+          {
+            "ad_mean": 91.76271959844854,
+            "control_mean": 91.80774203361472,
+            "covariate": "age_at_death",
+            "standardized_difference": -0.008895301047874076
+          },
+          {
+            "ad_mean": 15.583333333333334,
+            "control_mean": 15.38888888888889,
+            "covariate": "education_years",
+            "standardized_difference": 0.07462049299918495
+          },
+          {
+            "ad_proportion": 0.9166666666666666,
+            "control_proportion": 0.9166666666666666,
+            "covariate": "study",
+            "level": "MAP",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.08333333333333333,
+            "control_proportion": 0.08333333333333333,
+            "covariate": "study",
+            "level": "ROS",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.6666666666666666,
+            "control_proportion": 0.6666666666666666,
+            "covariate": "sex_code",
+            "level": "Code 0",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.3333333333333333,
+            "control_proportion": 0.3333333333333333,
+            "covariate": "sex_code",
+            "level": "Code 1",
+            "standardized_difference": 0.0
+          }
+        ],
+        "balance_target_met": true,
+        "comparison_with_discovery_and_heldout": [
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Discovery",
+            "reference_mean": 89.96988364134154,
+            "standardized_difference": 0.3358025407501802,
+            "validation_mean": 91.76271959844854
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Discovery",
+            "reference_mean": 16.075,
+            "standardized_difference": -0.1701961889934816,
+            "validation_mean": 15.583333333333334
+          },
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Discovery",
+            "reference_mean": 89.76827515400412,
+            "standardized_difference": 0.3793337606093636,
+            "validation_mean": 91.80774203361472
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Discovery",
+            "reference_mean": 16.0875,
+            "standardized_difference": -0.25097794379755495,
+            "validation_mean": 15.38888888888889
+          },
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 89.7733220598301,
+            "standardized_difference": 0.40071122768393297,
+            "validation_mean": 91.76271959844854
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "AD",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 15.970588235294118,
+            "standardized_difference": -0.13702387584345757,
+            "validation_mean": 15.583333333333334
+          },
+          {
+            "covariate": "age_at_death",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 89.58908080686075,
+            "standardized_difference": 0.4440896434164294,
+            "validation_mean": 91.80774203361472
+          },
+          {
+            "covariate": "education_years",
+            "diagnosis_group": "Control",
+            "reference_cohort": "Held-out validation",
+            "reference_mean": 16.0,
+            "standardized_difference": -0.23099019362448325,
+            "validation_mean": 15.38888888888889
+          }
+        ],
+        "component": "CT_DLPFC__PCGBA23",
+        "insufficient_reason": "",
+        "matched_AD": 36,
+        "matched_Control": 36,
+        "matched_pairs": 36,
+        "max_abs_within_group_SMD": 0.07462049299918495,
+        "missing_by_covariate": {
+          "age_at_death": 0,
+          "education_years": 0,
+          "sex_code": 0,
+          "study": 0
+        },
+        "missing_covariate_donors": 0,
+        "nonfinite_balance_checks": 0,
+        "sufficient_for_inferential_MDC": true,
+        "tissues": [
+          "DLPFC",
+          "PCG"
+        ],
+        "total_matched_donors": 72
+      }
+    ],
+    "excluded_complete_expression_n": 464,
+    "frozen_discovery": {
+      "masks_unchanged": true,
+      "modules_unchanged": true,
+      "references_unchanged": true,
+      "transformations_unchanged": true
+    },
+    "incomplete_unique_donors": 793,
+    "inference": {
+      "CT_TS": "Use the CT pair's matched donors for both CT and within-region scores",
+      "MDC": "Recompute group adjacencies and both permutation nulls for matched donors; do not reuse full-cohort MDC/FDR",
+      "association_BH": "Across valid modules separately by cohort/component/outcome/group/feature/scale/mask/normalization",
+      "minimum_MDC_pairs": 5,
+      "minimum_association_complete_pairs": 10
+    },
+    "limitations": [
+      "Balanced AD/Control within each component, not guaranteed identical demographic distributions to discovery",
+      "Observed outcome missingness can reduce or unbalance the pairs used by a particular association; no outcome-based rematching",
+      "Component cohorts overlap; counts must not be added",
+      "The full incomplete-region cohort, including MCI/unclassified donors, remains available"
+    ],
+    "matched_unique_donors": 419,
+    "matching": {
+      "age_caliper_years": 2,
+      "diagnosis_used_as_matching_group": true,
+      "education_caliper_years": 2,
+      "exact": [
+        "study",
+        "sex_code"
+      ],
+      "ratio": "1 AD : 1 Control",
+      "re_split_validation": false,
+      "replacement": false,
+      "uses_expression_values": false,
+      "uses_other_outcomes_or_network_scores": false
+    },
+    "matching_algorithm_sha256": "1eb5d10f8c8eca9718c9e0cfba3f92e4101e518a5f002dc2308debf7b2d2c56e",
+    "membership_sha256": "e683f296a5ba6d69de49ca0a602b57d73119f886de0405c487b6c7f61302a975",
+    "publication": "Private membership only; this aggregate manifest contains no sample or donor identifiers",
+    "schema_version": 1,
+    "source_metadata_sha256": "07d9df9bc2328a1845d3542a07179bb732f1eee6b797fba2f0096da845cc132e",
+    "status": "complete"
+  },
+  "discovery_demography_validation": {
+    "cohort_label": "Discovery-demography-matched incomplete-region validation (AD\u2013Control)",
+    "component_counts_overlap": true,
+    "components": [
+      {
+        "component": "TS_AC",
+        "discovery_demographic_comparison": [
+          {
+            "SMD_to_matched_discovery": -0.042905284983675566,
+            "SMD_to_whole_discovery": 0.05018860553781902,
+            "anchor_mean": 90.38795345653664,
+            "covariate": "age_at_death",
+            "diagnosis_group": "AD",
+            "selected_mean": 90.21396303901437,
+            "whole_discovery_mean": 89.96988364134154
+          },
+          {
+            "SMD_to_matched_discovery": -0.08481898955060306,
+            "SMD_to_whole_discovery": -0.21936373619595312,
+            "anchor_mean": 15.65,
+            "covariate": "education_years",
+            "diagnosis_group": "AD",
+            "selected_mean": 15.425,
+            "whole_discovery_mean": 16.075
+          },
+          {
+            "SMD_to_matched_discovery": -0.028064659377304207,
+            "SMD_to_whole_discovery": 0.03949340208818851,
+            "anchor_mean": 90.07713894592744,
+            "covariate": "age_at_death",
+            "diagnosis_group": "Control",
+            "selected_mean": 89.96269678302532,
+            "whole_discovery_mean": 89.76827515400412
+          },
+          {
+            "SMD_to_matched_discovery": 0.0,
+            "SMD_to_whole_discovery": -0.15089469517689014,
+            "anchor_mean": 15.65,
+            "covariate": "education_years",
+            "diagnosis_group": "Control",
+            "selected_mean": 15.65,
+            "whole_discovery_mean": 16.0875
+          }
+        ],
+        "inferential_MDC": true,
+        "matched_pairs": 40,
+        "n_AD": 40,
+        "n_Control": 40,
+        "unavailable_reason": "",
+        "within_validation_balance": [
+          {
+            "ad_mean": 90.21396303901437,
+            "control_mean": 89.96269678302532,
+            "covariate": "age_at_death",
+            "standardized_difference": 0.06263512956622307
+          },
+          {
+            "ad_mean": 15.425,
+            "control_mean": 15.65,
+            "covariate": "education_years",
+            "standardized_difference": -0.0801376128880197
+          },
+          {
+            "ad_proportion": 0.575,
+            "control_proportion": 0.575,
+            "covariate": "study",
+            "level": "MAP",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.425,
+            "control_proportion": 0.425,
+            "covariate": "study",
+            "level": "ROS",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.85,
+            "control_proportion": 0.85,
+            "covariate": "sex_code",
+            "level": "Code 0",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.15,
+            "control_proportion": 0.15,
+            "covariate": "sex_code",
+            "level": "Code 1",
+            "standardized_difference": 0.0
+          }
+        ]
+      },
+      {
+        "component": "TS_DLPFC",
+        "discovery_demographic_comparison": [
+          {
+            "SMD_to_matched_discovery": -0.028760777057221423,
+            "SMD_to_whole_discovery": -0.08942885349541227,
+            "anchor_mean": 89.64782711145521,
+            "covariate": "age_at_death",
+            "diagnosis_group": "AD",
+            "selected_mean": 89.51232593889205,
+            "whole_discovery_mean": 89.96988364134154
+          },
+          {
+            "SMD_to_matched_discovery": 0.06371854512776128,
+            "SMD_to_whole_discovery": -0.07486297248271016,
+            "anchor_mean": 15.672131147540984,
+            "covariate": "education_years",
+            "diagnosis_group": "AD",
+            "selected_mean": 15.852459016393443,
+            "whole_discovery_mean": 16.075
+          },
+          {
+            "SMD_to_matched_discovery": -0.020718292625066175,
+            "SMD_to_whole_discovery": -0.10147037476339046,
+            "anchor_mean": 89.3351735281247,
+            "covariate": "age_at_death",
+            "diagnosis_group": "Control",
+            "selected_mean": 89.23445652539806,
+            "whole_discovery_mean": 89.76827515400412
+          },
+          {
+            "SMD_to_matched_discovery": 0.011215387240167593,
+            "SMD_to_whole_discovery": -0.10002373276010178,
+            "anchor_mean": 15.754098360655737,
+            "covariate": "education_years",
+            "diagnosis_group": "Control",
+            "selected_mean": 15.78688524590164,
+            "whole_discovery_mean": 16.0875
+          }
+        ],
+        "inferential_MDC": true,
+        "matched_pairs": 61,
+        "n_AD": 61,
+        "n_Control": 61,
+        "unavailable_reason": "",
+        "within_validation_balance": [
+          {
+            "ad_mean": 89.51232593889205,
+            "control_mean": 89.23445652539806,
+            "covariate": "age_at_death",
+            "standardized_difference": 0.05915971256836051
+          },
+          {
+            "ad_mean": 15.852459016393443,
+            "control_mean": 15.78688524590164,
+            "covariate": "education_years",
+            "standardized_difference": 0.0224050026695294
+          },
+          {
+            "ad_proportion": 0.639344262295082,
+            "control_proportion": 0.639344262295082,
+            "covariate": "study",
+            "level": "MAP",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.36065573770491804,
+            "control_proportion": 0.36065573770491804,
+            "covariate": "study",
+            "level": "ROS",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.7213114754098361,
+            "control_proportion": 0.7213114754098361,
+            "covariate": "sex_code",
+            "level": "Code 0",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.2786885245901639,
+            "control_proportion": 0.2786885245901639,
+            "covariate": "sex_code",
+            "level": "Code 1",
+            "standardized_difference": 0.0
+          }
+        ]
+      },
+      {
+        "component": "TS_PCGBA23",
+        "discovery_demographic_comparison": [
+          {
+            "SMD_to_matched_discovery": -0.029307704891589383,
+            "SMD_to_whole_discovery": 0.39001777049995023,
+            "anchor_mean": 91.97535934291584,
+            "covariate": "age_at_death",
+            "diagnosis_group": "AD",
+            "selected_mean": 91.86071184120465,
+            "whole_discovery_mean": 89.96988364134154
+          },
+          {
+            "SMD_to_matched_discovery": 0.16729644848765302,
+            "SMD_to_whole_discovery": -0.3039121172121589,
+            "anchor_mean": 14.875,
+            "covariate": "education_years",
+            "diagnosis_group": "AD",
+            "selected_mean": 15.25,
+            "whole_discovery_mean": 16.075
+          },
+          {
+            "SMD_to_matched_discovery": 0.058414183519559175,
+            "SMD_to_whole_discovery": 0.4693087637758559,
+            "anchor_mean": 91.84964636094001,
+            "covariate": "age_at_death",
+            "diagnosis_group": "Control",
+            "selected_mean": 92.09103353867214,
+            "whole_discovery_mean": 89.76827515400412
+          },
+          {
+            "SMD_to_matched_discovery": 0.09626225486047599,
+            "SMD_to_whole_discovery": -0.4162912207736465,
+            "anchor_mean": 14.75,
+            "covariate": "education_years",
+            "diagnosis_group": "Control",
+            "selected_mean": 14.958333333333334,
+            "whole_discovery_mean": 16.0875
+          }
+        ],
+        "inferential_MDC": true,
+        "matched_pairs": 24,
+        "n_AD": 24,
+        "n_Control": 24,
+        "unavailable_reason": "",
+        "within_validation_balance": [
+          {
+            "ad_mean": 91.86071184120465,
+            "control_mean": 92.09103353867214,
+            "covariate": "age_at_death",
+            "standardized_difference": -0.057212831202313366
+          },
+          {
+            "ad_mean": 15.25,
+            "control_mean": 14.958333333333334,
+            "covariate": "education_years",
+            "standardized_difference": 0.12524681940185145
+          },
+          {
+            "ad_proportion": 0.875,
+            "control_proportion": 0.875,
+            "covariate": "study",
+            "level": "MAP",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.125,
+            "control_proportion": 0.125,
+            "covariate": "study",
+            "level": "ROS",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.8333333333333334,
+            "control_proportion": 0.8333333333333334,
+            "covariate": "sex_code",
+            "level": "Code 0",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.16666666666666666,
+            "control_proportion": 0.16666666666666666,
+            "covariate": "sex_code",
+            "level": "Code 1",
+            "standardized_difference": 0.0
+          }
+        ]
+      },
+      {
+        "component": "CT_AC__DLPFC",
+        "discovery_demographic_comparison": [
+          {
+            "SMD_to_matched_discovery": -0.03825370526462099,
+            "SMD_to_whole_discovery": -0.04257932982997674,
+            "anchor_mean": 89.91045617425617,
+            "covariate": "age_at_death",
+            "diagnosis_group": "AD",
+            "selected_mean": 89.76760478318637,
+            "whole_discovery_mean": 89.96988364134154
+          },
+          {
+            "SMD_to_matched_discovery": -0.05147813042567531,
+            "SMD_to_whole_discovery": -0.21555491021093265,
+            "anchor_mean": 15.558823529411764,
+            "covariate": "education_years",
+            "diagnosis_group": "AD",
+            "selected_mean": 15.411764705882353,
+            "whole_discovery_mean": 16.075
+          },
+          {
+            "SMD_to_matched_discovery": -0.0014621285927817933,
+            "SMD_to_whole_discovery": -0.049588937294653926,
+            "anchor_mean": 89.53392116600234,
+            "covariate": "age_at_death",
+            "diagnosis_group": "Control",
+            "selected_mean": 89.52844546442806,
+            "whole_discovery_mean": 89.76827515400412
+          },
+          {
+            "SMD_to_matched_discovery": 0.04292039552107133,
+            "SMD_to_whole_discovery": -0.10930947535012266,
+            "anchor_mean": 15.647058823529411,
+            "covariate": "education_years",
+            "diagnosis_group": "Control",
+            "selected_mean": 15.764705882352942,
+            "whole_discovery_mean": 16.0875
+          }
+        ],
+        "inferential_MDC": true,
+        "matched_pairs": 34,
+        "n_AD": 34,
+        "n_Control": 34,
+        "unavailable_reason": "",
+        "within_validation_balance": [
+          {
+            "ad_mean": 89.76760478318637,
+            "control_mean": 89.52844546442806,
+            "covariate": "age_at_death",
+            "standardized_difference": 0.06354304122189193
+          },
+          {
+            "ad_mean": 15.411764705882353,
+            "control_mean": 15.764705882352942,
+            "covariate": "education_years",
+            "standardized_difference": -0.11841173452250306
+          },
+          {
+            "ad_proportion": 0.6176470588235294,
+            "control_proportion": 0.6176470588235294,
+            "covariate": "study",
+            "level": "MAP",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.38235294117647056,
+            "control_proportion": 0.38235294117647056,
+            "covariate": "study",
+            "level": "ROS",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.8823529411764706,
+            "control_proportion": 0.8823529411764706,
+            "covariate": "sex_code",
+            "level": "Code 0",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.11764705882352941,
+            "control_proportion": 0.11764705882352941,
+            "covariate": "sex_code",
+            "level": "Code 1",
+            "standardized_difference": 0.0
+          }
+        ]
+      },
+      {
+        "component": "CT_AC__PCGBA23",
+        "discovery_demographic_comparison": [
+          {
+            "SMD_to_matched_discovery": null,
+            "SMD_to_whole_discovery": null,
+            "anchor_mean": null,
+            "covariate": "age_at_death",
+            "diagnosis_group": "AD",
+            "selected_mean": null,
+            "whole_discovery_mean": 89.96988364134154
+          },
+          {
+            "SMD_to_matched_discovery": null,
+            "SMD_to_whole_discovery": null,
+            "anchor_mean": null,
+            "covariate": "education_years",
+            "diagnosis_group": "AD",
+            "selected_mean": null,
+            "whole_discovery_mean": 16.075
+          },
+          {
+            "SMD_to_matched_discovery": null,
+            "SMD_to_whole_discovery": null,
+            "anchor_mean": null,
+            "covariate": "age_at_death",
+            "diagnosis_group": "Control",
+            "selected_mean": null,
+            "whole_discovery_mean": 89.76827515400412
+          },
+          {
+            "SMD_to_matched_discovery": null,
+            "SMD_to_whole_discovery": null,
+            "anchor_mean": null,
+            "covariate": "education_years",
+            "diagnosis_group": "Control",
+            "selected_mean": null,
+            "whole_discovery_mean": 16.0875
+          }
+        ],
+        "inferential_MDC": false,
+        "matched_pairs": 0,
+        "n_AD": 0,
+        "n_Control": 0,
+        "unavailable_reason": "Fewer than five eligible demographic-profile-matched pairs",
+        "within_validation_balance": []
+      },
+      {
+        "component": "CT_DLPFC__PCGBA23",
+        "discovery_demographic_comparison": [
+          {
+            "SMD_to_matched_discovery": -0.12795306196083017,
+            "SMD_to_whole_discovery": 0.2603875111312119,
+            "anchor_mean": 91.66128874547766,
+            "covariate": "age_at_death",
+            "diagnosis_group": "AD",
+            "selected_mean": 91.20537140249665,
+            "whole_discovery_mean": 89.96988364134154
+          },
+          {
+            "SMD_to_matched_discovery": 0.18683219797558417,
+            "SMD_to_whole_discovery": -0.27040983676556507,
+            "anchor_mean": 14.904761904761905,
+            "covariate": "education_years",
+            "diagnosis_group": "AD",
+            "selected_mean": 15.333333333333334,
+            "whole_discovery_mean": 16.075
+          },
+          {
+            "SMD_to_matched_discovery": -0.07203031060954168,
+            "SMD_to_whole_discovery": 0.33441451029820163,
+            "anchor_mean": 91.64681724845994,
+            "covariate": "age_at_death",
+            "diagnosis_group": "Control",
+            "selected_mean": 91.37824712362698,
+            "whole_discovery_mean": 89.76827515400412
+          },
+          {
+            "SMD_to_matched_discovery": 0.17554246553313022,
+            "SMD_to_whole_discovery": -0.34816036270259626,
+            "anchor_mean": 14.761904761904763,
+            "covariate": "education_years",
+            "diagnosis_group": "Control",
+            "selected_mean": 15.142857142857142,
+            "whole_discovery_mean": 16.0875
+          }
+        ],
+        "inferential_MDC": true,
+        "matched_pairs": 21,
+        "n_AD": 21,
+        "n_Control": 21,
+        "unavailable_reason": "",
+        "within_validation_balance": [
+          {
+            "ad_mean": 91.20537140249665,
+            "control_mean": 91.37824712362698,
+            "covariate": "age_at_death",
+            "standardized_difference": -0.04637302412931988
+          },
+          {
+            "ad_mean": 15.333333333333334,
+            "control_mean": 15.142857142857142,
+            "covariate": "education_years",
+            "standardized_difference": 0.08062812085685489
+          },
+          {
+            "ad_proportion": 0.9047619047619048,
+            "control_proportion": 0.9047619047619048,
+            "covariate": "study",
+            "level": "MAP",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.09523809523809523,
+            "control_proportion": 0.09523809523809523,
+            "covariate": "study",
+            "level": "ROS",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.8095238095238095,
+            "control_proportion": 0.8095238095238095,
+            "covariate": "sex_code",
+            "level": "Code 0",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.19047619047619047,
+            "control_proportion": 0.19047619047619047,
+            "covariate": "sex_code",
+            "level": "Code 1",
+            "standardized_difference": 0.0
+          }
+        ]
+      }
+    ],
+    "existing_balanced_pairs_sha256": "f47ebfe4876569324dc3f35dccbae8d19d618dfc4faead1df1fc94dd354bbd4f",
+    "frozen_modules_reference_scores_masks": true,
+    "input_metadata_sha256": "07d9df9bc2328a1845d3542a07179bb732f1eee6b797fba2f0096da845cc132e",
+    "limitations": [
+      "Matched subsets do not guarantee identical demographics or eliminate unmeasured confounding",
+      "MDC tests conditional on frozen discovery modules/masks; discovery inference not added",
+      "No outcome-specific rematching; outcome-complete donors may lose demographic balance",
+      "CAMEL partial correlations assume an adequate covariate model; residual permutations assume within-study/sex exchangeability"
+    ],
+    "matching": "Maximum-cardinality minimum-demographic-distance match of existing validation pairs to discovery pairs; exact study/sex, age and education calipers two years for BOTH members",
+    "pairs_sha256": "4cd7a6d45316b03671c95ff19bcaa9e5bfbdb82537975243be88d3e88d558a84",
+    "public_donor_bundle": "not authorized; private only",
+    "selection_uses_outcomes_or_scores": false,
+    "status": "complete",
+    "version": "brain-demographic-null-v1"
+  },
+  "discovery_design": {
+    "beta_CT": 2,
+    "beta_TS": 3,
+    "biological_level": 4,
+    "cohorts": {
+      "Discovery": {
+        "balance": [
+          {
+            "ad_mean": 89.96988364134154,
+            "control_mean": 89.76827515400412,
+            "covariate": "age_at_death",
+            "standardized_difference": 0.035755436982618204
+          },
+          {
+            "ad_mean": 16.075,
+            "control_mean": 16.0875,
+            "covariate": "education_years",
+            "standardized_difference": -0.004098161997444794
+          },
+          {
+            "ad_proportion": 0.6,
+            "control_proportion": 0.6,
+            "covariate": "study",
+            "level": "MAP",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.4,
+            "control_proportion": 0.4,
+            "covariate": "study",
+            "level": "ROS",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.675,
+            "control_proportion": 0.675,
+            "covariate": "sex_code",
+            "level": "Code 0",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.325,
+            "control_proportion": 0.325,
+            "covariate": "sex_code",
+            "level": "Code 1",
+            "standardized_difference": 0.0
+          }
+        ],
+        "counts": {
+          "AD": 80,
+          "Control": 80
+        }
+      },
+      "Held-out validation": {
+        "balance": [
+          {
+            "ad_mean": 89.7733220598301,
+            "control_mean": 89.58908080686075,
+            "covariate": "age_at_death",
+            "standardized_difference": 0.03761577408621085
+          },
+          {
+            "ad_mean": 15.970588235294118,
+            "control_mean": 16.0,
+            "covariate": "education_years",
+            "standardized_difference": -0.010273211371591807
+          },
+          {
+            "ad_proportion": 0.5882352941176471,
+            "control_proportion": 0.5882352941176471,
+            "covariate": "study",
+            "level": "MAP",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.4117647058823529,
+            "control_proportion": 0.4117647058823529,
+            "covariate": "study",
+            "level": "ROS",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.6764705882352942,
+            "control_proportion": 0.6764705882352942,
+            "covariate": "sex_code",
+            "level": "Code 0",
+            "standardized_difference": 0.0
+          },
+          {
+            "ad_proportion": 0.3235294117647059,
+            "control_proportion": 0.3235294117647059,
+            "covariate": "sex_code",
+            "level": "Code 1",
+            "standardized_difference": 0.0
+          }
+        ],
+        "counts": {
+          "AD": 34,
+          "Control": 34
+        }
+      }
+    },
+    "complete_expression_excluded_from_incomplete": 464,
+    "component_cohorts": [
+      {
+        "cohort": "Discovery",
+        "component": "AC",
+        "diagnosis_counts": {
+          "AD": 80,
+          "Control": 80
+        },
+        "n": 160
+      },
+      {
+        "cohort": "Held-out validation",
+        "component": "AC",
+        "diagnosis_counts": {
+          "AD": 34,
+          "Control": 34
+        },
+        "n": 68
+      },
+      {
+        "cohort": "Incomplete-region validation",
+        "component": "AC",
+        "diagnosis_counts": {
+          "AD": 108,
+          "Control": 79,
+          "MCI": 71,
+          "Unclassified": 8
+        },
+        "n": 266
+      },
+      {
+        "cohort": "MCI (exploratory)",
+        "component": "AC",
+        "diagnosis_counts": {
+          "MCI": 119
+        },
+        "n": 119
+      },
+      {
+        "cohort": "Unmatched complete donors (exploratory)",
+        "component": "AC",
+        "diagnosis_counts": {
+          "AD": 53,
+          "Control": 50
+        },
+        "n": 103
+      },
+      {
+        "cohort": "Discovery",
+        "component": "DLPFC",
+        "diagnosis_counts": {
+          "AD": 80,
+          "Control": 80
+        },
+        "n": 160
+      },
+      {
+        "cohort": "Held-out validation",
+        "component": "DLPFC",
+        "diagnosis_counts": {
+          "AD": 34,
+          "Control": 34
+        },
+        "n": 68
+      },
+      {
+        "cohort": "Incomplete-region validation",
+        "component": "DLPFC",
+        "diagnosis_counts": {
+          "AD": 339,
+          "Control": 229,
+          "MCI": 165,
+          "Unclassified": 19
+        },
+        "n": 752
+      },
+      {
+        "cohort": "MCI (exploratory)",
+        "component": "DLPFC",
+        "diagnosis_counts": {
+          "MCI": 119
+        },
+        "n": 119
+      },
+      {
+        "cohort": "Unmatched complete donors (exploratory)",
+        "component": "DLPFC",
+        "diagnosis_counts": {
+          "AD": 53,
+          "Control": 50
+        },
+        "n": 103
+      },
+      {
+        "cohort": "Discovery",
+        "component": "PCG",
+        "diagnosis_counts": {
+          "AD": 80,
+          "Control": 80
+        },
+        "n": 160
+      },
+      {
+        "cohort": "Held-out validation",
+        "component": "PCG",
+        "diagnosis_counts": {
+          "AD": 34,
+          "Control": 34
+        },
+        "n": 68
+      },
+      {
+        "cohort": "Incomplete-region validation",
+        "component": "PCG",
+        "diagnosis_counts": {
+          "AD": 80,
+          "Control": 74,
+          "MCI": 35,
+          "Unclassified": 6
+        },
+        "n": 195
+      },
+      {
+        "cohort": "MCI (exploratory)",
+        "component": "PCG",
+        "diagnosis_counts": {
+          "MCI": 119
+        },
+        "n": 119
+      },
+      {
+        "cohort": "Unmatched complete donors (exploratory)",
+        "component": "PCG",
+        "diagnosis_counts": {
+          "AD": 53,
+          "Control": 50
+        },
+        "n": 103
+      },
+      {
+        "cohort": "Discovery",
+        "component": "AC\u2013DLPFC",
+        "diagnosis_counts": {
+          "AD": 80,
+          "Control": 80
+        },
+        "n": 160
+      },
+      {
+        "cohort": "Held-out validation",
+        "component": "AC\u2013DLPFC",
+        "diagnosis_counts": {
+          "AD": 34,
+          "Control": 34
+        },
+        "n": 68
+      },
+      {
+        "cohort": "Incomplete-region validation",
+        "component": "AC\u2013DLPFC",
+        "diagnosis_counts": {
+          "AD": 97,
+          "Control": 67,
+          "MCI": 61,
+          "Unclassified": 5
+        },
+        "n": 230
+      },
+      {
+        "cohort": "MCI (exploratory)",
+        "component": "AC\u2013DLPFC",
+        "diagnosis_counts": {
+          "MCI": 119
+        },
+        "n": 119
+      },
+      {
+        "cohort": "Unmatched complete donors (exploratory)",
+        "component": "AC\u2013DLPFC",
+        "diagnosis_counts": {
+          "AD": 53,
+          "Control": 50
+        },
+        "n": 103
+      },
+      {
+        "cohort": "Discovery",
+        "component": "AC\u2013PCG",
+        "diagnosis_counts": {
+          "AD": 80,
+          "Control": 80
+        },
+        "n": 160
+      },
+      {
+        "cohort": "Held-out validation",
+        "component": "AC\u2013PCG",
+        "diagnosis_counts": {
+          "AD": 34,
+          "Control": 34
+        },
+        "n": 68
+      },
+      {
+        "cohort": "Incomplete-region validation",
+        "component": "AC\u2013PCG",
+        "diagnosis_counts": {
+          "AD": 3,
+          "Control": 6,
+          "MCI": 4,
+          "Unclassified": 1
+        },
+        "n": 14
+      },
+      {
+        "cohort": "MCI (exploratory)",
+        "component": "AC\u2013PCG",
+        "diagnosis_counts": {
+          "MCI": 119
+        },
+        "n": 119
+      },
+      {
+        "cohort": "Unmatched complete donors (exploratory)",
+        "component": "AC\u2013PCG",
+        "diagnosis_counts": {
+          "AD": 53,
+          "Control": 50
+        },
+        "n": 103
+      },
+      {
+        "cohort": "Discovery",
+        "component": "DLPFC\u2013PCG",
+        "diagnosis_counts": {
+          "AD": 80,
+          "Control": 80
+        },
+        "n": 160
+      },
+      {
+        "cohort": "Held-out validation",
+        "component": "DLPFC\u2013PCG",
+        "diagnosis_counts": {
+          "AD": 34,
+          "Control": 34
+        },
+        "n": 68
+      },
+      {
+        "cohort": "Incomplete-region validation",
+        "component": "DLPFC\u2013PCG",
+        "diagnosis_counts": {
+          "AD": 77,
+          "Control": 65,
+          "MCI": 29,
+          "Unclassified": 5
+        },
+        "n": 176
+      },
+      {
+        "cohort": "MCI (exploratory)",
+        "component": "DLPFC\u2013PCG",
+        "diagnosis_counts": {
+          "MCI": 119
+        },
+        "n": 119
+      },
+      {
+        "cohort": "Unmatched complete donors (exploratory)",
+        "component": "DLPFC\u2013PCG",
+        "diagnosis_counts": {
+          "AD": 53,
+          "Control": 50
+        },
+        "n": 103
+      }
+    ],
+    "discovery_genes": 51918,
+    "incomplete_unique_donors": 793,
+    "matching": {
+      "age_caliper_years": 2,
+      "education_caliper_years": 2,
+      "exact": [
+        "study",
+        "sex_code"
+      ],
+      "selection_uses_expression": false,
+      "selection_uses_other_outcomes": false
+    },
+    "minimum_module_size": 30,
+    "module_set": "matched_control_brain_l4",
+    "publication": "Private preparation only; new donor-level score publication requires approval",
+    "reference_n": 80,
+    "source_expression_preprocessing": "Fixed existing processed expression; not external validation",
+    "split_identity": "79609213b425737ca55e1d0145471a7450bd7ae7f226b38a5cfe44ebe3059cbb",
+    "status": "approved_cohort_frozen",
+    "zero_indexed_table": "table_3.csv"
+  },
+  "export_recovery": {
+    "new_experiments_run": false,
+    "recovery_writer_sha256": "048607a81acd5b1d64b81ed42e569a56198b55a3da537343310e4be32d27eb5c",
+    "repair": "Explicit nullable bool/string output schemas; scientific values unchanged",
+    "scientific_source_fingerprint": "af84c1fd37ffb1e67312603e4a386d35ba9e6e77e8ff0aff994ae5b2f7179bcf",
+    "scientific_source_sha256": "8576b445b30e96804897f97be7983f01058661ce022bf7af1228ee652eb34461",
+    "status": "complete"
+  },
+  "pilot": {
+    "camel_pilot_seconds": 2.310764167457819,
+    "camel_projected_hours_range": [
+      2.1403453101078047,
+      12.84207186064683
+    ],
+    "caveat": "No full M5/motor or older partition is authorized by this brain-only implementation",
+    "estimate_is_provisional": true,
+    "large_run_permutations": 9999,
+    "mdc_full_permutation_pilot_seconds": 56.98612675815821,
+    "mdc_projected_hours_range": [
+      26.39169995487202,
+      316.70039945846423
+    ],
+    "peak_RSS_GiB": 1.042327880859375,
+    "pilot_rows": [
+      {
+        "component": "TS_DLPFC",
+        "direct_numerical_check": "passed",
+        "module": 120,
+        "nulls_requested": 49,
+        "rows": 8,
+        "seconds": 0.025510229170322418
+      },
+      {
+        "component": "CT_AC__DLPFC",
+        "direct_numerical_check": "passed",
+        "module": 120,
+        "nulls_requested": 49,
+        "rows": 8,
+        "seconds": 0.017109964042901993
+      },
+      {
+        "component": "CT_DLPFC__PCGBA23",
+        "direct_numerical_check": "passed",
+        "module": 120,
+        "nulls_requested": 49,
+        "rows": 8,
+        "seconds": 0.01653418317437172
+      },
+      {
+        "component": "TS_DLPFC",
+        "direct_numerical_check": "passed",
+        "module": 1349,
+        "nulls_requested": 49,
+        "rows": 8,
+        "seconds": 0.2408670075237751
+      },
+      {
+        "component": "CT_AC__DLPFC",
+        "direct_numerical_check": "passed",
+        "module": 1349,
+        "nulls_requested": 49,
+        "rows": 8,
+        "seconds": 0.2461153082549572
+      },
+      {
+        "component": "CT_DLPFC__PCGBA23",
+        "direct_numerical_check": "passed",
+        "module": 1349,
+        "nulls_requested": 49,
+        "rows": 8,
+        "seconds": 0.34813713282346725
+      }
+    ],
+    "scope": "Technical pilot only; no selection based on p-values or MDC magnitude",
+    "source_fingerprint": "af84c1fd37ffb1e67312603e4a386d35ba9e6e77e8ff0aff994ae5b2f7179bcf",
+    "status": "passed",
+    "total_pilot_seconds": 0.8942738249897957
+  }
+}

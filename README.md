@@ -1063,3 +1063,37 @@ and never loads donor scores. No networks, edge masks, predictions, or Drive
 files are recomputed or changed. **Focus modules (optional)** filters the
 displayed plot/table; the complete-context download retains all modules and
 their full-family corrections.
+
+## New matched-Control results (247 modules)
+
+After deployment, choose **Analysis view → Matched-control results**.
+This is a separate module definition learned from 80 demographically matched
+discovery Controls; its module numbers must not be equated with the older
+186-module partition.
+
+The aggregate-only release contains the complete 30,794,712-row demographic
+CAMEL/eigengene test catalog, not just a top-ten subset. It also includes
+AD–Control CAMEL label tests, the 47,424-row MDC label-test catalog, original
+sample/gene MDC tests, full and endpoint-filtered KEGG, module composition,
+entropy, cohort balance and numerical QA. All four edge sets, three score
+scales, supported normalizations and available cohorts/components are selectable.
+FDR is copied from full module families before any display or top-K filter.
+
+Reads are local and predicate-filtered by the complete selected statistical
+context; no donor scores or large all-module calculations run in Streamlit.
+Only the active section executes. The original analyses and defaults remain
+unchanged. This release does **not** publish the new donor-level bundle, so donor
+scatter plots/distributions and the earlier unadjusted/dependent CT–TS catalog
+for this partition are explicitly outside this aggregate page.
+
+To rebuild from the private completed analysis and the identifier-free baseline:
+
+```bash
+python scripts/build_matched_brain_results.py \
+  --analysis-root /path/to/20261028_matched80_control_l4 \
+  --baseline-root /path/to/completed_baseline
+```
+
+The builder verifies source hashes, exact sampled coefficients/p/FDR values,
+row counts, privacy fields and the 95-MiB per-file limit. It never recalculates
+networks, edge masks or statistical tests and never uploads data.

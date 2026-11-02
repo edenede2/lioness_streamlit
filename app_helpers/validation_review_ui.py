@@ -189,6 +189,9 @@ def _mdc(render, reader=R, labels=COMPONENT_LABELS):
 
 def render_view(render):
     st.header("Validation & replication")
+    from app_helpers.matched_brain_results import available as matched_results_available
+    if matched_results_available():
+        st.info("The new 247-module matched-Control analysis is under Analysis view → Matched-control results. It includes demographic-adjusted CAMEL tests and MDC label-swap tests; the legacy comparisons below are unchanged.")
     identities=[(key,method) for key,config in DATASETS.items() for method in config.methods
                 if R.manifest(key,method)]
     if not identities:

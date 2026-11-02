@@ -3978,6 +3978,7 @@ view_options = [
     "Module details",
     "Partition comparison",
     "Validation & replication",
+    "Matched-control results",
     "Donor explorer",
     "Methods & data",
 ]
@@ -4014,6 +4015,11 @@ if active_view == "Validation & replication":
     from app_helpers.validation_review_ui import render_view as render_validation_review
 
     render_validation_review(render_plotly_chart)
+    st.stop()
+if active_view == "Matched-control results":
+    from app_helpers.matched_brain_results_ui import render_view as render_matched_results
+
+    render_matched_results(render_plotly_chart)
     st.stop()
 if active_view == "Donor explorer":
     from app_helpers.donor_explorer_ui import render_view as render_donor_explorer
