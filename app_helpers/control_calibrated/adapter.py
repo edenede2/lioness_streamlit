@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from .registry import ROOT, METRICS, ESTIMATORS, is_calibrated, require_capability
 from .inputs import sha
+from . import hosted as H
 
 
 class ScoreUnavailable(ValueError):
@@ -17,7 +18,7 @@ class ScoreUnavailable(ValueError):
 
 
 def catalog(root=ROOT):
-    path = Path(root).resolve() / "catalog.json"
+    path = H.ensure(Path(root).resolve() / "catalog.json")
     stat = path.stat()
     return _catalog_content(str(path), stat.st_mtime_ns, stat.st_size)
 
@@ -69,7 +70,7 @@ def variant_for(family, root=ROOT):
 def metadata(module_set="full_cohort", cohort_scope="complete_450", root=ROOT, **_):
     c = catalog(root)
     variant = variant_for(module_set, root)
-    f = pd.read_parquet(Path(root) / c["datasets"][variant]["metadata_file"])
+    f = pd.read_parquet(H.ensure(Path(root) / c["datasets"][variant]["metadata_file"]))
     keep = f.role.eq("target")
     if cohort_scope in ("complete_450", "common_450", "common_357"):
         keep &= f.in_original_analysis
@@ -97,6 +98,7 @@ def scores(
     score_normalization="standard_pruned",
     regional_tissue=None,
     root=ROOT,
+    metric_families=None,
     **_,
 ):
     require_capability(estimator, "donor_scores")
@@ -110,6 +112,13 @@ def scores(
         )
     if metric_family is not None and metric_family not in METRICS:
         raise ScoreUnavailable("The selected metric is not a calibrated donor score")
+    selected_metrics = (
+        [metric_family]
+        if metric_family
+        else list(METRICS if metric_families is None else metric_families)
+    )
+    if not set(selected_metrics) <= set(METRICS):
+        raise ScoreUnavailable("Unknown calibrated donor measure")
     root = Path(root)
     c = catalog(root)
     variant = variant_for(module_set, root)
@@ -137,68 +146,44 @@ def scores(
         raise ScoreUnavailable("Regional module IDs require their tissue namespace")
     parts = []
     for job in jobs:
-        path = (
-            root
-            / "scores"
-            / f"beta{beta}"
-            / module_set
-            / scope
-            / module_filename(job["module_key"])
-        )
-        if differential_edge_rule != "all":
-            from .masks import mask_artifact_path
+        if H.is_hosted(root):
+            from .masks import key as mask_key
 
-            path = mask_artifact_path(
+            metadata_path = H.ensure(root / c["datasets"][variant]["metadata_file"])
+            full_metadata = pd.read_parquet(metadata_path)
+            selected_mask = (
+                "all"
+                if differential_edge_rule == "all"
+                else mask_key(
+                    differential_edge_rule,
+                    differential_fdr_scope,
+                    differential_fdr_threshold,
+                )
+            )
+            frame = H.read_scores(
                 root,
+                job,
                 beta,
-                module_set,
-                scope,
-                job["module_key"],
-                differential_edge_rule,
-                differential_fdr_scope,
-                differential_fdr_threshold,
+                selected_mask,
+                full_metadata,
+                component_public(component) if component else None,
             )
-        if not path.exists():
-            raise ScoreUnavailable(
-                f"Cached calibrated score is unavailable: {module_set}, beta{beta}, {scope}, {differential_edge_rule}"
-            )
-        if differential_edge_rule == "all":
-            index_path = root / "file_indexes" / f"{variant}.json"
-            expected = file_index(
-                str(root), variant, index_path.stat().st_mtime_ns
-            ).get(str(path.relative_to(root)))
+            selected_ids = metadata(module_set, scope, root).sample_id
+            frame = frame.loc[frame.sample_id.isin(selected_ids)].copy()
+            frame["cohort_scope"] = scope
         else:
-            from .masks import key
-
-            mm = json.loads((root / "masks/manifest.json").read_text())
-            mask_key = key(
+            frame = _local_score_frame(
+                root,
+                c,
+                job,
+                variant,
+                beta,
+                scope,
+                module_set,
                 differential_edge_rule,
                 differential_fdr_scope,
                 differential_fdr_threshold,
             )
-            record = mm["modules"][job["module_key"]][mask_key]
-            if "files" not in record:
-                record = json.loads(
-                    (
-                        root
-                        / "masks/module_completion"
-                        / module_filename(job["module_key"]).replace(
-                            ".parquet", ".json"
-                        )
-                    ).read_text()
-                )["masks"][mask_key]
-            expected = next(
-                x["sha256"]
-                for x in record["files"]
-                if x["path"] == str(path.relative_to(root))
-            )
-        if expected is None:
-            raise ScoreUnavailable(
-                "Score artifact is absent from its completed file index"
-            )
-        stat = path.stat()
-        verify_score(str(path), stat.st_mtime_ns, stat.st_size, expected)
-        frame = pd.read_parquet(path)
         if len(frame) and (
             not frame.role.eq("target").all()
             or not frame.beta.eq(beta).all()
@@ -207,64 +192,17 @@ def scores(
             raise ValueError("Cached score role/beta/module identity mismatch")
         if component is not None:
             frame = frame.loc[frame.component.eq(component_public(component))]
-        identity = [
-            col
-            for col in frame
-            if col not in METRICS
-            and not any(col == m + "_" + s for m in METRICS for s in ("asinh", "rint"))
-        ]
-        for metric in [metric_family] if metric_family else METRICS:
-            out = frame[identity].copy()
-            out["metric_family"] = metric
-            out["magnitude_unavailable_reason"] = frame.unavailable_reason.to_numpy()
-            out["magnitude_eligible_edges"] = frame.eligible_edges.to_numpy()
-            if metric in ("signed_distance", "signed_abs_z"):
-                finite = np.isfinite(frame[metric])
-                out["eligible_edges"] = frame.signed_eligible_edges.to_numpy()
-                out["scored_edges"] = np.where(
-                    finite, frame.signed_eligible_edges, np.nan
-                )
-                out["unavailable_reason"] = np.where(
-                    finite,
-                    "ok",
-                    np.where(
-                        frame.unavailable_reason.eq("missing_required_tissue"),
-                        "missing_required_tissue",
-                        np.where(
-                            frame.signed_eligible_edges.eq(0),
-                            "no_eligible_signed_edges",
-                            "incomplete_signed_target_edge_coverage",
-                        ),
-                    ),
-                )
-            out["metric_eligible_edges"] = out.eligible_edges
-            for scale in [metric_scale] if metric_scale else ("raw", "asinh", "rint"):
-                out["metric_" + scale] = frame[
-                    metric if scale == "raw" else metric + "_" + scale
-                ].to_numpy()
-            out["component"] = out.component.map(component_legacy)
-            out["component_label"] = out.component.map(
-                lambda v: (
-                    v.replace("TS_", "")
-                    .replace("CT_", "")
-                    .replace("__", "–")
-                    .replace("PCGBA23", "PCG")
-                    if v not in ("TS", "CT", "all")
-                    else {
-                        "TS": "All within-tissue edges",
-                        "CT": "All cross-tissue edges",
-                        "all": "Whole module (fixed physical union)",
-                    }[v]
-                )
+        parts.extend(
+            _metric_frames(
+                frame,
+                selected_metrics,
+                metric_scale,
+                estimator,
+                beta,
+                edge_rule,
+                differential_edge_rule,
             )
-            out["lioness_method"] = "control_anchored"
-            out["network_method"] = "control_anchored"
-            out["estimator"] = estimator
-            out["score_version"] = f"control_calibrated_connectivity.v2.beta{beta}"
-            out["edge_rule"] = edge_rule
-            out["differential_edge_rule"] = differential_edge_rule
-            out["score_normalization"] = "common_eligible_physical_edges"
-            parts.append(out)
+        )
     result = (
         pd.concat(parts, ignore_index=True)
         if parts
@@ -292,6 +230,148 @@ def scores(
     if not include_embedded_metadata:
         result = result.drop(columns=["diagnosis_group"], errors="ignore")
     return result
+
+
+def _local_score_frame(
+    root,
+    c,
+    job,
+    variant,
+    beta,
+    scope,
+    module_set,
+    differential_edge_rule,
+    differential_fdr_scope,
+    differential_fdr_threshold,
+):
+    path = (
+        root
+        / "scores"
+        / f"beta{beta}"
+        / module_set
+        / scope
+        / module_filename(job["module_key"])
+    )
+    if differential_edge_rule != "all":
+        from .masks import mask_artifact_path
+
+        path = mask_artifact_path(
+            root,
+            beta,
+            module_set,
+            scope,
+            job["module_key"],
+            differential_edge_rule,
+            differential_fdr_scope,
+            differential_fdr_threshold,
+        )
+    if not path.exists():
+        raise ScoreUnavailable(
+            f"Cached calibrated score is unavailable: {module_set}, beta{beta}, {scope}, {differential_edge_rule}"
+        )
+    if differential_edge_rule == "all":
+        index_path = root / "file_indexes" / f"{variant}.json"
+        expected = file_index(str(root), variant, index_path.stat().st_mtime_ns).get(
+            str(path.relative_to(root))
+        )
+    else:
+        from .masks import key
+
+        mm = json.loads((root / "masks/manifest.json").read_text())
+        mask_key = key(
+            differential_edge_rule,
+            differential_fdr_scope,
+            differential_fdr_threshold,
+        )
+        record = mm["modules"][job["module_key"]][mask_key]
+        if "files" not in record:
+            record = json.loads(
+                (
+                    root
+                    / "masks/module_completion"
+                    / module_filename(job["module_key"]).replace(".parquet", ".json")
+                ).read_text()
+            )["masks"][mask_key]
+        expected = next(
+            x["sha256"]
+            for x in record["files"]
+            if x["path"] == str(path.relative_to(root))
+        )
+    if expected is None:
+        raise ScoreUnavailable("Score artifact is absent from its completed file index")
+    stat = path.stat()
+    verify_score(str(path), stat.st_mtime_ns, stat.st_size, expected)
+    frame = pd.read_parquet(path)
+    return frame
+
+
+def _metric_frames(
+    frame,
+    selected_metrics,
+    metric_scale,
+    estimator,
+    beta,
+    edge_rule,
+    differential_edge_rule,
+):
+    parts = []
+    identity = [
+        col
+        for col in frame
+        if col not in METRICS
+        and not any(col == m + "_" + s for m in METRICS for s in ("asinh", "rint"))
+    ]
+    for metric in selected_metrics:
+        out = frame[identity].copy()
+        out["metric_family"] = metric
+        out["magnitude_unavailable_reason"] = frame.unavailable_reason.to_numpy()
+        out["magnitude_eligible_edges"] = frame.eligible_edges.to_numpy()
+        if metric in ("signed_distance", "signed_abs_z"):
+            finite = np.isfinite(frame[metric])
+            out["eligible_edges"] = frame.signed_eligible_edges.to_numpy()
+            out["scored_edges"] = np.where(finite, frame.signed_eligible_edges, np.nan)
+            out["unavailable_reason"] = np.where(
+                finite,
+                "ok",
+                np.where(
+                    frame.unavailable_reason.eq("missing_required_tissue"),
+                    "missing_required_tissue",
+                    np.where(
+                        frame.signed_eligible_edges.eq(0),
+                        "no_eligible_signed_edges",
+                        "incomplete_signed_target_edge_coverage",
+                    ),
+                ),
+            )
+        out["metric_eligible_edges"] = out.eligible_edges
+        for scale in [metric_scale] if metric_scale else ("raw", "asinh", "rint"):
+            out["metric_" + scale] = frame[
+                metric if scale == "raw" else metric + "_" + scale
+            ].to_numpy()
+        out["component"] = out.component.map(component_legacy)
+        out["component_label"] = out.component.map(
+            lambda v: (
+                v.replace("TS_", "")
+                .replace("CT_", "")
+                .replace("__", "–")
+                .replace("PCGBA23", "PCG")
+                if v not in ("TS", "CT", "all")
+                else {
+                    "TS": "All within-tissue edges",
+                    "CT": "All cross-tissue edges",
+                    "all": "Whole module (fixed physical union)",
+                }[v]
+            )
+        )
+        out["lioness_method"] = "control_anchored"
+        out["network_method"] = "control_anchored"
+        out["estimator"] = estimator
+        out["score_version"] = f"control_calibrated_connectivity.v2.beta{beta}"
+        out["edge_rule"] = edge_rule
+        out["differential_edge_rule"] = differential_edge_rule
+        out["score_normalization"] = "common_eligible_physical_edges"
+        parts.append(out)
+    return parts
 
 
 def aggregate(**kwargs):
@@ -368,12 +448,13 @@ def baseline_associations(
     c = catalog(root)
     dataset = c["families"][module_set]["dataset"]
     path = Path(root) / "associations" / f"{dataset}_{cohort_scope}.parquet"
-    if not path.exists():
+    if not H.available(path):
         raise ScoreUnavailable("The full baseline association catalog has not finished")
+    path = H.ensure(path)
     completion = Path(root) / "associations/completion.json"
-    if not completion.exists():
+    if not H.available(completion):
         raise ScoreUnavailable("The complete baseline scan is still being finalized")
-    report = json.loads(completion.read_text())
+    report = H.read_json(completion)
     expected = next(
         item["sha256"]
         for item in report["files"]
@@ -461,7 +542,10 @@ def statistics(**kwargs):
 
 
 def coverage(module_set=None, root=ROOT):
-    paths = list((Path(root) / "coverage").glob("*.parquet"))
+    paths = [
+        H.ensure(Path(root) / "coverage" / (v + ".parquet"))
+        for v in catalog(root)["datasets"]
+    ]
     f = pd.concat([pd.read_parquet(p) for p in paths], ignore_index=True)
     return f if module_set is None else f[f.family.eq(module_set)].copy()
 
@@ -469,7 +553,7 @@ def coverage(module_set=None, root=ROOT):
 def role_status(dataset, sample_ids=None, root=ROOT):
     c = catalog(root)
     info = c["datasets"][dataset]
-    frame = pd.read_parquet(Path(root) / info["metadata_file"])
+    frame = pd.read_parquet(H.ensure(Path(root) / info["metadata_file"]))
     frame = frame[["sample_id", "role", "in_original_analysis"]].copy()
     frame["independent_B_score_available"] = frame.role.eq("target")
     frame["independent_B_unavailable_reason"] = frame.role.map(

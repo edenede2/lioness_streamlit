@@ -23,6 +23,13 @@ def render_inspection(view, frame, context, render, mask):
             .reset_index()
         )
         table(summary, "cc_edge_score_summary", "Donor connectivity summary by group")
+    from .hosted import is_hosted
+
+    if is_hosted(ROOT):
+        st.info(
+            "Edge reconstruction and edge-level association searches remain available in the local research app. This hosted release publishes donor scores, frozen masks and donor-score associations, while keeping expression/reference arrays and identity mappings private."
+        )
+        return
     st.caption(
         "Edge weights are reconstructed in bounded batches from the frozen cache. No controls or preprocessing are refitted. Contributions use the selected aggregate’s actual common denominator. These annotations imply no individual-donor abnormality p value."
     )

@@ -10,7 +10,7 @@ import sys, argparse, json, time, resource, logging
 APP = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(APP), str(APP.parents[1])]
 logging.getLogger("streamlit").setLevel(logging.ERROR)
-from app_helpers.control_calibrated.registry import ROOT
+from app_helpers.control_calibrated.registry import RESEARCH_ROOT as ROOT
 
 
 def main():

@@ -7,6 +7,7 @@ import pandas as pd
 from .registry import ROOT
 from .inputs import REPO, gene, tissue, atomic_json, atomic_parquet, sha
 from .adapter import module_filename
+from . import hosted as H
 
 
 def key(rule, scope="global", threshold=0.05):
@@ -35,9 +36,9 @@ def mask_artifact_path(
 def options(family, module, tissue=None, root=ROOT):
     result = {"all": dict(rule="all", label="All physical edges (unmasked baseline)")}
     path = Path(root) / "masks/manifest.json"
-    if not path.exists():
+    if not H.available(path):
         return result
-    m = json.loads(path.read_text())
+    m = H.read_json(path)
     module_key = f"{family}::{tissue}::M{module}" if tissue else f"{family}::M{module}"
     for k, v in m.get("modules", {}).get(module_key, {}).items():
         if v.get("status") == "complete":
@@ -49,10 +50,10 @@ def family_options(family, root=ROOT):
     result = {"all": dict(rule="all", label="All physical edges (unmasked)")}
     root = Path(root)
     path = root / "masks/manifest.json"
-    if not path.exists():
+    if not H.available(path):
         return result
-    manifest = json.loads(path.read_text())
-    catalog = json.loads((root / "catalog.json").read_text())
+    manifest = H.read_json(path)
+    catalog = H.read_json(root / "catalog.json")
     modules = [j["module_key"] for j in catalog["modules"] if j["family"] == family]
     for k, spec in manifest.get("specs", {}).get(family, {}).items():
         if modules and all(

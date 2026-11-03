@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "release_id": "20261103_bf01d5b35d51",
+  "data_prefix": "control_calibrated_v2/releases/20261103_bf01d5b35d51",
+  "backend": "existing_read_only_google_drive_index",
+  "manifest_sha256": "81f433fc484dce5d151e4a921145f5830e6eb18314d178f8a8589ca9d60cad3b",
+  "catalog_sha256": "957da96b343851218404a13f8d7bc84df7985ab26ed2dd86b9399aca20926d36",
+  "release_manifest_sha256": "2c9036e82e0eb4d4ca97e0d7c1d7bb1e1863428c9661ac0f2ec48de821ef6182",
+  "edge_reconstruction": "local_only",
+  "edge_search": "local_only",
+  "prediction": false
+}

@@ -198,3 +198,47 @@ refer to native units. Each metric then uses its own frozen R diagnostic
 transform; transformed A is not a sum of transformed G/L. A constant R diagnostic
 distribution makes RINT unavailable with an explicit reason; targets never supply
 replacement transform knots.
+
+## Hosted summary release
+
+The hosted app uses an immutable release named by
+`control_calibrated_release.json`. Its files are indexed under the existing
+read-only Google Drive backend. The local research bundle remains at
+`data/control_calibrated_v2`; an installed local bundle takes precedence in
+ordinary local runs. `LIONESS_FORCE_DRIVE=1` exercises the hosted data path.
+
+A hosted module bundles both betas and every registered frozen mask without
+recomputing scores. Identical physical unions share exact numeric rows; their
+individual provenance is retained. Original and incomplete cohorts are exact
+metadata subsets of maximum-component targets. Numeric values, native/frozen
+transforms, common denominators, NA reasons and baseline p/q values are retained.
+The release has 272 range-addressable immutable containers, each below the
+connector's 100 MiB file limit. The reader downloads only the verified compressed row groups needed for the
+chosen beta/mask/component. Per-range SHA256, a sealed footer and the existing
+Drive size/MD5 checks protect content. The module disk cache is bounded to
+512 MiB by default (`LIONESS_CALIBRATED_CACHE_MIB` can change this).
+
+The user explicitly approved publishing deidentified donor scores and linked
+registered clinical outcomes to the existing app data folder. Public pseudonyms
+remain aligned with the existing app; individual R/C clinical values are removed.
+Raw expression, reference/calibration arrays, preprocessing fits, private identity
+crosswalks and physical source-node lists are excluded. **Edge reconstruction and
+edge-level searches remain local by the user's instruction.** Hosted edge views
+explain this limitation; donor scores, masks, donor-score associations, comparisons,
+rankings, distributions and downloads remain available. No prediction feature or
+result is enrolled or changed.
+
+Reproduction helpers are `scripts/build_control_calibrated_release.py`,
+`scripts/audit_control_calibrated_release.py`,
+`scripts/pack_control_calibrated_transport.py`,
+`scripts/audit_control_calibrated_transport.py`,
+`scripts/control_calibrated_release_plan.py`, and
+`scripts/verify_control_calibrated_uploads.py`. After complete readback,
+`scripts/install_control_calibrated_release.py` adds the sealed index locally.
+`scripts/smoke_control_calibrated_hosted.py` compares real Drive reads with the
+frozen research sources for all families, betas and scopes. The immutable publisher accepts a
+valid existing user OAuth token; connector upload receipts can also be resumed
+and verified. Uploads add only new release files and do not alter existing Drive
+objects or sharing. Data upload/index preparation never pushes Git. The user
+pushes the reviewed release commit separately to the branch configured for the
+hosted app.

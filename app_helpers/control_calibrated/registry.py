@@ -29,7 +29,28 @@ CAPABILITIES = {
     "feature_selection": False,
 }
 APP = Path(__file__).resolve().parents[2]
-ROOT = APP / "data/control_calibrated_v2"
+RESEARCH_ROOT = APP / "data/control_calibrated_v2"
+
+
+def runtime_root():
+    from app_helpers.drive_data import DATA_DIR, LOCAL_DATA_DIR
+
+    bootstrap = APP / "control_calibrated_release.json"
+    if (
+        DATA_DIR == LOCAL_DATA_DIR.resolve()
+        and (RESEARCH_ROOT / "manifest.json").exists()
+    ):
+        return RESEARCH_ROOT
+    if bootstrap.exists():
+        release = json.loads(bootstrap.read_text())
+        prefix = Path(release["data_prefix"])
+        if prefix.is_absolute() or ".." in prefix.parts:
+            raise ValueError("Invalid calibrated release prefix")
+        return DATA_DIR / prefix
+    return DATA_DIR / "control_calibrated_v2"
+
+
+ROOT = runtime_root()
 HELP = "Deviations in LIONESS contribution magnitude relative to disjoint calibration Controls. These are not observed within-person correlations, Gaussian tail probabilities, or fold changes. Gain and loss share one physical-edge denominator. A=G+L; signed distance D is separate. Reversal is a sign annotation. Per-edge loss is bounded by nu/tau; lower loss variation does not establish better biology."
 
 
@@ -48,11 +69,14 @@ def feature_labels():
 def source_spec(estimator):
     if not is_calibrated(estimator):
         raise ValueError("Unknown calibrated source")
+    capabilities = dict(CAPABILITIES)
+    if manifest().get("capabilities", {}).get("edge_reconstruction") is False:
+        capabilities["edge_inspection"] = False
     return dict(
         id=f"control_calibrated_connectivity.v2.beta{beta_for(estimator)}",
         label=SOURCE_LABEL,
         beta=beta_for(estimator),
-        capabilities=dict(CAPABILITIES),
+        capabilities=capabilities,
         default_metric="gain",
     )
 
@@ -63,10 +87,12 @@ def require_capability(estimator, capability):
 
 
 def manifest(root=ROOT):
+    from .hosted import available, read_json
+
     path = Path(root) / "manifest.json"
     return (
-        json.loads(path.read_text())
-        if path.exists()
+        read_json(path)
+        if available(path)
         else {
             "status": "unavailable",
             "reason": "Control-calibrated catalog has not been generated",

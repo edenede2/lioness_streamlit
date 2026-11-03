@@ -15,6 +15,12 @@ from . import adapter as A
 def prepare_reference_caches(root=ROOT):
     """Offline preparation only. No app rerender fits preprocessing or controls."""
     root = Path(root)
+    from .hosted import is_hosted
+
+    if is_hosted(root):
+        raise A.ScoreUnavailable(
+            "Edge reconstruction remains local. The hosted release contains donor-score summaries; private expression/reference arrays are not published."
+        )
     catalog = A.catalog(root)
     for variant, info in catalog["datasets"].items():
         path = root / "private" / f"{variant}_reference.npz"
@@ -97,6 +103,12 @@ def iter_edges(
     root=ROOT,
 ):
     root = Path(root)
+    from .hosted import is_hosted
+
+    if is_hosted(root):
+        raise A.ScoreUnavailable(
+            "Edge reconstruction remains local. The hosted release contains donor-score summaries; private expression/reference arrays are not published."
+        )
     catalog = A.catalog(root)
     jobs = [
         j

@@ -17,6 +17,7 @@ from .registry import APP, ROOT, METRICS, PRIMARY, HELP, ESTIMATORS, feature_lab
 from .inputs import atomic_json, atomic_parquet, sha
 from .core import canonical_hash
 from .analysis import bh
+from . import hosted as H
 
 COLORS = {
     "Gain / strengthening": "#167D9A",
@@ -85,9 +86,18 @@ def draw(figure, render, key, context):
     render(figure, key=key, metadata=context)
 
 
-@st.cache_data(show_spinner=False, max_entries=4, ttl=600)
+@st.cache_data(show_spinner=False, max_entries=1, ttl=600)
 def load_module(
-    family, estimator, module, scope, mask, fdr_scope, fdr_threshold, tissue, revision
+    family,
+    estimator,
+    module,
+    scope,
+    mask,
+    fdr_scope,
+    fdr_threshold,
+    tissue,
+    revision,
+    metrics=None,
 ):
     return A.scores(
         module_set=family,
@@ -98,6 +108,7 @@ def load_module(
         differential_fdr_scope=fdr_scope,
         differential_fdr_threshold=fdr_threshold,
         regional_tissue=tissue,
+        metric_families=metrics,
     )
 
 
@@ -759,9 +770,9 @@ def render_view(
             "Exploratory reuse of a historical AD–Control discovery mask. It changes the physical-edge aggregation set; per-edge R/C calibration is unchanged. Baseline q_scan does not cover this mask search."
         )
     mask_manifest = ROOT / "masks/manifest.json"
-    if mask_manifest.exists():
+    if H.available(mask_manifest):
         missing = (
-            json.loads(mask_manifest.read_text())
+            H.read_json(mask_manifest)
             .get("unavailable", {})
             .get(next(j["module_key"] for j in jobs if j["module"] == module), {})
         )
@@ -778,9 +789,13 @@ def render_view(
             mask.get("fdr_scope", "global"),
             mask.get("threshold", 0.05),
             regional_tissue,
-            ((ROOT / "manifest.json").stat().st_mtime_ns, sha(Path(A.__file__))),
+            (
+                H.ensure(ROOT / "manifest.json").stat().st_mtime_ns,
+                sha(Path(A.__file__)),
+            ),
+            tuple(metrics),
         )
-    except (A.ScoreUnavailable, FileNotFoundError, ValueError) as error:
+    except (A.ScoreUnavailable, OSError, ValueError) as error:
         st.info(str(error))
         return
     frame = frame[frame.metric_family.isin(metrics)].copy()
@@ -943,7 +958,7 @@ def render_view(
         return
     if view == "Methods & data":
         st.markdown((APP / "docs/control_calibrated_connectivity.md").read_text())
-        st.json(json.loads((ROOT / "associations/testing_manifest.json").read_text()))
+        st.json(H.read_json(ROOT / "associations/testing_manifest.json"))
         table(A.coverage(family), "cc_catalog_coverage", "Full catalog coverage")
         return
     if view in ("Statistics", "Module finder", "CT–TS screen"):
