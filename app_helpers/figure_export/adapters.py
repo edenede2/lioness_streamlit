@@ -935,7 +935,10 @@ def build_figure(
             xanchor="left",
             xref="container",
             pad=dict(t=0),
-            automargin=True,
+            # These aggregate figures have an explicit physical title margin.
+            # Plotly's second automatic title pass can otherwise clip line 1
+            # in raster exports. All existing figure types keep their policy.
+            automargin=not bool((figure.layout.meta or {}).get("figure_export", {}).get("fixed_container_title",False)),
         ),
         paper_bgcolor=background,
         plot_bgcolor=background,
@@ -1684,6 +1687,10 @@ def render_figure(
         scale = config.dpi / CSS_DPI
         width, height = w / scale + 1e-8, h / scale + 1e-8
     figure.update_layout(width=width, height=height)
+    if (figure.layout.meta or {}).get("figure_export", {}).get("fixed_container_title") and figure.layout.title.text:
+        # PNG/TIFF uses integer-pixel canvas dimensions. Re-anchor against
+        # that actual height, not the pre-rounding physical-size height.
+        figure.layout.title.y=max(0.5,1-float(figure.layout.title.font.size)/height)
     backend_format = "png" if config.format == "tiff" else config.format
     raw = static_image(figure, backend_format, width, height, scale)
     if config.format in {"png", "tiff"}:

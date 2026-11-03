@@ -1,0 +1,1842 @@
+{
+  "BH": "Across valid modules only within each fixed cohort/component/feature/scale/mask/normalization/outcome/method/test/covariates family",
+  "assignment_count": 49330,
+  "audit_sha256": "6f80197f75b4c8eca019b72c3ed53fe6fa5eefed4319b7e78766eafe51794cdf",
+  "camel_rows": 30794712,
+  "discovery_AD": 80,
+  "donor_level_data_published": false,
+  "files": [
+    {
+      "bytes": 22173893,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label",
+          "score_matched_pair_label"
+        ]
+      },
+      "cohort_scope": "Balanced incomplete-region validation (AD\u2013Control)",
+      "component": "CT_AC__DLPFC",
+      "kind": "camel",
+      "path": "camel/5dc7380f832ab463.parquet",
+      "rows": 1138176,
+      "sha256": "4fcb5b42257a31187966134be73237faccf2cdb8b95c35f2b0c294e268352db3",
+      "source_sha256": "4fcb5b42257a31187966134be73237faccf2cdb8b95c35f2b0c294e268352db3"
+    },
+    {
+      "bytes": 1254073,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label",
+          "score_matched_pair_label"
+        ]
+      },
+      "cohort_scope": "Balanced incomplete-region validation (AD\u2013Control)",
+      "component": "CT_AC__PCGBA23",
+      "kind": "camel",
+      "path": "camel/2d1f574d01e34f32.parquet",
+      "rows": 1138176,
+      "sha256": "4281371fce29805b129c1fc31cf2543e9c1a8abab36d0bc1202eee4208bbd793",
+      "source_sha256": "4281371fce29805b129c1fc31cf2543e9c1a8abab36d0bc1202eee4208bbd793"
+    },
+    {
+      "bytes": 22419684,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label",
+          "score_matched_pair_label"
+        ]
+      },
+      "cohort_scope": "Balanced incomplete-region validation (AD\u2013Control)",
+      "component": "CT_DLPFC__PCGBA23",
+      "kind": "camel",
+      "path": "camel/853a12362819acde.parquet",
+      "rows": 1138176,
+      "sha256": "a683fc223da99077b7c286b0c8c1cf0756286c88e56dc464cc0f9e7d4a53b0bc",
+      "source_sha256": "a683fc223da99077b7c286b0c8c1cf0756286c88e56dc464cc0f9e7d4a53b0bc"
+    },
+    {
+      "bytes": 23089090,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "eigengene",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned",
+          "unfiltered"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label",
+          "score_matched_pair_label"
+        ]
+      },
+      "cohort_scope": "Balanced incomplete-region validation (AD\u2013Control)",
+      "component": "TS_AC",
+      "kind": "camel",
+      "path": "camel/5ed190653b1fc792.parquet",
+      "rows": 1161600,
+      "sha256": "5925e82151a6ca4258c0b3ca24e7268e1e248c71b7e840225c346b683e16ea0c",
+      "source_sha256": "5925e82151a6ca4258c0b3ca24e7268e1e248c71b7e840225c346b683e16ea0c"
+    },
+    {
+      "bytes": 25422484,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "eigengene",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned",
+          "unfiltered"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label",
+          "score_matched_pair_label"
+        ]
+      },
+      "cohort_scope": "Balanced incomplete-region validation (AD\u2013Control)",
+      "component": "TS_DLPFC",
+      "kind": "camel",
+      "path": "camel/691918ad0b42f227.parquet",
+      "rows": 1161312,
+      "sha256": "f24df4f485432644365caeedf647d9323479e424f2da57b755816cf469be8ee5",
+      "source_sha256": "f24df4f485432644365caeedf647d9323479e424f2da57b755816cf469be8ee5"
+    },
+    {
+      "bytes": 24941535,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "eigengene",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned",
+          "unfiltered"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label",
+          "score_matched_pair_label"
+        ]
+      },
+      "cohort_scope": "Balanced incomplete-region validation (AD\u2013Control)",
+      "component": "TS_PCGBA23",
+      "kind": "camel",
+      "path": "camel/d52988e22fc3ee9b.parquet",
+      "rows": 1161504,
+      "sha256": "b9de0f55a2a09c33cf6e512eff1e214b3796cb3b0a2e0c76c6ff917ada796881",
+      "source_sha256": "b9de0f55a2a09c33cf6e512eff1e214b3796cb3b0a2e0c76c6ff917ada796881"
+    },
+    {
+      "bytes": 21076106,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label",
+          "score_matched_pair_label"
+        ]
+      },
+      "cohort_scope": "Discovery-demography-matched incomplete-region validation (AD\u2013Control)",
+      "component": "CT_AC__DLPFC",
+      "kind": "camel",
+      "path": "camel/74850da962e0e17b.parquet",
+      "rows": 1138176,
+      "sha256": "2d952f04a92a548e720552f5ec9a2b58956d1293fd7adf1458481ac2ec1d5362",
+      "source_sha256": "2d952f04a92a548e720552f5ec9a2b58956d1293fd7adf1458481ac2ec1d5362"
+    },
+    {
+      "bytes": 1268116,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label",
+          "score_matched_pair_label"
+        ]
+      },
+      "cohort_scope": "Discovery-demography-matched incomplete-region validation (AD\u2013Control)",
+      "component": "CT_AC__PCGBA23",
+      "kind": "camel",
+      "path": "camel/fcbaa1f3499f7250.parquet",
+      "rows": 1138176,
+      "sha256": "f897434b3987abbdcf807dd38e66f43965553080f27e20c1e324b121b8b58e71",
+      "source_sha256": "f897434b3987abbdcf807dd38e66f43965553080f27e20c1e324b121b8b58e71"
+    },
+    {
+      "bytes": 22091199,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label",
+          "score_matched_pair_label"
+        ]
+      },
+      "cohort_scope": "Discovery-demography-matched incomplete-region validation (AD\u2013Control)",
+      "component": "CT_DLPFC__PCGBA23",
+      "kind": "camel",
+      "path": "camel/ddeb2336ccad2365.parquet",
+      "rows": 1138176,
+      "sha256": "7e7dbb0f3da0eb9b58ba9d40cb252e4dd508d04e23a27ac5a5e28a6650a74c19",
+      "source_sha256": "7e7dbb0f3da0eb9b58ba9d40cb252e4dd508d04e23a27ac5a5e28a6650a74c19"
+    },
+    {
+      "bytes": 23072517,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "eigengene",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned",
+          "unfiltered"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label",
+          "score_matched_pair_label"
+        ]
+      },
+      "cohort_scope": "Discovery-demography-matched incomplete-region validation (AD\u2013Control)",
+      "component": "TS_AC",
+      "kind": "camel",
+      "path": "camel/684aff4b131383d2.parquet",
+      "rows": 1161600,
+      "sha256": "0f709bc681479a9bde00915af04cd7bc95e8a492728f1874986c3a81b1bd29fc",
+      "source_sha256": "0f709bc681479a9bde00915af04cd7bc95e8a492728f1874986c3a81b1bd29fc"
+    },
+    {
+      "bytes": 23839586,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "eigengene",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned",
+          "unfiltered"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label",
+          "score_matched_pair_label"
+        ]
+      },
+      "cohort_scope": "Discovery-demography-matched incomplete-region validation (AD\u2013Control)",
+      "component": "TS_DLPFC",
+      "kind": "camel",
+      "path": "camel/2eff1b3ac08af7a6.parquet",
+      "rows": 1161312,
+      "sha256": "00e7d6575967635fa67bc9070ecd97fd5e1624ec43993aa77468f48a27c434e1",
+      "source_sha256": "00e7d6575967635fa67bc9070ecd97fd5e1624ec43993aa77468f48a27c434e1"
+    },
+    {
+      "bytes": 24144481,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "eigengene",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned",
+          "unfiltered"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label",
+          "score_matched_pair_label"
+        ]
+      },
+      "cohort_scope": "Discovery-demography-matched incomplete-region validation (AD\u2013Control)",
+      "component": "TS_PCGBA23",
+      "kind": "camel",
+      "path": "camel/208470874b0d863b.parquet",
+      "rows": 1161504,
+      "sha256": "337121dc7a910ce52e3cec89ca74974d984d5f105fc8f5b8f34782c77593bbde",
+      "source_sha256": "337121dc7a910ce52e3cec89ca74974d984d5f105fc8f5b8f34782c77593bbde"
+    },
+    {
+      "bytes": 22601636,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label",
+          "score_matched_pair_label"
+        ]
+      },
+      "cohort_scope": "Held-out validation",
+      "component": "CT",
+      "kind": "camel",
+      "path": "camel/a819848b1b639ad1.parquet",
+      "rows": 1138176,
+      "sha256": "2c432f7dc4653c790dfc38f0f635f5b05c690951476ddfd5f2a3ed473b11b5e8",
+      "source_sha256": "2c432f7dc4653c790dfc38f0f635f5b05c690951476ddfd5f2a3ed473b11b5e8"
+    },
+    {
+      "bytes": 21167415,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label",
+          "score_matched_pair_label"
+        ]
+      },
+      "cohort_scope": "Held-out validation",
+      "component": "CT_AC__DLPFC",
+      "kind": "camel",
+      "path": "camel/7f67373f095b5c0e.parquet",
+      "rows": 1138176,
+      "sha256": "2eac143d7a809d6e00ed86dfc6061f1b4d8950a73834b0a3b16d4624c3bfbbfa",
+      "source_sha256": "2eac143d7a809d6e00ed86dfc6061f1b4d8950a73834b0a3b16d4624c3bfbbfa"
+    },
+    {
+      "bytes": 21520258,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label",
+          "score_matched_pair_label"
+        ]
+      },
+      "cohort_scope": "Held-out validation",
+      "component": "CT_AC__PCGBA23",
+      "kind": "camel",
+      "path": "camel/a4a31184d8b0a1a9.parquet",
+      "rows": 1138176,
+      "sha256": "0424444e70703ea1c33dae35077f246340bfd0cb4667e4c0f906a3087a826485",
+      "source_sha256": "0424444e70703ea1c33dae35077f246340bfd0cb4667e4c0f906a3087a826485"
+    },
+    {
+      "bytes": 21532844,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label",
+          "score_matched_pair_label"
+        ]
+      },
+      "cohort_scope": "Held-out validation",
+      "component": "CT_DLPFC__PCGBA23",
+      "kind": "camel",
+      "path": "camel/f9781e7f85f34e08.parquet",
+      "rows": 1138176,
+      "sha256": "75f801d0d17fbdbf90b273978e079cac524bc5b2a42d9c100238b6817f14182b",
+      "source_sha256": "75f801d0d17fbdbf90b273978e079cac524bc5b2a42d9c100238b6817f14182b"
+    },
+    {
+      "bytes": 23330074,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label",
+          "score_matched_pair_label"
+        ]
+      },
+      "cohort_scope": "Held-out validation",
+      "component": "TS",
+      "kind": "camel",
+      "path": "camel/4bc68d6d35e72849.parquet",
+      "rows": 1138176,
+      "sha256": "6229d3bb063811890fcae0b7957190db78046b892115062ddc4ec1a606036ef7",
+      "source_sha256": "6229d3bb063811890fcae0b7957190db78046b892115062ddc4ec1a606036ef7"
+    },
+    {
+      "bytes": 22263316,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "eigengene",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned",
+          "unfiltered"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label",
+          "score_matched_pair_label"
+        ]
+      },
+      "cohort_scope": "Held-out validation",
+      "component": "TS_AC",
+      "kind": "camel",
+      "path": "camel/ac4aaf43b96481ec.parquet",
+      "rows": 1161600,
+      "sha256": "2307c8c21c8ed63824d6316148d1620fa8bff1e9f99677aa218005bc6fc1c9e0",
+      "source_sha256": "2307c8c21c8ed63824d6316148d1620fa8bff1e9f99677aa218005bc6fc1c9e0"
+    },
+    {
+      "bytes": 22226737,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "eigengene",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned",
+          "unfiltered"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label",
+          "score_matched_pair_label"
+        ]
+      },
+      "cohort_scope": "Held-out validation",
+      "component": "TS_DLPFC",
+      "kind": "camel",
+      "path": "camel/bb7355451ddbb9b4.parquet",
+      "rows": 1161312,
+      "sha256": "a4bfd6eb14eafe3101c14180f50ecd0bd74615ff4061e1138c6f3920b5b358bb",
+      "source_sha256": "a4bfd6eb14eafe3101c14180f50ecd0bd74615ff4061e1138c6f3920b5b358bb"
+    },
+    {
+      "bytes": 23175406,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "eigengene",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned",
+          "unfiltered"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label",
+          "score_matched_pair_label"
+        ]
+      },
+      "cohort_scope": "Held-out validation",
+      "component": "TS_PCGBA23",
+      "kind": "camel",
+      "path": "camel/d40e9715da36fe4b.parquet",
+      "rows": 1161504,
+      "sha256": "b2e3d4c86ed16c8eaa5f727126cfed8e47b42d124001bf4a11d4d094d7519863",
+      "source_sha256": "b2e3d4c86ed16c8eaa5f727126cfed8e47b42d124001bf4a11d4d094d7519863"
+    },
+    {
+      "bytes": 23345417,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label",
+          "score_matched_pair_label"
+        ]
+      },
+      "cohort_scope": "Held-out validation",
+      "component": "all",
+      "kind": "camel",
+      "path": "camel/e977032e86aafb7d.parquet",
+      "rows": 1138176,
+      "sha256": "f4079d12ab0f240dc1254b605974e2207144c793ffcf3697bb345f28c3b9addc",
+      "source_sha256": "f4079d12ab0f240dc1254b605974e2207144c793ffcf3697bb345f28c3b9addc"
+    },
+    {
+      "bytes": 23780606,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label"
+        ]
+      },
+      "cohort_scope": "Incomplete-region validation",
+      "component": "CT_AC__DLPFC",
+      "kind": "camel",
+      "path": "camel/1ef569076d08887c.parquet",
+      "rows": 1102608,
+      "sha256": "08c519b829d1257900f49db9c52ddfedf097e51dd1535658c8f7cb0bf37a1665",
+      "source_sha256": "08c519b829d1257900f49db9c52ddfedf097e51dd1535658c8f7cb0bf37a1665"
+    },
+    {
+      "bytes": 17559928,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label"
+        ]
+      },
+      "cohort_scope": "Incomplete-region validation",
+      "component": "CT_AC__PCGBA23",
+      "kind": "camel",
+      "path": "camel/4715c62234329d82.parquet",
+      "rows": 1102608,
+      "sha256": "8344a74947173f2c695ef6555a2bbc323dbcc6f3ea47a0136d430a81f74d517c",
+      "source_sha256": "8344a74947173f2c695ef6555a2bbc323dbcc6f3ea47a0136d430a81f74d517c"
+    },
+    {
+      "bytes": 24205213,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label"
+        ]
+      },
+      "cohort_scope": "Incomplete-region validation",
+      "component": "CT_DLPFC__PCGBA23",
+      "kind": "camel",
+      "path": "camel/3ed0242e98975b12.parquet",
+      "rows": 1102608,
+      "sha256": "0f7adc68062aae20de14d733996b9fd96d1857e39cd0fbb90ae42a0ecdb1b787",
+      "source_sha256": "0f7adc68062aae20de14d733996b9fd96d1857e39cd0fbb90ae42a0ecdb1b787"
+    },
+    {
+      "bytes": 25083803,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "eigengene",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned",
+          "unfiltered"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label"
+        ]
+      },
+      "cohort_scope": "Incomplete-region validation",
+      "component": "TS_AC",
+      "kind": "camel",
+      "path": "camel/f72a5f791507be8f.parquet",
+      "rows": 1125300,
+      "sha256": "31b70f2c3818e2867090571a29588da6578aec50e217d388ddd3bba1d3bb34c3",
+      "source_sha256": "31b70f2c3818e2867090571a29588da6578aec50e217d388ddd3bba1d3bb34c3"
+    },
+    {
+      "bytes": 25764407,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "eigengene",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned",
+          "unfiltered"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label"
+        ]
+      },
+      "cohort_scope": "Incomplete-region validation",
+      "component": "TS_DLPFC",
+      "kind": "camel",
+      "path": "camel/f0bd474394c0f18e.parquet",
+      "rows": 1125021,
+      "sha256": "902422e40e93fe5a6ac9fd3c0d485be3a6a4ba14b8d3215488bda02f4e129783",
+      "source_sha256": "902422e40e93fe5a6ac9fd3c0d485be3a6a4ba14b8d3215488bda02f4e129783"
+    },
+    {
+      "bytes": 25751353,
+      "choices": {
+        "correlation_method": [
+          "not_applicable",
+          "pearson",
+          "spearman"
+        ],
+        "differential_edge_rule": [
+          "ad_higher",
+          "all",
+          "control_higher",
+          "either"
+        ],
+        "metric_family": [
+          "abs_sum",
+          "connectivity",
+          "eigengene",
+          "negative_abs_sum",
+          "negative_density",
+          "positive_abs_sum",
+          "positive_density"
+        ],
+        "phenotype": [
+          "adnc",
+          "age_at_death",
+          "amyloid",
+          "braak_stage",
+          "cerad_score",
+          "cogdx",
+          "cogn_global",
+          "cogng_demog_slope",
+          "cogng_path_slope",
+          "diagnosis_AD_Control",
+          "education_years",
+          "gpath",
+          "motor10_demog_slope",
+          "parkinsonism",
+          "sqrt_parksc_demog_slope",
+          "tangles"
+        ],
+        "scale": [
+          "asinh",
+          "raw",
+          "rint"
+        ],
+        "score_normalization": [
+          "retained_edge",
+          "standard_pruned",
+          "unfiltered"
+        ],
+        "test_type": [
+          "covariate_adjusted_association",
+          "score_diagnosis_label"
+        ]
+      },
+      "cohort_scope": "Incomplete-region validation",
+      "component": "TS_PCGBA23",
+      "kind": "camel",
+      "path": "camel/d43206b4033d1f0a.parquet",
+      "rows": 1125207,
+      "sha256": "4f3b662a2a18797e6472d533140e84ecd5e19261890e44fd67ab43b568f0edc3",
+      "source_sha256": "4f3b662a2a18797e6472d533140e84ecd5e19261890e44fd67ab43b568f0edc3"
+    },
+    {
+      "bytes": 1476282,
+      "kind": "mdc_labels",
+      "path": "mdc_labels.parquet",
+      "rows": 47424,
+      "sha256": "b185e6a46e44dddb77cfedaf99f8c20394aed12930ac1c56a513a1c24b0209c3"
+    },
+    {
+      "bytes": 1413949,
+      "kind": "mdc_baseline",
+      "path": "mdc_baseline.parquet",
+      "rows": 29640,
+      "sha256": "f8e41a6ec545585943e2ec32faa67256ec367a6e35c2b5e8bc16301ffb71aebd"
+    },
+    {
+      "bytes": 14039,
+      "kind": "module_details",
+      "path": "module_details.parquet",
+      "rows": 247,
+      "sha256": "29e4d94b05c02d39237fe39f428feb27ce60f4da6a498295922c307f0bb167d1"
+    },
+    {
+      "bytes": 629339,
+      "kind": "kegg",
+      "path": "kegg_all__tissue_expanded.parquet",
+      "rows": 10630,
+      "sha256": "2e2ef2485ae062646d2829990705bdf3bffa0d16e0349493a86338ae7da50518"
+    },
+    {
+      "bytes": 232974,
+      "kind": "kegg",
+      "path": "kegg_ad_higher__regional.parquet",
+      "rows": 86450,
+      "sha256": "1c8f774f1e07b37fa049d0deea40810fa426abfe5579f740821abedef0c3fe76"
+    },
+    {
+      "bytes": 17542,
+      "kind": "kegg",
+      "path": "kegg_module_coverage.parquet",
+      "rows": 988,
+      "sha256": "52708102a53fdf55fe9598526258834d1d509fd6124a4668c3427f07a299aaf1"
+    },
+    {
+      "bytes": 421521,
+      "kind": "kegg",
+      "path": "kegg_all__regional.parquet",
+      "rows": 86450,
+      "sha256": "dde9dded349ec11776d032ea9cf4aded06424d5e2125f403caab803af47002af"
+    },
+    {
+      "bytes": 571548,
+      "kind": "kegg",
+      "path": "kegg_either__tissue_expanded.parquet",
+      "rows": 9704,
+      "sha256": "3bb18a5345bb5cebac1cd89e8f85d7ab0dbe1ea8165cc578e1900cc954d528d6"
+    },
+    {
+      "bytes": 372668,
+      "kind": "kegg",
+      "path": "kegg_control_higher__regional.parquet",
+      "rows": 86450,
+      "sha256": "06728daccad008285ba29ef01bf2ea2e336ac0021cc39355c3c15ee5bbe6c7a6"
+    },
+    {
+      "bytes": 348891,
+      "kind": "kegg",
+      "path": "kegg_ad_higher__tissue_expanded.parquet",
+      "rows": 6090,
+      "sha256": "78e1d996112abe156d3611934c033cc128e4d812b72da43472758a0ba23aa5fe"
+    },
+    {
+      "bytes": 379430,
+      "kind": "kegg",
+      "path": "kegg_either__regional.parquet",
+      "rows": 86450,
+      "sha256": "b3874e070e97c088fecacd570e797a1e5453094661f64b10c3d3d709e8d0a3a3"
+    },
+    {
+      "bytes": 537117,
+      "kind": "kegg",
+      "path": "kegg_control_higher__tissue_expanded.parquet",
+      "rows": 9153,
+      "sha256": "68ceb4e2efb4e53ed2d34a69516ae21b4c5490942ee215b6651d61bcc33ae93b"
+    }
+  ],
+  "full_module_catalog": true,
+  "heldout_AD": 34,
+  "heldout_Control": 34,
+  "important_limits": [
+    "Within-ROSMAP non-discovery-donor evidence, not external validation",
+    "Matched-pair swaps are approximate for age and education; adjustment assumes a suitable nuisance model",
+    "Discovery modules and effect masks stay frozen; no new discovery inferential p-values",
+    "Incomplete-region cohorts have resolved components only; no imputed tissue or pooled CT/TS"
+  ],
+  "module_count": 247,
+  "module_set": "matched_control_brain_l4",
+  "not_in_this_aggregate_release": [
+    "Donor scatter/distribution plots",
+    "Earlier unadjusted-association and dependent CT\u2013TS catalogs"
+  ],
+  "rankings_are_display_only": true,
+  "reference_controls": 80,
+  "schema_version": 1,
+  "scope": [
+    "All demographic-adjusted CAMEL/eigengene association tests",
+    "All CAMEL diagnosis-label tests",
+    "Baseline and new MDC tests",
+    "Four edge sets",
+    "KEGG and regional enrichment",
+    "Module composition and entropy",
+    "Cohort balance and technical QA"
+  ],
+  "source_analysis_commit": "6b51e45274c99ad3e704f22319bdf9c996d94518",
+  "status": "complete"
+}

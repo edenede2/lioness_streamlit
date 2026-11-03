@@ -1066,3 +1066,68 @@ their full-family corrections.
 
 
 Control-calibrated connectivity (uniform beta3 default, beta1 sensitivity) is documented in [the method and reproduction guide](docs/control_calibrated_connectivity.md). It uses frozen B independent targets and is excluded from prediction.
+## New matched-Control results (247 modules)
+
+After deployment, choose **Analysis view → Matched-control results**.
+This is a separate module definition learned from 80 demographically matched
+discovery Controls; its module numbers must not be equated with the older
+186-module partition.
+
+The aggregate catalog contains the complete 30,794,712-row demographic
+CAMEL/eigengene test catalog, not just a top-ten subset. It also includes
+AD–Control CAMEL label tests, the 47,424-row MDC label-test catalog, original
+sample/gene MDC tests, full and endpoint-filtered KEGG, module composition,
+entropy, cohort balance and numerical QA. All four edge sets, three score
+scales, supported normalizations and available cohorts/components are selectable.
+FDR is copied from full module families before any display or top-K filter.
+
+Reads are local and predicate-filtered by the complete selected statistical
+context; no donor scores or large all-module calculations run in Streamlit.
+Only the active section executes. The original analyses and defaults remain
+unchanged. The earlier unadjusted/dependent CT–TS catalog is not copied into
+this aggregate catalog.
+
+To rebuild from the private completed analysis and the identifier-free baseline:
+
+```bash
+python scripts/build_matched_brain_results.py \
+  --analysis-root /path/to/20261028_matched80_control_l4 \
+  --baseline-root /path/to/completed_baseline
+```
+
+The builder verifies source hashes, exact sampled coefficients/p/FDR values,
+row counts, privacy fields and the 95-MiB per-file limit. It never recalculates
+networks, edge masks or statistical tests and never uploads data.
+
+### Approved donor plots (2026-11-03)
+
+The separate `data/matched_brain_donors/` bundle contains the exact donor-score
+publication explicitly approved by the user: 5,614,804 CAMEL edge-summary rows,
+621,121 same-module regional eigengene rows, 106,704 frozen transformation rows,
+and metadata for 1,243 existing pseudonyms (approximately 357 MiB). It excludes
+donor IDs, `projid`, private matching/anchor links, expression and PCA loadings.
+Sanitized component/cohort membership permits both incomplete-region matched
+cohorts without exposing partner linkage. No GitHub push or Drive upload occurs
+in the builder:
+
+```bash
+python scripts/build_matched_brain_donors.py --analysis-root /path/to/20261028_matched80_control_l4
+```
+
+Choose **Matched-control results → Donor scatter plots** or **Donor feature
+distributions**. Both reuse existing chart and publication-export helpers.
+Controls cover the original roles and two demographic-matched incomplete
+cohorts, six features plus same-module eigengenes, four masks, two score
+normalizations, Raw/asinh/frozen RINT, components, diagnosis inclusion and
+categorical grouping. Eigengenes are regional and unfiltered; incomplete-region
+donors never receive invented pooled TS/CT scores.
+
+Scatter annotations show ordinary donor correlations, not the adjusted effects
+in **CAMEL associations**. Nominal outcomes use Kruskal–Wallis comparisons,
+never numeric category-code correlations. Selected-module statistics require
+only one module. **Calculate module-set FDR** explicitly streams all 247 modules
+under the exact same filters; BH is separate per component and grouping level,
+and excludes invalid tests. It is never applied just to displayed groups or a
+single module. Only compact results are cached; repeated heavy calculations are
+serialized. The approved scores are stored as small local Parquets to avoid
+Drive requests for these new plots.
