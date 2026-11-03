@@ -12,7 +12,7 @@ from app_helpers.table_controls import filterable_dataframe
 from app_helpers.charts import module_entropy_figure,module_size_distribution_figure,module_region_composition_figure
 
 TITLE="Matched-control results"
-SECTIONS=["CAMEL associations","CAMEL AD–Control differences","MDC","KEGG enrichment","Module composition","Cohorts & technical checks","Catalog & downloads"]
+SECTIONS=["CAMEL associations","Donor scatter plots","Donor feature distributions","CAMEL AD–Control differences","MDC","KEGG enrichment","Module composition","Cohorts & technical checks","Catalog & downloads"]
 NORMALIZATIONS={"standard_pruned":"Standard pruned","retained_edge":"Retained-edge normalized","unfiltered":"Unfiltered eigengene"}
 COHORT_SHORT={
     "Held-out validation":"Held-out",
@@ -325,6 +325,9 @@ def render_view(render):
         annotation=selected_kegg_table_annotation(D.kegg().loc[lambda f:f.cluster_id.eq(module)])
         st.write(annotation or "No qualifying enrichment is available for this module.")
     if section=="CAMEL associations": associations(render)
+    elif section in {"Donor scatter plots","Donor feature distributions"}:
+        from app_helpers.matched_brain_donor_ui import render_view as render_donors
+        render_donors(render,module,distributions=section=="Donor feature distributions")
     elif section=="CAMEL AD–Control differences": associations(render,True)
     elif section=="MDC": mdc(render)
     elif section=="KEGG enrichment": kegg(render,module)
@@ -336,4 +339,8 @@ def render_view(render):
         st.caption("Only the selected statistical context is loaded. Downloads in the analysis sections contain all selected-context modules before top-K filtering.")
         _table(pd.DataFrame(manifest["files"])[["path","kind","rows","bytes","sha256"]],"files","Result file manifest")
         st.json({k:v for k,v in manifest.items() if k!="files"})
-    st.info("This release contains module-level results only. Donor scatter plots and distributions for this new partition are not published here; the existing donor-level views continue to use their previous datasets.")
+    from app_helpers.matched_brain_donors import available as donor_bundle_available
+    if donor_bundle_available():
+        st.caption("The explicitly approved pseudonymized donor bundle is available in Donor scatter plots and Donor feature distributions. Existing datasets and prediction results are unchanged.")
+    else:
+        st.info("Donor plots require the approved matched-Control donor bundle; aggregate results remain available.")
