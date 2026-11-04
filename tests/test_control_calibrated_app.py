@@ -103,6 +103,74 @@ def test_existing_analysis_views_accept_calibrated_source(view):
     )
 
 
+@pytest.mark.parametrize("family,beta", [("full_cohort", 3), ("muscle_control_l4", 1)])
+def test_heatmap_all_modules_preserves_baseline_after_outcome_filters(family, beta):
+    app = app_for(
+        family, view="Correlation heatmaps", beta=beta, module=smallest_module(family)
+    )
+    assert not app.exception
+    app = app.radio(key="cc_heatmap_scope").set_value("All modules").run()
+    assert not app.exception
+    shown = next(
+        d.value
+        for d in app.dataframe
+        if {"q_scan", "outcome", "module_key"} <= set(d.value.columns)
+    )
+    jobs = [j for j in A.catalog()["modules"] if j["family"] == family]
+    assert set(shown.module_key) == {j["module_key"] for j in jobs}
+    spec = json.loads(app.get("plotly_chart")[0].proto.spec)
+    assert spec["layout"]["meta"]["module"] is None
+    assert spec["layout"]["meta"]["heatmap_scope"] == "all_modules"
+    # The complete module grid retains undefined physical components as NA.
+    assert len(spec["data"][0]["y"]) == len(jobs) * 4
+    app = app.multiselect(key="cc_heatmap_outcomes").set_value(["cogn_global"]).run()
+    assert not app.exception
+    filtered = next(
+        d.value
+        for d in app.dataframe
+        if {"q_scan", "outcome", "module_key"} <= set(d.value.columns)
+    )
+    assert filtered.outcome.eq("cogn_global").all()
+    expected = shown.loc[shown.outcome.eq("cogn_global")].reset_index(drop=True)
+    import pandas as pd
+
+    pd.testing.assert_frame_equal(
+        filtered.reset_index(drop=True), expected, check_exact=True
+    )
+    # A new transform must never reuse native baseline statistics.
+    app = app.selectbox(key="cc_scale").set_value("asinh").run()
+    assert not app.exception and not app.get("plotly_chart")
+    assert app.button(key="cc_run_heatmap_search")
+
+
+def test_regional_all_module_heatmap_keeps_selected_tissue_namespace():
+    family = "single_region_complete_case_l3"
+    app = app_for(view="Correlation heatmaps")
+    organization = next(w for w in app.radio if w.label == "Module organization")
+    app = organization.set_value("independent_regional").run()
+    app = app.selectbox(key="regional_partition_source").set_value(family).run()
+    app = (
+        app.radio(key="regional_calibrated_source").set_value("calibrated_beta3").run()
+    )
+    app = app.radio(key="cc_heatmap_scope").set_value("All modules").run()
+    assert not app.exception
+    tissue = app.selectbox(key="cc_regional_tissue").value
+    expected = {
+        j["module_key"]
+        for j in A.catalog()["modules"]
+        if j["family"] == family and j["regional_tissue"] == tissue
+    }
+    shown = next(
+        d.value
+        for d in app.dataframe
+        if {"q_scan", "outcome", "module_key"} <= set(d.value.columns)
+    )
+    assert set(shown.module_key) == expected
+    spec = json.loads(app.get("plotly_chart")[0].proto.spec)
+    assert spec["layout"]["meta"]["displayed_modules"] == len(expected)
+    assert spec["layout"]["meta"]["regional_tissue"] == tissue
+
+
 @pytest.mark.parametrize(
     "family",
     [

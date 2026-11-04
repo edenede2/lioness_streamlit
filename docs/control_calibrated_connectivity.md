@@ -155,6 +155,16 @@ complete cases and HC3 standard errors; extra covariates are explicit. There is
 no automatic additional adjustment of a supplied adjusted slope. Pairwise group
 intervals use 1,000 donor resamples within groups, seed42, not edges as replicates.
 
+The Correlation heatmaps page offers **Selected module** and **All modules**.
+All modules covers the selected partition and, for regional partitions, the
+selected tissue. Each module/measure/component has its own row; undefined
+components and unavailable correlations remain blank. Tall heatmaps scroll,
+and the statistics table/download follows the selected numeric outcome columns.
+Display filtering preserves saved baseline corrections. Changed donor groups,
+masks, measures or transforms require the **Save and calculate all-module
+heatmap** action; its q_search spans the complete selected module/measure/
+component search and all registered outcomes before display filtering.
+
 ## Reproduction and storage
 
 From the application directory, using the existing research environment:

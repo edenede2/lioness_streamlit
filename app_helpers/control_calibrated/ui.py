@@ -62,7 +62,7 @@ def table(frame, key, label="Results"):
     )
 
 
-def draw(figure, render, key, context):
+def draw(figure, render, key, context, *, annotate=True):
     figure.update_layout(
         template="plotly_white",
         height=max(450, figure.layout.height or 450),
@@ -70,16 +70,17 @@ def draw(figure, render, key, context):
         margin=dict(t=120, b=75, l=70, r=35),
         meta=context,
     )
-    figure.add_annotation(
-        text=f"beta{context['beta']} · {context['cohort_scope']} · {context['transform']} · {context['mask']}",
-        xref="paper",
-        yref="paper",
-        x=0,
-        y=1.13,
-        showarrow=False,
-        xanchor="left",
-        font=dict(size=11, color="#555555"),
-    )
+    if annotate:
+        figure.add_annotation(
+            text=f"beta{context['beta']} · {context['cohort_scope']} · {context['transform']} · {context['mask']}",
+            xref="paper",
+            yref="paper",
+            x=0,
+            y=1.13,
+            showarrow=False,
+            xanchor="left",
+            font=dict(size=11, color="#555555"),
+        )
     for annotation in figure.layout.annotations:
         if str(annotation.text).startswith("component_label="):
             annotation.text = annotation.text.split("=", 1)[1]
@@ -349,8 +350,18 @@ def _filters(frame):
 
 
 def full_partition_search(
-    context, estimator, scope, metrics, components, outcome, donors, mask, tissue
+    context,
+    estimator,
+    scope,
+    metrics,
+    components,
+    outcome,
+    donors,
+    mask,
+    tissue,
+    outcomes=None,
 ):
+    outcomes = [outcome] if outcomes is None else list(outcomes)
     jobs = [
         j
         for j in A.catalog()["modules"]
@@ -363,14 +374,19 @@ def full_partition_search(
         metrics=metrics,
         components=components,
         outcome=outcome,
+        outcomes=outcomes,
         donor_membership_sha256=canonical_hash(sorted(donors)),
         method=(
-            "Kruskal-Wallis"
-            if outcome in D.CATEGORICAL_OUTCOME_LABELS
-            or context.get("outcome_interpretation") == "categorical"
-            else "Spearman"
+            "Registered per-outcome Spearman / Kruskal-Wallis"
+            if len(outcomes) > 1
+            else (
+                "Kruskal-Wallis"
+                if outcome in D.CATEGORICAL_OUTCOME_LABELS
+                or context.get("outcome_interpretation") == "categorical"
+                else "Spearman"
+            )
         ),
-        correction="BH over every estimable selected metric/component/module in this full-partition search, before Top K; q_search, separate from baseline q_scan",
+        correction="BH over every estimable selected metric/component/module/outcome in this full-partition search, before display filtering; q_search, separate from baseline q_scan",
     )
     aid = canonical_hash(intent)
     path = ROOT / "associations/saved" / aid
@@ -386,6 +402,7 @@ def full_partition_search(
                 estimator=estimator,
                 cohort_scope=scope,
                 regional_tissue=tissue,
+                metric_families=metrics,
                 differential_edge_rule=mask["rule"],
                 differential_fdr_scope=mask.get("fdr_scope", "global"),
                 differential_fdr_threshold=mask.get("threshold", 0.05),
@@ -401,22 +418,35 @@ def full_partition_search(
             ]
             if frame.empty:
                 continue
-            parts.append(
-                descriptive_analysis(
-                    frame,
-                    dict(context, module=j["module"], search_parent=aid),
-                    [outcome],
-                )
+            result = descriptive_analysis(
+                frame,
+                dict(context, module=j["module"], search_parent=aid),
+                outcomes,
             )
-        except (A.ScoreUnavailable, FileNotFoundError) as error:
+            result["module"] = j["module"]
+            result["regional_tissue"] = j["regional_tissue"]
+            parts.append(result)
+        except (A.ScoreUnavailable, OSError) as error:
             parts.append(
                 pd.DataFrame(
                     [
                         dict(
                             module_key=j["module_key"],
+                            module=j["module"],
+                            regional_tissue=j["regional_tissue"],
                             component=c,
                             metric_family=m,
-                            outcome=outcome,
+                            outcome=selected_outcome,
+                            method=(
+                                "Kruskal-Wallis"
+                                if selected_outcome in D.CATEGORICAL_OUTCOME_LABELS
+                                or (
+                                    selected_outcome == outcome
+                                    and context.get("outcome_interpretation")
+                                    == "categorical"
+                                )
+                                else "Spearman"
+                            ),
                             effect=np.nan,
                             p=np.nan,
                             n=0,
@@ -424,15 +454,231 @@ def full_partition_search(
                         )
                         for c in components
                         for m in metrics
+                        for selected_outcome in outcomes
                     ]
                 )
             )
+    if not parts:
+        raise A.ScoreUnavailable("No modules or donor scores match this search.")
     result = pd.concat(parts, ignore_index=True)
     result["q_search"] = bh(result.p)
     result["analysis_id"] = aid
     result["correction_scope"] = intent["correction"]
     atomic_parquet(path.with_suffix(".parquet"), result)
     return result
+
+
+def correlation_heatmap_figure(
+    results, metrics, components, outcomes, all_modules, title, modules=None
+):
+    """One row per module/measure/component; keep unavailable cells as NA."""
+    numeric = results.loc[
+        results.method.eq("Spearman")
+        & results.metric_family.isin(metrics)
+        & results.component.isin(components)
+        & results.outcome.isin(outcomes)
+    ].copy()
+    if numeric.empty and not (all_modules and modules):
+        raise A.ScoreUnavailable(
+            "No numeric correlation outcomes match these selections."
+        )
+    numeric["row"] = (
+        numeric.metric_family.map(feature_labels()) + " · " + numeric.component
+    )
+    if all_modules:
+        numeric["row"] = (
+            "M" + numeric.module.astype(int).astype(str) + " · " + numeric["row"]
+        )
+    rows = (
+        numeric.assign(
+            _metric=numeric.metric_family.map({m: i for i, m in enumerate(metrics)}),
+            _component=numeric.component.map({c: i for i, c in enumerate(components)}),
+        )
+        .sort_values((["module"] if all_modules else []) + ["_metric", "_component"])[
+            "row"
+        ]
+        .drop_duplicates()
+    )
+    if all_modules and modules is not None:
+        rows = [
+            f"M{module} · {feature_labels()[metric]} · {component}"
+            for module in sorted(modules)
+            for metric in metrics
+            for component in components
+        ]
+    matrix = numeric.pivot(index="row", columns="outcome", values="effect").reindex(
+        index=rows, columns=outcomes
+    )
+    counts = numeric.pivot(index="row", columns="outcome", values="n").reindex(
+        index=rows, columns=outcomes
+    )
+    matrix = matrix.rename(columns=D.ASSOCIATION_OUTCOME_LABELS)
+    figure = px.imshow(
+        matrix,
+        zmin=-1,
+        zmax=1,
+        color_continuous_scale="RdBu_r",
+        aspect="auto",
+        labels={"color": "Spearman rho"},
+        title=title,
+    )
+    figure.update_traces(
+        customdata=counts.to_numpy(),
+        hovertemplate="%{y}<br>%{x}<br>Spearman rho=%{z:.3f}<br>Paired donor N=%{customdata}<extra></extra>",
+        hoverongaps=False,
+    )
+    figure.update_layout(height=max(450, 22 * len(matrix) + 220))
+    figure.update_xaxes(
+        title_text="Outcome", side="top", tickangle=-45, automargin=True
+    )
+    figure.update_layout(title=dict(y=0.995, yanchor="top", pad=dict(t=8)))
+    if figure.layout.height > 900:
+        figure.update_layout(
+            coloraxis_colorbar=dict(lenmode="pixels", len=300, y=1, yanchor="top")
+        )
+    figure.update_yaxes(
+        title_text=(
+            "Module / donor measure / component"
+            if all_modules
+            else "Donor measure / component"
+        ),
+        tickmode="array",
+        tickvals=matrix.index.tolist(),
+        ticktext=matrix.index.tolist(),
+        automargin=True,
+    )
+    return figure
+
+
+def render_correlation_heatmaps(
+    frame, context, estimator, scope, mask, jobs, baseline_compatible, render
+):
+    all_modules = (
+        st.radio(
+            "Correlation heatmap scope",
+            ["Selected module", "All modules"],
+            horizontal=True,
+            key="cc_heatmap_scope",
+        )
+        == "All modules"
+    )
+    outcomes = st.multiselect(
+        "Outcome columns in heatmap and table",
+        D.NUMERIC_OUTCOMES,
+        default=D.NUMERIC_OUTCOMES,
+        format_func=D.ASSOCIATION_OUTCOME_LABELS.get,
+        key="cc_heatmap_outcomes",
+    )
+    if not outcomes:
+        st.info("Select at least one numeric outcome.")
+        return
+    metrics, components = context["metric_families"], context["components"]
+    heatmap_context = dict(
+        context, heatmap_scope="all_modules" if all_modules else "selected_module"
+    )
+    if all_modules:
+        heatmap_context.update(
+            module=None,
+            planned_modules=[j["module_key"] for j in jobs],
+            donor_membership_sha256=canonical_hash(
+                sorted(frame.sample_id.unique().tolist())
+            ),
+            manifest_sha256=sha(H.ensure(ROOT / "manifest.json")),
+        )
+        heatmap_context.pop("donor_score_metadata_sha256", None)
+    try:
+        if baseline_compatible:
+            results = A.baseline_associations(
+                module_set=context["family"],
+                estimator=estimator,
+                cohort_scope=scope,
+                module=None if all_modules else context["module"],
+                regional_tissue=context["regional_tissue"],
+            )
+            st.caption(
+                "Frozen native, unmasked baseline. Saved q_scan and q_GL_outcome are preserved across module and outcome display filters."
+            )
+        elif all_modules:
+            search_id = canonical_hash(heatmap_context)
+            if st.button(
+                "Save and calculate all-module heatmap", key="cc_run_heatmap_search"
+            ):
+                with st.spinner(
+                    "Calculating correlations across all modules for the selected donors, mask and score scale…"
+                ):
+                    result = full_partition_search(
+                        heatmap_context,
+                        estimator,
+                        scope,
+                        metrics,
+                        components,
+                        context["outcome"],
+                        frame.sample_id.unique().tolist(),
+                        mask,
+                        context["regional_tissue"],
+                        outcomes=list(D.ASSOCIATION_OUTCOME_LABELS),
+                    )
+                st.session_state["cc_partition_heatmap"] = (search_id, result)
+            saved = st.session_state.get("cc_partition_heatmap")
+            if not saved or saved[0] != search_id:
+                st.info(
+                    "Calculate the all-module heatmap for these donors, measures, mask and score scale."
+                )
+                return
+            results = saved[1]
+            st.caption(
+                "q_search covers all estimable modules, selected measures/components and registered outcomes in this saved search. Outcome display filters preserve that correction; baseline q_scan is not reused."
+            )
+        else:
+            results = descriptive_analysis(
+                frame, context, list(D.ASSOCIATION_OUTCOME_LABELS)
+            )
+            st.caption(
+                "Heatmap recalculated for the selected donors, measures, mask and scale. Its selected-module q_search covers all registered outcomes and selected components; baseline q_scan is not reused."
+            )
+        results = results.loc[
+            results.metric_family.isin(metrics)
+            & results.component.isin(components)
+            & results.outcome.isin(outcomes)
+            & results.method.eq("Spearman")
+        ].copy()
+        title = context["family"] + (
+            f" · All {len(jobs)} modules" if all_modules else f" · M{context['module']}"
+        )
+        if context["regional_tissue"]:
+            title += " · " + context["regional_tissue"]
+        figure = correlation_heatmap_figure(
+            results,
+            metrics,
+            components,
+            outcomes,
+            all_modules,
+            title
+            + " · Correlation heatmaps"
+            + f"<br><sup>beta{context['beta']} · {scope} · {context['transform']} · {context['mask']}</sup>",
+            modules=[j["module"] for j in jobs] if all_modules else None,
+        )
+        displayed_modules = (
+            len(jobs) if all_modules else int(results.module_key.nunique())
+        )
+        heatmap_context.update(
+            displayed_outcomes=outcomes,
+            displayed_modules=displayed_modules,
+        )
+        st.caption(
+            f"Showing {displayed_modules} module(s), {len(figure.data[0].y)} measure/component rows and {len(outcomes)} numeric outcomes. Blank cells indicate unavailable correlations or undefined physical components; hover shows paired donor N."
+        )
+        if figure.layout.height > 900:
+            st.caption(
+                "Scroll within the heatmap to see every module. The statistics download includes every displayed module and outcome."
+            )
+            with st.container(height=900, border=False):
+                draw(figure, render, "cc_heatmap", heatmap_context, annotate=False)
+        else:
+            draw(figure, render, "cc_heatmap", heatmap_context, annotate=False)
+        table(results, "cc_heatmap_table", "Heatmap statistics")
+    except (A.ScoreUnavailable, OSError, ValueError) as error:
+        st.info(str(error))
 
 
 def baseline_browser(
@@ -860,12 +1106,28 @@ def render_view(
         donor_score_metadata_sha256=content_hash,
     )
     finite = np.isfinite(frame.metric_value)
+    all_module_heatmap = (
+        view == "Correlation heatmaps"
+        and st.session_state.get("cc_heatmap_scope") == "All modules"
+    )
     a, b, d = st.columns(3)
     a.metric("Independent target candidates", frame.sample_id.nunique())
     b.metric(
-        "Targets with selected finite scores", frame.loc[finite, "sample_id"].nunique()
+        (
+            "Finite targets in sidebar module"
+            if all_module_heatmap
+            else "Targets with selected finite scores"
+        ),
+        frame.loc[finite, "sample_id"].nunique(),
     )
-    d.metric("Score / component cells available", f"{finite.sum():,} / {len(frame):,}")
+    d.metric(
+        (
+            "Sidebar module cells available"
+            if all_module_heatmap
+            else "Score / component cells available"
+        ),
+        f"{finite.sum():,} / {len(frame):,}",
+    )
     with st.expander("Coverage, denominators and score provenance"):
         cols = [
             "module_key",
@@ -1044,58 +1306,10 @@ def render_view(
             st.info(str(error))
         return
     if view == "Correlation heatmaps":
-        try:
-            if baseline_compatible:
-                results = A.baseline_associations(
-                    module_set=family,
-                    estimator=estimator,
-                    cohort_scope=scope,
-                    module=module,
-                    regional_tissue=regional_tissue,
-                )
-            else:
-                results = descriptive_analysis(
-                    frame, context, list(D.ASSOCIATION_OUTCOME_LABELS)
-                )
-                st.caption(
-                    "Heatmap recalculated for the selected donors, metric, mask and scale. Its saved selected-module q_search covers these outcomes and components; it does not inherit baseline q_scan."
-                )
-            results = results[
-                results.metric_family.isin(metrics) & results.component.isin(components)
-            ]
-            results["row"] = (
-                results.metric_family.map(labels) + " · " + results.component
-            )
-            numeric = results[results.method.eq("Spearman")]
-            matrix = numeric.pivot(index="row", columns="outcome", values="effect")
-            counts = numeric.pivot(index="row", columns="outcome", values="n").reindex(
-                index=matrix.index, columns=matrix.columns
-            )
-            matrix = matrix.rename(columns=D.ASSOCIATION_OUTCOME_LABELS)
-            figure = px.imshow(
-                matrix,
-                zmin=-1,
-                zmax=1,
-                color_continuous_scale="RdBu_r",
-                aspect="auto",
-                labels={"color": "Spearman rho"},
-                title=title,
-            )
-            figure.update_traces(
-                customdata=counts.to_numpy(),
-                hovertemplate="%{y}<br>%{x}<br>Spearman rho=%{z:.3f}<br>Paired donor N=%{customdata}<extra></extra>",
-            )
-            figure.update_xaxes(title_text="Outcome")
-            figure.update_yaxes(title_text="Donor measure / component")
-            draw(
-                figure,
-                render,
-                "cc_heatmap",
-                context,
-            )
-            table(results, "cc_heatmap_table", "Heatmap statistics")
-        except A.ScoreUnavailable as error:
-            st.info(str(error))
+        render_correlation_heatmaps(
+            frame, context, estimator, scope, mask, jobs, baseline_compatible, render
+        )
+        return
     elif view == "Feature distributions":
         grouping = st.selectbox(
             "Distribution grouping",
