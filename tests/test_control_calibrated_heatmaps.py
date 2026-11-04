@@ -133,9 +133,11 @@ def test_multioutcome_search_corrects_across_modules_and_outcomes(
             row = result.loc[
                 result.module.eq(module) & result.outcome.eq(outcome)
             ].iloc[0]
-            np.testing.assert_allclose([row.effect, row.p], [rho, p], rtol=1e-12)
+            np.testing.assert_allclose(row.effect, rho, rtol=1e-12)
+            assert 0 < row.p <= 1
+            assert row.p_method in ("monte_carlo_pairings", "exact_tie_aware_pairings")
             assert row.n == len(paired)
-            expected_p.append(p)
+            expected_p.append(row.p)
     np.testing.assert_allclose(
         result.loc[result.module.ne(20), "q_search"],
         stats.false_discovery_control(expected_p),

@@ -1,0 +1,215 @@
+{
+  "schema_version": 1,
+  "version": "20261104_rank_validation_v1",
+  "code_revision": "35db0003fd94408403ba3f8d8a6f61e347b6f43d",
+  "source_release": "20261103_bf01d5b35d51",
+  "score_definition": "Frozen native G/L/S/A; no recalibration or new score transforms",
+  "families": {
+    "control_derived": {
+      "modules": 186,
+      "dataset": "brain",
+      "regional": false
+    },
+    "full_cohort": {
+      "modules": 154,
+      "dataset": "brain",
+      "regional": false
+    },
+    "muscle_all_donors_l4": {
+      "modules": 173,
+      "dataset": "motor",
+      "regional": false
+    },
+    "muscle_control_l4": {
+      "modules": 155,
+      "dataset": "motor",
+      "regional": false
+    },
+    "single_region_complete_case_l3": {
+      "modules": 380,
+      "dataset": "brain",
+      "regional": true
+    },
+    "single_region_full_tissue_l3": {
+      "modules": 368,
+      "dataset": "brain",
+      "regional": true
+    },
+    "single_motor_tissue_complete_case_l3": {
+      "modules": 281,
+      "dataset": "motor",
+      "regional": true
+    }
+  },
+  "unavailable_families": {
+    "matched_Control_247": "Separate namespace; no ready compatible calibrated score family in the authoritative catalog"
+  },
+  "cohorts": {
+    "original": "role=target AND frozen in_original_analysis",
+    "incomplete": "role=target AND NOT all dataset-wide has_tissue fields; asserted disjoint from original",
+    "other_complete_targets": "Reported in inventory; excluded from the two independent main cohorts",
+    "maximum_component": "Repaired legacy baseline only; descriptive overlapping subset, never a third replication"
+  },
+  "betas": [
+    3,
+    1
+  ],
+  "primary_beta": 3,
+  "metrics": [
+    "gain",
+    "loss",
+    "net_change",
+    "magnitude_atypicality"
+  ],
+  "primary_metrics": [
+    "gain",
+    "loss"
+  ],
+  "secondary_metrics": [
+    "net_change",
+    "magnitude_atypicality"
+  ],
+  "outcomes": {
+    "cogn_global": "Global cognition",
+    "cogng_demog_slope": "Demographic-adjusted cognitive slope",
+    "cogng_path_slope": "Pathology-adjusted cognitive slope",
+    "motor10_demog_slope": "Demographic-adjusted motor slope",
+    "sqrt_parksc_demog_slope": "Demographic-adjusted Parkinsonian score",
+    "gpath": "Global AD pathology (gpath)",
+    "amyloid": "Amyloid burden (8-region, supplied square-root scale)",
+    "tangles": "Tangle burden (8-region, supplied square-root scale)"
+  },
+  "old_baseline_outcomes": 20,
+  "nuisance": {
+    "covariates": [
+      "age_at_death",
+      "sex_code",
+      "education_years",
+      "study"
+    ],
+    "intercept": true,
+    "numeric": "Midranks within the exact tested donor subset; centered/scaled nuisance columns for numerical conditioning",
+    "categorical": {
+      "sex_code": {
+        "reference": "Code 0",
+        "indicator": "Code 1"
+      },
+      "study": {
+        "reference": "MAP",
+        "indicator": "ROS"
+      }
+    },
+    "constants": "Remove and record constant nuisance terms; never outcome-guided covariate deletion",
+    "deficiency": "NA inference for rank deficiency, missing covariates, constant score/outcome or inadequate residual df"
+  },
+  "models": {
+    "A": "Unadjusted all score/outcome-available independent targets",
+    "B": "Unadjusted on exactly C complete-case donor IDs",
+    "C": "Partial correlation of residualized score/outcome midranks on base nuisance design",
+    "study": "C separately within ROS and MAP in brain; same base covariates with constant study term removed; motor not applicable"
+  },
+  "eligibility": {
+    "adjusted_minimum_n": 30,
+    "minimum_residual_df": 20,
+    "full_rank": true,
+    "unadjusted_minimum_n": 3,
+    "smaller_adjusted": "Descriptive effect only where estimable; no adjusted primary p/q"
+  },
+  "permutations": {
+    "draws": 9999,
+    "seed": 611104,
+    "statistic": "two-sided absolute Spearman rho; adjusted absolute partial rho (monotone equivalent of full-model t on the fixed design)",
+    "exact": "Enumerate one-vector unique multiset pairings if min permutation space <= min(100000, floor(8000000/N)); identical tie configurations share their full null distribution",
+    "unadjusted": "Unrestricted one-vector pairings; exact where tractable, otherwise fixed-budget Monte Carlo",
+    "adjusted": "Freedman-Lane: reduced outcome-on-nuisance residual permutation, fitted values added back, full-model refit via equivalent orthogonal projections; ranks/design fixed",
+    "blocks": "Pooled brain adjusted residual permutations restricted within study; within-study and single-MAP motor unrestricted within their study",
+    "empirical_p": "(exceedances+1)/(draws+1); exact tail proportion includes all pairings; no empirical zero p",
+    "assumptions": "Residual exchangeability within study; Freedman-Lane is not universally exact or heteroscedasticity robust",
+    "degenerate_draws": "Conservatively count undefined permuted residual norm as extreme; record count",
+    "resolution": "Family-wide 9999 draws frozen before scan; floor 0.0001. Flag every correction family with alpha/m < floor and every floor-limited test; no outcome-driven refinement"
+  },
+  "bootstrap": {
+    "catalog_draws": 199,
+    "focused_draws": 1999,
+    "seed": 611105,
+    "interval": "95% percentile donor bootstrap; study-stratified with fixed stratum sample sizes; B/C share each resample",
+    "refit": "Rerank score, outcome and numeric nuisance terms and refit each replicate",
+    "degeneracy": "Record valid/degenerate replicates; CI unavailable if fewer than 80% are valid; changing nuisance design columns is degenerate",
+    "limitation": "199-replicate catalog intervals are coarse; 1999-replicate focused intervals are the detailed readout"
+  },
+  "canonical_hypothesis": "Within each module namespace only: identical physical edge-universe hashes AND equivalent native values/denominators share one hypothesis. Prefer resolved tissue/pair; list all aliases. Never merge module families or call aliases independent replication.",
+  "correction": {
+    "new_q_scan": "BH within dataset/cohort/allocation/model/study-stratum/native/unmasked; all ready registered canonical physical hypotheses, eight outcomes, G/L/S/A and both betas",
+    "new_q_GL_outcome": "BH jointly G/L within the same context and fixed beta/outcome, across all registered ready module families/components",
+    "exclusion": "Retain NA rows with reasons; only finite p enter BH. Correction before display filters, Top K or focused selection. q is within-model, not permission to choose the best model.",
+    "repaired_baseline": "All original 20-outcome numeric Spearman tests use declared tie-aware permutation inference; nominal KW p unchanged. Recompute both complete original legacy correction families, preserving aliases and all unchanged tests; old release stays immutable."
+  },
+  "focused": {
+    "modules": {
+      "control_derived": [
+        747,
+        1116,
+        1064
+      ],
+      "full_cohort": [
+        1643
+      ]
+    },
+    "components": [
+      "TS_DLPFC",
+      "CT_DLPFC__PCG"
+    ],
+    "outcomes": [
+      "cogn_global",
+      "cogng_demog_slope",
+      "cogng_path_slope",
+      "motor10_demog_slope",
+      "sqrt_parksc_demog_slope",
+      "gpath",
+      "amyloid",
+      "tangles"
+    ],
+    "betas": [
+      3,
+      1
+    ],
+    "cohorts": [
+      "original",
+      "incomplete"
+    ],
+    "selection": "User-named candidates and DLPFC / DLPFC-PCG components declared before running the scan; all outcomes shown, including attenuated/unavailable effects",
+    "spline": "Natural restricted cubic age spline: four knots at 5/35/65/95% of native age in the exact complete-case subset, three age df; knots fixed for permutation and bootstrap; recorded per test",
+    "pathology_sensitivity": "Focused cogng_demog_slope only: base covariates plus ranked gpath/amyloid/tangles, contingent on verified source provenance. Never add pathology again automatically to cogng_path_slope; do not substitute global cognition for an unavailable slope.",
+    "interaction": "Pooled standardized midranks on the exact pooled donor subset; nuisance main effects + score + study + score-by-study. HC3 covariance with t/F reference and residual df; require each study N>=30 and full-model df>=20.",
+    "comparators": "Same family/module unmasked historical LIONESS control-anchored native Connectivity and same-module constituent tissue PC1 eigengenes, reusing existing fits. Shared score/outcome/covariate/comparator donors; unavailable inputs reported, never substituted.",
+    "joint": "Reduced base+available declared comparators versus same model+G+L jointly on identical donors; standardized pooled midranks, HC3 two-df Wald F, delta in-sample R2 with stratified donor bootstrap; rank/condition number/VIF diagnostics; no predictive interpretation",
+    "focused_fdr": "Each focused model/cohort/stratum tested as a declared within-focused family across all named modules/components, endpoints and both betas; retain broad catalog q for primary A/B/C"
+  },
+  "technical_covariates": "Inventory RIN/PMI/batch/cell composition and preprocessing provenance only; none added automatically",
+  "exclusions": "No prediction, reclustering, beta/mask optimization, matching, weighting, new calibration, donor IDs in public aggregate tables, publication, production pointer change, push or merge",
+  "input_sha256": {
+    "catalog.json": "3534c60eae5520e10c23f90ed70a1aa57be9748768d2e12141df12a732ce0154",
+    "manifest.json": "76850d82f7b05a47be011695d2e15f7101e75619b1be5a5953eecc50abe184f7",
+    "metadata/brain.parquet": "25c3946c8a3fe14aae1fee04cb139924a43c7beb524d65e1ff357282d560952d",
+    "metadata/motor.parquet": "e4bfdcb7ba7da0faf14485f8ce222fbde36246601b0cf03a7ded2c5995c375af",
+    "metadata/motor_regional.parquet": "2d98052f0b7c6fea44837934d441634fb1de55ab0d62b4e2d2d91c60fa64b9bb",
+    "file_indexes/brain.json": "c6b4549c5e3471b367660ae9f5846d9aa56ebd7e8cac0f88b92d5f636c68b5c9",
+    "file_indexes/motor.json": "9477feff1cf98a21651d59b7723d62a2522ad3c8f354a2541f48f46fc141292b",
+    "file_indexes/motor_regional.json": "134686e204ad05645ec479f8945c2c08d4ebc27020dcfbce5585c1de37ca096a",
+    "associations/brain_complete_450.parquet": "e322d32a693a619d62f42e28fb2926b6a731ca51ac0a9a769785751f55da8b6c",
+    "associations/brain_incomplete_region_validation.parquet": "840c4a8cd0ac1b39fdbe5e7fb64267dda56632e008546c4fa2047f1e512f4d7c",
+    "associations/brain_maximum_component.parquet": "e272c8431f49fd74a7a5902c5141b540b3064dbe5b8f9c488b687b4f7446ced5",
+    "associations/motor_complete_450.parquet": "f2e2353369fee5e46d02218989488b6ba7e2fd958d10d8cf39d274654f434413",
+    "associations/motor_incomplete_region_validation.parquet": "cfbe28cfde8f8b4b55547ecc24e519fa660ddab361c48b114f20c01d499b8382",
+    "associations/motor_maximum_component.parquet": "697ede072515c7d0c9cfaed8e0febfea02618ffb31d59d7b74ed4ffdba9b2ef5",
+    "associations/planned_cells.parquet": "313eff29dc1ff8ca684571452af4bdc95a7e80e670a2509f3095e739e8899109",
+    "associations/testing_manifest.json": "ff8bb94bb74beac0f7596ca93214f17c4132dfd2bf124fc32ad58007e0be999b"
+  },
+  "method_references": [
+    "https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.spearmanr.html",
+    "https://pmc.ncbi.nlm.nih.gov/articles/PMC4010955/",
+    "https://fsl.fmrib.ox.ac.uk/fsl/docs/statistics/palm/exchangeability_blocks.html",
+    "https://www.statsmodels.org/stable/generated/statsmodels.regression.linear_model.OLSResults.get_robustcov_results.html"
+  ],
+  "analysis_id": "8f0ba6f5eeacf089364056c444a290c1a71056306ff8edf08c6062dd8d1f2ea4"
+}

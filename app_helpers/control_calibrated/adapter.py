@@ -441,27 +441,36 @@ def baseline_associations(
     component=None,
     regional_tissue=None,
     root=ROOT,
+    inference_version="auto",
     **_,
 ):
     import pyarrow.parquet as pq
 
     c = catalog(root)
     dataset = c["families"][module_set]["dataset"]
-    path = Path(root) / "associations" / f"{dataset}_{cohort_scope}.parquet"
-    if not H.available(path):
-        raise ScoreUnavailable("The full baseline association catalog has not finished")
-    path = H.ensure(path)
-    completion = Path(root) / "associations/completion.json"
-    if not H.available(completion):
-        raise ScoreUnavailable("The complete baseline scan is still being finalized")
-    report = H.read_json(completion)
-    expected = next(
-        item["sha256"]
-        for item in report["files"]
-        if item["path"] == str(path.relative_to(root))
-    )
-    stat = path.stat()
-    verify_score(str(path), stat.st_mtime_ns, stat.st_size, expected)
+    from .validation_data import baseline_path
+
+    path = baseline_path(root, dataset, cohort_scope, inference_version)
+    if path is None:
+        path = Path(root) / "associations" / f"{dataset}_{cohort_scope}.parquet"
+        if not H.available(path):
+            raise ScoreUnavailable(
+                "The full baseline association catalog has not finished"
+            )
+        path = H.ensure(path)
+        completion = Path(root) / "associations/completion.json"
+        if not H.available(completion):
+            raise ScoreUnavailable(
+                "The complete baseline scan is still being finalized"
+            )
+        report = H.read_json(completion)
+        expected = next(
+            item["sha256"]
+            for item in report["files"]
+            if item["path"] == str(path.relative_to(root))
+        )
+        stat = path.stat()
+        verify_score(str(path), stat.st_mtime_ns, stat.st_size, expected)
     filters = [("family", "=", module_set), ("beta", "=", ESTIMATORS[estimator])]
     if c["families"][module_set]["regional"] and module is not None:
         if regional_tissue is None:

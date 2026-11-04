@@ -1,0 +1,5 @@
+# Local scientific report generation and independent validation only.
+# The hosted application's dependencies remain in requirements.txt.
+matplotlib==3.10.8
+statsmodels==0.14.5
+pytest==8.4.2

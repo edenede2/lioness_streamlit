@@ -1,0 +1,109 @@
+{
+  "status": "passed",
+  "analysis_id": "8f0ba6f5eeacf089364056c444a290c1a71056306ff8edf08c6062dd8d1f2ea4",
+  "tests": {
+    "initial_regression": {
+      "passed": 78,
+      "seconds": 177.26
+    },
+    "final_models_and_new_UI": {
+      "passed": 14,
+      "seconds": 43.61
+    },
+    "final_existing_UI": {
+      "passed": 34,
+      "seconds": 177.24
+    },
+    "CLI": {
+      "passed": 1,
+      "seconds": 0.4
+    },
+    "note": "Suites overlap; do not add these counts. A repeated broad invocation exited 143 before completion and was superseded by the passing final affected-view/model suites."
+  },
+  "numerical_source_formatting_proof": {
+    "validation_inference.py": {
+      "formatted_sha256": "dcaf0a65d2673ba88df5875e537562a8d8428d37e560b24a47fe48391569715f",
+      "formatted_source_semantically_identical": true
+    },
+    "validation_run.py": {
+      "formatted_sha256": "16a7c1e7d8a4278338a615e8bb18a3d7448a1bdac5b0b868a1eb13c04ae9a664",
+      "formatted_source_semantically_identical": true
+    },
+    "validation_focused.py": {
+      "formatted_sha256": "a831a6f96f98134266a44101f3a61f703963e4d88dc03a4b53921809ccee6f2b",
+      "formatted_source_semantically_identical": true
+    }
+  },
+  "preservation": {
+    "user_files": {
+      "checked": 105,
+      "changed": []
+    },
+    "prediction_files": {
+      "checked": 322,
+      "changed": []
+    },
+    "production_pointers": {
+      "checked": 2,
+      "changed": []
+    }
+  },
+  "browser": {
+    "errors": [],
+    "meta": {
+      "analysis_id": "8f0ba6f5eeacf089364056c444a290c1a71056306ff8edf08c6062dd8d1f2ea4",
+      "family": "control_derived",
+      "beta": 3,
+      "outcome": "cogn_global",
+      "cohorts": [
+        "original",
+        "incomplete"
+      ],
+      "mask": "all",
+      "transform": "native",
+      "role": "independent_targets",
+      "correction_scope": "Within model / cohort / study stratum; catalog q_scan spans all registered canonical families, eight outcomes, four metrics and both betas",
+      "interval": "Study-stratified donor percentile bootstrap; rerank/refit; no edge resampling",
+      "models": [
+        "A",
+        "B",
+        "C"
+      ],
+      "study_strata": [
+        "all"
+      ],
+      "components": [
+        "TS_DLPFC",
+        "CT_DLPFC__PCG"
+      ],
+      "metrics": [
+        "gain",
+        "loss"
+      ]
+    },
+    "range": [
+      47.5,
+      -0.5
+    ],
+    "categories": 48,
+    "panels": [
+      "A \u00b7 all-available unadjusted",
+      "B \u00b7 matched-sample unadjusted",
+      "C \u00b7 covariate-adjusted partial ranks"
+    ]
+  },
+  "local_bundle_sealed_files_verified": 46,
+  "aggregate_report_sealed_files_verified": 46,
+  "publication": false,
+  "production_release_pointer_changed": false,
+  "push": false,
+  "merge": false,
+  "prediction_changed": false,
+  "test_dependencies": {
+    "independent_HC3_reference": "statsmodels 0.14.5",
+    "test_runner": "pytest 8.4.2",
+    "Streamlit": "1.64.0"
+  },
+  "screenshots_local": "artifacts/calibrated_validation_20261104/screenshots",
+  "scientific_verification": "verification.json"
+}

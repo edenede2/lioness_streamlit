@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "analysis_id": "8f0ba6f5eeacf089364056c444a290c1a71056306ff8edf08c6062dd8d1f2ea4",
+  "catalog_rows_verified": 3263232,
+  "actual_donor_memberships_verified": 3263232,
+  "independent_SciPy_BH_families": 558,
+  "N4_zero_p_repaired": 98,
+  "exact_alias_vectors_verified": 18496,
+  "original_native_files_hash_verified": 3394,
+  "score_allocation_and_transforms_unchanged": true,
+  "old_baseline_unchanged": true,
+  "projection_FL_and_HC3_independent_unit_tests": "See recorded pytest and statsmodels0.14.5 tests",
+  "seconds": 83.4610123001039
+}

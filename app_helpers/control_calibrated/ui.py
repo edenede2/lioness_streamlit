@@ -205,6 +205,8 @@ def descriptive_analysis(
         correction="q_search BH across all finite tests in this saved selected-module analysis, both displayed G/L when selected; not baseline q_scan",
         role="independent target",
         prediction=False,
+        numeric_inference="Spearman: exact tie-aware pairings where tractable, else fixed9999 Monte Carlo (+1), seed611104; Pearson remains a separately labeled parametric analysis",
+        component_aliases="Legacy displayed-component family retained; exact aliases are not independent replication",
     )
     analysis_id = canonical_hash(spec)
     dest = ROOT / "associations" / "saved" / analysis_id
@@ -288,6 +290,26 @@ def descriptive_analysis(
                     g.assign(_group=0), ["_group"], [outcome], min_group_n=minimum_n
                 ).iloc[0]
                 prefix = method.lower()
+                permutation = None
+                if prefix == "spearman":
+                    from .validation_inference import (
+                        infer_group,
+                        finite_numeric,
+                        stable_seed,
+                    )
+
+                    x = finite_numeric(g.metric_value)
+                    y = finite_numeric(g[outcome])
+                    valid = np.isfinite(x) & np.isfinite(y)
+                    permutation = infer_group(
+                        x[valid][None, :],
+                        y[valid],
+                        g.loc[valid],
+                        draws=9999,
+                        seed=stable_seed(
+                            611104, analysis_id, key, component, metric, outcome
+                        ),
+                    )
                 rows.append(
                     dict(
                         base,
@@ -296,7 +318,21 @@ def descriptive_analysis(
                         effect_name=(
                             "spearman_rho" if prefix == "spearman" else "pearson_r"
                         ),
-                        p=r[prefix + "_p"],
+                        p=(
+                            permutation["p"][0]
+                            if permutation is not None
+                            else r[prefix + "_p"]
+                        ),
+                        p_method=(
+                            permutation["method"][0]
+                            if permutation is not None
+                            else "parametric_Pearson_t"
+                        ),
+                        permutation_draws=(
+                            int(permutation["draws"][0])
+                            if permutation is not None
+                            else 0
+                        ),
                         unavailable_reason=r.unavailable_reason,
                     )
                 )
@@ -375,6 +411,7 @@ def full_partition_search(
         components=components,
         outcome=outcome,
         outcomes=outcomes,
+        numeric_inference="Exact tie-aware pairings where tractable, else fixed9999 Monte Carlo (+1), seed611104",
         donor_membership_sha256=canonical_hash(sorted(donors)),
         method=(
             "Registered per-outcome Spearman / Kruskal-Wallis"
@@ -594,6 +631,7 @@ def render_correlation_heatmaps(
                 cohort_scope=scope,
                 module=None if all_modules else context["module"],
                 regional_tissue=context["regional_tissue"],
+                inference_version=context.get("baseline_inference_version", "auto"),
             )
             st.caption(
                 "Frozen native, unmasked baseline. Saved q_scan and q_GL_outcome are preserved across module and outcome display filters."
@@ -682,7 +720,14 @@ def render_correlation_heatmaps(
 
 
 def baseline_browser(
-    family, estimator, scope, module, outcome, components, regional_tissue=None
+    family,
+    estimator,
+    scope,
+    module,
+    outcome,
+    components,
+    regional_tissue=None,
+    inference_version="auto",
 ):
     with st.expander(
         "Full-catalog baseline associations · frozen q_scan", expanded=False
@@ -694,6 +739,7 @@ def baseline_browser(
                 cohort_scope=scope,
                 phenotype=outcome,
                 regional_tissue=regional_tissue,
+                inference_version=inference_version,
             )
         except A.ScoreUnavailable as error:
             st.info(str(error))
@@ -900,6 +946,26 @@ def render_view(
         from app_helpers.figure_export import render_exportable_plot
 
         render = render_exportable_plot
+    from .validation_ui import select_validation
+
+    if select_validation(view, family, estimator, render):
+        return
+    from .validation_data import local_root as local_validation_root
+
+    baseline_inference_version = st.sidebar.selectbox(
+        "20-outcome baseline inference",
+        (
+            ["repaired", "original"]
+            if local_validation_root() is not None
+            else ["original"]
+        ),
+        format_func=lambda v: (
+            "Repaired tie-aware permutation inference"
+            if v == "repaired"
+            else "Original asymptotic inference (audit)"
+        ),
+        key="cc_baseline_inference_version",
+    )
     c = A.catalog()
     beta = ESTIMATORS[estimator]
     jobs = [j for j in c["modules"] if j["family"] == family]
@@ -1104,6 +1170,7 @@ def render_view(
         metric_families=metrics,
         components=components,
         donor_score_metadata_sha256=content_hash,
+        baseline_inference_version=baseline_inference_version,
     )
     finite = np.isfinite(frame.metric_value)
     all_module_heatmap = (
@@ -1232,6 +1299,7 @@ def render_view(
                     cohort_scope=scope,
                     phenotype=outcome,
                     regional_tissue=regional_tissue,
+                    inference_version=baseline_inference_version,
                 )
                 results = results[
                     results.metric_family.isin(metrics)
@@ -1484,7 +1552,14 @@ def render_view(
             "A changed donor set, transform, method or mask is a separate saved search. q_search covers its declared selected-module tests; it does not inherit baseline q_scan or cover choosing among saved searches."
         )
     baseline_browser(
-        family, estimator, scope, module, outcome, components, regional_tissue
+        family,
+        estimator,
+        scope,
+        module,
+        outcome,
+        components,
+        regional_tissue,
+        baseline_inference_version,
     )
     if (
         view == "Associations"

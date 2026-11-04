@@ -1,0 +1,337 @@
+{
+  "scan_complete": {
+    "status": "complete",
+    "analysis_id": "8f0ba6f5eeacf089364056c444a290c1a71056306ff8edf08c6062dd8d1f2ea4",
+    "contexts": [
+      {
+        "dataset": "brain",
+        "cohort": "original",
+        "planned": 1175232,
+        "completed": 1175232,
+        "estimable": 1175192,
+        "excluded": 40,
+        "matched_B_C_pairs": 234944,
+        "families": [
+          "control_derived",
+          "full_cohort",
+          "single_region_complete_case_l3",
+          "single_region_full_tissue_l3"
+        ],
+        "sha256": "ab4288f704d875489d1672550f8d97d491286a83a7cd801aae5ea52c43267d84",
+        "file": "brain_original.parquet"
+      },
+      {
+        "dataset": "brain",
+        "cohort": "incomplete",
+        "planned": 1175232,
+        "completed": 1175232,
+        "estimable": 800256,
+        "excluded": 374976,
+        "matched_B_C_pairs": 234944,
+        "families": [
+          "control_derived",
+          "full_cohort",
+          "single_region_complete_case_l3",
+          "single_region_full_tissue_l3"
+        ],
+        "sha256": "ea0fe38a274493cd6688720111bae39dd5ca491646ec645f514b059e7163f52f",
+        "file": "brain_incomplete.parquet"
+      },
+      {
+        "dataset": "motor",
+        "cohort": "original",
+        "planned": 456384,
+        "completed": 456384,
+        "estimable": 456384,
+        "excluded": 0,
+        "matched_B_C_pairs": 152128,
+        "families": [
+          "muscle_all_donors_l4",
+          "muscle_control_l4",
+          "single_motor_tissue_complete_case_l3"
+        ],
+        "sha256": "832a8aff59a4c5b99eec104d64b1a2b3a969b5a1d4178deff0626e31da75f7dd",
+        "file": "motor_original.parquet"
+      },
+      {
+        "dataset": "motor",
+        "cohort": "incomplete",
+        "planned": 456384,
+        "completed": 456384,
+        "estimable": 322752,
+        "excluded": 133632,
+        "matched_B_C_pairs": 152128,
+        "families": [
+          "muscle_all_donors_l4",
+          "muscle_control_l4",
+          "single_motor_tissue_complete_case_l3"
+        ],
+        "sha256": "199945bd8bfac9103363fda4458343383cd56706a6f91fb7bc49fb01542ffa2c",
+        "file": "motor_incomplete.parquet"
+      }
+    ],
+    "B_C_identical_membership": true
+  },
+  "repair_complete": {
+    "status": "complete",
+    "analysis_id": "8f0ba6f5eeacf089364056c444a290c1a71056306ff8edf08c6062dd8d1f2ea4",
+    "contexts": [
+      {
+        "file": "brain_complete_450.parquet",
+        "rows": 832160,
+        "numeric_repaired": 624120,
+        "old_zero_p": 0,
+        "new_zero_p": 0,
+        "n4_perfect_repaired": 0,
+        "old_q_scan_lt05": 1099,
+        "new_q_scan_lt05": 24,
+        "sha256": "9027f728bedf24982656809884bc5553c1ab9e0f09073f3548e1553a48fa9db4"
+      },
+      {
+        "file": "brain_incomplete_region_validation.parquet",
+        "rows": 832160,
+        "numeric_repaired": 624120,
+        "old_zero_p": 98,
+        "new_zero_p": 0,
+        "n4_perfect_repaired": 98,
+        "old_q_scan_lt05": 30591,
+        "new_q_scan_lt05": 30197,
+        "sha256": "91f32df4f90f9c3966483bf53dcf39eb106c98e094f362786ea11bb045a90330"
+      },
+      {
+        "file": "brain_maximum_component.parquet",
+        "rows": 832160,
+        "numeric_repaired": 624120,
+        "old_zero_p": 0,
+        "new_zero_p": 0,
+        "n4_perfect_repaired": 0,
+        "old_q_scan_lt05": 69565,
+        "new_q_scan_lt05": 69339,
+        "sha256": "6a2917b76d80433fecb7526adc15a5ea07cde7a682aec1aedf3ab73e92ee8cd3"
+      },
+      {
+        "file": "motor_complete_450.parquet",
+        "rows": 505440,
+        "numeric_repaired": 379080,
+        "old_zero_p": 0,
+        "new_zero_p": 0,
+        "n4_perfect_repaired": 0,
+        "old_q_scan_lt05": 0,
+        "new_q_scan_lt05": 0,
+        "sha256": "1a8cd05fa56146bd74f68855016b173a7c0ced765468a238b8a7fa9096f171dd"
+      },
+      {
+        "file": "motor_incomplete_region_validation.parquet",
+        "rows": 505440,
+        "numeric_repaired": 379080,
+        "old_zero_p": 0,
+        "new_zero_p": 0,
+        "n4_perfect_repaired": 0,
+        "old_q_scan_lt05": 0,
+        "new_q_scan_lt05": 0,
+        "sha256": "2825c5e2c91e8bbb6273e061ab04aab313b4377096d141ea0feaf802f8c87f7e"
+      },
+      {
+        "file": "motor_maximum_component.parquet",
+        "rows": 505440,
+        "numeric_repaired": 379080,
+        "old_zero_p": 0,
+        "new_zero_p": 0,
+        "n4_perfect_repaired": 0,
+        "old_q_scan_lt05": 4,
+        "new_q_scan_lt05": 4,
+        "sha256": "164ebadba9df41378737d1995e7bf18d2d48b68bbb6806c7989ea2c548aad035"
+      }
+    ],
+    "old_release_untouched": true,
+    "aliases_preserved_in_legacy_FDR": true
+  },
+  "focused_complete": {
+    "status": "complete",
+    "analysis_id": "8f0ba6f5eeacf089364056c444a290c1a71056306ff8edf08c6062dd8d1f2ea4",
+    "planned_contexts": 256,
+    "completed_contexts": 256,
+    "seconds": 233.39253954216838,
+    "analyses": [
+      {
+        "analysis": "interaction",
+        "planned": 1024,
+        "completed": 1024,
+        "estimable": 992,
+        "excluded": 32,
+        "reasons": {
+          "each_study_requires_at_least_30_complete_cases": 32
+        },
+        "file": "interaction.parquet",
+        "sha256": "cafce7db4f482856d0852e7e79c3772c081236b31c121a7688935b1540b5e489"
+      },
+      {
+        "analysis": "comparators",
+        "planned": 1152,
+        "completed": 1152,
+        "estimable": 576,
+        "excluded": 576,
+        "reasons": {
+          "no_shared_comparator_donors": 576
+        },
+        "file": "comparators.parquet",
+        "sha256": "001ef8e2f3d1d6f0e8ec08b7b4b4f65affb36c023bb13628f552474e34b9f396"
+      },
+      {
+        "analysis": "incremental",
+        "planned": 256,
+        "completed": 256,
+        "estimable": 128,
+        "excluded": 128,
+        "reasons": {
+          "no_shared_comparator_donors": 128
+        },
+        "file": "incremental.parquet",
+        "sha256": "7d8e457cc62a7321f0227aa68a09016ea600bff28fa9c635880e013a68a66784"
+      }
+    ]
+  },
+  "scan_execution": {
+    "status": "complete",
+    "analysis_id": "8f0ba6f5eeacf089364056c444a290c1a71056306ff8edf08c6062dd8d1f2ea4",
+    "planned_tasks": 1133,
+    "completed_tasks": 1133,
+    "failed_tasks": 0,
+    "rows": 3263232,
+    "seconds": 1041.3255992159247,
+    "workers": 4,
+    "code_sha256": {
+      "validation_run.py": "53cd4e54995de8f081ef8caa604d9a9b18c2af659a6868f279014935a4b74140",
+      "validation_inference.py": "4390210e75be360ed831ac22750af911bd1cbe49b21383d2504fab76daecbd14"
+    }
+  },
+  "repair_execution": {
+    "status": "complete",
+    "analysis_id": "8f0ba6f5eeacf089364056c444a290c1a71056306ff8edf08c6062dd8d1f2ea4",
+    "planned_tasks": 1785,
+    "completed_tasks": 1785,
+    "failed_tasks": 0,
+    "rows": 3009600,
+    "seconds": 174.40824873000383,
+    "workers": 4,
+    "code_sha256": {
+      "validation_run.py": "53cd4e54995de8f081ef8caa604d9a9b18c2af659a6868f279014935a4b74140",
+      "validation_inference.py": "4390210e75be360ed831ac22750af911bd1cbe49b21383d2504fab76daecbd14"
+    }
+  },
+  "benchmark": {
+    "status": "complete",
+    "analysis_id": "8f0ba6f5eeacf089364056c444a290c1a71056306ff8edf08c6062dd8d1f2ea4",
+    "task_id": "6906af720a0dbec5ae4733f3d67e38f9cb866970bbfa2ee549a890d023424041",
+    "sha256": "d2afd283c8f2e4dd42b74cd853eb97bdfc137391204e94f6ae388a4e4eae6781",
+    "rows": 2048,
+    "seconds": 0.3105095587670803,
+    "peak_rss_bytes": 983392256,
+    "score_vectors": 2048,
+    "donors": 275,
+    "draws": 9999
+  },
+  "verification": {
+    "status": "passed",
+    "analysis_id": "8f0ba6f5eeacf089364056c444a290c1a71056306ff8edf08c6062dd8d1f2ea4",
+    "catalog_rows_verified": 3263232,
+    "actual_donor_memberships_verified": 3263232,
+    "independent_SciPy_BH_families": 558,
+    "N4_zero_p_repaired": 98,
+    "exact_alias_vectors_verified": 18496,
+    "original_native_files_hash_verified": 3394,
+    "score_allocation_and_transforms_unchanged": true,
+    "old_baseline_unchanged": true,
+    "projection_FL_and_HC3_independent_unit_tests": "See recorded pytest and statsmodels0.14.5 tests",
+    "seconds": 83.4610123001039
+  },
+  "provenance_inventory": {
+    "pathology_sensitivity_verified": false,
+    "pathology_sensitivity_exclusion": "Exact generating-release provenance of the supplied demographic slope is unresolved; optional extra-pathology model withheld. Core supplied-outcome association/sensitivity scans remain enabled.",
+    "supplied_values_preserved": true,
+    "sources": [
+      {
+        "source": "sample_info.tsv",
+        "sha256": "3e137d92b4ff7815d51b1c66f2c236ea20e70bf22d9d8070da4410e504df7b6b",
+        "technical_fields": [
+          "Batch",
+          "rin",
+          "prod_batch",
+          "Flowcell_Batch",
+          "RNA_Batch",
+          "Library_Batch",
+          "pmi"
+        ],
+        "slope_fields": []
+      },
+      {
+        "source": "muscle_samples_with_clinical_groups_by_IID_cogdx_RADC.csv",
+        "sha256": "ed62fffc4655e8b0d18f0d91010711c097cf642be7c25d5af61f1004107803c9",
+        "technical_fields": [
+          "Batch",
+          "pmi"
+        ],
+        "slope_fields": [
+          "cogng_demog_slope",
+          "sqrt_parksc_demog_slope",
+          "motor10_demog_slope",
+          "cogng_path_slope"
+        ]
+      },
+      {
+        "source": "20250203_Parkinsonism_metadata_1st_page.csv",
+        "sha256": "15a1a47444b68a9681fa1e087b9b8b2e502c087eb2deb99b041dfac8a7da5fe6",
+        "technical_fields": [],
+        "slope_fields": [
+          "cogng_demog_slope",
+          "sqrt_parksc_demog_slope",
+          "motor10_demog_slope"
+        ]
+      },
+      {
+        "source": "resiliencePheno.csv",
+        "sha256": "f74f9fcbaf8cd52f78498f7e685c7a44256eb72770bb465e8922c81be35dcdd6",
+        "technical_fields": [],
+        "slope_fields": [
+          "cogng_path_slope"
+        ]
+      }
+    ],
+    "slope_definitions": {
+      "cogng_demog_slope": {
+        "current_RADC_documentation": "Mixed model person-specific global-cognition slope, adjusted for baseline age, sex, education and phone_cog; years from baseline",
+        "url": "https://www.radc.rush.edu/docs/var/detail.htm?category=Cognition&subcategory=Estimated+slopes&variable=cogng_demog_slope",
+        "generating_release_exact_formula": "Unresolved in the supplied February 2025 derived table"
+      },
+      "cogng_path_slope": {
+        "current_RADC_documentation": "Global-cognition random slope with demographics and eleven neuropathologic terms; time from death",
+        "url": "https://www.radc.rush.edu/docs/var/detail.htm?category=Cognition&subcategory=Estimated+slopes&variable=cogng_path_slope",
+        "generating_release_exact_formula": "Unresolved for the supplied resiliencePheno source; current variable documentation is contextual evidence, not proof of release identity"
+      },
+      "motor10_demog_slope": {
+        "known": "Supplied demographic-adjusted motor-function slope",
+        "unresolved": "Exact original covariates, time origin, visit minimum and random-effects specification"
+      },
+      "sqrt_parksc_demog_slope": {
+        "known": "Supplied demographic-adjusted square-root Parkinsonian-score slope",
+        "unresolved": "Exact original covariates, time origin, visit minimum and random-effects specification"
+      }
+    },
+    "pathology_columns": {
+      "gpath": "gpath",
+      "amyloid": "amylsqrt_est_8reg",
+      "tangles": "tangsqrt_est_8reg"
+    },
+    "pathology_source_sha256": "fbf58995bae76da2af2502fc1fc41442d685d8a1d174a27160e0e88213e4b96f",
+    "technical_covariates_added": false,
+    "technical_preprocessing_use": "Frozen input provenance does not establish which of the available upstream RIN/PMI/batch variables were regressed out; unresolved, no new preprocessing performed",
+    "additional_family_unavailable": {
+      "matched_control_brain_l4": "Separate 247-module namespace; not present in the ready calibrated catalog"
+    }
+  },
+  "observed_maximum_worker_RSS_bytes": {
+    "repair": 983392256,
+    "scan": 858275840
+  },
+  "failed_required_tasks": 0
+}

@@ -1,0 +1,2 @@
+# Matplotlib preserves spaces inside multiline SVG path attributes.
+docs/reports/control_calibrated_validation_20261104/figures/*.svg whitespace=-blank-at-eol

@@ -1,0 +1,7 @@
+input_variant,cohort,n,ROS,MAP,missing_study,applicable,reason
+brain,original,327,155,172,0,True,
+brain,incomplete,793,317,467,9,True,
+motor,original,267,0,267,0,False,single_study_MAP_motor
+motor,incomplete,142,0,142,0,False,single_study_MAP_motor
+motor_regional,original,267,0,267,0,False,single_study_MAP_motor
+motor_regional,incomplete,143,0,143,0,False,single_study_MAP_motor

@@ -252,3 +252,35 @@ and verified. Uploads add only new release files and do not alter existing Drive
 objects or sharing. Data upload/index preparation never pushes Git. The user
 pushes the reviewed release commit separately to the branch configured for the
 hosted app.
+
+## Local covariate validation (2026-11-04)
+
+The five ROSMAP validation analyses are documented in the
+[scientific report](reports/control_calibrated_validation_20261104/report.md).
+They cover all seven ready families (1,697 modules), an eight-outcome adjusted
+scan, linked all-pair/matched-pair/adjusted estimates, ROS/MAP sensitivities,
+focused legacy/PC1 comparisons, and a versioned repair of the full 20-outcome
+baseline. The local bundle is distinct from the hosted release. No production
+release pointer or prediction artifact changes.
+
+Use a calibrated beta3/beta1 source in Associations, Statistics or Correlation
+heatmaps, then **Association results → Covariate validation / 8-outcome scan**.
+The ordinary score view retains the 20-outcome baseline and an explicit
+repaired/original inference selector. Downloads carry the exact model, donor-set
+hash, N, uncertainty, inference method and correction context. Rankings and
+residual plots are association models; stored native G/L/S/A units are preserved.
+
+For a fresh local run, install the existing application dependencies and
+`requirements-validation.txt` into the numerical environment, then run:
+
+```bash
+../../.venv/bin/python scripts/run_control_calibrated_validation.py all --workers 4
+```
+
+To finish the current frozen workspace without refreezing it, use `finalize`
+instead of `all`. Completed bundles are immutable and reused. The default is
+four workers and two BLAS threads each; checkpoint shards are bounded score
+summaries, never a dense donor-by-all-edge matrix. The specification records
+9,999 Monte Carlo draws; the p=0.0001 floor limits broad FDR resolution and is
+flagged in the app/report. Both original and repaired baseline versions remain
+available for audit. All results from this task are local and unpublished.

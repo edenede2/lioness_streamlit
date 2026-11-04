@@ -1,0 +1,84 @@
+{
+  "pathology_sensitivity_verified": false,
+  "pathology_sensitivity_exclusion": "Exact generating-release provenance of the supplied demographic slope is unresolved; optional extra-pathology model withheld. Core supplied-outcome association/sensitivity scans remain enabled.",
+  "supplied_values_preserved": true,
+  "sources": [
+    {
+      "source": "sample_info.tsv",
+      "sha256": "3e137d92b4ff7815d51b1c66f2c236ea20e70bf22d9d8070da4410e504df7b6b",
+      "technical_fields": [
+        "Batch",
+        "rin",
+        "prod_batch",
+        "Flowcell_Batch",
+        "RNA_Batch",
+        "Library_Batch",
+        "pmi"
+      ],
+      "slope_fields": []
+    },
+    {
+      "source": "muscle_samples_with_clinical_groups_by_IID_cogdx_RADC.csv",
+      "sha256": "ed62fffc4655e8b0d18f0d91010711c097cf642be7c25d5af61f1004107803c9",
+      "technical_fields": [
+        "Batch",
+        "pmi"
+      ],
+      "slope_fields": [
+        "cogng_demog_slope",
+        "sqrt_parksc_demog_slope",
+        "motor10_demog_slope",
+        "cogng_path_slope"
+      ]
+    },
+    {
+      "source": "20250203_Parkinsonism_metadata_1st_page.csv",
+      "sha256": "15a1a47444b68a9681fa1e087b9b8b2e502c087eb2deb99b041dfac8a7da5fe6",
+      "technical_fields": [],
+      "slope_fields": [
+        "cogng_demog_slope",
+        "sqrt_parksc_demog_slope",
+        "motor10_demog_slope"
+      ]
+    },
+    {
+      "source": "resiliencePheno.csv",
+      "sha256": "f74f9fcbaf8cd52f78498f7e685c7a44256eb72770bb465e8922c81be35dcdd6",
+      "technical_fields": [],
+      "slope_fields": [
+        "cogng_path_slope"
+      ]
+    }
+  ],
+  "slope_definitions": {
+    "cogng_demog_slope": {
+      "current_RADC_documentation": "Mixed model person-specific global-cognition slope, adjusted for baseline age, sex, education and phone_cog; years from baseline",
+      "url": "https://www.radc.rush.edu/docs/var/detail.htm?category=Cognition&subcategory=Estimated+slopes&variable=cogng_demog_slope",
+      "generating_release_exact_formula": "Unresolved in the supplied February 2025 derived table"
+    },
+    "cogng_path_slope": {
+      "current_RADC_documentation": "Global-cognition random slope with demographics and eleven neuropathologic terms; time from death",
+      "url": "https://www.radc.rush.edu/docs/var/detail.htm?category=Cognition&subcategory=Estimated+slopes&variable=cogng_path_slope",
+      "generating_release_exact_formula": "Unresolved for the supplied resiliencePheno source; current variable documentation is contextual evidence, not proof of release identity"
+    },
+    "motor10_demog_slope": {
+      "known": "Supplied demographic-adjusted motor-function slope",
+      "unresolved": "Exact original covariates, time origin, visit minimum and random-effects specification"
+    },
+    "sqrt_parksc_demog_slope": {
+      "known": "Supplied demographic-adjusted square-root Parkinsonian-score slope",
+      "unresolved": "Exact original covariates, time origin, visit minimum and random-effects specification"
+    }
+  },
+  "pathology_columns": {
+    "gpath": "gpath",
+    "amyloid": "amylsqrt_est_8reg",
+    "tangles": "tangsqrt_est_8reg"
+  },
+  "pathology_source_sha256": "fbf58995bae76da2af2502fc1fc41442d685d8a1d174a27160e0e88213e4b96f",
+  "technical_covariates_added": false,
+  "technical_preprocessing_use": "Frozen input provenance does not establish which of the available upstream RIN/PMI/batch variables were regressed out; unresolved, no new preprocessing performed",
+  "additional_family_unavailable": {
+    "matched_control_brain_l4": "Separate 247-module namespace; not present in the ready calibrated catalog"
+  }
+}
