@@ -343,6 +343,8 @@ def test_streamed_real_scores_match_direct_spearman(resolved):
 )
 def test_dedicated_consumers_use_shared_calibrated_renderer(view, key):
     app = app_for(view=view)
+    if view == "Validation & replication":
+        app = next(w for w in app.radio if w.label == "Validation section").set_value("Technical checks").run()
     app = app.radio(key=key).set_value("calibrated_beta3").run()
     assert not app.exception and app.get("plotly_chart")
     meta = json.loads(app.get("plotly_chart")[0].proto.spec)["layout"]["meta"]

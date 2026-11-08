@@ -1,0 +1,156 @@
+{
+  "version": "20261108_focused_validation_v1",
+  "generated_utc": "2026-11-08T10:16:27.067710+00:00",
+  "status": "passed",
+  "test_runs": [
+    {
+      "tests": 176,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 14,
+      "label": "regression",
+      "seconds": 126.267,
+      "junit_sha256": "5579f6d140ffce075998b97b7ca048d77dce373d52399d186c305d6b417ee352"
+    },
+    {
+      "tests": 23,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "label": "focused_missing_input_and_source_guards",
+      "seconds": 2.829,
+      "junit_sha256": "932809e4cb8bb5d561048e39eaacfab2e9ba256a15174456f969fc6863bc98d2"
+    },
+    {
+      "tests": 14,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "label": "real_chrome_export",
+      "seconds": 97.544,
+      "junit_sha256": "3d0575101d1ff330009bd2fd3f962cbe57ac57b24adec9173d0a862af72f6114"
+    }
+  ],
+  "unique_tests_passed": 177,
+  "unique_tests_failed": 0,
+  "unique_tests_remaining_skipped": 0,
+  "scope": "Focused regression suite plus separately enabled existing Chrome integration tests; not an all-repository test claim",
+  "browser": {
+    "views": [
+      {
+        "section": "overview",
+        "charts": 1,
+        "exceptions": 0,
+        "page_overflow": false
+      },
+      {
+        "section": "control_structure",
+        "charts": 2,
+        "exceptions": 0,
+        "page_overflow": false
+      },
+      {
+        "section": "mdc_decomposition",
+        "charts": 1,
+        "exceptions": 0,
+        "page_overflow": false
+      },
+      {
+        "section": "same_edges",
+        "charts": 1,
+        "exceptions": 0,
+        "page_overflow": false
+      },
+      {
+        "section": "adjusted",
+        "charts": 1,
+        "exceptions": 0,
+        "page_overflow": false
+      },
+      {
+        "section": "narrow",
+        "page_overflow": false
+      }
+    ],
+    "export_dialog_preview_image_verified": true,
+    "loopback_only": true,
+    "payloads_published": false
+  },
+  "numerical": {
+    "sampled_direct_add_one_checks": 32,
+    "max_absolute_error": 5.684341886080803e-14,
+    "tolerance": 1e-10,
+    "original_full_search_contexts": 8,
+    "original_and_selected_union_BH_scipy_max_error": 2.220446049250313e-16,
+    "selected_module_edge_candidates": 461,
+    "original_only_selection_receipts_verified": 8
+  },
+  "privacy": {
+    "aggregate_only": true,
+    "new_public_donor_arrays": false,
+    "new_public_edge_arrays": false,
+    "public_table_checksums_verified": true,
+    "public_files_under_95_MiB": true,
+    "local_artifacts_ignored": true
+  },
+  "exports": [
+    {
+      "file": "controls_structure_summary.png",
+      "pixels": [
+        2480,
+        1949
+      ],
+      "dpi": 299.9994,
+      "sha256": "991c103dcb3a32ed7aa455d9b0192825a3cfddec58ac41c44aae06e03d866cf6",
+      "visually_reviewed": true
+    },
+    {
+      "file": "mdc_decomposition_summary.png",
+      "pixels": [
+        2480,
+        1949
+      ],
+      "dpi": 299.9994,
+      "sha256": "680e1a3dff15f6172f35cdcb04edbb14fd9fb3dfea4a0838b2bd57c6f9de2513",
+      "visually_reviewed": true
+    },
+    {
+      "file": "same_edge_support_summary.png",
+      "pixels": [
+        2480,
+        1949
+      ],
+      "dpi": 299.9994,
+      "sha256": "80d02a276a27ebd30351b37013187c23a935b7e67b16ebb688ccd280b5b5de1d",
+      "visually_reviewed": true
+    },
+    {
+      "file": "controls_structure_summary.pdf",
+      "pages": 1,
+      "sha256": "17ea89345e4dd3058ec7aa1193f94d4473ef97ad4a837c01f10a517ad8b7c8b3",
+      "paired_png_visually_reviewed": true,
+      "pdfinfo_passed": true
+    },
+    {
+      "file": "mdc_decomposition_summary.pdf",
+      "pages": 1,
+      "sha256": "1a1725c27b165089006253104c1c76d3817f7aa36d47a4e1fd60a9a033ff8c0c",
+      "paired_png_visually_reviewed": true,
+      "pdfinfo_passed": true
+    },
+    {
+      "file": "same_edge_support_summary.pdf",
+      "pages": 1,
+      "sha256": "dc42e9dc79ce8190b36737ff230e3c955a5061788b220619f97f9455d5655cd0",
+      "paired_png_visually_reviewed": true,
+      "pdfinfo_passed": true
+    }
+  ],
+  "unchanged": "No changes to existing score definitions, Prediction, frozen calibrations, existing report tables or saved legacy q-values",
+  "limitations": [
+    "Concordance resampling ranges are not calibrated population preservation CIs",
+    "Historical MDC membership may overlap or be unverified",
+    "Incomplete-cohort same-module frozen PC1 comparator unavailable",
+    "Edge-level reconstructions/identities remain local-only"
+  ]
+}

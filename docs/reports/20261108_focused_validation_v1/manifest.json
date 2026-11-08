@@ -1,0 +1,114 @@
+{
+  "version": "20261108_focused_validation_v1",
+  "status": "complete",
+  "generated_utc": "2026-11-08T10:16:46.418512+00:00",
+  "focus": {
+    "control_derived": [
+      747,
+      1064,
+      1116
+    ],
+    "full_cohort": [
+      1643
+    ]
+  },
+  "components": [
+    "TS_DLPFC",
+    "CT_DLPFC__PCG"
+  ],
+  "source_score_release": "20261103_bf01d5b35d51",
+  "source_adjusted_analysis_id": "8f0ba6f5eeacf089364056c444a290c1a71056306ff8edf08c6062dd8d1f2ea4",
+  "input_sha256": {
+    "data/control_calibrated_v2/catalog.json": "3534c60eae5520e10c23f90ed70a1aa57be9748768d2e12141df12a732ce0154",
+    "data/control_calibrated_v2/manifest.json": "76850d82f7b05a47be011695d2e15f7101e75619b1be5a5953eecc50abe184f7",
+    "data/control_calibrated_v2/private/brain_reference.json": "3087fd5f79867b4ce47dd3662d3aeadbf0f1f1cefa50e9678ff7fb601f3da9c7",
+    "data/control_calibrated_v2/private/brain_reference.npz": "5de6db01f6b93b2c9a47b5ca68d25ec7170c75324a9dc9c355752152824cce06",
+    "data/control_calibrated_v2/private/brain/edges.npy": "f4851533803842f18b1651a0a861cda1893ead7de8ad7190234865296896c64a",
+    "data/control_calibrated_v2/private/brain/calibration_beta3.npy": "7accd70f90667aaeef3646305c29f838db55a1e98cc61776d5cb4f7f904638cb",
+    "data/control_calibrated_v2/metadata/brain.parquet": "25c3946c8a3fe14aae1fee04cb139924a43c7beb524d65e1ff357282d560952d",
+    "docs/reports/control_calibrated_validation_20261104/report_manifest.json": "f6dcf6a11c8c33f193daf43fd5e9f7b22ef6956d3f8b0ee93c4bc8b3a1872822"
+  },
+  "producer_sha256": {
+    "scripts/build_validation_evidence.py": "20e33c05924571940b7604cfbffdff33f101beb50b66d84baf73cea26f14be0b",
+    "scripts/validation_evidence_edges.py": "72383739e4aab79510bc5a9cd9e03abd65b35853e335b6d98262a7123eb39884",
+    "app_helpers/validation_evidence.py": "cdc053ef4dbbe9bd24e0bd82ccd8cea5de1b30c6756b2cd3235bc8729707c9c8",
+    "app_helpers/validation_evidence_ui.py": "dfad79db5c7f4226f165bdbddcf4ec189c4b359a40ac6b1ac969dce50a4b865f",
+    "scripts/export_validation_evidence.py": "168daa725d321676806cf958209d98dede1479d8a884129d28e661363a74f5a7"
+  },
+  "files": {
+    "mdc_decomposition.csv": {
+      "sha256": "28ca6d129cac257b8ababf56ce2f78cae732bbba74276659e2d88b334029ffca",
+      "rows": 8
+    },
+    "edge_summary.csv": {
+      "sha256": "d73b8ef7123cc5eee6f98c627500dd11c9cdfa7a6e302bac4d2734e1150eb66b",
+      "rows": 24
+    },
+    "historical_mdc.csv": {
+      "sha256": "96df5a4a606b44ae010d3c00d6ce02987290b93f0810488c9fcea658fbd9d4c6",
+      "rows": 3864
+    },
+    "intersections.csv": {
+      "sha256": "0e311daf0ffa1599ad653840158e8fddd500887d3a07cca30baa0455ac68d435",
+      "rows": 10
+    },
+    "cohorts.csv": {
+      "sha256": "abcb5871a7e94dff15fe1d613986229b2ce21a2ea067575609f1306fa380c9c2",
+      "rows": 65
+    },
+    "availability.csv": {
+      "sha256": "e5d2ff689e85afb90f2bdd37ceb1024bf43d8c78bf02339c1c61fc9e2889bab1",
+      "rows": 49
+    },
+    "structure.csv": {
+      "sha256": "13de1f69aff9cfe9732e760cc5004ca4383de62c95cc4c6a741bd84027000089",
+      "rows": 8
+    },
+    "mdc_overview.csv": {
+      "sha256": "b0f4ef0cd94d9540c3dd328c548ac79352244958a4d57c298c302c6f02f5e886",
+      "rows": 558
+    }
+  },
+  "artifacts": {
+    "QA.json": {
+      "sha256": "9b6e6eff36b3ddbd2da8b7d4fdbcd118d196544d3a630f2f15e314f884582e5c",
+      "bytes": 4512
+    },
+    "RESULTS.md": {
+      "sha256": "8cacb7c9cbc4df7c608ce1fcceca971ff7fdc5c49720777aa1fbf393e28c452e",
+      "bytes": 15694
+    },
+    "figures/controls_structure_summary.pdf": {
+      "sha256": "17ea89345e4dd3058ec7aa1193f94d4473ef97ad4a837c01f10a517ad8b7c8b3",
+      "bytes": 47056
+    },
+    "figures/controls_structure_summary.png": {
+      "sha256": "991c103dcb3a32ed7aa455d9b0192825a3cfddec58ac41c44aae06e03d866cf6",
+      "bytes": 225725
+    },
+    "figures/mdc_decomposition_summary.pdf": {
+      "sha256": "1a1725c27b165089006253104c1c76d3817f7aa36d47a4e1fd60a9a033ff8c0c",
+      "bytes": 54083
+    },
+    "figures/mdc_decomposition_summary.png": {
+      "sha256": "680e1a3dff15f6172f35cdcb04edbb14fd9fb3dfea4a0838b2bd57c6f9de2513",
+      "bytes": 247601
+    },
+    "figures/same_edge_support_summary.pdf": {
+      "sha256": "dc42e9dc79ce8190b36737ff230e3c955a5061788b220619f97f9455d5655cd0",
+      "bytes": 64446
+    },
+    "figures/same_edge_support_summary.png": {
+      "sha256": "80d02a276a27ebd30351b37013187c23a935b7e67b16ebb688ccd280b5b5de1d",
+      "bytes": 267653
+    }
+  },
+  "local_only": "Donor-edge arrays, exact candidates, paired network heatmaps and edge scatter figures are not published",
+  "definitions": {
+    "score_beta": "power within frozen calibrated donor LIONESS estimator; beta3 primary, beta1 in existing report",
+    "adjacency_power": "group signedAlt adjacency: TS=3, CT=2; distinct from donor score beta",
+    "uncertainty": "199 study-stratified donor bootstrap draws; rebuild group networks, not independent edge resampling",
+    "new_diagnostic_inference": "bootstrap intervals only; no new structure/MDC permutation p or FDR",
+    "legacy_mdc": "existing dual-null permutation p and full-family BH retained, historical donor overlap shown separately"
+  }
+}

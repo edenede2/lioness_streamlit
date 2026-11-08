@@ -79,6 +79,12 @@ def widget(elements, label):
     return next(e for e in elements if e.label == label)
 
 
+def legacy_review(app):
+    """Old scientific assertions explicitly select their existing detail view."""
+    app.session_state['validation_review_section']='Technical checks'
+    return app.run()
+
+
 def test_source_backed_shards_are_small_aggregate_and_keep_full_family_fdr(stage):
     manifest = R.manifest()
     assert manifest["modules"] == 186 and manifest["validation_donors"] == 793
@@ -103,7 +109,7 @@ from app_helpers.validation_review_ui import render_view
 from app_helpers.figure_export import render_exportable_plot
 render_view(render_exportable_plot)
 '''
-    app = AppTest.from_string(script, default_timeout=120).run()
+    app = legacy_review(AppTest.from_string(script, default_timeout=120))
     assert not app.exception
     assert any("Technical reproduction" in x.value for x in app.subheader)
     app = widget(app.radio, "Validation section").set_value("Association replication").run()
@@ -131,8 +137,9 @@ render_view(render_exportable_plot)
 
 
 def test_main_navigation_routes_review_before_single_partition_scoring(stage):
-    app = AppTest.from_file(APP / "streamlit_app.py", default_timeout=180).run()
-    app = widget(app.pills, "Analysis view").set_value("Validation & replication").run()
+    app = AppTest.from_file(APP / "streamlit_app.py", default_timeout=180)
+    app.query_params['view']='Validation & replication'
+    app=app.run()
     assert not app.exception
     assert any(x.value == "Validation & replication" for x in app.header)
     assert not any(x.label == "Module definition" for x in app.selectbox)
@@ -145,11 +152,11 @@ def test_pooled_m1116_asinh_fdr_is_displayed_without_donor_reads(stage, monkeypa
         raise AssertionError("Pooled replication must remain aggregate-only in Streamlit")
     for name in ("scores", "summaries", "metadata"):
         monkeypatch.setattr(V, name, forbidden)
-    app = AppTest.from_string('''
+    app = legacy_review(AppTest.from_string('''
 from app_helpers.validation_review_ui import render_view
 from app_helpers.figure_export import render_exportable_plot
 render_view(render_exportable_plot)
-''', default_timeout=120).run()
+''', default_timeout=120))
     app = widget(app.radio, "Validation section").set_value("Association replication").run()
     assert widget(app.selectbox, "Validation donor group").value == "All donors"
     rule = "ad_control_discovery_effect__hedges_g__fixed_0.40__either"
@@ -175,7 +182,10 @@ render_view(render_exportable_plot)
 
 
 def test_new_validation_cohort_and_completed_effect_mask_render_existing_views(stage):
-    app = AppTest.from_file(APP / "streamlit_app.py", default_timeout=180).run()
+    from ui_interactions import apply_driver
+    app = apply_driver(AppTest.from_file(APP / "streamlit_app.py", default_timeout=180))
+    app.query_params['view']='Associations'
+    app=app.run()
     app = widget(app.selectbox, "Module definition").set_value("control_derived").run()
     app = widget(app.radio, "Donor cohort scope").set_value("incomplete_region_validation").run()
     assert not app.exception and app.get("plotly_chart")
@@ -183,17 +193,18 @@ def test_new_validation_cohort_and_completed_effect_mask_render_existing_views(s
         app = widget(app.radio, "AD–Control edge subset").set_value("effect_size").run()
         assert not app.exception
     for view in ("Feature distributions", "Correlation heatmaps", "Statistics", "Edge summaries", "MDC"):
-        app = widget(app.pills, "Analysis view").set_value(view).run()
+        app.query_params['view']=view
+        app=app.run()
         assert not app.exception, view
 
 
 def test_uninstalled_review_is_explicit_not_fake_results(monkeypatch, tmp_path):
     monkeypatch.setenv("CAMEL_VALIDATION_DATA_ROOT", str(tmp_path))
     monkeypatch.setenv("PARTITION_VALIDATION_DATA_ROOT", str(tmp_path))
-    app = AppTest.from_string('''
+    app = legacy_review(AppTest.from_string('''
 from app_helpers.validation_review_ui import render_view
 render_view(lambda *args, **kwargs: None)
-''').run()
+'''))
     assert not app.exception
     assert any("has not been installed" in x.value for x in app.info)
     assert not app.metric

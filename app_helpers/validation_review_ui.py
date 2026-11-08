@@ -188,13 +188,18 @@ def _mdc(render, reader=R, labels=COMPONENT_LABELS):
 
 
 def render_view(render):
+    st.header("Validation & replication")
+    section = st.radio("Validation section", ["Evidence overview", "Technical checks", "Association replication", "MDC replication", "Coverage & completion"], horizontal=True, key="validation_review_section")
+    if section == "Evidence overview":
+        from app_helpers.validation_evidence_ui import render_view as evidence_view
+        evidence_view(render)
+        return
     from app_helpers.control_calibrated import registry as CC,adapter as CA
     if CC.ready():
         source=st.radio('Validation score source',['legacy',*CC.ESTIMATORS],format_func=lambda v:'Historical validation / MDC review' if v=='legacy' else 'Control-calibrated connectivity · beta'+str(CC.ESTIMATORS[v]),horizontal=True,key='validation_calibrated_source')
         if CC.is_calibrated(source):
             from app_helpers.control_calibrated.ui import render_view as calibrated_view
             c=CA.catalog();family=st.selectbox('Validation partition',list(c['families']),key='validation_calibrated_partition');calibrated_view('Validation & replication',family,source,render,default_scope='incomplete_region_validation');return
-    st.header("Validation & replication")
     from app_helpers.matched_brain_results import available as matched_results_available
     if matched_results_available():
         st.info("The new 247-module matched-Control analysis is under Analysis view → Matched-control results. It includes demographic-adjusted CAMEL tests and MDC label-swap tests; the legacy comparisons below are unchanged.")
@@ -223,7 +228,6 @@ def render_view(render):
     st.caption(f'Evidence snapshot: {m["generated_utc"]} · {m["run_id"]}. This is non-discovery-donor validation within ROSMAP, not external validation.')
     if not source.available():
         st.info("Aggregate validation evidence is available here. Donor-level plots become selectable after the Drive bundle passes readback verification; this page does not load those files.")
-    section = st.radio("Validation section", ["Technical checks", "Association replication", "MDC replication", "Coverage & completion"], horizontal=True, key="validation_review_section")
     if section == "Technical checks":
         _technical(m,reader)
     elif section == "Association replication":

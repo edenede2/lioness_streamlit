@@ -204,10 +204,15 @@ def test_real_mdc_page_is_lazy_and_routes_configuration(brain_image, monkeypatch
         return brain_image
     monkeypatch.setattr(data, "load_mdc_split_heatmap", load)
     monkeypatch.setattr(data, "mdc_split_heatmap_available", lambda *args: True)
-    app = AppTest.from_file(Path(__file__).resolve().parents[1] / "streamlit_app.py", default_timeout=120).run()
+    from app_helpers.workspaces import module as module_view
+    monkeypatch.setattr(module_view, "load_mdc_split_heatmap", load)
+    monkeypatch.setattr(module_view, "mdc_split_heatmap_available", lambda *args: True)
+    from ui_interactions import apply_driver
+    app = apply_driver(AppTest.from_file(Path(__file__).resolve().parents[1] / "streamlit_app.py", default_timeout=120))
+    app.query_params['view']='MDC'
+    app=app.run()
     widget(app.selectbox, "Module definition").set_value("control_derived").run()
     widget(app.selectbox, "Module").set_value(121).run()
-    widget(app.pills, "Analysis view").set_value("MDC").run()
     assert not app.exception
     assert not calls  # Entering MDC must not fetch image/manifests.
     widget(app.toggle, "Load the selected module adjacency heatmap").set_value(True).run()

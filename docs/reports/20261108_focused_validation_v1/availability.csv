@@ -1,0 +1,50 @@
+partition,module,component,analysis,status,max_abs_error,tolerance,reason,rows
+control_derived,747.0,TS_DLPFC,sampled direct add-one original_complete AD,passed,0.0,1e-10,,
+control_derived,747.0,TS_DLPFC,sampled direct add-one original_complete Control,passed,2.220446049250313e-15,1e-10,,
+control_derived,747.0,TS_DLPFC,sampled direct add-one incomplete AD,passed,4.884981308350689e-15,1e-10,,
+control_derived,747.0,TS_DLPFC,sampled direct add-one incomplete Control,passed,5.995204332975845e-15,1e-10,,
+control_derived,747.0,TS_DLPFC,structure + disjoint MDC,complete,,,"199 donor resamples; structure concordance uses stability ranges; MDC has bootstrap CIs, no new permutation q",
+control_derived,747.0,CT_DLPFC__PCG,sampled direct add-one original_complete AD,passed,1.9984014443252818e-15,1e-10,,
+control_derived,747.0,CT_DLPFC__PCG,sampled direct add-one original_complete Control,passed,1.1102230246251565e-15,1e-10,,
+control_derived,747.0,CT_DLPFC__PCG,sampled direct add-one incomplete AD,passed,6.439293542825908e-15,1e-10,,
+control_derived,747.0,CT_DLPFC__PCG,sampled direct add-one incomplete Control,passed,7.771561172376096e-15,1e-10,,
+control_derived,747.0,CT_DLPFC__PCG,structure + disjoint MDC,complete,,,"199 donor resamples; structure concordance uses stability ranges; MDC has bootstrap CIs, no new permutation q",
+control_derived,1064.0,TS_DLPFC,sampled direct add-one original_complete AD,passed,4.263256414560601e-14,1e-10,,
+control_derived,1064.0,TS_DLPFC,sampled direct add-one original_complete Control,passed,3.907985046680551e-14,1e-10,,
+control_derived,1064.0,TS_DLPFC,sampled direct add-one incomplete AD,passed,3.552713678800501e-15,1e-10,,
+control_derived,1064.0,TS_DLPFC,sampled direct add-one incomplete Control,passed,5.684341886080802e-14,1e-10,,
+control_derived,1064.0,TS_DLPFC,structure + disjoint MDC,complete,,,"199 donor resamples; structure concordance uses stability ranges; MDC has bootstrap CIs, no new permutation q",
+control_derived,1064.0,CT_DLPFC__PCG,sampled direct add-one original_complete AD,passed,1.2434497875801753e-14,1e-10,,
+control_derived,1064.0,CT_DLPFC__PCG,sampled direct add-one original_complete Control,passed,8.881784197001252e-16,1e-10,,
+control_derived,1064.0,CT_DLPFC__PCG,sampled direct add-one incomplete AD,passed,7.993605777301127e-15,1e-10,,
+control_derived,1064.0,CT_DLPFC__PCG,sampled direct add-one incomplete Control,passed,2.6645352591003757e-15,1e-10,,
+control_derived,1064.0,CT_DLPFC__PCG,structure + disjoint MDC,complete,,,"199 donor resamples; structure concordance uses stability ranges; MDC has bootstrap CIs, no new permutation q",
+control_derived,1116.0,TS_DLPFC,sampled direct add-one original_complete AD,passed,6.2341624917916505e-19,1e-10,,
+control_derived,1116.0,TS_DLPFC,sampled direct add-one original_complete Control,passed,5.149960319306146e-19,1e-10,,
+control_derived,1116.0,TS_DLPFC,sampled direct add-one incomplete AD,passed,1.1709383462843448e-17,1e-10,,
+control_derived,1116.0,TS_DLPFC,sampled direct add-one incomplete Control,passed,1.4094628242311558e-18,1e-10,,
+control_derived,1116.0,TS_DLPFC,structure + disjoint MDC,complete,,,"199 donor resamples; structure concordance uses stability ranges; MDC has bootstrap CIs, no new permutation q",
+control_derived,1116.0,CT_DLPFC__PCG,sampled direct add-one original_complete AD,passed,8.326672684688674e-16,1e-10,,
+control_derived,1116.0,CT_DLPFC__PCG,sampled direct add-one original_complete Control,passed,3.885780586188048e-16,1e-10,,
+control_derived,1116.0,CT_DLPFC__PCG,sampled direct add-one incomplete AD,passed,8.326672684688674e-16,1e-10,,
+control_derived,1116.0,CT_DLPFC__PCG,sampled direct add-one incomplete Control,passed,3.885780586188048e-16,1e-10,,
+control_derived,1116.0,CT_DLPFC__PCG,structure + disjoint MDC,complete,,,"199 donor resamples; structure concordance uses stability ranges; MDC has bootstrap CIs, no new permutation q",
+full_cohort,1643.0,TS_DLPFC,sampled direct add-one original_complete AD,passed,0.0,1e-10,,
+full_cohort,1643.0,TS_DLPFC,sampled direct add-one original_complete Control,passed,1.1102230246251565e-15,1e-10,,
+full_cohort,1643.0,TS_DLPFC,sampled direct add-one incomplete AD,passed,4.218847493575595e-15,1e-10,,
+full_cohort,1643.0,TS_DLPFC,sampled direct add-one incomplete Control,passed,0.0,1e-10,,
+full_cohort,1643.0,TS_DLPFC,structure + disjoint MDC,complete,,,"199 donor resamples; structure concordance uses stability ranges; MDC has bootstrap CIs, no new permutation q",
+full_cohort,1643.0,CT_DLPFC__PCG,sampled direct add-one original_complete AD,passed,3.885780586188048e-16,1e-10,,
+full_cohort,1643.0,CT_DLPFC__PCG,sampled direct add-one original_complete Control,passed,7.494005416219807e-16,1e-10,,
+full_cohort,1643.0,CT_DLPFC__PCG,sampled direct add-one incomplete AD,passed,4.496403249731884e-15,1e-10,,
+full_cohort,1643.0,CT_DLPFC__PCG,sampled direct add-one incomplete Control,passed,4.440892098500626e-16,1e-10,,
+full_cohort,1643.0,CT_DLPFC__PCG,structure + disjoint MDC,complete,,,"199 donor resamples; structure concordance uses stability ranges; MDC has bootstrap CIs, no new permutation q",
+four fixed brain namespaces,,DLPFC and DLPFC–PCG,read-only adjusted report composition,complete,,,"Exact existing public source/hash; original q scopes retained, eight endpoints and beta1/beta3",54.0
+four fixed brain namespaces,,DLPFC and DLPFC–PCG,read-only adjusted report incremental,complete,,,"Exact existing public source/hash; original q scopes retained, eight endpoints and beta1/beta3",256.0
+four fixed brain namespaces,,DLPFC and DLPFC–PCG,read-only adjusted report effect_summary,complete,,,"Exact existing public source/hash; original q scopes retained, eight endpoints and beta1/beta3",1152.0
+four fixed brain namespaces,,DLPFC and DLPFC–PCG,read-only adjusted report interaction,complete,,,"Exact existing public source/hash; original q scopes retained, eight endpoints and beta1/beta3",1024.0
+four fixed brain namespaces,,DLPFC and DLPFC–PCG,read-only adjusted report focused_all_endpoints,complete,,,"Exact existing public source/hash; original q scopes retained, eight endpoints and beta1/beta3",6144.0
+four fixed brain namespaces,,DLPFC and DLPFC–PCG,read-only adjusted report study_applicability,complete,,,"Exact existing public source/hash; original q scopes retained, eight endpoints and beta1/beta3",6.0
+four fixed brain namespaces,,DLPFC and DLPFC–PCG,read-only adjusted report comparators,complete,,,"Exact existing public source/hash; original q scopes retained, eight endpoints and beta1/beta3",1152.0
+four fixed brain namespaces,,DLPFC and DLPFC–PCG,read-only adjusted report focused_selection_adjustment,complete,,,"Exact existing public source/hash; original q scopes retained, eight endpoints and beta1/beta3",4608.0
+four fixed brain namespaces,,DLPFC and DLPFC–PCG,incomplete incremental Connectivity + PC1,unavailable,,,Saved incremental.csv: no_shared_comparator_donors. Existing module_eigengenes.parquet provides original450 scores only; no compatible frozen incomplete-cohort PC1 projection is registered. No validation PCA refit or substitute.,

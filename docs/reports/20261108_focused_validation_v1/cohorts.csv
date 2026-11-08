@@ -1,0 +1,66 @@
+dataset,component,cohort,population,diagnosis,role,unique_donors,cogn_global_n,gpath_n,mask,artifact_version
+brain,Any observed brain region,original_complete,all applicable roles,AD,target,167,124,167,all,20261108_focused_validation_v1
+brain,Any observed brain region,original_complete,all applicable roles,Control,calibration,41,39,41,all,20261108_focused_validation_v1
+brain,Any observed brain region,original_complete,all applicable roles,Control,reference,82,79,82,all,20261108_focused_validation_v1
+brain,Any observed brain region,original_complete,all applicable roles,Control,target,41,36,41,all,20261108_focused_validation_v1
+brain,Any observed brain region,original_complete,all applicable roles,MCI,target,119,115,119,all,20261108_focused_validation_v1
+brain,Any observed brain region,incomplete,all applicable roles,AD,target,350,244,350,all,20261108_focused_validation_v1
+brain,Any observed brain region,incomplete,all applicable roles,Control,target,244,230,244,all,20261108_focused_validation_v1
+brain,Any observed brain region,incomplete,all applicable roles,MCI,target,177,171,177,all,20261108_focused_validation_v1
+brain,Any observed brain region,incomplete,all applicable roles,Unclassified,target,22,11,13,all,20261108_focused_validation_v1
+brain,Any observed brain region,legacy_heldout,all applicable roles,AD,target,50,42,50,all,20261108_focused_validation_v1
+brain,Any observed brain region,legacy_heldout,all applicable roles,Control,calibration,13,13,13,all,20261108_focused_validation_v1
+brain,Any observed brain region,legacy_heldout,all applicable roles,Control,reference,29,27,29,all,20261108_focused_validation_v1
+brain,Any observed brain region,legacy_heldout,all applicable roles,Control,target,8,7,8,all,20261108_focused_validation_v1
+brain,Any observed brain region,other_complete_targets,all applicable roles,Unclassified,target,14,6,7,all,20261108_focused_validation_v1
+matched_control_brain_l4 (separate namespace),Registered matched cohort; region inclusion is context-specific,Discovery,all applicable roles,AD,matched analysis role,80,61,80,see matched-control catalog,existing approved matched_brain_donors metadata
+matched_control_brain_l4 (separate namespace),Registered matched cohort; region inclusion is context-specific,Discovery,all applicable roles,Control,matched analysis role,80,74,80,see matched-control catalog,existing approved matched_brain_donors metadata
+matched_control_brain_l4 (separate namespace),Registered matched cohort; region inclusion is context-specific,Held-out validation,all applicable roles,AD,matched analysis role,34,25,34,see matched-control catalog,existing approved matched_brain_donors metadata
+matched_control_brain_l4 (separate namespace),Registered matched cohort; region inclusion is context-specific,Held-out validation,all applicable roles,Control,matched analysis role,34,32,34,see matched-control catalog,existing approved matched_brain_donors metadata
+matched_control_brain_l4 (separate namespace),Registered matched cohort; region inclusion is context-specific,Incomplete-region validation,all applicable roles,AD,matched analysis role,350,244,350,see matched-control catalog,existing approved matched_brain_donors metadata
+matched_control_brain_l4 (separate namespace),Registered matched cohort; region inclusion is context-specific,Incomplete-region validation,all applicable roles,Control,matched analysis role,244,230,244,see matched-control catalog,existing approved matched_brain_donors metadata
+matched_control_brain_l4 (separate namespace),Registered matched cohort; region inclusion is context-specific,Incomplete-region validation,all applicable roles,MCI,matched analysis role,177,171,177,see matched-control catalog,existing approved matched_brain_donors metadata
+matched_control_brain_l4 (separate namespace),Registered matched cohort; region inclusion is context-specific,Incomplete-region validation,all applicable roles,Unclassified,matched analysis role,22,11,13,see matched-control catalog,existing approved matched_brain_donors metadata
+matched_control_brain_l4 (separate namespace),Registered matched cohort; region inclusion is context-specific,MCI (exploratory),all applicable roles,MCI,matched analysis role,119,115,119,see matched-control catalog,existing approved matched_brain_donors metadata
+matched_control_brain_l4 (separate namespace),Registered matched cohort; region inclusion is context-specific,Unmatched complete donors (exploratory),all applicable roles,AD,matched analysis role,53,38,53,see matched-control catalog,existing approved matched_brain_donors metadata
+matched_control_brain_l4 (separate namespace),Registered matched cohort; region inclusion is context-specific,Unmatched complete donors (exploratory),all applicable roles,Control,matched analysis role,50,48,50,see matched-control catalog,existing approved matched_brain_donors metadata
+brain,TS_DLPFC,original_complete,all applicable roles,AD,target,167,124,167,all,20261108_focused_validation_v1
+brain,TS_DLPFC,original_complete,all applicable roles,Control,calibration,41,39,41,all,20261108_focused_validation_v1
+brain,TS_DLPFC,original_complete,all applicable roles,Control,reference,82,79,82,all,20261108_focused_validation_v1
+brain,TS_DLPFC,original_complete,all applicable roles,Control,target,41,36,41,all,20261108_focused_validation_v1
+brain,TS_DLPFC,original_complete,all applicable roles,MCI,target,119,115,119,all,20261108_focused_validation_v1
+brain,TS_DLPFC,original_complete,independent targets,AD,target,167,124,167,all,20261108_focused_validation_v1
+brain,TS_DLPFC,original_complete,independent targets,Control,target,41,36,41,all,20261108_focused_validation_v1
+brain,TS_DLPFC,original_complete,independent targets,MCI,target,119,115,119,all,20261108_focused_validation_v1
+brain,TS_DLPFC,incomplete,all applicable roles,AD,target,339,235,339,all,20261108_focused_validation_v1
+brain,TS_DLPFC,incomplete,all applicable roles,Control,target,229,215,229,all,20261108_focused_validation_v1
+brain,TS_DLPFC,incomplete,all applicable roles,MCI,target,165,159,165,all,20261108_focused_validation_v1
+brain,TS_DLPFC,incomplete,all applicable roles,Unclassified,target,19,11,13,all,20261108_focused_validation_v1
+brain,TS_DLPFC,incomplete,independent targets,AD,target,339,235,339,all,20261108_focused_validation_v1
+brain,TS_DLPFC,incomplete,independent targets,Control,target,229,215,229,all,20261108_focused_validation_v1
+brain,TS_DLPFC,incomplete,independent targets,MCI,target,165,159,165,all,20261108_focused_validation_v1
+brain,TS_DLPFC,incomplete,independent targets,Unclassified,target,19,11,13,all,20261108_focused_validation_v1
+brain,TS_DLPFC,legacy_heldout,all applicable roles,AD,target,50,42,50,all,20261108_focused_validation_v1
+brain,TS_DLPFC,legacy_heldout,all applicable roles,Control,calibration,13,13,13,all,20261108_focused_validation_v1
+brain,TS_DLPFC,legacy_heldout,all applicable roles,Control,reference,29,27,29,all,20261108_focused_validation_v1
+brain,TS_DLPFC,legacy_heldout,all applicable roles,Control,target,8,7,8,all,20261108_focused_validation_v1
+brain,CT_DLPFC__PCG,original_complete,all applicable roles,AD,target,167,124,167,all,20261108_focused_validation_v1
+brain,CT_DLPFC__PCG,original_complete,all applicable roles,Control,calibration,41,39,41,all,20261108_focused_validation_v1
+brain,CT_DLPFC__PCG,original_complete,all applicable roles,Control,reference,82,79,82,all,20261108_focused_validation_v1
+brain,CT_DLPFC__PCG,original_complete,all applicable roles,Control,target,41,36,41,all,20261108_focused_validation_v1
+brain,CT_DLPFC__PCG,original_complete,all applicable roles,MCI,target,119,115,119,all,20261108_focused_validation_v1
+brain,CT_DLPFC__PCG,original_complete,independent targets,AD,target,167,124,167,all,20261108_focused_validation_v1
+brain,CT_DLPFC__PCG,original_complete,independent targets,Control,target,41,36,41,all,20261108_focused_validation_v1
+brain,CT_DLPFC__PCG,original_complete,independent targets,MCI,target,119,115,119,all,20261108_focused_validation_v1
+brain,CT_DLPFC__PCG,incomplete,all applicable roles,AD,target,77,66,77,all,20261108_focused_validation_v1
+brain,CT_DLPFC__PCG,incomplete,all applicable roles,Control,target,65,63,65,all,20261108_focused_validation_v1
+brain,CT_DLPFC__PCG,incomplete,all applicable roles,MCI,target,29,29,29,all,20261108_focused_validation_v1
+brain,CT_DLPFC__PCG,incomplete,all applicable roles,Unclassified,target,5,4,5,all,20261108_focused_validation_v1
+brain,CT_DLPFC__PCG,incomplete,independent targets,AD,target,77,66,77,all,20261108_focused_validation_v1
+brain,CT_DLPFC__PCG,incomplete,independent targets,Control,target,65,63,65,all,20261108_focused_validation_v1
+brain,CT_DLPFC__PCG,incomplete,independent targets,MCI,target,29,29,29,all,20261108_focused_validation_v1
+brain,CT_DLPFC__PCG,incomplete,independent targets,Unclassified,target,5,4,5,all,20261108_focused_validation_v1
+brain,CT_DLPFC__PCG,legacy_heldout,all applicable roles,AD,target,50,42,50,all,20261108_focused_validation_v1
+brain,CT_DLPFC__PCG,legacy_heldout,all applicable roles,Control,calibration,13,13,13,all,20261108_focused_validation_v1
+brain,CT_DLPFC__PCG,legacy_heldout,all applicable roles,Control,reference,29,27,29,all,20261108_focused_validation_v1
+brain,CT_DLPFC__PCG,legacy_heldout,all applicable roles,Control,target,8,7,8,all,20261108_focused_validation_v1

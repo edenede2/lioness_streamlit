@@ -1098,6 +1098,7 @@ def render_volcano(context):
             volcano_analysis_set = st.radio(
                 "Edge-test cohort",
                 options=["Discovery", "Validation"],
+                format_func=lambda value: value + " · legacy complete-donor AD/Control split",
                 horizontal=True,
                 key=f"volcano_set_{module_set}_{estimator}_{method}_{module}",
             )
