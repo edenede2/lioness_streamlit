@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Any
 
 import pandas as pd
@@ -29,6 +29,7 @@ def filterable_dataframe(
     table_key: str,
     table_name: str,
     column_config: Mapping[object, object] | None = None,
+    on_row_select: Callable[[pd.Series], None] | None = None,
     **dataframe_kwargs: Any,
 ) -> object | None:
     """Render a dataframe with compact, type-aware filters on column values."""
@@ -188,8 +189,27 @@ def filterable_dataframe(
         st.caption(f"Showing {len(filtered):,} of {len(frame):,} rows")
         st.caption("Filters affect the visible table; downloads retain their full row set.")
 
-    return st.dataframe(
+    selection_key = None
+    if on_row_select is not None:
+        # A new dataset/ranking/filter gets a new selection widget. A stale row
+        # index must never open a module from another applied context.
+        digest = hashlib.sha1(pd.util.hash_pandas_object(filtered, index=True).values.tobytes(), usedforsecurity=False).hexdigest()[:12]
+        selection_key = f'table_selection__{table_key}__{digest}'
+        dataframe_kwargs.update(key=selection_key, on_select='rerun', selection_mode='single-row')
+    event = st.dataframe(
         filtered,
         column_config=config or None,
         **normalize_width_kwargs(dataframe_kwargs),
     )
+    if on_row_select is not None:
+        rows = list(event.selection.rows)
+        consumed_key = f'_table_selection_consumed:{table_key}'
+        token = (selection_key, tuple(rows))
+        if not rows:
+            st.session_state.pop(consumed_key, None)
+        elif st.session_state.get(consumed_key) != token:
+            st.session_state[consumed_key] = token
+            index = int(rows[0])
+            if 0 <= index < len(filtered):
+                on_row_select(filtered.iloc[index])
+    return event

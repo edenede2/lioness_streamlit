@@ -22,6 +22,7 @@ from app_helpers.control_calibrated import adapter as _calibrated
 APP_ROOT = Path(__file__).resolve().parents[1]
 EFFECT_ENDPOINT_KEGG_API_VERSION = 1
 MDC_NORMALIZATION_API_VERSION = 1
+MANIFEST_CONTEXT_API_VERSION = 1
 PATHOLOGY_OUTCOME_API_VERSION = 1
 MUSCLE_MODULE_SETS = ("muscle_control_l4", "muscle_all_donors_l4")
 
@@ -782,11 +783,12 @@ def differential_mdc_data_available(module_set: str = "full_cohort") -> bool:
     )
 
 
-def available_module_sets() -> tuple[str, ...]:
+def available_module_sets(manifest: dict[str, object] | None = None) -> tuple[str, ...]:
     """Return module definitions declared complete by the deploy manifest."""
 
     try:
-        manifest = json.loads(ensure_data_path(DATA_MANIFEST).read_text(encoding="utf-8"))
+        if manifest is None:
+            manifest = json.loads(ensure_data_path(DATA_MANIFEST).read_text(encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError, OSError):
         return tuple(
             key for key in ("full_cohort", "control_derived")
@@ -838,7 +840,7 @@ def load_partition_comparison_table(name: str) -> pd.DataFrame:
     )
 
 
-def require_data_files() -> None:
+def require_data_files(manifest: dict[str, object] | None = None) -> None:
     """Raise a useful error if the GitHub data bundle was not built."""
     required = [
         FEATURE_DEFINITIONS,
@@ -847,8 +849,9 @@ def require_data_files() -> None:
         DATA_MANIFEST,
         CLUSTER_ASSOCIATION_STATS,
     ]
-    module_sets = available_module_sets()
-    manifest = json.loads(ensure_data_path(DATA_MANIFEST).read_text(encoding="utf-8"))
+    if manifest is None:
+        manifest = json.loads(ensure_data_path(DATA_MANIFEST).read_text(encoding="utf-8"))
+    module_sets = available_module_sets(manifest)
     for module_set in module_sets:
         module_manifest = manifest.get("module_sets", {}).get(module_set, {})
         required.extend(
@@ -1962,11 +1965,13 @@ def load_kegg(
 def effect_endpoint_kegg_available(
     module_set: str,
     method: str,
+    *, manifest: dict[str, object] | None = None,
 ) -> bool:
     """Return whether the selected module/method has a complete endpoint catalog."""
 
     try:
-        manifest = load_data_manifest()
+        if manifest is None:
+            manifest = load_data_manifest()
     except (FileNotFoundError, KeyError, json.JSONDecodeError):
         return False
     metadata = (

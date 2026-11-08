@@ -1,0 +1,435 @@
+title: A Clearer LIONESS ROSMAP App
+shortTitle: LIONESS ROSMAP design review
+profile: plan
+status: { badge: keep, text: locked · 2026-11-08 }
+opening: >-
+  The LIONESS ROSMAP app helps researchers find modules and inspect their associations, biology, networks, and donor data.
+  This refactor starts with module search, keeps simple defaults and all advanced tools, and stays on Streamlit Community Cloud.
+  This page presents the proposed design, not an implementation plan. Click a map box to inspect a screen or a data rule.
+examples:
+  - { name: Outcome search, text: 'Control-derived brain modules (186) · global cognition · pooled donors · DLPFC CAMEL connectivity' }
+  - { name: Compare sources, text: 'brain versus motor, or regional eigengenes versus CT connectivity' }
+  - { name: Publication export, text: 'change a plot color without a new data read or statistical test' }
+retired: []
+blocks:
+  - kind: problem
+    problem: >-
+      Researchers face many equal-level pages and repeated controls before they can find an interesting module.
+      Shared preparation can load data that the selected view does not need.
+      The refactor reduces these costs without a change to scientific methods or publication features.
+      The audit finds avoidable loads, but it does not measure their share of lag or memory use.
+    today:
+      label: Current structure · evidence, not a timing result
+      items:
+        - 'The main script has 10,983 lines, 66 top-level functions, and 20 flat page choices (<code>streamlit_app.py</code>); helpers add 2,974 data lines and 5,656 chart lines (<code>app_helpers/data.py</code>, <code>app_helpers/charts.py</code>).'
+        - 'Several views pass through donor-score preparation before their render branch (<code>streamlit_app.py:4840</code>); KEGG and composition preparation also precede the active page (<code>streamlit_app.py:4980</code>).'
+        - 'A prediction manifest digest can clear the global data cache (<code>streamlit_app.py:3710</code>). This couples unrelated analyses to prediction bundle changes.'
+        - 'Active-tab guards, short-circuit routes, serial statistics, and small caches already limit some work (<code>streamlit_app.py</code>). The design reuses these controls.'
+        - 'Parquet files and integrity-checked lazy Drive reads supply the app (<code>app_helpers/drive_data.py</code>). Figure export, matched-brain readers, and control-calibrated views already exist (<code>app_helpers/figure_export/</code>, <code>matched_brain_results.py</code>, <code>donors.py</code>).'
+
+  - kind: map
+    title: Proposed design · six task workspaces
+    sub: 'This map shows the selected design. No decision is open.'
+    walkthrough: >-
+      Choose a dataset and open Discover to find a module; its result row opens Module with the same applied statistical context.<br>
+      Only the selected view requests its data; plot appearance uses the result already on screen.
+    note: Click any box. Each zoom has a real example and the rules that belong to that part.
+    legend:
+      - [code, workspace or control]
+      - [data, data scope]
+    root: overview
+    nodes:
+      overview:
+        title: Six workspaces, one applied context
+        view:
+          type: diagram
+          viewBox: 0 0 1120 610
+          label: Proposed app navigation and selected-view data flow
+          boxes:
+            - { node: context, x: 20, y: 30, w: 1080, h: 78 }
+            - { node: discover, x: 20, y: 175, w: 340, h: 105 }
+            - { node: module, x: 390, y: 175, w: 340, h: 105 }
+            - { node: compare, x: 760, y: 175, w: 340, h: 105 }
+            - { node: prediction, x: 20, y: 320, w: 340, h: 105 }
+            - { node: donors, x: 390, y: 320, w: 340, h: 105 }
+            - { node: methods, x: 760, y: 320, w: 340, h: 105 }
+            - { node: reads, x: 20, y: 510, w: 1080, h: 78 }
+          svg: |
+            <text x="20" y="15" class="m" font-size="12">Proposal: replace the flat 20-page strip with task destinations</text>
+            <path d="M560 108 V137 H190 V173" class="arrow" marker-end="url(#ah)"/>
+            <path d="M560 137 V173" class="arrow" marker-end="url(#ah)"/>
+            <path d="M560 137 H930 V173" class="arrow" marker-end="url(#ah)"/>
+            <text x="560" y="156" text-anchor="middle" class="m" font-size="12">Dataset context seeds each workspace</text>
+            <path d="M360 228 H388" class="arrow" marker-end="url(#ah)"/>
+            <text x="376" y="215" text-anchor="middle" class="m" font-size="10">open</text>
+            <path d="M190 425 V478 H560 V508" class="arrow" marker-end="url(#ah)"/>
+            <path d="M560 425 V476" class="arrow"/>
+            <path d="M930 425 V478 H560" class="arrow"/>
+            <text x="560" y="461" text-anchor="middle" class="m" font-size="13">Only the active route and subview request resources</text>
+        cls: code
+
+      context:
+        title: Context & applied choices
+        sub: "Compact dataset and cohort sidebar\nRelevant page controls, not repeated cards"
+        cls: code
+        one: >-
+          Context is the visible description of the data and choices behind each result.
+          A compact sidebar holds dataset and cohort; the page top holds only relevant outcome and feature choices.
+        in:
+          items: [Dataset choice, Page-local analysis choices, Legacy bookmark]
+          from: The person or a saved page link.
+          how: Native Streamlit navigation and page controls.
+        out:
+          items: [Applied context beside results and exports, Explicit unavailable views, Compatible remembered settings]
+          to: The selected workspace.
+          how: Thin dataset adapters describe available UI capabilities.
+        view:
+          type: parts
+          parts:
+            - [code, Compact screen, Sidebar plus concise applied context]
+            - [data, Dataset capabilities, All sources stay distinct]
+            - [code, Links & memory, Safe bookmarks and local state]
+        notes:
+          Compact screen: >-
+            The main screen has no 20-pill strip, repeated context cards, or automatic full composition table.
+            Advanced Analysis options, Appearance, Statistics & downloads, and Publication export open only where relevant.
+          Dataset capabilities: >-
+            A dataset adapter describes supported views without a data schema rewrite.
+            Unknown combinations show an explicit unavailable state; the app never substitutes another dataset.
+            Dataset changes reset only incompatible choices and explain each reset.
+          Links & memory: >-
+            Existing <code>?view=...</code> and <code>screen_*</code> bookmarks redirect to their matching route and context.
+            Page settings can persist, but URLs must not contain donor data.
+            A classic-route fallback remains until feature, regression, and performance gates pass.
+        children:
+          Compact screen: navigation-detail
+          Dataset capabilities: capability-detail
+        example: 'Outcome search · The page states modules186 / global cognition / pooled donors / DLPFC CAMEL connectivity before any result.'
+        exampleLabel: Outcome search · applied context
+
+      navigation-detail:
+        title: All current destinations remain reachable
+        one: >-
+          The recommended option combines related pages into task workspaces.
+          The alternative keeps familiar page labels under six native navigation sections.
+        view:
+          type: table
+          columns: [Proposed destination, Current page destinations]
+          rows:
+            - [Discover, 'Module finder; Correlation heatmaps; CT–TS screen; distribution-difference rankings from Feature distributions']
+            - [Module, 'Module details → Overview; Associations; Feature distributions → Distributions; MDC → Network change; KEGG enrichment → Biology; Statistics → contextual panel and deep-link']
+            - [Compare, 'Module–outcome comparison; Partition comparison; Validation & replication']
+            - [Prediction, Prediction]
+            - [Donors & edges, 'Donor explorer; Gene & edge associations; Edge summaries; Edge volcano; Donor edge explorer']
+            - [Data & methods, Methods & data]
+            - [Dataset choice across workspaces, 'Matched-control results → a named dataset and capability choice, not a duplicate navigation tree']
+        example: 'A KEGG bookmark opens Module → Biology with its dataset, module, endpoint, and scope. Its display label can change without a lost link.'
+
+      capability-detail:
+        title: Source boundaries, not silent substitutes
+        one: >-
+          Module identity includes dataset, source, tissue, and module.
+          This identity prevents an accidental match between equal numeric labels from different sources.
+        view:
+          type: table
+          columns: [Source family, Required distinction]
+          rows:
+            - ['Matched-Control modules247', 'Keep aggregate demography-adjusted tests distinct from ordinary donor plots. Label tests, MDC, enrichment, and cohort modes retain their own scope.']
+            - ['Regional brain and motor eigengenes', 'Keep one distinct module selector per selected tissue, with side-by-side panels. Do not assign multitissue module IDs or match on numeric ID alone.']
+            - ['LIONESS, CAMEL, BONOBO', 'Keep each available dataset reachable through its own capabilities. An absent view stays unavailable.']
+            - ['Control-calibrated variants', 'Keep gain, loss, net change, and magnitude atypicality labels and their statistical families. Keep q_search distinct from module-only FDR. Predictions remain unavailable.']
+            - ['Published cohorts and counts', 'Do not silently change a cohort boundary or published count. The applied context states the actual source and donor scope.']
+        example: 'Matched-Control modules247 without a supported view shows “Unavailable for this dataset”, not results from modules186.'
+
+      discover:
+        title: Discover
+        sub: "Find interesting modules first\nRanked results with simple presets"
+        cls: code
+        one: >-
+          Discover is the first destination.
+          Module finder starts with an outcome-first preset and a ranked list; it makes no new scientific ranking rule.
+          Dataset, cohort, outcome, feature source, and applied analysis options define the input.
+          The output is a ranked module list; each result opens Module with its full applied context.
+        view:
+          type: diagram
+          viewBox: 0 0 1000 505
+          label: Discover screen layout and result-row transition
+          boxes:
+            - { part: Dataset sidebar, x: 15, y: 45, w: 185, h: 390, cls: data, sub: "Dataset · cohort\nSix task destinations" }
+            - { part: Search controls, x: 225, y: 45, w: 755, h: 72, cls: code, sub: 'Outcome · feature source · preset · Apply analysis' }
+            - { part: Applied result context, x: 225, y: 135, w: 755, h: 55, cls: data, sub: 'Cohort · group · mask · scale · FDR' }
+            - { part: Ranked module list, x: 225, y: 210, w: 475, h: 135, cls: code, sub: "Compact rows with source labels\nOpen module associations" }
+            - { part: Module destination, x: 750, y: 210, w: 230, h: 135, cls: code, sub: "Same applied context\nBack restores selection" }
+            - { part: Other discovery tools, x: 225, y: 370, w: 755, h: 65, cls: code, sub: 'Correlation heatmaps · CT–TS · distribution differences' }
+          svg: |
+            <text x="15" y="20" class="t" font-size="14">Proposed screen · simple main controls, advanced options closed</text>
+            <path d="M700 277 H748" class="arrow" marker-end="url(#ah)"/>
+            <path d="M866 345 V355 H464 V347" class="arrow" marker-end="url(#ah)" stroke-dasharray="4 4"/>
+        notes:
+          Dataset sidebar: The dataset and cohort stay compact. Donor and edge controls do not appear on this screen.
+          Search controls: >-
+            Presets expose the common choices first. Advanced Analysis options disclose group, mask, scale, and statistical scope when relevant.
+            The Apply behavior is an open decision.
+          Applied result context: The row and its destination carry cohort, group, mask, scale, and FDR together. Pending edits cannot relabel an applied result.
+          Ranked module list: >-
+            The list uses the existing scientific results. Source labels distinguish connectivity from eigengenes.
+            The page does not claim a rank or significance for the example module.
+          Module destination: Open Module → Associations. Back returns to the same finder selection, not a new default search.
+          Other discovery tools: >-
+            Correlation heatmaps and CT–TS remain reachable here.
+            Distribution-difference rankings use the existing distribution screen; per-module distribution tools live in Module.
+        example: 'Choose Control-derived brain modules (186) / global cognition / pooled donors / DLPFC CAMEL connectivity. Open M1116 with the same cohort, group, mask, scale, and FDR. No example rank or significance is implied.'
+        exampleLabel: Outcome search · worked path
+
+      module:
+        title: Module
+        sub: "Inspect one module\nAssociations · networks · biology"
+        cls: code
+        one: >-
+          Module is one inspection workspace for a selected module and source.
+          Its tabs reveal the current tools without an oversized sidebar or unrelated controls.
+          Its input is a namespaced module and applied context from Discover, a bookmark, or a module choice.
+          Its output is the selected plot or table, with contextual statistics, downloads, and publication exports.
+        view:
+          type: diagram
+          viewBox: 0 0 1000 490
+          label: Module workspace with native tabs and contextual disclosures
+          boxes:
+            - { part: Module context, x: 20, y: 30, w: 960, h: 65, cls: data, sub: 'Dataset / source / tissue / module · concise APPLIED context' }
+            - { part: Inspection tabs, x: 20, y: 120, w: 960, h: 65, cls: code, sub: 'Overview · Associations · Distributions · Network change · Biology' }
+            - { part: Selected result, x: 20, y: 215, w: 610, h: 155, cls: code, sub: "One relevant plot or table\nOnly this subview asks for resources" }
+            - { part: Contextual panels, x: 660, y: 215, w: 320, h: 155, cls: code, sub: "Advanced Analysis options\nAppearance · Statistics & downloads" }
+            - { part: Publication export, x: 20, y: 400, w: 960, h: 60, cls: code, sub: 'Preview · physical size · fonts · colors · PNG / PDF / vector' }
+          svg: |
+            <path d="M325 185 V213" class="arrow" marker-end="url(#ah)"/>
+            <path d="M630 292 H658" class="arrow" marker-end="url(#ah)"/>
+            <path d="M325 370 V398" class="arrow" marker-end="url(#ah)"/>
+        notes:
+          Module context: Show the full source identity. An independent regional eigengene does not inherit a multitissue module ID.
+          Inspection tabs: >-
+            Overview contains details, composition, and entropy. Associations contains scatter plots and score-comparison bars.
+            Distributions keeps the per-module tools.
+          Selected result: >-
+            Composition, catalog, and KEGG-only views do not request donor plot scores.
+            Active-page, active-tab, and active-panel guards suppress unopened work; a collapsed panel alone does not stop computation.
+          Contextual panels: >-
+            Each disclosure stays closed until needed. Statistics remains a panel and deep-link, not a removed feature.
+            Appearance changes use data already on screen.
+          Publication export: >-
+            Reuse the figure-export tools and all supported formats.
+            Preview and export carry applied context; color or font edits do not trigger Drive reads or statistical tests.
+        children:
+          Inspection tabs: module-tools
+        example: 'Publication export · Open export controls, change a color, inspect the preview, and save the same applied result. Data reads and statistical results do not change.'
+        exampleLabel: Publication export · worked path
+
+      module-tools:
+        title: Full network and biology tools
+        one: >-
+          Network change and Biology retain their full scientific scope.
+          Dataset capabilities decide which controls appear; missing data never trigger a substitute result.
+        view:
+          type: table
+          columns: [Subview, Controls and outputs that remain]
+          rows:
+            - ['Network change · MDC', 'Total or resolved; raw or log; triangular heatmaps; pathway or category; entropy plots; all-module scope where supported.']
+            - ['Biology · KEGG enrichment', 'Full and effect endpoints; region sharing; this-module or all-module scope; relevant statistics and downloads.']
+            - ['Statistics & downloads', 'The same tests, effects, p values, FDR definitions, and export information for the exact applied context.']
+        example: 'A KEGG-only view reads its enrichment data and module identity. It does not prepare donor scores for an unopened association plot.'
+
+      compare:
+        title: Compare
+        sub: "Compare modules, partitions, cohorts\nExplicit source per series"
+        cls: code
+        one: >-
+          Compare collects Module–outcome comparison, Partition comparison, and Validation & replication.
+          Each comparison box owns its source overrides and states them beside its result.
+        in:
+          items: [Sources per comparison box, Outcome and cohort per supported analysis]
+          from: Context as an initial choice, then local box controls.
+          how: Global choices seed new boxes only.
+        out:
+          items: [Explicitly labeled comparisons, Existing validation and replication results]
+          to: The researcher.
+          how: Source, component, and donor N appear per series.
+        view:
+          type: table
+          columns: [Comparison surface, Design rule]
+          rows:
+            - ['Module–outcome comparison', 'Keep module and outcome controls local. A global edit cannot silently replace an existing box.']
+            - ['Partition comparison', 'Compare explicit brain, motor, regional eigengene, or connectivity sources. Never join on numeric module ID alone.']
+            - ['Validation & replication', 'State matched demographics. Label raw versus adjusted effects accurately; keep their test and cohort scopes distinct.']
+        example: 'Compare brain with motor, or a regional eigengene with CT connectivity. Label each series by source, component, and donor N. Add no unrequested inferential test.'
+        exampleLabel: Compare sources · worked path
+
+      prediction:
+        title: Prediction
+        sub: "Independent fixed catalog context\nAll modes, importance, and exports"
+        cls: code
+        one: >-
+          Prediction is an independent page with its own fixed catalog, split, and reference context.
+          It preserves all modes, feature importance, results, and exports.
+        in:
+          items: [Prediction catalog choice, Fixed split and reference context, Mode-specific controls]
+          from: Prediction controls only.
+          how: A lazy route requests the selected prediction resources.
+        out:
+          items: [Existing fitted results, Feature importance, Existing prediction exports]
+          to: The researcher.
+          how: Applied prediction context labels every result.
+        view:
+          type: parts
+          parts:
+            - [data, Fixed context, Catalog · split · reference]
+            - [code, Relevant controls, All modes remain reachable]
+            - [data, Scoped cache, Relevant dataset and bundle version]
+        notes:
+          Fixed context: Generic donor, cohort, and edge filters cannot alter or relabel fitted prediction results. The prediction context stays explicit.
+          Relevant controls: Reorganize controls without a refit or a change to scientific results. Catalogs, feature importance, and exports remain reachable.
+          Scoped cache: A prediction bundle change invalidates only related results. It does not clear unrelated analysis data.
+        example: 'A generic cohort change elsewhere leaves the fitted prediction catalog, split, reference, and result unchanged.'
+
+      donors:
+        title: Donors & edges
+        sub: "Donor plots and edge catalogs\nOnly meaningful controls"
+        cls: code
+        one: >-
+          Donors & edges gathers donor inspection and edge tools.
+          Each page shows only controls that can affect its own data or result.
+        in:
+          items: [Dataset capability, Relevant donor or edge choices]
+          from: Context and local controls.
+          how: Explicit source and analysis scope.
+        out:
+          items: [Selected donor or edge result, Relevant statistics and exports]
+          to: The researcher.
+          how: Bounded donor frames and scoped queries.
+        view:
+          type: table
+          columns: [Destination, Retained tools]
+          rows:
+            - ['Donor explorer', 'Ordinary donor plots with their own cohort and source context.']
+            - ['Gene & edge associations', 'Association catalog and relevant filters; no unrelated module-score load.']
+            - ['Edge summaries and Edge volcano', 'Existing summaries, comparisons, statistical labels, and exports.']
+            - ['Donor edge explorer', 'Expression 2D and 3D, residual tools, and the current donor-edge controls.']
+        example: 'An edge catalog opens catalog filters only. Expression plots request donor data only when the person opens that subview.'
+
+      methods:
+        title: Data & methods
+        sub: "Inventory · provenance · methods\nAvailability and downloads"
+        cls: code
+        one: >-
+          Data & methods explains the available sources and scientific methods.
+          It exposes inventory, availability, completion, provenance, and permitted downloads without private mappings.
+        in:
+          items: [Dataset metadata, Existing methods and download information]
+          from: Approved app data and documentation.
+          how: Metadata-only reads where possible.
+        out:
+          items: [Visible source availability, Methods and provenance, Available downloads]
+          to: The researcher.
+          how: A compact source inventory with explicit unavailable states.
+        view:
+          type: table
+          columns: [Surface, Purpose]
+          rows:
+            - [Inventory and availability, State which sources and capabilities exist and which are incomplete or unavailable.]
+            - [Methods and provenance, Explain the source and scientific meaning of a result without a new statistical method.]
+            - [Downloads, Expose permitted existing downloads; exclude credentials and private mappings.]
+        example: 'A researcher can inspect whether a matched-Control capability exists before a data-heavy page opens.'
+
+      reads:
+        title: Selected-view reads & light appearance edits
+        sub: "Scoped queries and compact caches\nExisting files stay on disk"
+        cls: data
+        one: >-
+          The selected view requests only the resources it needs.
+          Expensive cross-module screens start explicitly and run in series; the app does not add a new worker service.
+        in:
+          items: [Selected route and subview, Applied query choices or a style edit]
+          from: The active workspace.
+          how: Native Streamlit navigation, forms, fragments, and active-page, tab, and panel guards.
+        out:
+          items: [Compact statistical results, Bounded plot data, Preview or export from existing data]
+          to: The active view only.
+          how: Exact columns and predicates; cache keys use the relevant dataset and version.
+        view:
+          type: diagram
+          viewBox: 0 0 1000 500
+          label: Analysis path and style-only path
+          boxes:
+            - { part: Analysis choices, x: 20, y: 35, w: 265, h: 82, cls: code, sub: "Relevant selections\nApply behavior remains open" }
+            - { part: Selected query, x: 355, y: 35, w: 270, h: 82, cls: data, sub: "Required columns and predicates\nRelevant dataset / version" }
+            - { part: Applied result, x: 695, y: 35, w: 285, h: 82, cls: data, sub: "Compact result cache\nBounded donor frame" }
+            - { part: Style edit, x: 20, y: 245, w: 265, h: 82, cls: code, sub: "Colors · fonts · order\nFragment or dialog" }
+            - { part: Existing plot data, x: 355, y: 245, w: 270, h: 82, cls: data, sub: "No Drive read\nNo new statistical test" }
+            - { part: Preview & export, x: 695, y: 245, w: 285, h: 82, cls: code, sub: "Same applied context\nExisting figure-export tools" }
+            - { part: Storage & bounds, x: 20, y: 385, w: 960, h: 78, cls: data, sub: 'Parquet on disk · integrity-checked lazy Drive · serial statistics · bounded memory' }
+          svg: |
+            <path d="M285 76 H353" class="arrow" marker-end="url(#ah)"/>
+            <path d="M625 76 H693" class="arrow" marker-end="url(#ah)"/>
+            <path d="M285 286 H353" class="arrow" marker-end="url(#ah)"/>
+            <path d="M625 286 H693" class="arrow" marker-end="url(#ah)"/>
+            <path d="M838 117 V243" class="arrow" marker-end="url(#ah)" stroke-dasharray="4 4"/>
+            <text x="855" y="184" class="m" font-size="12">reuse</text>
+            <text x="20" y="190" class="t" font-size="13">Separate a change to the analysis from a change to its appearance</text>
+        notes:
+          Analysis choices: >-
+            The recommended form batches expensive query choices.
+            Dependency edits read lightweight metadata only.
+            Pending edits leave the applied results and export labels unchanged until Apply.
+          Selected query: >-
+            Only the selected route and active subview execute their data path.
+            KEGG, composition, and catalog-only views have no hidden donor-score request.
+            Prediction bundle changes cannot invalidate unrelated datasets.
+          Applied result: Cache compact results, not all raw donor frames. Keep donor frames bounded to the current plot or explicit query scope.
+          Style edit: Use native fragments or dialogs for appearance edits. A color, font, or order change does not require a fresh query.
+          Existing plot data: This path reads the data already held for the applied view. It does not fetch Drive data or recompute statistics.
+          Preview & export: Reuse the figure-export preview, dimensions, fonts, colors, PNG, PDF, and vector tools with the applied result context.
+          Storage & bounds: >-
+            Keep schemas and files as they are. Reuse the local Parquet cache and integrity-checked lazy Drive access.
+            Keep existing serial statistics and small caches; do not add a custom queue, daemon, or session manager.
+        example: 'Publication export · A color edit follows the lower path. An explicit all-module calculation follows the upper path and runs in series.'
+        exampleLabel: Publication export · data path
+
+  - kind: decisions
+    settled:
+      - decision: Start with module discovery, then inspection.
+        from: The researcher chooses a find-modules-first workflow.
+        considered: Module finder first versus a plot-first entry screen.
+      - decision: Use simple defaults and retain all advanced tools.
+        from: The researcher wants less clutter without feature loss.
+        considered: Contextual disclosures versus all controls visible or tool removal.
+      - decision: Stay with Streamlit and Community Cloud.
+        from: The researcher keeps the current platform and host.
+        considered: Native Streamlit controls versus a new frontend or backend.
+      - decision: Use six task workspaces.
+        from: The researcher selects the first navigation option to reduce page clutter and repeated context.
+        considered: Consolidated task workspaces versus six groups of the familiar pages.
+      - decision: Apply analysis changes; show style changes at once.
+        from: The researcher selects the first update option to avoid repeated reads during analysis setup.
+        considered: Page-local Apply forms and data-free style edits versus an automatic query after each selection.
+    open: []
+
+  - kind: goal
+    items:
+      - All 20 current feature destinations remain reachable, and existing view and screen bookmarks resolve to the matching context.
+      - A fixed source and analysis context gives the same donor counts, effects, KEGG, MDC, and prediction results, with each saved p/FDR definition intact.
+      - The ordinary main screen has no flat 20-pill strip, repeated context cards, or controls unrelated to its selected view.
+      - Inactive pages cause no data loads; style-only edits cause no Drive reads or statistical recomputation.
+      - 'A fixed baseline and up to two concurrent sessions measure startup, queries, style edits, and peak memory. The refactor shows fewer reads and lower memory; numeric budgets follow those measurements.'
+
+  - kind: scope
+    outside:
+      - New networks, scientific experiments, fitted models, or changes to effects, tests, FDR definitions, and published cohort boundaries.
+      - Data schema rewrites, raw-data publication, credential exposure, and private mapping downloads.
+      - A new frontend, cloud backend, authentication system, worker service, or cache daemon.
+      - A new scientific publication or an automatic design lock.
+      - 'Implementation tasks, file edits, deployment, and timing promises. A separate implementation plan follows the design lock.'
+
+  - kind: reused
+    items:
+      - 'Existing active-tab guards, short-circuit routes, serial statistical work, compact caches, local Parquet files, and integrity-checked lazy Drive access.'
+      - 'Existing figure-export tools, scientific results, matched-brain readers, and control-calibrated capabilities. The refactor changes access and presentation, not their scientific meaning.'
+      - 'Pinned Streamlit 1.64.0 supplies <a href="https://docs.streamlit.io/1.64.0/develop/api-reference/navigation/st.navigation" target="_blank" rel="noreferrer">native page navigation</a>. Only the selected page runs.'
+      - 'Native <a href="https://docs.streamlit.io/develop/concepts/architecture/forms" target="_blank" rel="noreferrer">forms</a> batch choices. Native <a href="https://docs.streamlit.io/develop/concepts/architecture/fragments" target="_blank" rel="noreferrer">fragments</a> limit partial reruns. <a href="https://docs.streamlit.io/develop/concepts/architecture/caching" target="_blank" rel="noreferrer">Caching guidance</a> informs result size and invalidation scope.'

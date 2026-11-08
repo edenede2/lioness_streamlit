@@ -21,6 +21,15 @@ from app_helpers.figure_export.config import figure_panels
 APP = Path(__file__).resolve().parents[1]
 
 
+def association_app():
+    """Legacy scientific checks use the explicit Associations route and Apply."""
+    from ui_interactions import apply_driver
+
+    app = apply_driver(AppTest.from_file(APP / "streamlit_app.py", default_timeout=180))
+    app.query_params["view"] = "Associations"
+    return app.run()
+
+
 def fixture_data():
     catalog = score_series_catalog(["AC", "DLPFC", "PCG"], {})
     metadata = pd.DataFrame({"sample_id":[f"S{i}" for i in range(15)],
@@ -283,7 +292,7 @@ def _widget(elements,label):
 
 
 def test_associations_default_scatter_and_score_comparison_render():
-    app=AppTest.from_file(APP/"streamlit_app.py",default_timeout=180).run()
+    app=association_app()
     assert not app.exception
     picker=_widget(app.selectbox,"Plot type")
     assert picker.value=="Scatter"
@@ -302,7 +311,7 @@ def test_associations_default_scatter_and_score_comparison_render():
 
 def test_composite_column_controls_and_statistics_render_without_recalculation_changes():
     import json
-    app=AppTest.from_file(APP/"streamlit_app.py",default_timeout=180).run()
+    app=association_app()
     app=_widget(app.selectbox,"Module definition").set_value("control_derived").run()
     app=_widget(app.selectbox,"Module").set_value(121).run()
     app=_widget(app.selectbox,"Plot type").set_value("Score comparison").run()
@@ -411,7 +420,7 @@ def test_absolute_bar_axis_preserves_signed_statistics_p_values_and_exports(meth
 
 def test_ui_absolute_y_axis_toggles_bars_and_keeps_statistics_and_composite():
     from app_helpers.figure_export.config import restore_figure
-    app=AppTest.from_file(APP/'streamlit_app.py',default_timeout=180).run()
+    app=association_app()
     app=_widget(app.selectbox,'Module definition').set_value('control_derived').run()
     app=_widget(app.selectbox,'Module').set_value(121).run()
     app=_widget(app.selectbox,'Plot type').set_value('Score comparison').run()
@@ -446,7 +455,7 @@ def test_ui_absolute_y_axis_toggles_bars_and_keeps_statistics_and_composite():
 
 
 def test_comparison_reuses_outcome_group_scale_and_effect_filter_controls():
-    app=AppTest.from_file(APP/"streamlit_app.py",default_timeout=180).run()
+    app=association_app()
     app=_widget(app.selectbox,"Module definition").set_value("control_derived").run()
     app=_widget(app.selectbox,"Module").set_value(121).run()
     app=_widget(app.selectbox,"Plot type").set_value("Score comparison").run()
@@ -467,7 +476,7 @@ def test_comparison_reuses_outcome_group_scale_and_effect_filter_controls():
 
 
 def test_nominal_outcome_never_enters_comparison_correlations():
-    app=AppTest.from_file(APP/"streamlit_app.py",default_timeout=180).run()
+    app=association_app()
     app=_widget(app.selectbox,"Association outcome").set_value("clusters").run()
     app=_widget(app.selectbox,"Plot type").set_value("Score comparison").run()
     assert not app.exception
@@ -483,7 +492,7 @@ def test_comparison_opens_existing_publication_export_dialog(monkeypatch):
         calls.append(spec.plot_id)
         return buffer.getvalue(),()
     monkeypatch.setattr(ui,"_render_cached",preview)
-    app=AppTest.from_file(APP/"streamlit_app.py",default_timeout=180).run()
+    app=association_app()
     app=_widget(app.selectbox,"Plot type").set_value("Score comparison").run()
     app=_widget(app.button,"Export figure").click().run()
     assert not app.exception

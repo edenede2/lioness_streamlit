@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 from streamlit.testing.v1 import AppTest
 from app_helpers.control_calibrated import registry as CC, adapter as A
+from ui_interactions import apply_driver
 
 APP = Path(__file__).resolve().parents[1]
 pytestmark = pytest.mark.skipif(
@@ -14,7 +15,7 @@ pytestmark = pytest.mark.skipif(
 
 
 def app_for(family="full_cohort", view="Associations", beta=3, module=None):
-    app = AppTest.from_file(APP / "streamlit_app.py", default_timeout=180)
+    app = apply_driver(AppTest.from_file(APP / "streamlit_app.py", default_timeout=180))
     app.query_params.update(
         view=view, screen_partition=family, score_source="calibrated_beta" + str(beta)
     )
@@ -252,6 +253,9 @@ def test_full_selected_edge_search_uses_separate_correction(view):
 
 def test_shared_donor_historical_comparison_and_mask_do_not_borrow_baseline_q():
     app = app_for()
+    app.session_state['cc_legacy_comparison_panel'] = True
+    app.session_state['cc_baseline_panel'] = True
+    app = app.run()
     app = app.button(key="cc_calculate_legacy_comparison").click().run()
     assert not app.exception
     _, result, _ = app.session_state["cc_legacy_comparison"]

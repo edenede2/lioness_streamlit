@@ -106,7 +106,7 @@ KEGG_PRIORITY_PATTERN = re.compile(
     r"sphingolipid|metaboli|alzheimer|infection|infectious|viral|virus",
     flags=re.IGNORECASE,
 )
-REGIONAL_API_VERSION = 3
+REGIONAL_API_VERSION = 4
 
 
 def regional_tissues(source: str) -> tuple[str, ...]:
@@ -275,7 +275,7 @@ def _prepare_score_frame(
     return result
 
 
-@st.cache_data(show_spinner=False, max_entries=2, ttl=1800)
+@st.cache_data(show_spinner=False, max_entries=3, ttl=1800)
 def regional_correlation_catalog(
     source: str,
     cohort_scope: str,
@@ -343,7 +343,7 @@ def regional_correlation_catalog(
     return result
 
 
-@st.cache_data(show_spinner=False, max_entries=2, ttl=1800)
+@st.cache_data(show_spinner=False, max_entries=3, ttl=1800)
 def regional_categorical_catalog(
     source: str,
     cohort_scope: str,
@@ -388,7 +388,7 @@ def regional_categorical_catalog(
     return result
 
 
-@st.cache_data(show_spinner=False, max_entries=2, ttl=1800)
+@st.cache_data(show_spinner=False, max_entries=3, ttl=1800)
 def regional_pairwise_catalog(
     source: str,
     cohort_scope: str,
@@ -520,6 +520,20 @@ def _download_table(label: str, frame: pd.DataFrame, filename: str, key: str) ->
     )
 
 
+def _apply_regional(values, submitted, view):
+    """Apply one regional analysis without changing its tissue-specific statistics."""
+    from app_helpers.analysis_context import resolve_controls
+    controls = dict(values, module_set=values['source'], method=values['network_method'],
+                    estimator=values['score_variant'])
+    result = resolve_controls(controls, view='regional:' + view, submitted=submitted)
+    result['metadata'] = pd.concat(
+        [regional_metadata(result['source'], result['cohort_scope'], tissue) for tissue in result['tissues']],
+        ignore_index=True,
+    ).drop_duplicates('sample_id')
+    st.caption(f"Applied: {result['source_label']} · {COHORT_LABELS.get(result['cohort_scope'], result['cohort_scope'])} · {SCALE_LABELS[result['scale']]}")
+    return result
+
+
 def _render_associations(
     *,
     source: str,
@@ -533,6 +547,7 @@ def _render_associations(
     diagnoses: tuple[str, ...],
     metadata: pd.DataFrame,
     kegg: pd.DataFrame,
+    apply_requested: bool = False,
 ) -> None:
     with st.sidebar:
         phenotype = st.selectbox(
@@ -675,6 +690,23 @@ def _render_associations(
                 "Reverse color scale", key="regional_association_reverse_palette"
             )
 
+    applied = _apply_regional(locals(), apply_requested, 'Associations')
+    source = applied['source']
+    source_label = applied['source_label']
+    cohort_scope = applied['cohort_scope']
+    score_variant = applied['score_variant']
+    network_method = applied['network_method']
+    scale = applied['scale']
+    tissues = applied['tissues']
+    selected_modules = applied['selected_modules']
+    diagnoses = applied['diagnoses']
+    metadata = applied['metadata']
+    phenotype = applied['phenotype']
+    interpretation = applied['interpretation']
+    grouping_variable = applied['grouping_variable']
+    selected_levels = applied['selected_levels']
+    minimum_group_n = applied['minimum_group_n']
+    correlation_method = applied['correlation_method']
     if not selected_levels:
         st.warning("Select at least one category level.")
         return
@@ -700,11 +732,13 @@ def _render_associations(
             regional_correlation_catalog(
                 source, cohort_scope, score_variant, network_method, tissue,
                 scale, diagnoses, grouping_variable, tuple(selected_levels),
-                int(minimum_group_n), (phenotype,), bool(show_pooled),
+                int(minimum_group_n), (phenotype,), True,
             )
             for tissue in tissues
         ]
         statistics = pd.concat(catalogs, ignore_index=True)
+        if not show_pooled and grouping_variable != '__all__':
+            statistics = statistics.loc[~statistics['grouping_level'].eq('__pooled__')].copy()
         statistics = statistics.loc[
             statistics.apply(
                 lambda row: int(row["module"]) == int(
@@ -789,7 +823,8 @@ def _render_associations(
                 single_point_color if color_by == "__single_color__" else None
             ),
         )
-    render_plotly_chart(figure, key="regional_association_figure")
+    from app_helpers.workspaces.shared import association_header
+    render_plotly_chart(association_header(figure), key="regional_association_figure")
     table = statistics.copy()
     table.insert(0, "partition_source_label", source_label)
     filterable_dataframe(
@@ -823,6 +858,7 @@ def _render_distributions(
     selected_modules: dict[str, int],
     diagnoses: tuple[str, ...],
     metadata: pd.DataFrame,
+    apply_requested: bool = False,
 ) -> None:
     with st.sidebar:
         grouping_variable = st.selectbox(
@@ -858,6 +894,20 @@ def _render_distributions(
             ],
             key="regional_distribution_analysis",
         )
+    applied = _apply_regional(locals(), apply_requested, 'Feature distributions')
+    source = applied['source']
+    source_label = applied['source_label']
+    cohort_scope = applied['cohort_scope']
+    score_variant = applied['score_variant']
+    network_method = applied['network_method']
+    scale = applied['scale']
+    tissues = applied['tissues']
+    selected_modules = applied['selected_modules']
+    diagnoses = applied['diagnoses']
+    metadata = applied['metadata']
+    grouping_variable = applied['grouping_variable']
+    selected_levels = applied['selected_levels']
+    minimum_group_n = applied['minimum_group_n']
     if not selected_levels:
         st.warning("Select at least one distribution group level.")
         return
@@ -1138,6 +1188,7 @@ def _render_correlation_heatmaps(
     selected_modules: dict[str, int],
     diagnoses: tuple[str, ...],
     metadata: pd.DataFrame,
+    apply_requested: bool = False,
 ) -> None:
     with st.sidebar:
         association_type = st.radio(
@@ -1164,6 +1215,10 @@ def _render_correlation_heatmaps(
         )
 
     feature_label = score_label(score_variant, network_method)
+    saved = st.session_state.get('analysis_context:regional:Correlation heatmaps', {})
+    if saved and saved.get('association_type') != association_type and not apply_requested:
+        st.info('Unapplied settings. Apply analysis to change the statistical outcome type.')
+        return
     if association_type == "Numeric correlations":
         with st.sidebar:
             grouping_variable = st.selectbox(
@@ -1200,6 +1255,23 @@ def _render_correlation_heatmaps(
                     "display filtering."
                 ),
             )
+        applied = _apply_regional(locals(), apply_requested, 'Correlation heatmaps')
+        source = applied['source']
+        source_label = applied['source_label']
+        cohort_scope = applied['cohort_scope']
+        score_variant = applied['score_variant']
+        network_method = applied['network_method']
+        scale = applied['scale']
+        tissues = applied['tissues']
+        selected_modules = applied['selected_modules']
+        diagnoses = applied['diagnoses']
+        metadata = applied['metadata']
+        grouping_variable = applied['grouping_variable']
+        selected_levels = applied['selected_levels']
+        minimum_group_n = applied['minimum_group_n']
+        association_type = applied['association_type']
+        correlation_method = applied['correlation_method']
+        selected_outcomes = applied['selected_outcomes']
         if not selected_levels:
             st.warning("Select at least one heatmap group level.")
             return
@@ -1354,6 +1426,21 @@ def _render_correlation_heatmaps(
             format_func=lambda value: association_level_label(category_variable, value),
             key="regional_heatmap_category_levels",
         )
+    applied = _apply_regional(locals(), apply_requested, 'Correlation heatmaps')
+    source = applied['source']
+    source_label = applied['source_label']
+    cohort_scope = applied['cohort_scope']
+    score_variant = applied['score_variant']
+    network_method = applied['network_method']
+    scale = applied['scale']
+    tissues = applied['tissues']
+    selected_modules = applied['selected_modules']
+    diagnoses = applied['diagnoses']
+    metadata = applied['metadata']
+    category_variable = applied['category_variable']
+    selected_levels = applied['selected_levels']
+    minimum_group_n = applied['minimum_group_n']
+    association_type = applied['association_type']
     if not selected_levels:
         st.warning("Select at least two category levels.")
         return
@@ -1539,6 +1626,8 @@ def render_regional_analysis_view(active_view: str) -> None:
                 key="regional_diagnoses",
             )
         )
+    with st.sidebar.form('regional_apply_analysis', border=False):
+        apply_requested = st.form_submit_button('Apply analysis', type='primary', width='stretch')
     if not diagnoses:
         st.warning("Select at least one diagnosis group.")
         return
@@ -1566,6 +1655,7 @@ def render_regional_analysis_view(active_view: str) -> None:
         selected_modules=selected_modules,
         diagnoses=diagnoses,
         metadata=metadata,
+        apply_requested=apply_requested,
     )
     if active_view == "Associations":
         _render_associations(**common, kegg=kegg)

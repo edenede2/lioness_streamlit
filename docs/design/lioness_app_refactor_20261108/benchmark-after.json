@@ -1,0 +1,182 @@
+{
+  "schema_version": 1,
+  "measurement": "local AppTest; peak_rss is cumulative process high-water, not per-view attribution",
+  "two_session_browser_check": "not_measured_by_this_script",
+  "results": [
+    {
+      "view": "Module details",
+      "runs": [
+        {
+          "state": "cold",
+          "seconds": 0.786,
+          "peak_rss_mib": 324.23,
+          "load_calls": {
+            "ensure_data_path": 3
+          },
+          "load_seconds": {
+            "ensure_data_path": 0.0
+          },
+          "exception_types": [],
+          "charts": 3,
+          "tables": 3
+        },
+        {
+          "state": "warm",
+          "seconds": 0.0848,
+          "peak_rss_mib": 326.98,
+          "load_calls": {
+            "ensure_data_path": 3
+          },
+          "load_seconds": {
+            "ensure_data_path": 0.0001
+          },
+          "exception_types": [],
+          "charts": 3,
+          "tables": 3
+        }
+      ]
+    },
+    {
+      "view": "KEGG enrichment",
+      "runs": [
+        {
+          "state": "cold",
+          "seconds": 0.3814,
+          "peak_rss_mib": 359.2,
+          "load_calls": {
+            "ensure_data_path": 1,
+            "_read_filtered": 2,
+            "read_table": 2,
+            "load_kegg": 1
+          },
+          "load_seconds": {
+            "ensure_data_path": 0.0,
+            "read_table": 0.0268,
+            "_read_filtered": 0.0303,
+            "load_kegg": 0.0413
+          },
+          "exception_types": [],
+          "charts": 1,
+          "tables": 1
+        },
+        {
+          "state": "warm",
+          "seconds": 0.0378,
+          "peak_rss_mib": 359.45,
+          "load_calls": {
+            "ensure_data_path": 1
+          },
+          "load_seconds": {
+            "ensure_data_path": 0.0
+          },
+          "exception_types": [],
+          "charts": 1,
+          "tables": 1
+        }
+      ]
+    },
+    {
+      "view": "MDC",
+      "runs": [
+        {
+          "state": "cold",
+          "seconds": 0.2507,
+          "peak_rss_mib": 362.7,
+          "load_calls": {},
+          "load_seconds": {},
+          "exception_types": [],
+          "charts": 6,
+          "tables": 2
+        },
+        {
+          "state": "warm",
+          "seconds": 0.1662,
+          "peak_rss_mib": 362.83,
+          "load_calls": {},
+          "load_seconds": {},
+          "exception_types": [],
+          "charts": 6,
+          "tables": 2
+        }
+      ]
+    },
+    {
+      "view": "Module finder",
+      "runs": [
+        {
+          "state": "cold",
+          "seconds": 0.5723,
+          "peak_rss_mib": 517.47,
+          "load_calls": {
+            "ensure_data_path": 1,
+            "_read_filtered": 2,
+            "read_table": 4,
+            "read_parquet": 2
+          },
+          "load_seconds": {
+            "ensure_data_path": 0.0,
+            "read_table": 0.1386,
+            "_read_filtered": 0.1489,
+            "read_parquet": 0.0061
+          },
+          "exception_types": [],
+          "charts": 1,
+          "tables": 1
+        },
+        {
+          "state": "warm",
+          "seconds": 0.0538,
+          "peak_rss_mib": 517.47,
+          "load_calls": {
+            "ensure_data_path": 1
+          },
+          "load_seconds": {
+            "ensure_data_path": 0.0
+          },
+          "exception_types": [],
+          "charts": 1,
+          "tables": 1
+        }
+      ]
+    },
+    {
+      "view": "Associations",
+      "runs": [
+        {
+          "state": "cold",
+          "seconds": 2.6812,
+          "peak_rss_mib": 517.47,
+          "load_calls": {
+            "ensure_data_path": 1,
+            "read_parquet": 1,
+            "read_table": 158,
+            "_read_filtered": 157
+          },
+          "load_seconds": {
+            "ensure_data_path": 0.0,
+            "read_table": 1.1,
+            "read_parquet": 0.003,
+            "_read_filtered": 1.1943
+          },
+          "exception_types": [],
+          "charts": 1,
+          "tables": 1
+        },
+        {
+          "state": "warm",
+          "seconds": 0.1318,
+          "peak_rss_mib": 517.47,
+          "load_calls": {
+            "ensure_data_path": 1
+          },
+          "load_seconds": {
+            "ensure_data_path": 0.0
+          },
+          "exception_types": [],
+          "charts": 1,
+          "tables": 1
+        }
+      ]
+    }
+  ]
+}

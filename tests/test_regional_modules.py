@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from streamlit.testing.v1 import AppTest
+from ui_interactions import apply_driver
 
 from app_helpers.regional_modules import (
     completed_combinations,
@@ -39,16 +40,12 @@ def _preserve_pills(app: AppTest) -> None:
 
 
 def _select_view(app: AppTest, label: str) -> AppTest:
-    _preserve_pills(app)
-    selector = _widget(
-        app.pills if hasattr(app, "pills") else app.get("button_group"),
-        "Analysis view",
-    )
-    return selector.set_value(label if hasattr(app, "pills") else [label]).run()
+    app.query_params['view'] = label
+    return app.run()
 
 
 def _regional_view(label: str) -> AppTest:
-    app = AppTest.from_file(APP, default_timeout=300).run()
+    app = apply_driver(AppTest.from_file(APP, default_timeout=300)).run()
     app = _select_view(app, label)
     _preserve_pills(app)
     app = _widget(app.radio, "Module organization").set_value(

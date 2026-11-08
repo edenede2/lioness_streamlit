@@ -21,6 +21,22 @@ DEFINITION="Matched-Control brain L4 (247 modules; 80 discovery Controls)"
 SCALES={"raw":"Raw","asinh":"asinh","rint":"Z-score"}
 
 
+@st.cache_data(show_spinner=False,max_entries=2,ttl=1800)
+def _numeric_statistics(frame,outcome,grouping,levels,min_n):
+    return D.numeric_statistics(frame,outcome,grouping,levels,min_n)
+
+
+@st.cache_data(show_spinner=False,max_entries=2,ttl=1800)
+def _categorical_statistics(frame,outcome,grouping,levels,min_n):
+    return D.selected_statistics(frame,outcome=outcome,grouping=grouping,levels=levels,min_n=min_n,categorical=True)
+
+
+@st.cache_data(show_spinner=False,max_entries=2,ttl=1800)
+def _pairwise_statistics(frame,grouping,contrasts,min_n):
+    return calculate_pairwise_distribution_statistics(frame,D.KEYS,category_column=grouping,
+        contrasts=contrasts,minimum_group_n=min_n,bootstrap_resamples=1000,seed=42)
+
+
 def donor_layout(fig):
     """Keep the existing panel semantics, with a narrow-safe header band."""
     title_depth=stat_depth=1
@@ -54,7 +70,8 @@ def _levels(frame,field):
     if field=="__all__":return ["__all__"]
     observed=frame[field].dropna().drop_duplicates().tolist()
     preferred=ASSOCIATION_LEVEL_ORDERS.get(field,[])
-    return [v for v in preferred if v in observed]+sorted([v for v in observed if v not in preferred],key=str)
+    values=[v for v in preferred if v in observed]+sorted([v for v in observed if v not in preferred],key=str)
+    return [v.item() if isinstance(v,np.generic) else v for v in values]
 
 
 def _subtitles(module,components,rule):
@@ -92,8 +109,12 @@ def render_view(render,module,*,distributions=False):
     component_context=("eigengene" if feature=="eigengene" else "network")+("_pooled" if "CT" in comps else "_resolved")
     components=st.multiselect("Donor plot components",comps,default=default,format_func=R.COMPONENTS.get,key=prefix+"_components_"+component_context)
     if not components:st.info("Select at least one component.");return
-    frame=D.load_scores(module,cohort=cohort,components=components,feature=feature,rule=rule,normalization=norm,scale=scale)
-    if frame.empty:st.info("No observed scores are available for this module and cohort.");return
+    # Category options need metadata, not a new module's donor-score shard.
+    frame=D.metadata()
+    role='Incomplete-region validation' if cohort in {D.BALANCED,D.PROFILE} else cohort
+    frame=frame.loc[frame.analysis_role.eq(role)].copy()
+    if cohort in {D.BALANCED,D.PROFILE}:
+        frame=frame.loc[frame.diagnosis_group.isin(['AD','Control'])]
     diagnoses=_levels(frame,"diagnosis_group")
     diagnoses=st.multiselect("Include diagnoses",diagnoses,default=diagnoses,key=prefix+"_diagnoses")
     frame=frame.loc[frame.diagnosis_group.isin(diagnoses)]
@@ -116,10 +137,24 @@ def render_view(render,module,*,distributions=False):
             format_func=lambda v:association_level_label(grouping,v),key=prefix+"_levels_"+level_context)
         missing=int(frame[grouping].isna().sum())
         if missing:st.caption(f"{missing} component-score rows with missing grouping values are excluded; missing is not a biological category.")
+    observed_levels={str(value):value for value in _levels(frame,grouping)}
+    levels=[observed_levels.get(str(value),value) for value in levels]
+    frame=D.filter_donors(frame,diagnoses,grouping,levels)
+    min_n=st.selectbox("Minimum donors per tested group",[5,10,20],index=1,key=prefix+"_min_n")
+    from app_helpers.analysis_context import apply_controls
+    applied=apply_controls(dict(module_set='matched_control_brain_l4',estimator='lioness',method='control_anchored',
+        module=module,cohort_scope=cohort,cohort=cohort,components=components,feature=feature,rule=rule,norm=norm,
+        scale=scale,diagnoses=diagnoses,outcome=outcome,categorical=categorical,grouping=grouping,levels=levels,min_n=min_n),
+        view='matched:'+prefix)
+    module=applied['module'];cohort=applied['cohort'];components=applied['components'];feature=applied['feature']
+    rule=applied['rule'];norm=applied['norm'];scale=applied['scale'];diagnoses=applied['diagnoses']
+    outcome=applied['outcome'];categorical=applied['categorical'];grouping=applied['grouping'];levels=applied['levels'];min_n=applied['min_n']
+    frame=D.load_scores(module,cohort=cohort,components=components,feature=feature,rule=rule,normalization=norm,scale=scale)
+    if frame.empty:st.info("No observed scores are available for this module and cohort.");return
     frame=D.filter_donors(frame,diagnoses,grouping,levels)
     if frame.empty or not np.isfinite(frame.metric_value).any():
         st.warning("No finite scores remain. This component may be structurally absent or the retained-edge set may be empty.");return
-    min_n=st.selectbox("Minimum donors per tested group",[5,10,20],index=1,key=prefix+"_min_n")
+    st.caption(f'Applied: M{module} · {cohort} · {FEATURE_LABELS.get(feature,feature)} · {SCALES[scale]}')
     if cohort=="Discovery" and rule!="all":st.warning("Discovery-selected edge separation is selection-biased. Prefer held-out or incomplete-region validation.")
     st.caption(f"{frame.sample_id.nunique():,} distinct donors; {len(frame):,} observed donor–component rows. No missing tissue is imputed.")
     _table(frame,prefix+"_scores","Displayed pseudonymized donor scores")
@@ -130,17 +165,15 @@ def render_view(render,module,*,distributions=False):
             [association_level_label(grouping,v) for v in levels],module,chart_type,
             module_definition=DEFINITION,group_column="display_group",group_label=ASSOCIATION_GROUP_LABELS[grouping])
         render(donor_layout(fig),key=prefix+"_plot")
-        stats=D.selected_statistics(frame,outcome=grouping,grouping=grouping,levels=levels,min_n=min_n,categorical=True)
+        stats=_categorical_statistics(frame,grouping,grouping,tuple(levels),min_n)
         category_outcome=grouping
         if len(levels)>=2:
             reference=st.selectbox("Pairwise reference category",levels,format_func=lambda v:association_level_label(grouping,v),key=prefix+"_reference")
-            pairs=calculate_pairwise_distribution_statistics(frame,D.KEYS,category_column=grouping,
-                contrasts=distribution_contrasts(levels,reference_level=reference),minimum_group_n=min_n,
-                bootstrap_resamples=1000,seed=42)
+            pairs=_pairwise_statistics(frame,grouping,distribution_contrasts(levels,reference_level=reference),min_n)
             _table(pairs,prefix+"_pairwise","Selected-module pairwise distribution tests")
     elif categorical:
         category_outcome=outcome
-        stats=D.selected_statistics(frame,outcome=outcome,grouping=grouping,levels=levels,min_n=min_n,categorical=True)
+        stats=_categorical_statistics(frame,outcome,grouping,tuple(levels),min_n)
         fig=categorical_association_figure(frame,stats,category_variable=outcome,category_label=ASSOCIATION_OUTCOME_LABELS[outcome],
             category_levels=levels,category_labels={str(v):association_level_label(outcome,v) for v in levels},
             feature_label=FEATURE_LABELS.get(feature,feature),scale_label=SCALES[scale],module=module,minimum_group_n=min_n,
@@ -149,7 +182,7 @@ def render_view(render,module,*,distributions=False):
         render(donor_layout(fig),key=prefix+"_plot")
     else:
         category_outcome=outcome
-        stats=D.numeric_statistics(frame,outcome,grouping,levels,min_n)
+        stats=_numeric_statistics(frame,outcome,grouping,tuple(levels),min_n)
     # Family correction is an explicit action, never a BH over plotted groups.
     context=dict(cohort=cohort,components=tuple(components),feature=feature,rule=rule,normalization=norm,scale=scale,
         diagnoses=tuple(diagnoses),grouping=grouping,levels=tuple(levels),outcome=category_outcome,min_n=min_n,categorical=bool(categorical or distributions))

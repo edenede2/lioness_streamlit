@@ -1,0 +1,45 @@
+[
+  {
+    "view": "discover",
+    "charts": 1,
+    "exceptions": 0,
+    "overflow": false,
+    "headings": "[\"Dataset\",\"ROSMAP Network Explorer\",\"Find modules with contrasting association patterns\"]"
+  },
+  {
+    "view": "associations",
+    "charts": 1,
+    "exceptions": 0,
+    "overflow": false,
+    "headings": "[\"Dataset\",\"ROSMAP Network Explorer\",\"Phenotype association\"]"
+  },
+  {
+    "view": "details",
+    "charts": 3,
+    "exceptions": 0,
+    "overflow": false,
+    "headings": "[\"Dataset\",\"ROSMAP Network Explorer\",\"Level-4 module composition\"]"
+  },
+  {
+    "view": "mdc",
+    "charts": 6,
+    "exceptions": 0,
+    "overflow": false,
+    "headings": "[\"Dataset\",\"ROSMAP Network Explorer\",\"Module differential connectivity (MDC)\"]"
+  },
+  {
+    "view": "prediction",
+    "charts": 2,
+    "exceptions": 0,
+    "overflow": false,
+    "headings": "[\"Targeted prediction controls\",\"ROSMAP Network Explorer\",\"Fully nested targeted-module LIONESS prediction\"]"
+  },
+  {
+    "view": "narrow",
+    "overflow": false
+  },
+  {
+    "view": "second_session",
+    "exceptions": 0
+  }
+]

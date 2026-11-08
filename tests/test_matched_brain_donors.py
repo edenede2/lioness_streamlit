@@ -7,6 +7,7 @@ import pyarrow.parquet as pq
 import pytest
 from scipy.stats import pearsonr,spearmanr,false_discovery_control
 from streamlit.testing.v1 import AppTest
+from ui_interactions import apply_driver
 from app_helpers import matched_brain_donors as D
 from app_helpers.camel import FrozenRINT,feature_values
 from app_helpers.matched_brain_donor_ui import _subtitles
@@ -115,7 +116,7 @@ def run_distributions():
 
 
 def test_scatter_group_controls_eigengenes_and_nominal_outcomes():
-    app=AppTest.from_function(run_view,default_timeout=120).run()
+    app=apply_driver(AppTest.from_function(run_view,default_timeout=120)).run()
     assert not app.exception and app.get("plotly_chart") and app.get("download_button")
     app=widget(app,"checkbox","Show group-specific trend lines").set_value(False).run()
     app=widget(app,"checkbox","Solid black pooled line").set_value(True).run()
@@ -129,7 +130,7 @@ def test_scatter_group_controls_eigengenes_and_nominal_outcomes():
 
 
 def test_distribution_views_and_incomplete_cohort_render():
-    app=AppTest.from_function(run_distributions,default_timeout=120).run()
+    app=apply_driver(AppTest.from_function(run_distributions,default_timeout=120)).run()
     assert not app.exception and app.get("plotly_chart")
     for v in ["ECDF","Violin","Histogram","Raincloud"]:
         app=widget(app,"selectbox","Donor distribution view").set_value(v).run()

@@ -312,13 +312,19 @@ def cohorts():
     st.caption("No discovery inferential label-test p-values were added: discovery diagnoses helped select the modules and edge masks. These validation tests condition on those frozen objects.")
 
 
-def render_view(render):
+WORKSPACE_SECTION_API_VERSION = 1
+
+
+def render_view(render, *, section=None):
     st.header(TITLE)
     if not D.available():
         st.info("The matched-Control result bundle is not installed; existing analyses remain unchanged.");return
     manifest=D.manifest()
     st.caption("247 new L4 modules learned from 80 matched discovery Controls. Module IDs belong to this partition and must not be equated with the older 186- or 154-module definitions.")
-    section=st.radio("Matched-control results section",SECTIONS,horizontal=True,key="matched_results_section")
+    if section is None:
+        section=st.radio("Matched-control results section",SECTIONS,horizontal=True,key="matched_results_section")
+    elif section not in SECTIONS:
+        raise ValueError(f'Unknown matched-control section: {section}')
     details=D.table("module_details")
     module=st.selectbox("Inspect module",sorted(details.module.astype(int)),format_func=lambda m:f"M{m}",key="matched_inspected_module")
     with st.expander("Inspected-module enrichment"):

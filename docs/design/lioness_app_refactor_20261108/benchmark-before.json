@@ -1,0 +1,228 @@
+{
+  "schema_version": 1,
+  "measurement": "local AppTest; peak_rss is cumulative process high-water, not per-view attribution",
+  "two_session_browser_check": "not_measured_by_this_script",
+  "results": [
+    {
+      "view": "Module details",
+      "runs": [
+        {
+          "state": "cold",
+          "seconds": 1.4948,
+          "peak_rss_mib": 380.9,
+          "load_calls": {
+            "ensure_data_path": 5,
+            "_read_filtered": 2,
+            "read_table": 4,
+            "load_sample_metadata": 1,
+            "read_parquet": 2,
+            "load_kegg": 1
+          },
+          "load_seconds": {
+            "ensure_data_path": 0.0001,
+            "read_table": 0.0381,
+            "_read_filtered": 0.0387,
+            "read_parquet": 0.0047,
+            "load_sample_metadata": 0.0092,
+            "load_kegg": 0.0411
+          },
+          "exception_types": [],
+          "charts": 3,
+          "tables": 3
+        },
+        {
+          "state": "warm",
+          "seconds": 0.7046,
+          "peak_rss_mib": 480.94,
+          "load_calls": {
+            "ensure_data_path": 5
+          },
+          "load_seconds": {
+            "ensure_data_path": 0.0001
+          },
+          "exception_types": [],
+          "charts": 3,
+          "tables": 3
+        }
+      ]
+    },
+    {
+      "view": "KEGG enrichment",
+      "runs": [
+        {
+          "state": "cold",
+          "seconds": 0.9801,
+          "peak_rss_mib": 533.81,
+          "load_calls": {
+            "ensure_data_path": 4,
+            "_read_filtered": 3,
+            "read_table": 4,
+            "load_sample_metadata": 1,
+            "read_parquet": 1,
+            "load_kegg": 2
+          },
+          "load_seconds": {
+            "ensure_data_path": 0.0001,
+            "read_table": 0.0337,
+            "_read_filtered": 0.0359,
+            "read_parquet": 0.0027,
+            "load_sample_metadata": 0.0049,
+            "load_kegg": 0.0485
+          },
+          "exception_types": [],
+          "charts": 1,
+          "tables": 2
+        },
+        {
+          "state": "warm",
+          "seconds": 0.6689,
+          "peak_rss_mib": 588.29,
+          "load_calls": {
+            "ensure_data_path": 4
+          },
+          "load_seconds": {
+            "ensure_data_path": 0.0001
+          },
+          "exception_types": [],
+          "charts": 1,
+          "tables": 2
+        }
+      ]
+    },
+    {
+      "view": "MDC",
+      "runs": [
+        {
+          "state": "cold",
+          "seconds": 0.9163,
+          "peak_rss_mib": 638.06,
+          "load_calls": {
+            "ensure_data_path": 3,
+            "_read_filtered": 2,
+            "read_table": 3,
+            "load_sample_metadata": 1,
+            "read_parquet": 1,
+            "load_kegg": 1,
+            "load_mdc_summary": 1,
+            "load_mdc_resolved": 1
+          },
+          "load_seconds": {
+            "ensure_data_path": 0.0001,
+            "read_table": 0.0238,
+            "_read_filtered": 0.0252,
+            "read_parquet": 0.0024,
+            "load_sample_metadata": 0.0047,
+            "load_kegg": 0.0089,
+            "load_mdc_summary": 0.0012,
+            "load_mdc_resolved": 0.0021
+          },
+          "exception_types": [],
+          "charts": 6,
+          "tables": 3
+        },
+        {
+          "state": "warm",
+          "seconds": 0.7827,
+          "peak_rss_mib": 712.27,
+          "load_calls": {
+            "ensure_data_path": 3
+          },
+          "load_seconds": {
+            "ensure_data_path": 0.0001
+          },
+          "exception_types": [],
+          "charts": 6,
+          "tables": 3
+        }
+      ]
+    },
+    {
+      "view": "Module finder",
+      "runs": [
+        {
+          "state": "cold",
+          "seconds": 1.2335,
+          "peak_rss_mib": 802.75,
+          "load_calls": {
+            "ensure_data_path": 4,
+            "_read_filtered": 4,
+            "read_table": 5,
+            "load_sample_metadata": 1,
+            "read_parquet": 1,
+            "load_kegg": 1,
+            "load_aggregate_scope": 1
+          },
+          "load_seconds": {
+            "ensure_data_path": 0.0001,
+            "read_table": 0.1521,
+            "_read_filtered": 0.1661,
+            "read_parquet": 0.0027,
+            "load_sample_metadata": 0.0049,
+            "load_kegg": 0.0076,
+            "load_aggregate_scope": 0.0671
+          },
+          "exception_types": [],
+          "charts": 1,
+          "tables": 2
+        },
+        {
+          "state": "warm",
+          "seconds": 0.6394,
+          "peak_rss_mib": 864.7,
+          "load_calls": {
+            "ensure_data_path": 4
+          },
+          "load_seconds": {
+            "ensure_data_path": 0.0001
+          },
+          "exception_types": [],
+          "charts": 1,
+          "tables": 2
+        }
+      ]
+    },
+    {
+      "view": "Associations",
+      "runs": [
+        {
+          "state": "cold",
+          "seconds": 3.3996,
+          "peak_rss_mib": 919.12,
+          "load_calls": {
+            "ensure_data_path": 4,
+            "load_sample_metadata": 1,
+            "read_parquet": 1,
+            "read_table": 158,
+            "_read_filtered": 157,
+            "load_kegg": 1
+          },
+          "load_seconds": {
+            "ensure_data_path": 0.0001,
+            "read_table": 1.2179,
+            "read_parquet": 0.0061,
+            "load_sample_metadata": 0.0089,
+            "_read_filtered": 1.3118,
+            "load_kegg": 0.0105
+          },
+          "exception_types": [],
+          "charts": 1,
+          "tables": 2
+        },
+        {
+          "state": "warm",
+          "seconds": 0.8039,
+          "peak_rss_mib": 926.71,
+          "load_calls": {
+            "ensure_data_path": 4
+          },
+          "load_seconds": {
+            "ensure_data_path": 0.0001
+          },
+          "exception_types": [],
+          "charts": 1,
+          "tables": 2
+        }
+      ]
+    }
+  ]
+}

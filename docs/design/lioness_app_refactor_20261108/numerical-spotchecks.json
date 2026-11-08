@@ -1,0 +1,34 @@
+[
+  {
+    "case": "full_cohort_M935_global_cognition",
+    "before": {
+      "numeric_trace_sha256": "82232c4d9a21c2ccee0d1f772d13f9aa8c78caf6f2e09e8c84a759bee75033cc",
+      "annotation_text_sha256": "30905922952aaf6b7d37fc604164823ea4d8398f388e2d5001f45c32f7144e5b",
+      "traces": 20,
+      "annotations": 4
+    },
+    "after": {
+      "numeric_trace_sha256": "82232c4d9a21c2ccee0d1f772d13f9aa8c78caf6f2e09e8c84a759bee75033cc",
+      "annotation_text_sha256": "30905922952aaf6b7d37fc604164823ea4d8398f388e2d5001f45c32f7144e5b",
+      "traces": 20,
+      "annotations": 4
+    },
+    "identical_numeric_and_annotation_contents": true
+  },
+  {
+    "case": "control_derived_M121_negative_density_path_slope_cluster4",
+    "before": {
+      "numeric_trace_sha256": "34ad078df1e654c53705cbab68a25551c18bbcc6ba2cbf694cb2917c78d18ca2",
+      "annotation_text_sha256": "54d0228d0f8eed14bd63dd39227ad6681770783e27790788a4ee63eb85577fcf",
+      "traces": 6,
+      "annotations": 2
+    },
+    "after": {
+      "numeric_trace_sha256": "34ad078df1e654c53705cbab68a25551c18bbcc6ba2cbf694cb2917c78d18ca2",
+      "annotation_text_sha256": "54d0228d0f8eed14bd63dd39227ad6681770783e27790788a4ee63eb85577fcf",
+      "traces": 6,
+      "annotations": 2
+    },
+    "identical_numeric_and_annotation_contents": true
+  }
+]

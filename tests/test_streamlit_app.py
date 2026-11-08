@@ -22,6 +22,30 @@ import app_helpers.streaming_associations as streaming_helpers
 APP = Path(__file__).resolve().parents[1] / "streamlit_app.py"
 
 
+def legacy_app(path, **kwargs):
+    """Keep the old scientific assertions; explicitly apply their test selections.
+
+    New workspace tests separately verify pending-state behavior and the new
+    Discover landing. This helper is only the legacy regression interaction driver.
+    """
+    app = AppTest.from_file(path, **kwargs)
+    app.query_params['view'] = 'Associations'
+    original_run = app._run
+
+    def run(widget_state=None, timeout=None):
+        result = original_run(widget_state, timeout=timeout)
+        pending = any('Unapplied settings' in item.value or 'Apply the new dataset' in item.value for item in result.info)
+        if pending and not result.exception:
+            apply = next((button for button in result.button if button.label == 'Apply analysis'), None)
+            if apply is not None:
+                apply.click()
+                result = original_run(result._tree.get_widget_states(), timeout=timeout)
+        return result
+
+    app._run = run
+    return app
+
+
 def widget_with_label(elements, label: str):
     return next(element for element in elements if element.label == label)
 
@@ -56,15 +80,8 @@ def assert_app_clean(app: AppTest) -> None:
 
 
 def select_view(app: AppTest, label: str) -> AppTest:
-    label = getattr(label, "content", label)
-    selector = widget_with_label(pills(app), "Analysis view")
-    value = label if hasattr(app, "pills") else [label]
-    result = selector.set_value(value).run()
-    if not hasattr(result, "pills"):
-        # Streamlit 1.44 exposes st.pills as ButtonGroup but decodes its single
-        # selection as a scalar; preserve the list-form widget state for reruns.
-        widget_with_label(pills(result), "Analysis view")._value = [label]
-    return result
+    app.query_params['view'] = getattr(label, 'content', label)
+    return app.run()
 
 
 def select_stateful_tab(app: AppTest, key: str, label: str) -> AppTest:
@@ -77,14 +94,14 @@ def select_stateful_tab(app: AppTest, key: str, label: str) -> AppTest:
 
 def test_streamlit_hot_reload_recovers_stale_chart_helper(monkeypatch) -> None:
     monkeypatch.delattr(chart_helpers, "CONTINUOUS_COLOR_SCALES")
-    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = legacy_app(APP, default_timeout=180).run()
     assert_app_clean(app)
     assert hasattr(chart_helpers, "CONTINUOUS_COLOR_SCALES")
 
 
 def test_streamlit_hot_reload_recovers_stale_correlation_helper(monkeypatch) -> None:
     monkeypatch.delattr(correlation_helpers, "GROUPED_ASSOCIATION_API_VERSION")
-    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = legacy_app(APP, default_timeout=180).run()
     assert_app_clean(app)
     assert correlation_helpers.GROUPED_ASSOCIATION_API_VERSION == 2
     assert "min_group_n" in inspect.signature(
@@ -94,7 +111,7 @@ def test_streamlit_hot_reload_recovers_stale_correlation_helper(monkeypatch) -> 
 
 def test_streamlit_hot_reload_recovers_stale_streaming_helper(monkeypatch) -> None:
     monkeypatch.delattr(streaming_helpers, "stream_pairwise_distribution_associations")
-    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = legacy_app(APP, default_timeout=180).run()
     assert_app_clean(app)
     assert streaming_helpers.STREAMING_ASSOCIATION_API_VERSION == 2
     assert hasattr(streaming_helpers, "stream_pairwise_distribution_associations")
@@ -108,7 +125,7 @@ def test_streamlit_hot_reload_recovers_stale_validation_helper(
     monkeypatch, missing_attribute
 ) -> None:
     monkeypatch.delattr(validation_helpers, missing_attribute)
-    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = legacy_app(APP, default_timeout=180).run()
     assert_app_clean(app)
     assert hasattr(validation_helpers, missing_attribute)
     assert validation_helpers.VALIDATION_DATASET_API_VERSION == 1
@@ -137,7 +154,8 @@ def test_validation_dataset_routing_is_explicit(module_set, method, expected) ->
 
 def test_streamlit_table_value_filter_filters_rows_and_resets() -> None:
     assert "st.dataframe(" not in APP.read_text(encoding="utf-8")
-    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = legacy_app(APP, default_timeout=180).run()
+    app = select_view(app, 'Module details')
     assert_app_clean(app)
     all_rows = len(app.dataframe[0].value)
     picker = widget_with_label(
@@ -167,17 +185,18 @@ def test_streamlit_table_value_filter_filters_rows_and_resets() -> None:
 
 
 def test_every_lazy_analysis_view_renders_cleanly() -> None:
-    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = legacy_app(APP, default_timeout=180).run()
     assert_app_clean(app)
     view_selector = widget_with_label(pills(app), "Analysis view")
     assert view_selector.value == "Associations" or view_selector.value == ["Associations"]
-    for view in view_selector.options:
+    from app_helpers.app_shell import VIEW_ROUTES
+    for view in VIEW_ROUTES:
         app = select_view(app, view)
         assert_app_clean(app)
 
 
 def test_effect_endpoint_kegg_and_cross_region_views_render() -> None:
-    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = legacy_app(APP, default_timeout=240).run()
     app = select_view(app, "KEGG enrichment")
     assert_app_clean(app)
     gene_set = widget_with_label(app.selectbox, "KEGG gene set")
@@ -214,7 +233,7 @@ def test_effect_endpoint_kegg_and_cross_region_views_render() -> None:
 
 
 def test_exact_effect_association_can_match_endpoint_kegg_subtitle() -> None:
-    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = legacy_app(APP, default_timeout=240).run()
     assert_app_clean(app)
     app = widget_with_label(app.radio, "AD–Control edge subset").set_value(
         "effect_size"
@@ -229,7 +248,7 @@ def test_exact_effect_association_can_match_endpoint_kegg_subtitle() -> None:
 
 
 def test_donor_edge_explorer_renders_2d_ols_and_3d_triangle() -> None:
-    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = legacy_app(APP, default_timeout=240).run()
     app = select_view(app, "Donor edge explorer")
     assert_app_clean(app)
     assert any(
@@ -272,7 +291,7 @@ def test_donor_edge_explorer_renders_2d_ols_and_3d_triangle() -> None:
 
 
 def test_feature_distributions_support_non_diagnosis_grouping() -> None:
-    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = legacy_app(APP, default_timeout=180).run()
     assert_app_clean(app)
     app = select_view(app, "Feature distributions")
     assert_app_clean(app)
@@ -294,7 +313,7 @@ def test_feature_distributions_support_non_diagnosis_grouping() -> None:
 
 
 def test_feature_distributions_offer_shape_and_lazy_differentiation_views() -> None:
-    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = legacy_app(APP, default_timeout=240).run()
     app = select_view(app, "Feature distributions")
     assert_app_clean(app)
     analysis = widget_with_label(app.radio, "Distribution analysis")
@@ -323,7 +342,7 @@ def test_feature_distributions_offer_shape_and_lazy_differentiation_views() -> N
 
 
 def test_feature_distributions_can_use_tissue_module_eigengenes() -> None:
-    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = legacy_app(APP, default_timeout=180).run()
     app = select_view(app, "Feature distributions")
     assert_app_clean(app)
     app = widget_with_label(app.selectbox, "Module").set_value(1918).run()
@@ -344,7 +363,7 @@ def test_feature_distributions_can_use_tissue_module_eigengenes() -> None:
 
 
 def test_distribution_feature_heatmaps_compare_connectivity_and_eigengenes() -> None:
-    app = AppTest.from_file(APP, default_timeout=420).run()
+    app = legacy_app(APP, default_timeout=420).run()
     assert_app_clean(app)
     app = preserve_legacy_pills_state(
         widget_with_label(app.radio, "Resolution").set_value(
@@ -402,7 +421,7 @@ def test_distribution_feature_heatmaps_compare_connectivity_and_eigengenes() -> 
 
 
 def test_associations_can_use_tissue_module_eigengenes() -> None:
-    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = legacy_app(APP, default_timeout=180).run()
     assert_app_clean(app)
     app = widget_with_label(app.selectbox, "Module").set_value(1918).run()
     assert_app_clean(app)
@@ -423,7 +442,7 @@ def test_associations_can_use_tissue_module_eigengenes() -> None:
 
 
 def test_association_view_defaults_to_pooled_all_donor_association() -> None:
-    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = legacy_app(APP, default_timeout=180).run()
     assert_app_clean(app)
     pooled = widget_with_label(
         app.checkbox, "Show pooled association across displayed donors"
@@ -447,7 +466,7 @@ def test_association_view_defaults_to_pooled_all_donor_association() -> None:
         app.checkbox, "Show pooled association across displayed donors"
     ).value is True
     assert any(
-        "BH-adjusted only across the 154 modules" in str(caption.value)
+        "Pearson and Spearman BH FDR uses only the 154 modules" in str(caption.value)
         for caption in app.caption
     )
     association_table = next(
@@ -467,7 +486,7 @@ def test_association_view_defaults_to_pooled_all_donor_association() -> None:
 
 
 def test_correlation_heatmap_supports_all_features_and_module_blocks() -> None:
-    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = legacy_app(APP, default_timeout=240).run()
     app = select_view(app, "Correlation heatmaps")
     assert_app_clean(app)
     scope = widget_with_label(app.radio, "Heatmap scope")
@@ -512,7 +531,7 @@ def test_correlation_heatmap_supports_all_features_and_module_blocks() -> None:
 
 
 def test_correlation_heatmap_supports_exact_top_k_rows() -> None:
-    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = legacy_app(APP, default_timeout=240).run()
     app = select_view(app, "Correlation heatmaps")
     assert_app_clean(app)
     app = widget_with_label(app.radio, "Rows displayed in heatmap").set_value(
@@ -536,7 +555,7 @@ def test_correlation_heatmap_supports_exact_top_k_rows() -> None:
 
 
 def test_correlation_heatmap_filters_outcome_columns_and_complete_table() -> None:
-    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = legacy_app(APP, default_timeout=240).run()
     app = select_view(app, "Correlation heatmaps")
     assert_app_clean(app)
     outcomes = widget_with_label(
@@ -560,7 +579,7 @@ def test_correlation_heatmap_filters_outcome_columns_and_complete_table() -> Non
 
 
 def test_correlation_heatmap_supports_all_tissue_resolved_components() -> None:
-    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = legacy_app(APP, default_timeout=240).run()
     assert_app_clean(app)
     app = widget_with_label(app.radio, "Resolution").set_value(
         "Tissue resolved"
@@ -595,7 +614,7 @@ def test_correlation_heatmap_supports_all_tissue_resolved_components() -> None:
 
 
 def test_prediction_view_uses_leakage_reduced_exploratory_default() -> None:
-    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = legacy_app(APP, default_timeout=180).run()
     app = select_view(app, "Prediction")
     assert_app_clean(app)
     app = widget_with_label(app.radio, "Prediction mode").set_value("benchmark").run()
@@ -616,7 +635,7 @@ def test_prediction_view_uses_leakage_reduced_exploratory_default() -> None:
 
 
 def test_targeted_prediction_view_defaults_to_primary_control_derived_analysis() -> None:
-    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = legacy_app(APP, default_timeout=180).run()
     app = select_view(app, "Prediction")
     assert_app_clean(app)
 
@@ -653,7 +672,7 @@ def test_targeted_prediction_view_defaults_to_primary_control_derived_analysis()
 
 
 def test_targeted_primary_hedges_result_and_both_regional_sources_render() -> None:
-    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = legacy_app(APP, default_timeout=240).run()
     app = select_view(app, "Prediction")
     assert_app_clean(app)
     app = widget_with_label(app.selectbox, "Targeted edge set").set_value(
@@ -686,7 +705,7 @@ def test_targeted_primary_hedges_result_and_both_regional_sources_render() -> No
 
 
 def test_targeted_cluster_prediction_renders_all_resolved_blocks() -> None:
-    app = AppTest.from_file(APP, default_timeout=300).run()
+    app = legacy_app(APP, default_timeout=300).run()
     app = select_view(app, "Prediction")
     app = preserve_legacy_pills_state(app)
     app = widget_with_label(app.selectbox, "Evidence tier").set_value(
@@ -718,7 +737,7 @@ def test_targeted_cluster_prediction_renders_all_resolved_blocks() -> None:
 
 
 def test_streamlit_smoke_lioness_and_bonobo_module_definitions() -> None:
-    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = legacy_app(APP, default_timeout=180).run()
     assert_app_clean(app)
     app = preserve_legacy_pills_state(app)
 
@@ -755,7 +774,7 @@ def test_streamlit_smoke_lioness_and_bonobo_module_definitions() -> None:
 
 
 def test_streamlit_muscle_module_set_core_views_render() -> None:
-    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = legacy_app(APP, default_timeout=240).run()
     assert_app_clean(app)
     app = widget_with_label(app.selectbox, "Module definition").set_value(
         "muscle_control_l4"
@@ -791,7 +810,7 @@ def test_streamlit_all_donor_muscle_core_views_render() -> None:
     registry=json.loads(DATA_MANIFEST.read_text()).get('module_sets',{})
     if 'muscle_all_donors_l4' not in registry:
         pytest.skip('New module set has not reached its validated public milestone')
-    app=AppTest.from_file(APP,default_timeout=240).run()
+    app=legacy_app(APP,default_timeout=240).run()
     assert_app_clean(app)
     app=widget_with_label(app.selectbox,'Module definition').set_value('muscle_all_donors_l4').run()
     app=preserve_legacy_pills_state(app)
@@ -812,7 +831,7 @@ def test_streamlit_all_donor_muscle_core_views_render() -> None:
 
 
 def test_streamlit_muscle_mdc_normalization_sensitivity_routes_every_view() -> None:
-    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = legacy_app(APP, default_timeout=240).run()
     assert_app_clean(app)
     app = widget_with_label(app.selectbox, "Module definition").set_value("muscle_control_l4").run()
     app = preserve_legacy_pills_state(app)
@@ -835,7 +854,7 @@ def test_streamlit_muscle_mdc_normalization_sensitivity_routes_every_view() -> N
 
 
 def test_streamlit_muscle_mdc_label_validation_keeps_existing_catalog() -> None:
-    app=AppTest.from_file(APP,default_timeout=240).run()
+    app=legacy_app(APP,default_timeout=240).run()
     assert_app_clean(app)
     app=widget_with_label(app.selectbox,"Module definition").set_value("muscle_control_l4").run()
     app=select_view(preserve_legacy_pills_state(app),"MDC")
@@ -865,7 +884,7 @@ def test_streamlit_mdc_validation_complete_chart_paths_with_test_fixture(monkeyp
     monkeypatch.setattr(ui,"load_manifest",lambda:manifest)
     monkeypatch.setattr(ui,"load_results",lambda variant,revision:source[source.normalization_variant.eq(variant)].copy())
     monkeypatch.setattr(ui,"load_replicates",lambda *args:pd.DataFrame({'statistic':np.linspace(-1,1,200)}))
-    app=AppTest.from_file(APP,default_timeout=240).run()
+    app=legacy_app(APP,default_timeout=240).run()
     assert_app_clean(app)
     app=widget_with_label(app.selectbox,"Module definition").set_value("muscle_control_l4").run()
     app=select_view(preserve_legacy_pills_state(app),"MDC")
@@ -879,7 +898,7 @@ def test_streamlit_mdc_validation_complete_chart_paths_with_test_fixture(monkeyp
 
 
 def test_streamlit_differential_filter_can_switch_bh_scope_and_cutoff() -> None:
-    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = legacy_app(APP, default_timeout=180).run()
     assert_app_clean(app)
 
     app = widget_with_label(app.radio, "AD–Control edge subset").set_value(
@@ -903,7 +922,7 @@ def test_streamlit_differential_filter_can_switch_bh_scope_and_cutoff() -> None:
 
 
 def test_streamlit_module_finder_supports_each_ranking_criterion() -> None:
-    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = legacy_app(APP, default_timeout=180).run()
     app = select_view(app, "Module finder")
     assert_app_clean(app)
     cohort = widget_with_label(app.selectbox, "Cohort for CT–TS comparison")
@@ -934,7 +953,7 @@ def test_streamlit_module_finder_supports_each_ranking_criterion() -> None:
 
 
 def test_streamlit_mdc_can_switch_to_raw_scale() -> None:
-    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = legacy_app(APP, default_timeout=180).run()
     assert_app_clean(app)
     app = select_view(app, "MDC")
     assert_app_clean(app)
@@ -953,7 +972,7 @@ def test_streamlit_mdc_can_switch_to_raw_scale() -> None:
 
 
 def test_streamlit_mdc_split_triangle_heatmap_loads_on_demand() -> None:
-    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = legacy_app(APP, default_timeout=180).run()
     assert_app_clean(app)
     app = select_view(app, "MDC")
     assert_app_clean(app)
@@ -969,7 +988,7 @@ def test_streamlit_mdc_split_triangle_heatmap_loads_on_demand() -> None:
     ).value is True
 
 def test_streamlit_mdc_uses_selected_ad_control_edge_mask() -> None:
-    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = legacy_app(APP, default_timeout=180).run()
     assert_app_clean(app)
     app = select_view(app, "MDC")
     assert_app_clean(app)
@@ -1009,7 +1028,7 @@ def test_streamlit_mdc_uses_selected_ad_control_edge_mask() -> None:
 
 
 def test_donor_edge_explorer_renders_with_existing_all_edge_data() -> None:
-    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = legacy_app(APP, default_timeout=180).run()
     assert_app_clean(app)
     app = select_view(app, "Donor edge explorer")
     assert_app_clean(app)
@@ -1020,7 +1039,7 @@ def test_donor_edge_explorer_renders_with_existing_all_edge_data() -> None:
 
 
 def test_streamlit_pathway_resolved_mdc_controls_both_module_sets() -> None:
-    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = legacy_app(APP, default_timeout=180).run()
     assert_app_clean(app)
     app = select_view(app, "MDC")
     assert_app_clean(app)
@@ -1097,7 +1116,7 @@ def test_nominal_cluster_statistics_never_use_numeric_correlation() -> None:
 
 
 def test_streamlit_nominal_cluster_association_and_heatmap_render() -> None:
-    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = legacy_app(APP, default_timeout=240).run()
     assert_app_clean(app)
     app = preserve_legacy_pills_state(app)
     outcome = widget_with_label(app.selectbox, "Association outcome")
@@ -1114,7 +1133,7 @@ def test_streamlit_nominal_cluster_association_and_heatmap_render() -> None:
 
 
 def test_streamlit_configurable_grouped_and_ordinal_associations_render() -> None:
-    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = legacy_app(APP, default_timeout=240).run()
     assert_app_clean(app)
     assert widget_with_label(app.selectbox, "Group correlations by").value == "diagnosis_group"
     app = widget_with_label(app.selectbox, "Group correlations by").set_value(
@@ -1165,7 +1184,7 @@ def test_publication_dialog_captures_current_association_data_and_statistics(mon
         return buffer.getvalue(), ()
 
     monkeypatch.setattr(ui, "_render_cached", render)
-    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = legacy_app(APP, default_timeout=240).run()
     assert_app_clean(app)
     outcome = widget_with_label(app.selectbox, "Association outcome").value
     plotted = next(
@@ -1183,7 +1202,7 @@ def test_publication_dialog_captures_current_association_data_and_statistics(mon
 
 
 def test_numeric_correlation_heatmap_supports_selected_category_levels() -> None:
-    app = AppTest.from_file(APP, default_timeout=240).run()
+    app = legacy_app(APP, default_timeout=240).run()
     assert_app_clean(app)
     app = select_view(app, "Correlation heatmaps")
     assert_app_clean(app)

@@ -774,6 +774,8 @@ def test_all_rendering_sites_are_exportable_and_inline_builders_extracted():
         "streamlit_app.py",
         "app_helpers/regional_modules.py",
         "app_helpers/protocol_v11.py",
+        "app_helpers/ui_runtime.py",
+        *[str(path.relative_to(root)) for path in (root / 'app_helpers/workspaces').glob('*.py')],
     ]:
         tree = ast.parse((root / filename).read_text())
         for node in ast.walk(tree):

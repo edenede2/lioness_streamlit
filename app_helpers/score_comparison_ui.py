@@ -30,6 +30,40 @@ def _new_box(label: str, spec: ComparisonSeriesSpec) -> dict:
     return {"uid": uuid.uuid4().hex[:12], "label": label, **asdict(spec)}
 
 
+def applied_score_box(context: dict, registry: dict) -> dict | None:
+    """Seed one new series without mutating existing boxes or their contexts."""
+    source = context.get("module_set")
+    if source not in registry:
+        return None
+    estimator = context.get("estimator", "lioness")
+    if estimator != "lioness" and not CC.is_calibrated(estimator):
+        return None  # This comparison reader has no BONOBO contract.
+    components = context.get("selected_components", ())
+    component = components[0] if components else "CT"
+    fields = {
+        key: context[key]
+        for key in (
+            "feature", "method", "scale", "cohort_scope", "estimator",
+            "differential_edge_rule", "differential_fdr_scope",
+            "differential_fdr_threshold", "score_normalization",
+        )
+        if key in context
+    }
+    try:
+        spec = ComparisonSeriesSpec(source=source, component=component, **fields)
+        if availability_reason(spec, registry):
+            return None
+    except (KeyError, ValueError):
+        return None
+    return _new_box(f"Applied score: {source} · {component}", spec)
+
+
+def add_applied_score(context: dict, registry: dict) -> None:
+    box = applied_score_box(context, registry)
+    if box is not None and len(st.session_state[BOX_STATE]) < MAX_BOXES:
+        st.session_state[BOX_STATE] = [*st.session_state[BOX_STATE], box]
+
+
 def default_boxes(registry: dict) -> list[dict]:
     rows = []
     regional = "single_region_complete_case_l3"
@@ -318,6 +352,15 @@ def render_view(data_manifest: dict) -> None:
         return
     if BOX_STATE not in st.session_state:
         st.session_state[BOX_STATE] = default_boxes(registry)
+    applied_context = st.session_state.get("_last_exploration_context", {})
+    if applied_score_box(applied_context, registry) is not None:
+        st.button(
+            "Add applied score as a comparison box",
+            disabled=len(st.session_state[BOX_STATE]) >= MAX_BOXES,
+            on_click=add_applied_score,
+            args=(applied_context, registry),
+            help="Adds the applied score configuration; existing boxes and the comparison's pooled-donor filters are unchanged.",
+        )
     with st.sidebar:
         st.header("Comparison controls")
         has_calibrated=any(CC.is_calibrated(row.get('estimator','lioness')) for row in st.session_state[BOX_STATE])

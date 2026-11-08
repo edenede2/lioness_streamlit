@@ -729,9 +729,13 @@ def baseline_browser(
     regional_tissue=None,
     inference_version="auto",
 ):
-    with st.expander(
-        "Full-catalog baseline associations · frozen q_scan", expanded=False
-    ):
+    panel = st.expander(
+        "Full-catalog baseline associations · frozen q_scan", expanded=False,
+        key='cc_baseline_panel', on_change='rerun',
+    )
+    if not panel.open:
+        return
+    with panel:
         try:
             frame = A.baseline_associations(
                 module_set=family,
@@ -776,7 +780,11 @@ def same_module_comparison(frame, context, outcome, render):
         score_comparison_figure,
     )
 
-    with st.expander("Compare with historical Connectivity on shared donors"):
+    panel = st.expander('Compare with historical Connectivity on shared donors',
+                        key='cc_legacy_comparison_panel', on_change='rerun')
+    if not panel.open:
+        return
+    with panel:
         st.caption(
             "Correlations use the same observed independent-target donor intersection. Historical Connectivity retains its native powers, normalization and reference exposure; it is not a second independent B protocol. This saved comparison has its own correction family."
         )
@@ -1068,6 +1076,18 @@ def render_view(
             if outcome in D.SELECTABLE_ASSOCIATION_OUTCOMES
             else "categorical" if outcome in D.CATEGORICAL_OUTCOME_LABELS else "numeric"
         )
+    from app_helpers.analysis_context import apply_controls
+    applied = apply_controls(dict(module_set=family, estimator=estimator, method='control_calibrated',
+        module=module, cohort_scope=scope, metrics=metrics, scale=scale, mask_id=mask_id,
+        phenotype=outcome, interpretation=interpretation, regional_tissue=regional_tissue,
+        baseline_inference_version=baseline_inference_version), view='calibrated:' + view)
+    family = applied['module_set']; estimator = applied['estimator']; module = applied['module']
+    scope = applied['cohort_scope']; metrics = applied['metrics']; scale = applied['scale']
+    mask_id = applied['mask_id']; outcome = applied['phenotype']; interpretation = applied['interpretation']
+    regional_tissue = applied['regional_tissue']; baseline_inference_version = applied['baseline_inference_version']
+    beta = ESTIMATORS[estimator]
+    jobs = [j for j in c['modules'] if j['family'] == family and (not regional or j['regional_tissue'] == regional_tissue)]
+    mask = mask_options(family, module, regional_tissue)[mask_id]
     st.subheader(f"Control-calibrated connectivity · beta{beta}")
     st.caption(
         "In native units: G is magnitude gain, L is magnitude loss, S=G−L is net change, and A=G+L is total magnitude atypicality. G and L share one eligible physical-edge denominator."
@@ -1568,5 +1588,7 @@ def render_view(
         and interpretation == "numeric"
     ):
         same_module_comparison(frame, context, outcome, render)
-    with st.expander("Donor scores and download"):
-        table(frame, "cc_scores", "Donor scores")
+    panel = st.expander('Donor scores and download', key='cc_donor_scores_panel', on_change='rerun')
+    if panel.open:
+        with panel:
+            table(frame, 'cc_scores', 'Donor scores')

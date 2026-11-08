@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 from scipy.stats import norm, rankdata, spearmanr
 from streamlit.testing.v1 import AppTest
+from ui_interactions import apply_driver
 
 from app_helpers import regional_modules as R
 from app_helpers import score_comparison as C
@@ -22,11 +23,12 @@ def _widget(elements, label):
 
 
 def _view(app, name):
-    return _widget(app.pills, "Analysis view").set_value(name).run()
+    app.query_params['view'] = name
+    return app.run()
 
 
 def _motor_view(view):
-    app = AppTest.from_file(APP, default_timeout=180).run()
+    app = apply_driver(AppTest.from_file(APP, default_timeout=180)).run()
     app = _view(app, view)
     app = _widget(app.radio, "Module organization").set_value("independent_regional").run()
     app = _widget(app.selectbox, "Regional partition source").set_value(R.MOTOR_SOURCE).run()

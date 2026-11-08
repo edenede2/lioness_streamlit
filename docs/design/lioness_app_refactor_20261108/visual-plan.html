@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer">
+<title>LIONESS ROSMAP design review</title>
+<style>
+/* visual-plan runtime · one page: opening, map with zoom (depth 3), blocks, decisions with option panels, Respond sheet */
+:root {
+  --bg: #f5f6f8; --surface: #fff; --sunk: #eceef3; --fg: #151a24; --muted: #5b6474; --line: #d9dde5;
+  --accent: #2b59c3; --accent-soft: #e6ecfb;
+  --ai: #6b3fb8; --ai-soft: #efe8fb; --code: #22774e; --code-soft: #e2f3e9; --ext: #1f69a3; --ext-soft: #e1eef9;
+  --data: #6b5a2e; --data-soft: #f6efdc; --risk: #b3261e; --risk-soft: #fbe7e5; --warn: #9a5a00; --warn-soft: #fdf0db;
+  --display: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Sans 3", -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f1218; --surface: #171c25; --sunk: #1e2531; --fg: #e7eaf0; --muted: #9ba4b6; --line: #2c3444;
+  --accent: #91b1ff; --accent-soft: #1d2a47;
+  --ai: #c6a9f6; --ai-soft: #2a2141; --code: #82d4a7; --code-soft: #16302a; --ext: #8fc5f0; --ext-soft: #172a3b;
+  --data: #e3c47e; --data-soft: #30291a; --risk: #ff8f86; --risk-soft: #3a1c1a; --warn: #f0b85c; --warn-soft: #33270f; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f1218; --surface: #171c25; --sunk: #1e2531; --fg: #e7eaf0; --muted: #9ba4b6; --line: #2c3444;
+  --accent: #91b1ff; --accent-soft: #1d2a47;
+  --ai: #c6a9f6; --ai-soft: #2a2141; --code: #82d4a7; --code-soft: #16302a; --ext: #8fc5f0; --ext-soft: #172a3b;
+  --data: #e3c47e; --data-soft: #30291a; --risk: #ff8f86; --risk-soft: #3a1c1a; --warn: #f0b85c; --warn-soft: #33270f; color-scheme: dark }
+
+* { box-sizing: border-box; }
+::selection { background: var(--accent-soft); color: var(--fg); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h3 { font: 700 16px/1.3 var(--display); margin: 0 0 8px; }
+h3 .tag { vertical-align: 2px; }
+body { background: var(--bg); color: var(--fg); font: 16.5px/1.55 var(--body); margin: 0; }
+.wrap { max-width: 1160px; margin: 0 auto; padding: 28px 18px 120px; }
+h1 { font: 800 clamp(26px, 3.6vw, 36px)/1.1 var(--display); letter-spacing: -.015em; margin: 0 0 8px; }
+h1 .tag { vertical-align: middle; font-size: 12px; margin-left: 8px; }
+h2.sec { font: 800 26px/1.2 var(--display); margin: 0 0 12px; }
+.opening { color: var(--muted); font-size: 18px; max-width: 72ch; margin: 0 0 14px; }
+.toc { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 18px; }
+.toc a { font: 600 14px var(--body); color: var(--fg); text-decoration: none; border: 1px solid var(--line); background: var(--surface); padding: 6px 12px; border-radius: 99px; }
+.toc a:hover, .toc a:focus-visible { border-color: var(--accent); color: var(--accent); outline: none; }
+section.block { margin-top: 44px; scroll-margin-top: 16px; }
+.sub { color: var(--muted); max-width: 76ch; margin: 0 0 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; min-width: 0; position: relative; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.grid2 > .card:only-child { grid-column: 1 / -1; }
+.lbl { font: 600 11.5px var(--mono); letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 22px 0 8px; }
+.card .lbl { margin-top: 0; }
+.card > h3 { padding-right: 96px; }
+.card p { margin: 0 0 6px; } .card p:last-child { margin-bottom: 0; }
+.card ul, .card ol { margin: 0; padding-left: 18px; } .card li { margin: 4px 0; }
+.card img { display: block; max-width: 100%; height: auto; border-radius: 10px; margin: 0 0 10px; }
+.grid2.wide { grid-template-columns: minmax(0, 1fr); }
+.card iframe.design { display: block; width: 100%; height: 80vh; min-height: 520px; border: 1px solid var(--line); border-radius: 10px; background: #fff; margin: 0 0 10px; }
+.box { background: var(--sunk); border-radius: 10px; padding: 12px 14px; font-size: 15px; min-width: 0; }
+pre { margin: 0; font: 12.5px/1.5 var(--mono); white-space: pre-wrap; word-break: break-word; }
+code { font: 13px var(--mono); background: var(--sunk); padding: 1px 5px; border-radius: 4px; }
+.box code, .port code, .note code { background: var(--surface); }
+.exstrip { background: var(--data-soft); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; font-size: 15px; display: grid; gap: 6px; margin-bottom: 16px; max-width: 900px; }
+.exb { display: block; } .exb b { font-family: var(--mono); font-size: 12.5px; color: var(--data); margin-right: 6px; }
+
+/* badges */
+.tag { display: inline-block; font: 700 10.5px var(--mono); letter-spacing: .05em; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); background: var(--sunk); color: var(--muted); vertical-align: 1px; margin-right: 6px; white-space: nowrap; }
+.tag.recommended, .tag.rec { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.tag.keep, .tag.recovered { border-color: var(--code); background: var(--code-soft); color: var(--code); }
+.tag.flag { border-color: var(--warn); background: var(--warn-soft); color: var(--warn); }
+.tag.exists { border-color: var(--ext); background: var(--ext-soft); color: var(--ext); }
+.tag.answered { border-color: var(--code); background: var(--code-soft); color: var(--code); }
+a.tag { text-decoration: none; }
+.tag.open, .tag.failed { border-color: var(--risk); background: var(--risk-soft); color: var(--risk); }
+.tag.new, .tag.round { border-color: var(--ext); background: var(--ext-soft); color: var(--ext); }
+.tag.withheld, .tag.settled { border-color: var(--muted); }
+
+/* tables */
+.tblwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.deftable { width: 100%; border-collapse: collapse; font-size: 14.5px; font-variant-numeric: tabular-nums; }
+.deftable th, .deftable td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.deftable th { font: 600 11px var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); background: var(--sunk); }
+.deftable tr:last-child td { border-bottom: 0; }
+
+/* terms */
+.termflow { display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; }
+.termflow .sep { align-self: center; color: var(--muted); font-weight: 700; }
+.tcard { flex: 1 1 200px; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font-size: 14.5px; position: relative; }
+.tcard > .cbtn { top: 8px; right: 8px; }
+.deftable .ccol { width: 1%; white-space: nowrap; } .deftable .ccol .cbtn { position: static; }
+.tcard b.tt { display: block; font: 700 15.5px var(--display); margin: 6px 0 4px; }
+.tcard p { margin: 0 0 6px; } .tcard .ex { background: var(--sunk); border-radius: 8px; padding: 6px 8px; margin: 0; } .tcard .ex code { background: var(--surface); }
+.term { font: 700 11px var(--mono); padding: 1px 7px; border-radius: 99px; margin-right: 6px; letter-spacing: .03em; vertical-align: 1px; }
+.term.car { background: var(--data-soft); color: var(--data); } .term.cell { background: var(--ext-soft); color: var(--ext); }
+.term.shape { background: var(--ai-soft); color: var(--ai); } .term.slot { background: var(--code-soft); color: var(--code); }
+
+/* map stage */
+.crumbs { display: flex; gap: 8px; align-items: center; font-size: 14.5px; min-height: 32px; margin-bottom: 8px; white-space: nowrap; overflow-x: auto; scroll-margin-top: 12px; }
+.crumbs button { font: 600 14.5px var(--body); background: none; border: 0; color: var(--accent); cursor: pointer; padding: 4px 2px; }
+.crumbs span { color: var(--muted); }
+.stage { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.ov, .diag { position: relative; overflow-x: auto; }
+.ov { padding: 10px; }
+.ov::after, .diag::after { content: attr(data-scroll); display: none; position: sticky; left: 0; font: 600 12px var(--body); color: var(--muted); padding: 0 4px 6px; }
+.ov svg { display: block; width: 100%; min-width: 720px; height: auto; }
+.diag svg { display: block; width: 100%; min-width: 600px; height: auto; }
+.hint { font-size: 14px; color: var(--muted); padding: 0 18px 14px; display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
+.key { display: inline-flex; gap: 6px; align-items: center; } .key i { width: 12px; height: 12px; border-radius: 3px; border: 1.5px solid; display: inline-block; }
+.key i.ai { background: var(--ai-soft); border-color: var(--ai); } .key i.code { background: var(--code-soft); border-color: var(--code); }
+.key i.ext { background: var(--ext-soft); border-color: var(--ext); } .key i.data { background: var(--data-soft); border-color: var(--data); }
+svg text { font-family: var(--body); }
+svg .t { fill: var(--fg); } svg .m { fill: var(--muted); }
+svg .ai { fill: var(--ai-soft); stroke: var(--ai); } svg .code { fill: var(--code-soft); stroke: var(--code); }
+svg .ext { fill: var(--ext-soft); stroke: var(--ext); } svg .data { fill: var(--data-soft); stroke: var(--data); }
+svg .frame { fill: var(--sunk); stroke: var(--line); }
+svg .arrow { stroke: var(--muted); fill: none; stroke-width: 1.8; } svg .arrowhead { fill: var(--muted); }
+svg .badge-ai { fill: var(--ai); } svg .badge-code { fill: var(--code); } svg .badge-t { fill: var(--surface); }
+svg .grp { fill: none; stroke: var(--line); stroke-dasharray: 6 4; } svg .grpt { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+svg .lbl2 { font-size: 12.5px; font-weight: 700; } svg .sm { font-size: 10.5px; }
+svg .nd { cursor: pointer; } svg .nd rect { stroke-width: 1.6; transition: stroke-width .15s; }
+svg .nd:hover rect, svg .nd.on rect, svg .nd:focus-visible rect { stroke-width: 3.2; } svg .nd:focus { outline: none; }
+svg .zoom { fill: var(--accent); font-size: 11px; font-weight: 700; opacity: 0; transition: opacity .15s; }
+svg .nd:hover .zoom, svg .nd:focus-visible .zoom { opacity: 1; }
+
+/* node detail */
+.detail { padding: 22px 24px 26px; }
+.dt-head { display: flex; gap: 14px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.dt-actions { display: flex; gap: 10px; align-items: center; } .dt-actions .cbtn { position: static; }
+.dt-head h2 { font: 800 28px/1.15 var(--display); margin: 6px 0 8px; }
+.badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.bdg { font: 600 11.5px var(--mono); padding: 3px 9px; border-radius: 6px; border: 1px solid var(--line); background: var(--sunk); color: var(--fg); }
+.bdg b { color: var(--muted); font-weight: 600; margin-right: 4px; }
+.bdg.ai { border-color: var(--ai); background: var(--ai-soft); color: var(--ai); } .bdg.code { border-color: var(--code); background: var(--code-soft); color: var(--code); }
+.bdg.ext { border-color: var(--ext); background: var(--ext-soft); color: var(--ext); } .bdg.data { border-color: var(--data); background: var(--data-soft); color: var(--data); }
+.one { font-size: 18px; max-width: 74ch; margin: 8px 0 18px; }
+.io { display: grid; grid-template-columns: minmax(170px, 230px) minmax(0, 1fr) minmax(170px, 230px); gap: 12px; align-items: start; }
+.io.noports { grid-template-columns: minmax(0, 1fr); }
+.port { border: 1.5px solid var(--data); background: var(--data-soft); border-radius: 12px; padding: 12px 14px; font-size: 14px; min-width: 0; }
+.port h4 { margin: 0 0 6px; font: 700 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--data); }
+.port ul { margin: 0 0 8px; padding-left: 16px; } .port li { margin: 2px 0; }
+.port .meta { border-top: 1px dashed var(--data); padding-top: 6px; margin-top: 6px; color: var(--muted); font-size: 13px; } .port .meta b { color: var(--fg); }
+.inside { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: var(--bg); min-width: 0; }
+.inside .cap { font: 600 13px var(--body); color: var(--muted); margin-bottom: 8px; }
+.flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.node { flex: 1 1 120px; min-width: 0; max-width: 220px; text-align: left; border: 1.5px solid; border-radius: 10px; padding: 8px 10px; background: var(--surface); color: var(--fg); font: inherit; cursor: pointer; align-self: stretch; }
+.node b { display: block; font: 700 14.5px/1.25 var(--display); } .node small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; line-height: 1.35; }
+.node.ai { background: var(--ai-soft); border-color: var(--ai); } .node.code { background: var(--code-soft); border-color: var(--code); }
+.node.ext { background: var(--ext-soft); border-color: var(--ext); } .node.data { background: var(--data-soft); border-color: var(--data); }
+.node[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--accent); } .node:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sep { color: var(--muted); font-weight: 700; flex: 0 0 auto; }
+.note { margin-top: 12px; background: var(--sunk); border-radius: 10px; padding: 12px 14px; font-size: 15.5px; }
+.note b { font-family: var(--display); } .note .go { margin-top: 10px; border-color: var(--accent); color: var(--accent); }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; margin-top: 14px; }
+.nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 24px; flex-wrap: wrap; scroll-margin-bottom: 80px; }
+.btn { font: 600 14.5px var(--body); border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 99px; padding: 8px 14px; cursor: pointer; }
+.btn:hover { border-color: var(--accent); color: var(--accent); } .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn.pri { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.btn.ghost { border: 0; background: none; color: var(--muted); font-weight: 600; padding: 4px 8px; }
+
+/* machine */
+.machine { display: grid; gap: 10px; }
+.mgrid { display: grid; gap: 8px; }
+.mstate { border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--surface); font-size: 14px; cursor: pointer; text-align: left; }
+.mstate b { display: block; font: 700 14px var(--display); } .mstate.on { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.marrows { font-size: 13.5px; color: var(--muted); } .marrows li.on { color: var(--fg); font-weight: 600; }
+
+/* calls */
+.calls { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; font: 12.5px/1.6 var(--mono); margin-top: 6px; }
+.cl-head { display: flex; gap: 14px; align-items: center; padding: 7px 12px; background: var(--sunk); border-bottom: 1px solid var(--line); font: 600 12px var(--body); color: var(--muted); flex-wrap: wrap; }
+.cl-head .k { display: inline-flex; gap: 6px; align-items: center; } .cl-head .k i { font: 700 11px var(--mono); width: 18px; text-align: center; border-radius: 4px; }
+.cl-rows { padding: 6px 0; overflow-x: auto; }
+.cl-row { display: flex; align-items: baseline; padding: 1px 12px 1px 0; white-space: nowrap; min-height: 22px; }
+.cl-row:hover { filter: brightness(.97); }
+.cl-rail { width: 28px; flex: 0 0 28px; text-align: center; color: var(--muted); font-weight: 700; cursor: pointer; border-radius: 4px; }
+.cl-rail:hover { background: var(--sunk); }
+.cl-rail:empty:hover::before { content: '×'; }
+.cl-rows.norail .cl-rail { width: 14px; flex-basis: 14px; }
+.cl-tg { color: var(--line); white-space: pre; }
+.cl-nm { color: var(--fg); } .cl-note { color: var(--muted); font-family: var(--body); font-size: 13px; margin-left: 14px; }
+.cl-loc { margin-left: auto; padding-left: 18px; color: var(--ext); font-size: 12px; flex: 0 0 auto; }
+.cl-row.m-add { background: var(--code-soft); } .cl-row.m-add .cl-rail { color: var(--code); } .cl-row.m-add .cl-nm { font-weight: 700; }
+.cl-row.m-mod { background: var(--warn-soft); } .cl-row.m-mod .cl-rail { color: var(--warn); } .cl-row.m-mod .cl-nm { font-weight: 700; }
+.cl-row.m-ai { background: var(--ai-soft); } .cl-row.m-ai .cl-rail { color: var(--ai); }
+.cl-row.struck .cl-nm, .cl-row.struck .cl-note { text-decoration: line-through; color: var(--muted); }
+.cl-row.struck { background: var(--sunk); opacity: .7; }
+
+/* decisions */
+.dec { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; margin-top: 12px; position: relative; }
+.dec h3 { margin: 0 0 8px; font-size: 16.5px; }
+.ctx { font-size: 14.5px; margin: 0 0 6px; }
+.opts { display: grid; gap: 8px; margin-top: 10px; }
+.opt { text-align: left; font: 600 14.5px var(--body); color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; cursor: pointer; }
+.opt:hover, .opt:focus-visible { border-color: var(--accent); outline: none; }
+.opt[aria-expanded="true"] { border-color: var(--accent); }
+.opt .pick { color: var(--code); }
+.opt .pick { float: right; font: 600 11px var(--mono); }
+.optd { display: none; border: 1px solid var(--line); border-top: 0; border-radius: 0 0 10px 10px; margin-top: -8px; padding: 12px 14px 10px; background: var(--bg); font-size: 14px; }
+.optd.show { display: block; }
+.optd dl { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 4px 12px; margin: 0; }
+.optd dt { font: 600 11px var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); padding-top: 2px; } .optd dd { margin: 0; }
+.optd .choose { margin-top: 10px; } .optd .choose:hover { border-color: var(--code); color: var(--code); }
+.openhead { margin-top: 26px; font-size: 18px; } .openhead:first-child { margin-top: 0; }
+.dec > h3 { padding-right: 96px; }
+
+/* comments and respond */
+.cbtn { position: absolute; top: 12px; right: 12px; font: 600 12px var(--body); color: var(--muted); background: none; border: 1px solid transparent; border-radius: 99px; padding: 3px 9px; cursor: pointer; opacity: .7; }
+.cbtn:hover, .cbtn.has { opacity: 1; color: var(--accent); border-color: var(--line); }
+.cbox { margin-top: 10px; } .cbox label { display: block; font: 600 13px var(--body); color: var(--muted); } .cbox textarea { margin-top: 4px; }
+.cbox textarea { width: 100%; min-height: 60px; font: 14px var(--body); padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--fg); resize: vertical; }
+.bar { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 10px; align-items: center; justify-content: flex-end; padding: 10px 18px; background: var(--surface); border-top: 1px solid var(--line); z-index: 5; font-size: 14px; color: var(--muted); }
+.sheet { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: none; z-index: 6; }
+.sheet.show { display: block; }
+.sheet .pane { position: absolute; right: 0; top: 0; bottom: 0; width: min(640px, 100%); background: var(--surface); border-left: 1px solid var(--line); padding: 20px 22px; overflow: auto; }
+.sheet h2 { margin: 0 0 10px; font: 800 22px var(--display); }
+.sheet textarea { width: 100%; min-height: 280px; font: 12.5px/1.5 var(--mono); padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); }
+.sheet .row { display: flex; gap: 10px; align-items: center; margin: 10px 0; flex-wrap: wrap; }
+.fade { animation: fade .25s ease both; } @keyframes fade { from { opacity: .3; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .fade { animation: none; } }
+@media (max-width: 860px) {
+  .ov::after, .diag::after { display: block; }
+  .io { grid-template-columns: minmax(0, 1fr); } .grid2 { grid-template-columns: minmax(0, 1fr); }
+  .card > h3, .dec > h3 { padding-right: 0; padding-top: 26px; }
+  .detail { padding: 18px 16px 22px; } .node { max-width: none; } .optd dl { grid-template-columns: 1fr; }
+}
+
+</style>
+</head><body>
+<script id="plan">
+window.PLAN = {"title":"A Clearer LIONESS ROSMAP App","shortTitle":"LIONESS ROSMAP design review","profile":"plan","status":{"badge":"keep","text":"locked · 2026-11-08"},"opening":"The LIONESS ROSMAP app helps researchers find modules and inspect their associations, biology, networks, and donor data. This refactor starts with module search, keeps simple defaults and all advanced tools, and stays on Streamlit Community Cloud. This page presents the proposed design, not an implementation plan. Click a map box to inspect a screen or a data rule.","examples":[{"name":"Outcome search","text":"Control-derived brain modules (186) · global cognition · pooled donors · DLPFC CAMEL connectivity"},{"name":"Compare sources","text":"brain versus motor, or regional eigengenes versus CT connectivity"},{"name":"Publication export","text":"change a plot color without a new data read or statistical test"}],"retired":[],"blocks":[{"kind":"problem","problem":"Researchers face many equal-level pages and repeated controls before they can find an interesting module. Shared preparation can load data that the selected view does not need. The refactor reduces these costs without a change to scientific methods or publication features. The audit finds avoidable loads, but it does not measure their share of lag or memory use.","today":{"label":"Current structure · evidence, not a timing result","items":["The main script has 10,983 lines, 66 top-level functions, and 20 flat page choices (\u003ccode>streamlit_app.py\u003c/code>); helpers add 2,974 data lines and 5,656 chart lines (\u003ccode>app_helpers/data.py\u003c/code>, \u003ccode>app_helpers/charts.py\u003c/code>).","Several views pass through donor-score preparation before their render branch (\u003ccode>streamlit_app.py:4840\u003c/code>); KEGG and composition preparation also precede the active page (\u003ccode>streamlit_app.py:4980\u003c/code>).","A prediction manifest digest can clear the global data cache (\u003ccode>streamlit_app.py:3710\u003c/code>). This couples unrelated analyses to prediction bundle changes.","Active-tab guards, short-circuit routes, serial statistics, and small caches already limit some work (\u003ccode>streamlit_app.py\u003c/code>). The design reuses these controls.","Parquet files and integrity-checked lazy Drive reads supply the app (\u003ccode>app_helpers/drive_data.py\u003c/code>). Figure export, matched-brain readers, and control-calibrated views already exist (\u003ccode>app_helpers/figure_export/\u003c/code>, \u003ccode>matched_brain_results.py\u003c/code>, \u003ccode>donors.py\u003c/code>)."]}},{"kind":"map","title":"Proposed design · six task workspaces","sub":"This map shows the selected design. No decision is open.","walkthrough":"Choose a dataset and open Discover to find a module; its result row opens Module with the same applied statistical context.\u003cbr> Only the selected view requests its data; plot appearance uses the result already on screen.","note":"Click any box. Each zoom has a real example and the rules that belong to that part.","legend":[["code","workspace or control"],["data","data scope"]],"root":"overview","nodes":{"overview":{"title":"Six workspaces, one applied context","view":{"type":"diagram","viewBox":"0 0 1120 610","label":"Proposed app navigation and selected-view data flow","boxes":[{"node":"context","x":20,"y":30,"w":1080,"h":78},{"node":"discover","x":20,"y":175,"w":340,"h":105},{"node":"module","x":390,"y":175,"w":340,"h":105},{"node":"compare","x":760,"y":175,"w":340,"h":105},{"node":"prediction","x":20,"y":320,"w":340,"h":105},{"node":"donors","x":390,"y":320,"w":340,"h":105},{"node":"methods","x":760,"y":320,"w":340,"h":105},{"node":"reads","x":20,"y":510,"w":1080,"h":78}],"svg":"\u003ctext x=\"20\" y=\"15\" class=\"m\" font-size=\"12\">Proposal: replace the flat 20-page strip with task destinations\u003c/text>\n\u003cpath d=\"M560 108 V137 H190 V173\" class=\"arrow\" marker-end=\"url(#ah)\"/>\n\u003cpath d=\"M560 137 V173\" class=\"arrow\" marker-end=\"url(#ah)\"/>\n\u003cpath d=\"M560 137 H930 V173\" class=\"arrow\" marker-end=\"url(#ah)\"/>\n\u003ctext x=\"560\" y=\"156\" text-anchor=\"middle\" class=\"m\" font-size=\"12\">Dataset context seeds each workspace\u003c/text>\n\u003cpath d=\"M360 228 H388\" class=\"arrow\" marker-end=\"url(#ah)\"/>\n\u003ctext x=\"376\" y=\"215\" text-anchor=\"middle\" class=\"m\" font-size=\"10\">open\u003c/text>\n\u003cpath d=\"M190 425 V478 H560 V508\" class=\"arrow\" marker-end=\"url(#ah)\"/>\n\u003cpath d=\"M560 425 V476\" class=\"arrow\"/>\n\u003cpath d=\"M930 425 V478 H560\" class=\"arrow\"/>\n\u003ctext x=\"560\" y=\"461\" text-anchor=\"middle\" class=\"m\" font-size=\"13\">Only the active route and subview request resources\u003c/text>\n"},"cls":"code"},"context":{"title":"Context & applied choices","sub":"Compact dataset and cohort sidebar\nRelevant page controls, not repeated cards","cls":"code","one":"Context is the visible description of the data and choices behind each result. A compact sidebar holds dataset and cohort; the page top holds only relevant outcome and feature choices.","in":{"items":["Dataset choice","Page-local analysis choices","Legacy bookmark"],"from":"The person or a saved page link.","how":"Native Streamlit navigation and page controls."},"out":{"items":["Applied context beside results and exports","Explicit unavailable views","Compatible remembered settings"],"to":"The selected workspace.","how":"Thin dataset adapters describe available UI capabilities."},"view":{"type":"parts","parts":[["code","Compact screen","Sidebar plus concise applied context"],["data","Dataset capabilities","All sources stay distinct"],["code","Links & memory","Safe bookmarks and local state"]]},"notes":{"Compact screen":"The main screen has no 20-pill strip, repeated context cards, or automatic full composition table. Advanced Analysis options, Appearance, Statistics & downloads, and Publication export open only where relevant.","Dataset capabilities":"A dataset adapter describes supported views without a data schema rewrite. Unknown combinations show an explicit unavailable state; the app never substitutes another dataset. Dataset changes reset only incompatible choices and explain each reset.","Links & memory":"Existing \u003ccode>?view=...\u003c/code> and \u003ccode>screen_*\u003c/code> bookmarks redirect to their matching route and context. Page settings can persist, but URLs must not contain donor data. A classic-route fallback remains until feature, regression, and performance gates pass."},"children":{"Compact screen":"navigation-detail","Dataset capabilities":"capability-detail"},"example":"Outcome search · The page states modules186 / global cognition / pooled donors / DLPFC CAMEL connectivity before any result.","exampleLabel":"Outcome search · applied context"},"navigation-detail":{"title":"All current destinations remain reachable","one":"The recommended option combines related pages into task workspaces. The alternative keeps familiar page labels under six native navigation sections.","view":{"type":"table","columns":["Proposed destination","Current page destinations"],"rows":[["Discover","Module finder; Correlation heatmaps; CT–TS screen; distribution-difference rankings from Feature distributions"],["Module","Module details → Overview; Associations; Feature distributions → Distributions; MDC → Network change; KEGG enrichment → Biology; Statistics → contextual panel and deep-link"],["Compare","Module–outcome comparison; Partition comparison; Validation & replication"],["Prediction","Prediction"],["Donors & edges","Donor explorer; Gene & edge associations; Edge summaries; Edge volcano; Donor edge explorer"],["Data & methods","Methods & data"],["Dataset choice across workspaces","Matched-control results → a named dataset and capability choice, not a duplicate navigation tree"]]},"example":"A KEGG bookmark opens Module → Biology with its dataset, module, endpoint, and scope. Its display label can change without a lost link."},"capability-detail":{"title":"Source boundaries, not silent substitutes","one":"Module identity includes dataset, source, tissue, and module. This identity prevents an accidental match between equal numeric labels from different sources.","view":{"type":"table","columns":["Source family","Required distinction"],"rows":[["Matched-Control modules247","Keep aggregate demography-adjusted tests distinct from ordinary donor plots. Label tests, MDC, enrichment, and cohort modes retain their own scope."],["Regional brain and motor eigengenes","Keep one distinct module selector per selected tissue, with side-by-side panels. Do not assign multitissue module IDs or match on numeric ID alone."],["LIONESS, CAMEL, BONOBO","Keep each available dataset reachable through its own capabilities. An absent view stays unavailable."],["Control-calibrated variants","Keep gain, loss, net change, and magnitude atypicality labels and their statistical families. Keep q_search distinct from module-only FDR. Predictions remain unavailable."],["Published cohorts and counts","Do not silently change a cohort boundary or published count. The applied context states the actual source and donor scope."]]},"example":"Matched-Control modules247 without a supported view shows “Unavailable for this dataset”, not results from modules186."},"discover":{"title":"Discover","sub":"Find interesting modules first\nRanked results with simple presets","cls":"code","one":"Discover is the first destination. Module finder starts with an outcome-first preset and a ranked list; it makes no new scientific ranking rule. Dataset, cohort, outcome, feature source, and applied analysis options define the input. The output is a ranked module list; each result opens Module with its full applied context.","view":{"type":"diagram","viewBox":"0 0 1000 505","label":"Discover screen layout and result-row transition","boxes":[{"part":"Dataset sidebar","x":15,"y":45,"w":185,"h":390,"cls":"data","sub":"Dataset · cohort\nSix task destinations"},{"part":"Search controls","x":225,"y":45,"w":755,"h":72,"cls":"code","sub":"Outcome · feature source · preset · Apply analysis"},{"part":"Applied result context","x":225,"y":135,"w":755,"h":55,"cls":"data","sub":"Cohort · group · mask · scale · FDR"},{"part":"Ranked module list","x":225,"y":210,"w":475,"h":135,"cls":"code","sub":"Compact rows with source labels\nOpen module associations"},{"part":"Module destination","x":750,"y":210,"w":230,"h":135,"cls":"code","sub":"Same applied context\nBack restores selection"},{"part":"Other discovery tools","x":225,"y":370,"w":755,"h":65,"cls":"code","sub":"Correlation heatmaps · CT–TS · distribution differences"}],"svg":"\u003ctext x=\"15\" y=\"20\" class=\"t\" font-size=\"14\">Proposed screen · simple main controls, advanced options closed\u003c/text>\n\u003cpath d=\"M700 277 H748\" class=\"arrow\" marker-end=\"url(#ah)\"/>\n\u003cpath d=\"M866 345 V355 H464 V347\" class=\"arrow\" marker-end=\"url(#ah)\" stroke-dasharray=\"4 4\"/>\n"},"notes":{"Dataset sidebar":"The dataset and cohort stay compact. Donor and edge controls do not appear on this screen.","Search controls":"Presets expose the common choices first. Advanced Analysis options disclose group, mask, scale, and statistical scope when relevant. The Apply behavior is an open decision.","Applied result context":"The row and its destination carry cohort, group, mask, scale, and FDR together. Pending edits cannot relabel an applied result.","Ranked module list":"The list uses the existing scientific results. Source labels distinguish connectivity from eigengenes. The page does not claim a rank or significance for the example module.","Module destination":"Open Module → Associations. Back returns to the same finder selection, not a new default search.","Other discovery tools":"Correlation heatmaps and CT–TS remain reachable here. Distribution-difference rankings use the existing distribution screen; per-module distribution tools live in Module."},"example":"Choose Control-derived brain modules (186) / global cognition / pooled donors / DLPFC CAMEL connectivity. Open M1116 with the same cohort, group, mask, scale, and FDR. No example rank or significance is implied.","exampleLabel":"Outcome search · worked path"},"module":{"title":"Module","sub":"Inspect one module\nAssociations · networks · biology","cls":"code","one":"Module is one inspection workspace for a selected module and source. Its tabs reveal the current tools without an oversized sidebar or unrelated controls. Its input is a namespaced module and applied context from Discover, a bookmark, or a module choice. Its output is the selected plot or table, with contextual statistics, downloads, and publication exports.","view":{"type":"diagram","viewBox":"0 0 1000 490","label":"Module workspace with native tabs and contextual disclosures","boxes":[{"part":"Module context","x":20,"y":30,"w":960,"h":65,"cls":"data","sub":"Dataset / source / tissue / module · concise APPLIED context"},{"part":"Inspection tabs","x":20,"y":120,"w":960,"h":65,"cls":"code","sub":"Overview · Associations · Distributions · Network change · Biology"},{"part":"Selected result","x":20,"y":215,"w":610,"h":155,"cls":"code","sub":"One relevant plot or table\nOnly this subview asks for resources"},{"part":"Contextual panels","x":660,"y":215,"w":320,"h":155,"cls":"code","sub":"Advanced Analysis options\nAppearance · Statistics & downloads"},{"part":"Publication export","x":20,"y":400,"w":960,"h":60,"cls":"code","sub":"Preview · physical size · fonts · colors · PNG / PDF / vector"}],"svg":"\u003cpath d=\"M325 185 V213\" class=\"arrow\" marker-end=\"url(#ah)\"/>\n\u003cpath d=\"M630 292 H658\" class=\"arrow\" marker-end=\"url(#ah)\"/>\n\u003cpath d=\"M325 370 V398\" class=\"arrow\" marker-end=\"url(#ah)\"/>\n"},"notes":{"Module context":"Show the full source identity. An independent regional eigengene does not inherit a multitissue module ID.","Inspection tabs":"Overview contains details, composition, and entropy. Associations contains scatter plots and score-comparison bars. Distributions keeps the per-module tools.","Selected result":"Composition, catalog, and KEGG-only views do not request donor plot scores. Active-page, active-tab, and active-panel guards suppress unopened work; a collapsed panel alone does not stop computation.","Contextual panels":"Each disclosure stays closed until needed. Statistics remains a panel and deep-link, not a removed feature. Appearance changes use data already on screen.","Publication export":"Reuse the figure-export tools and all supported formats. Preview and export carry applied context; color or font edits do not trigger Drive reads or statistical tests."},"children":{"Inspection tabs":"module-tools"},"example":"Publication export · Open export controls, change a color, inspect the preview, and save the same applied result. Data reads and statistical results do not change.","exampleLabel":"Publication export · worked path"},"module-tools":{"title":"Full network and biology tools","one":"Network change and Biology retain their full scientific scope. Dataset capabilities decide which controls appear; missing data never trigger a substitute result.","view":{"type":"table","columns":["Subview","Controls and outputs that remain"],"rows":[["Network change · MDC","Total or resolved; raw or log; triangular heatmaps; pathway or category; entropy plots; all-module scope where supported."],["Biology · KEGG enrichment","Full and effect endpoints; region sharing; this-module or all-module scope; relevant statistics and downloads."],["Statistics & downloads","The same tests, effects, p values, FDR definitions, and export information for the exact applied context."]]},"example":"A KEGG-only view reads its enrichment data and module identity. It does not prepare donor scores for an unopened association plot."},"compare":{"title":"Compare","sub":"Compare modules, partitions, cohorts\nExplicit source per series","cls":"code","one":"Compare collects Module–outcome comparison, Partition comparison, and Validation & replication. Each comparison box owns its source overrides and states them beside its result.","in":{"items":["Sources per comparison box","Outcome and cohort per supported analysis"],"from":"Context as an initial choice, then local box controls.","how":"Global choices seed new boxes only."},"out":{"items":["Explicitly labeled comparisons","Existing validation and replication results"],"to":"The researcher.","how":"Source, component, and donor N appear per series."},"view":{"type":"table","columns":["Comparison surface","Design rule"],"rows":[["Module–outcome comparison","Keep module and outcome controls local. A global edit cannot silently replace an existing box."],["Partition comparison","Compare explicit brain, motor, regional eigengene, or connectivity sources. Never join on numeric module ID alone."],["Validation & replication","State matched demographics. Label raw versus adjusted effects accurately; keep their test and cohort scopes distinct."]]},"example":"Compare brain with motor, or a regional eigengene with CT connectivity. Label each series by source, component, and donor N. Add no unrequested inferential test.","exampleLabel":"Compare sources · worked path"},"prediction":{"title":"Prediction","sub":"Independent fixed catalog context\nAll modes, importance, and exports","cls":"code","one":"Prediction is an independent page with its own fixed catalog, split, and reference context. It preserves all modes, feature importance, results, and exports.","in":{"items":["Prediction catalog choice","Fixed split and reference context","Mode-specific controls"],"from":"Prediction controls only.","how":"A lazy route requests the selected prediction resources."},"out":{"items":["Existing fitted results","Feature importance","Existing prediction exports"],"to":"The researcher.","how":"Applied prediction context labels every result."},"view":{"type":"parts","parts":[["data","Fixed context","Catalog · split · reference"],["code","Relevant controls","All modes remain reachable"],["data","Scoped cache","Relevant dataset and bundle version"]]},"notes":{"Fixed context":"Generic donor, cohort, and edge filters cannot alter or relabel fitted prediction results. The prediction context stays explicit.","Relevant controls":"Reorganize controls without a refit or a change to scientific results. Catalogs, feature importance, and exports remain reachable.","Scoped cache":"A prediction bundle change invalidates only related results. It does not clear unrelated analysis data."},"example":"A generic cohort change elsewhere leaves the fitted prediction catalog, split, reference, and result unchanged."},"donors":{"title":"Donors & edges","sub":"Donor plots and edge catalogs\nOnly meaningful controls","cls":"code","one":"Donors & edges gathers donor inspection and edge tools. Each page shows only controls that can affect its own data or result.","in":{"items":["Dataset capability","Relevant donor or edge choices"],"from":"Context and local controls.","how":"Explicit source and analysis scope."},"out":{"items":["Selected donor or edge result","Relevant statistics and exports"],"to":"The researcher.","how":"Bounded donor frames and scoped queries."},"view":{"type":"table","columns":["Destination","Retained tools"],"rows":[["Donor explorer","Ordinary donor plots with their own cohort and source context."],["Gene & edge associations","Association catalog and relevant filters; no unrelated module-score load."],["Edge summaries and Edge volcano","Existing summaries, comparisons, statistical labels, and exports."],["Donor edge explorer","Expression 2D and 3D, residual tools, and the current donor-edge controls."]]},"example":"An edge catalog opens catalog filters only. Expression plots request donor data only when the person opens that subview."},"methods":{"title":"Data & methods","sub":"Inventory · provenance · methods\nAvailability and downloads","cls":"code","one":"Data & methods explains the available sources and scientific methods. It exposes inventory, availability, completion, provenance, and permitted downloads without private mappings.","in":{"items":["Dataset metadata","Existing methods and download information"],"from":"Approved app data and documentation.","how":"Metadata-only reads where possible."},"out":{"items":["Visible source availability","Methods and provenance","Available downloads"],"to":"The researcher.","how":"A compact source inventory with explicit unavailable states."},"view":{"type":"table","columns":["Surface","Purpose"],"rows":[["Inventory and availability","State which sources and capabilities exist and which are incomplete or unavailable."],["Methods and provenance","Explain the source and scientific meaning of a result without a new statistical method."],["Downloads","Expose permitted existing downloads; exclude credentials and private mappings."]]},"example":"A researcher can inspect whether a matched-Control capability exists before a data-heavy page opens."},"reads":{"title":"Selected-view reads & light appearance edits","sub":"Scoped queries and compact caches\nExisting files stay on disk","cls":"data","one":"The selected view requests only the resources it needs. Expensive cross-module screens start explicitly and run in series; the app does not add a new worker service.","in":{"items":["Selected route and subview","Applied query choices or a style edit"],"from":"The active workspace.","how":"Native Streamlit navigation, forms, fragments, and active-page, tab, and panel guards."},"out":{"items":["Compact statistical results","Bounded plot data","Preview or export from existing data"],"to":"The active view only.","how":"Exact columns and predicates; cache keys use the relevant dataset and version."},"view":{"type":"diagram","viewBox":"0 0 1000 500","label":"Analysis path and style-only path","boxes":[{"part":"Analysis choices","x":20,"y":35,"w":265,"h":82,"cls":"code","sub":"Relevant selections\nApply behavior remains open"},{"part":"Selected query","x":355,"y":35,"w":270,"h":82,"cls":"data","sub":"Required columns and predicates\nRelevant dataset / version"},{"part":"Applied result","x":695,"y":35,"w":285,"h":82,"cls":"data","sub":"Compact result cache\nBounded donor frame"},{"part":"Style edit","x":20,"y":245,"w":265,"h":82,"cls":"code","sub":"Colors · fonts · order\nFragment or dialog"},{"part":"Existing plot data","x":355,"y":245,"w":270,"h":82,"cls":"data","sub":"No Drive read\nNo new statistical test"},{"part":"Preview & export","x":695,"y":245,"w":285,"h":82,"cls":"code","sub":"Same applied context\nExisting figure-export tools"},{"part":"Storage & bounds","x":20,"y":385,"w":960,"h":78,"cls":"data","sub":"Parquet on disk · integrity-checked lazy Drive · serial statistics · bounded memory"}],"svg":"\u003cpath d=\"M285 76 H353\" class=\"arrow\" marker-end=\"url(#ah)\"/>\n\u003cpath d=\"M625 76 H693\" class=\"arrow\" marker-end=\"url(#ah)\"/>\n\u003cpath d=\"M285 286 H353\" class=\"arrow\" marker-end=\"url(#ah)\"/>\n\u003cpath d=\"M625 286 H693\" class=\"arrow\" marker-end=\"url(#ah)\"/>\n\u003cpath d=\"M838 117 V243\" class=\"arrow\" marker-end=\"url(#ah)\" stroke-dasharray=\"4 4\"/>\n\u003ctext x=\"855\" y=\"184\" class=\"m\" font-size=\"12\">reuse\u003c/text>\n\u003ctext x=\"20\" y=\"190\" class=\"t\" font-size=\"13\">Separate a change to the analysis from a change to its appearance\u003c/text>\n"},"notes":{"Analysis choices":"The recommended form batches expensive query choices. Dependency edits read lightweight metadata only. Pending edits leave the applied results and export labels unchanged until Apply.","Selected query":"Only the selected route and active subview execute their data path. KEGG, composition, and catalog-only views have no hidden donor-score request. Prediction bundle changes cannot invalidate unrelated datasets.","Applied result":"Cache compact results, not all raw donor frames. Keep donor frames bounded to the current plot or explicit query scope.","Style edit":"Use native fragments or dialogs for appearance edits. A color, font, or order change does not require a fresh query.","Existing plot data":"This path reads the data already held for the applied view. It does not fetch Drive data or recompute statistics.","Preview & export":"Reuse the figure-export preview, dimensions, fonts, colors, PNG, PDF, and vector tools with the applied result context.","Storage & bounds":"Keep schemas and files as they are. Reuse the local Parquet cache and integrity-checked lazy Drive access. Keep existing serial statistics and small caches; do not add a custom queue, daemon, or session manager."},"example":"Publication export · A color edit follows the lower path. An explicit all-module calculation follows the upper path and runs in series.","exampleLabel":"Publication export · data path"}}},{"kind":"decisions","settled":[{"decision":"Start with module discovery, then inspection.","from":"The researcher chooses a find-modules-first workflow.","considered":"Module finder first versus a plot-first entry screen."},{"decision":"Use simple defaults and retain all advanced tools.","from":"The researcher wants less clutter without feature loss.","considered":"Contextual disclosures versus all controls visible or tool removal."},{"decision":"Stay with Streamlit and Community Cloud.","from":"The researcher keeps the current platform and host.","considered":"Native Streamlit controls versus a new frontend or backend."},{"decision":"Use six task workspaces.","from":"The researcher selects the first navigation option to reduce page clutter and repeated context.","considered":"Consolidated task workspaces versus six groups of the familiar pages."},{"decision":"Apply analysis changes; show style changes at once.","from":"The researcher selects the first update option to avoid repeated reads during analysis setup.","considered":"Page-local Apply forms and data-free style edits versus an automatic query after each selection."}],"open":[]},{"kind":"goal","items":["All 20 current feature destinations remain reachable, and existing view and screen bookmarks resolve to the matching context.","A fixed source and analysis context gives the same donor counts, effects, KEGG, MDC, and prediction results, with each saved p/FDR definition intact.","The ordinary main screen has no flat 20-pill strip, repeated context cards, or controls unrelated to its selected view.","Inactive pages cause no data loads; style-only edits cause no Drive reads or statistical recomputation.","A fixed baseline and up to two concurrent sessions measure startup, queries, style edits, and peak memory. The refactor shows fewer reads and lower memory; numeric budgets follow those measurements."]},{"kind":"scope","outside":["New networks, scientific experiments, fitted models, or changes to effects, tests, FDR definitions, and published cohort boundaries.","Data schema rewrites, raw-data publication, credential exposure, and private mapping downloads.","A new frontend, cloud backend, authentication system, worker service, or cache daemon.","A new scientific publication or an automatic design lock.","Implementation tasks, file edits, deployment, and timing promises. A separate implementation plan follows the design lock."]},{"kind":"reused","items":["Existing active-tab guards, short-circuit routes, serial statistical work, compact caches, local Parquet files, and integrity-checked lazy Drive access.","Existing figure-export tools, scientific results, matched-brain readers, and control-calibrated capabilities. The refactor changes access and presentation, not their scientific meaning.","Pinned Streamlit 1.64.0 supplies \u003ca href=\"https://docs.streamlit.io/1.64.0/develop/api-reference/navigation/st.navigation\" target=\"_blank\" rel=\"noreferrer\">native page navigation\u003c/a>. Only the selected page runs.","Native \u003ca href=\"https://docs.streamlit.io/develop/concepts/architecture/forms\" target=\"_blank\" rel=\"noreferrer\">forms\u003c/a> batch choices. Native \u003ca href=\"https://docs.streamlit.io/develop/concepts/architecture/fragments\" target=\"_blank\" rel=\"noreferrer\">fragments\u003c/a> limit partial reruns. \u003ca href=\"https://docs.streamlit.io/develop/concepts/architecture/caching\" target=\"_blank\" rel=\"noreferrer\">Caching guidance\u003c/a> informs result size and invalidation scope."]}]};
+</script>
+
+<script>
+/* visual-plan runtime. Renders window.PLAN: opening, examples, blocks (core and extras), the map as a node
+   tree of depth 3 with zoom, decisions with option panels, comments, and the Respond sheet. No dependencies. */
+(function () {
+  'use strict';
+  var P = null;
+
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function tag(cls, text) { return '<span class="tag ' + esc(cls) + '">' + esc(text || cls) + '</span>'; }
+  function el(html) { var t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstChild; }
+  var store = { picks: {}, comments: {}, struck: {} };
+  function save() { try { localStorage.setItem('visual-plan:' + P.title, JSON.stringify(store)); } catch (e) {} }
+
+  /* ---------- blocks ---------- */
+  var KIND_TITLES = { problem: 'Problem, and how it works today', design: 'Design reference', map: 'Map', terms: 'Terms', traces: 'Traces', constraints: 'Constraints', data: 'Data models', decisions: 'Decisions', risks: 'Risks, and what changes for a reader', goal: 'Goal', scope: 'Scope', reused: 'Reused', section: '' };
+  var TOC_TITLES = { problem: 'Problem', design: 'Design', map: 'Map', terms: 'Terms', traces: 'Traces', constraints: 'Constraints', data: 'Data models', decisions: 'Decisions', risks: 'Risks', goal: 'Goal', scope: 'Scope', reused: 'Reused' };
+
+  function commentBtn(key, label) {
+    var has = store.comments[key] ? ' has' : '';
+    return '<button type="button" class="cbtn' + has + '" data-c="' + esc(key) + '" data-label="' + esc(label || key) + '" title="Comment on this part">' + (has ? 'comment ✓' : 'comment') + '</button>';
+  }
+  function card(key, inner, label) { return '<div class="card">' + commentBtn(key, label || strip(inner).slice(0, 60)) + inner + '</div>'; }
+  function strip(h) { var t = document.createElement('div'); t.innerHTML = h; return (t.textContent || '').replace(/\s+/g, ' ').trim(); }
+  function list(items) { return '<ul>' + items.map(function (i) { return '<li>' + i + '</li>'; }).join('') + '</ul>'; }
+
+  function renderBlock(b, i) {
+    var id = b.id || b.kind + (b.kind === 'section' ? i : '');
+    var title = b.title || KIND_TITLES[b.kind] || '';
+    var h = '<section class="block" id="' + esc(id) + '">' + (title ? '<h2 class="sec">' + title + '</h2>' : '') + (b.sub ? '<p class="sub">' + b.sub + '</p>' : '');
+    switch (b.kind) {
+      case 'problem':
+        h += '<div class="grid2">' + card(id + '/problem', '<h3>Problem</h3><p>' + b.problem + '</p>') +
+             card(id + '/today', '<h3>' + esc(b.today.label || 'How it works today') + '</h3>' + list(b.today.items)) + '</div>';
+        break;
+      case 'map':
+        h += '<div class="crumbs" id="crumbs"></div><div class="stage"><div id="overview"><div class="ov" data-scroll="scroll sideways →"></div><div class="hint">' +
+             (b.legend || []).map(function (k) { return '<span class="key"><i class="' + esc(k[0]) + '"></i>' + esc(k[1]) + '</span>'; }).join('') +
+             (b.note ? '<span>' + b.note + '</span>' : '') + '</div></div><div class="detail" id="detail" hidden></div></div>' +
+             (b.walkthrough ? '<p class="sub" style="margin-top:10px"><b>In two lines:</b> ' + b.walkthrough + '</p>' : '');
+        break;
+      case 'terms':
+        h += '<div class="termflow">' + (b.cards || []).map(function (c, j) {
+          return (j ? '<span class="sep" aria-hidden="true">→</span>' : '') + '<div class="tcard">' + commentBtn(id + '/term/' + j, c.term) + '<span class="term ' + esc(c.cls || 'car') + '">' + esc(c.term) + '</span><b class="tt">' + c.title + '</b><p>' + c.text + '</p>' + (c.example ? '<p class="ex">' + c.example + '</p>' : '') + '</div>';
+        }).join('') + '</div>';
+        if (b.extra && b.extra.length) h += '<div class="grid2" style="margin-top:14px">' + b.extra.map(function (x, j) { return card(id + '/' + j, '<h3>' + x.title + '</h3><p>' + x.html + '</p>', strip(x.title)); }).join('') + '</div>';
+        break;
+      case 'traces':
+        h += renderCalls(b.calls, id + '/calls');
+        if (b.cards && b.cards.length) h += '<div class="grid2" style="margin-top:14px">' + b.cards.map(function (c, j) { return card(id + '/' + j, '<h3>' + (c.badge ? tag(c.badge) : '') + c.title + '</h3><p>' + c.html + '</p>', strip(c.title)); }).join('') + '</div>';
+        break;
+      case 'constraints':
+        h += '<div class="tblwrap"><table class="deftable"><tr><th style="width:34%">Constraint</th><th style="width:20%">Applied by</th><th>Keep, or flag</th><th class="ccol"></th></tr>' +
+             b.rows.map(function (r, k) { return '<tr><td>' + r.value + '</td><td>' + r.by + '</td><td>' + (r.badge ? tag(r.badge) : '') + r.text + '</td><td class="ccol">' + commentBtn(id + '/row/' + k, strip(r.value)) + '</td></tr>'; }).join('') + '</table></div>';
+        break;
+      case 'data':
+        h += '<div class="grid2">' + b.cards.map(function (c, j) { return card(id + '/' + j, '<h3>' + (c.badge ? tag(c.badge) : '') + c.title + '</h3>' + c.html, strip(c.title)); }).join('') + '</div>';
+        break;
+      case 'decisions':
+        h += renderDecisions(b, id);
+        break;
+      case 'risks':
+        h += '<div class="grid2">' + card(id + '/risks', '<h3>Risks</h3>' + list(b.risks), 'Risks') + card(id + '/changes', '<h3>Behaviour changes</h3>' + list(b.changes), 'Behaviour changes') + '</div>';
+        break;
+      case 'goal':
+        h += card(id, list(b.items), 'Goal'); break;
+      case 'scope':
+        h += (b.inside && b.inside.length ? '<div class="grid2">' + card(id + '/in', '<h3>Also in this plan</h3>' + list(b.inside), 'Also in this plan') + card(id + '/out', '<h3>Not in this plan</h3>' + list(b.outside), 'Not in this plan') + '</div>' : card(id + '/out', '<h3>Not in this plan</h3>' + list(b.outside), 'Not in this plan'));
+        break;
+      case 'design':
+        h += card(id, '<h3>' + esc(b.file || '') + '</h3><iframe class="design" title="' + esc(b.title || 'Design reference') + '" srcdoc="' + esc(b.srcdoc || '') + '"></iframe>', 'Design reference'); break;
+      case 'reused':
+        h += card(id, list(b.items), 'Reused'); break;
+      default:
+        h += '<div class="grid2' + (b.wide ? ' wide' : '') + '">' + (b.cards || []).map(function (c, j) { return card(id + '/' + j, (c.title ? '<h3>' + c.title + '</h3>' : '') + c.html, strip(c.title || '')); }).join('') + '</div>';
+    }
+    return h + '</section>';
+  }
+
+  /* ---------- calls ---------- */
+  function renderCalls(text, key) {
+    var lines = String(text || '').split('\n').filter(function (l) { return l.trim(); });
+    var marked = lines.some(function (l) { return /^[+~*] /.test(l); });
+    var h = '<div class="calls" data-key="' + esc(key) + '">';
+    if (marked) h += '<div class="cl-head"><span class="k"><i style="background:var(--code-soft);color:var(--code)">+</i>new</span><span class="k"><i style="background:var(--warn-soft);color:var(--warn)">~</i>changed</span><span class="k"><i style="background:var(--ai-soft);color:var(--ai)">*</i>an agent</span><span>click the rail to strike a row</span></div>';
+    else h += '<div class="cl-head"><span>one call per line · click the rail to strike a row</span></div>';
+    h += '<div class="cl-rows' + (marked ? '' : ' norail') + '">';
+    lines.forEach(function (line, i) {
+      var mark = marked ? line.charAt(0) : ' ', rest = marked ? line.slice(2) : line;
+      var depth = (rest.match(/^ */) || [''])[0].length / 2; rest = rest.trim();
+      var loc = '', note = '', at = rest.indexOf(' @ '); if (at >= 0) { loc = rest.slice(at + 3); rest = rest.slice(0, at); }
+      var dd = rest.indexOf(' -- '); if (dd >= 0) { note = rest.slice(dd + 4); rest = rest.slice(0, dd); }
+      var cls = mark === '+' ? 'm-add' : mark === '~' ? 'm-mod' : mark === '*' ? 'm-ai' : 'm-ctx';
+      var rk = key + '#' + i, struck = store.struck[rk] ? ' struck' : '';
+      var guides = ''; for (var d = 0; d < depth; d++) guides += '│  ';
+      h += '<div class="cl-row ' + cls + struck + '" data-row="' + esc(rk) + '" data-name="' + esc(rest) + '"><span class="cl-rail" title="Strike this row">' + (mark.trim() || '') + '</span><span class="cl-tg">' + guides + '</span><span class="cl-nm">' + esc(rest) + '</span>' + (note ? '<span class="cl-note">' + esc(note) + '</span>' : '') + (loc ? '<span class="cl-loc">' + esc(loc) + '</span>' : '') + '</div>';
+    });
+    return h + '</div></div>';
+  }
+
+  /* ---------- decisions ---------- */
+  function renderDecisions(b, id) {
+    var h = '';
+    if (b.settled && b.settled.length) {
+      h += '<h3 class="openhead">' + tag('settled') + 'Decisions taken, and what each follows from</h3><div class="tblwrap"><table class="deftable"><tr><th style="width:38%">Decision</th><th style="width:26%">Follows from</th><th>Considered</th><th class="ccol"></th></tr>' +
+           b.settled.map(function (r, k) { return '<tr><td>' + r.decision + '</td><td>' + r.from + '</td><td>' + (r.considered || '—') + '</td><td class="ccol">' + commentBtn(id + '/settled/' + k, strip(r.decision).slice(0, 60)) + '</td></tr>'; }).join('') + '</table></div>';
+    }
+    if (b.open && b.open.length) {
+      h += '<h3 class="openhead">Open decisions · ' + b.open.length + '</h3><p class="sub">Open an option to read how it works and what it costs. Press <b>Choose</b> to answer. The first option is the author\'s recommendation. When every decision has an answer, copy the response from the bar below; the author moves the answers into the settled table and offers the lock.</p>';
+      b.open.forEach(function (d, n) {
+        var pick = store.picks[d.id];
+        h += '<div class="dec" id="d-' + esc(d.id) + '" data-dec="' + esc(d.id) + '">' + commentBtn('decision/' + d.id, 'Decision ' + (n + 1) + ' · ' + strip(d.title)) + '<h3>' + tag(pick != null ? 'answered' : 'open') + (n + 1) + ' · ' + d.title + '</h3><p class="ctx">' + d.context + '</p><div class="opts">';
+        d.options.forEach(function (o, i) {
+          var chosen = pick === i;
+          h += '<button type="button" class="opt" data-i="' + i + '" aria-expanded="' + (i === 0 && pick == null) + '">' + (i === 0 ? tag('recommended') : '') + o.label + (chosen ? '<span class="pick">✓ your answer</span>' : '') + '</button>' +
+               '<div class="optd' + ((i === 0 && pick == null) || chosen ? ' show' : '') + '"><dl><dt>How</dt><dd>' + o.how + '</dd><dt>Gains</dt><dd>' + o.gains + '</dd><dt>Costs</dt><dd>' + o.costs + '</dd><dt>Effort / risk</dt><dd>' + o.effort + '</dd><dt>Reversible?</dt><dd>' + o.reversible + '</dd></dl><button type="button" class="btn choose" data-i="' + i + '">' + (chosen ? 'Chosen' : 'Choose this option') + '</button></div>';
+        });
+        h += '</div></div>';
+      });
+    } else if (!b.settled || !b.settled.length) {
+      h += '<p class="sub">No decisions.</p>';
+    }
+    return h;
+  }
+
+  /* ---------- map and nodes ---------- */
+  var mapBlock = null, N = {}, parentOf = {}, current = null, decBlock = null, openDecs = [];
+  function init() {
+    try { var saved = localStorage.getItem('visual-plan:' + P.title); if (saved) store = JSON.parse(saved); } catch (e) {}
+    mapBlock = P.blocks.filter(function (b) { return b.kind === 'map'; })[0];
+    N = mapBlock ? mapBlock.nodes : {};
+    if (mapBlock) Object.keys(N).forEach(function (id) {
+      var n = N[id];
+      Object.keys(n.children || {}).forEach(function (k) { parentOf[n.children[k]] = id; });
+      if (n.view && n.view.type === 'diagram') {
+        ((n.view.svg || '').match(/data-go="([^"]+)"/g) || []).forEach(function (m) { parentOf[m.slice(9, -1)] = id; });
+        (n.view.boxes || []).forEach(function (b) { if (b.node) parentOf[b.node] = id; });
+      }
+    });
+    decBlock = P.blocks.filter(function (b) { return b.kind === 'decisions'; })[0];
+    openDecs = decBlock && decBlock.open ? decBlock.open : [];
+  }
+
+  function partsHtml(view) {
+    var h = '<div class="flow">';
+    view.parts.forEach(function (p, i) {
+      if (i) h += '<span class="sep" aria-hidden="true">→</span>';
+      h += '<button type="button" class="node ' + esc(p[0]) + '" data-n="' + esc(p[1]) + '" aria-pressed="false"><b>' + esc(p[1]) + '</b><small>' + esc(p[2] || '') + '</small></button>';
+    });
+    return h + '</div>';
+  }
+  function machineHtml(view) {
+    var h = '<div class="machine">';
+    (view.grid || [view.states.map(function (s) { return s[0]; })]).forEach(function (row) {
+      h += '<div class="mgrid" style="grid-template-columns:repeat(' + row.length + ',minmax(0,1fr))">';
+      row.forEach(function (sid) { var st = view.states.filter(function (s) { return s[0] === sid; })[0]; h += st ? '<button type="button" class="mstate" data-n="' + esc(sid) + '"><b>' + esc(sid) + '</b>' + esc(st[1]) + '</button>' : '<span></span>'; });
+      h += '</div>';
+    });
+    h += '<ul class="marrows">' + (view.arrows || []).map(function (a) { return '<li data-from="' + esc(a[0]) + '">' + esc(a[0]) + ' → ' + esc(a[1]) + (a[2] ? ' : ' + esc(a[2]) : '') + '</li>'; }).join('') + '</ul></div>';
+    return h;
+  }
+  function tableHtml(view) {
+    return '<div class="tblwrap"><table class="deftable"><tr>' + view.columns.map(function (c) { return '<th>' + c + '</th>'; }).join('') + '</tr>' + view.rows.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + c + '</td>'; }).join('') + '</tr>'; }).join('') + '</table></div>';
+  }
+  function boxSvg(b, node) {
+    var cls = b.cls || (node && node.cls) || 'code', title = b.title || (node ? node.title : b.part) || '', sub = b.sub != null ? b.sub : (node && node.sub) || '';
+    var subs = String(sub).split('\n').filter(Boolean), w = b.w || 150, h = b.h || (subs.length > 1 ? 96 : 72);
+    var titleY = subs.length ? b.y + Math.max(24, (h - 15 * subs.length - 4) / 2 + 8) : b.y + h / 2 + 5;
+    var attr = b.node ? ' data-go="' + esc(b.node) + '"' : ' data-n="' + esc(b.part) + '"';
+    var g = '<g class="nd"' + attr + ' tabindex="0" role="button" aria-label="' + esc(b.node ? 'Open: ' + title : title) + '">';
+    g += '<rect class="' + esc(cls) + '" x="' + b.x + '" y="' + b.y + '" width="' + w + '" height="' + h + '" rx="12"' + (b.dashed ? ' stroke-dasharray="6 4"' : '') + '/>';
+    g += '<text x="' + (b.x + w / 2) + '" y="' + titleY + '" text-anchor="middle" class="t" font-weight="700" font-size="15">' + esc(title) + '</text>';
+    subs.forEach(function (line, i) { g += '<text x="' + (b.x + w / 2) + '" y="' + (titleY + 19 + i * 15) + '" text-anchor="middle" class="m" font-size="12">' + esc(line) + '</text>'; });
+    if (b.node) g += '<text x="' + (b.x + w - 8) + '" y="' + (b.y + 14) + '" text-anchor="end" class="zoom">+</text>';
+    return g + '</g>';
+  }
+  var markerSeq = 0;
+  function diagramSvg(view) {
+    var mid = 'ah-' + (++markerSeq);
+    if (!view.boxes) return String(view.svg).replace(/id="ah"/g, 'id="' + mid + '"').replace(/url\(#ah\)/g, 'url(#' + mid + ')');
+    var inner = String(view.svg || '').replace(/url\(#ah\)/g, 'url(#' + mid + ')') + view.boxes.map(function (b) { return boxSvg(b, b.node ? N[b.node] : null); }).join('');
+    return '<svg viewBox="' + esc(view.viewBox || '0 0 1000 400') + '" role="img" aria-label="' + esc(view.label || 'diagram') + '"><defs><marker id="' + mid + '" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="arrowhead"/></marker></defs>' + inner + '</svg>';
+  }
+  function viewHtml(view, key) {
+    if (!view) return '';
+    if (view.type === 'diagram') return '<div class="diag" data-scroll="scroll sideways →">' + diagramSvg(view) + '</div>';
+    if (view.type === 'parts') return partsHtml(view);
+    if (view.type === 'calls') return renderCalls(view.text, key);
+    if (view.type === 'machine') return machineHtml(view);
+    if (view.type === 'table') return tableHtml(view);
+    return '';
+  }
+  function portHtml(label, p, dirWord) {
+    return '<div class="port"><h4>' + label + '</h4><ul>' + p.items.map(function (i) { return '<li>' + i + '</li>'; }).join('') + '</ul><div class="meta"><b>' + dirWord + '</b> ' + (p.from || p.to) + '</div>' + (p.how ? '<div class="meta"><b>How</b> ' + p.how + '</div>' : '') + '</div>';
+  }
+  function siblings(id) { var p = parentOf[id]; return Object.keys(N).filter(function (k) { return parentOf[k] === p && k !== mapBlock.root; }); }
+
+  function renderDetail(id) {
+    current = id;
+    var c = N[id], detail = document.getElementById('detail'), h = '';
+    h += '<div class="dt-head"><div><div class="badges">' + (c.badges || []).map(function (b) { return '<span class="bdg ' + esc(b[0]) + '">' + (b[1] ? '<b>' + esc(b[1]) + '</b>' : '') + esc(b[2]) + '</span>'; }).join('') + '</div>';
+    h += '<h2>' + esc(c.title) + '</h2></div><div class="dt-actions">' + commentBtn('node/' + id, strip(c.title)) + '<button class="btn" type="button" data-back>← Back</button></div></div>';
+    if (c.one) h += '<p class="one">' + c.one + '</p>';
+    var hasPorts = c['in'] || c.out;
+    h += '<div class="io' + (hasPorts ? '' : ' noports') + '">' + (c['in'] ? portHtml('Input', c['in'], 'From') : '') +
+         '<div class="inside"><div class="cap">Inside · click a part to read about it</div>' + viewHtml(c.view, 'node/' + id) + '<div class="note" id="note" hidden></div></div>' +
+         (c.out ? portHtml('Output', c.out, 'To') : '') + '</div>';
+    if (c.example) h += '<div class="cols"><div><div class="lbl">' + esc(c.exampleLabel || 'Example') + '</div><div class="box"><pre>' + esc(c.example) + '</pre></div></div></div>';
+    var sib = siblings(id), i = sib.indexOf(id);
+    if (sib.length > 1) { var prev = sib[(i - 1 + sib.length) % sib.length], next = sib[(i + 1) % sib.length]; h += '<div class="nav"><button type="button" class="btn" data-go="' + esc(prev) + '">← ' + esc(N[prev].title) + '</button><button type="button" class="btn" data-go="' + esc(next) + '">' + esc(N[next].title) + ' →</button></div>'; }
+    detail.innerHTML = h;
+    var note = detail.querySelector('#note');
+    function show(name) {
+      detail.querySelectorAll('[data-n]').forEach(function (b) { var on = b.getAttribute('data-n') === name; b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.classList.toggle('on', on); });
+      detail.querySelectorAll('.marrows li').forEach(function (li) { li.classList.toggle('on', li.getAttribute('data-from') === name); });
+      var text = (c.notes || {})[name];
+      if (text == null) { note.hidden = true; return; }
+      var child = (c.children || {})[name];
+      note.hidden = false;
+      note.innerHTML = '<b>' + esc(name) + '.</b> ' + text + (child && N[child] ? '<div><button type="button" class="btn go" data-go="' + esc(child) + '">Open: ' + esc(N[child].title) + ' →</button></div>' : '');
+      bindGo(note);
+    }
+    var first = detail.querySelector('[data-n]');
+    if (first) show(first.getAttribute('data-n'));
+    detail.querySelectorAll('[data-n]').forEach(function (b) { b.onclick = function () { show(b.getAttribute('data-n')); }; });
+    detail.querySelector('[data-back]').onclick = function () { var p = parentOf[id]; if (p && p !== mapBlock.root) openDirect(p); else goHome(); };
+    bindGo(detail); bindComments(detail); bindCalls(detail);
+  }
+  function bindGo(root) { root.querySelectorAll('[data-go]').forEach(function (b) { b.onclick = function (e) { e.stopPropagation(); openDirect(b.getAttribute('data-go')); }; }); }
+  function crumbs(id) {
+    var c = document.getElementById('crumbs'); if (!c) return;
+    var chain = []; var cur = id; while (cur && cur !== mapBlock.root) { chain.unshift(cur); cur = parentOf[cur]; }
+    var h = '<button type="button" data-home>' + esc(N[mapBlock.root].title || 'Overview') + '</button>';
+    chain.forEach(function (k, i) { h += '<span>›</span>' + (i === chain.length - 1 ? '<span>' + esc(N[k].title) + '</span>' : '<button type="button" data-go="' + esc(k) + '">' + esc(N[k].title) + '</button>'); });
+    c.innerHTML = h; c.querySelector('[data-home]').onclick = goHome; bindGo(c);
+  }
+  function openDirect(id) {
+    if (!N[id]) return;
+    var ov = document.getElementById('overview'), dt = document.getElementById('detail');
+    ov.hidden = true; dt.hidden = false; renderDetail(id); dt.classList.remove('fade'); void dt.offsetWidth; dt.classList.add('fade');
+    crumbs(id); if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
+    var c = document.getElementById('crumbs'); if (c) c.scrollIntoView({ block: 'start' });
+  }
+  function goHome() {
+    var ov = document.getElementById('overview'), dt = document.getElementById('detail');
+    dt.hidden = true; ov.hidden = false; current = null; crumbs(null); history.replaceState(null, '', location.pathname + location.search);
+  }
+  function renderMap() {
+    if (!mapBlock) return;
+    var root = N[mapBlock.root];
+    var ov = document.querySelector('#overview .ov'); ov.innerHTML = root.view && root.view.type === 'diagram' ? diagramSvg(root.view) : '';
+    ov.querySelectorAll('[data-go]').forEach(function (g) { g.setAttribute('tabindex', '0'); g.setAttribute('role', 'button'); g.onclick = function () { openDirect(g.getAttribute('data-go')); }; g.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDirect(g.getAttribute('data-go')); } }; });
+    crumbs(null);
+  }
+
+  /* ---------- comments, strikes, picks ---------- */
+  function bindComments(root) {
+    root.querySelectorAll('.cbtn').forEach(function (b) {
+      b.onclick = function () {
+        var key = b.getAttribute('data-c'), host = b.closest('.dt-actions') ? b.closest('.detail') : b.parentElement, box = host.querySelector('.cbox');
+        if (box) { box.remove(); return; }
+        box = el('<div class="cbox"><label>Comment on ' + esc(b.getAttribute('data-label')) + '<textarea placeholder="What should change, or what is unclear">' + esc(store.comments[key] || '') + '</textarea></label></div>');
+        if (b.closest('.dt-actions')) host.querySelector('.dt-head').insertAdjacentElement('afterend', box); else host.appendChild(box);
+        var ta = box.querySelector('textarea'); ta.focus();
+        ta.oninput = function () { store.comments[key] = ta.value.trim(); b.classList.toggle('has', !!store.comments[key]); b.textContent = store.comments[key] ? 'comment ✓' : 'comment'; save(); updateBar(); };
+      };
+    });
+  }
+  function bindCalls(root) {
+    root.querySelectorAll('.cl-rail').forEach(function (r) {
+      r.onclick = function () { var row = r.parentElement, k = row.getAttribute('data-row'); store.struck[k] = store.struck[k] ? '' : row.getAttribute('data-name'); row.classList.toggle('struck', !!store.struck[k]); save(); updateBar(); };
+    });
+  }
+  function bindDecisions(root) {
+    root.querySelectorAll('.dec').forEach(function (dec) {
+      var id = dec.getAttribute('data-dec');
+      dec.querySelectorAll('.opt').forEach(function (b) {
+        b.onclick = function () {
+          var open = b.getAttribute('aria-expanded') === 'true';
+          dec.querySelectorAll('.opt').forEach(function (o) { o.setAttribute('aria-expanded', 'false'); o.nextElementSibling.classList.remove('show'); });
+          if (!open) { b.setAttribute('aria-expanded', 'true'); b.nextElementSibling.classList.add('show'); }
+        };
+      });
+      dec.querySelectorAll('.choose').forEach(function (c) {
+        c.onclick = function () {
+          var i = +c.getAttribute('data-i');
+          store.picks[id] = i; save();
+          dec.querySelectorAll('.opt').forEach(function (o, k) { var p = o.querySelector('.pick'); if (p) p.remove(); if (k === i) o.insertAdjacentHTML('beforeend', '<span class="pick">✓ your answer</span>'); });
+          dec.querySelectorAll('.choose').forEach(function (x, k) { x.textContent = k === i ? 'Chosen' : 'Choose this option'; });
+          var t = dec.querySelector('h3 .tag'); if (t) { t.className = 'tag answered'; t.textContent = 'answered'; }
+          updateBar();
+        };
+      });
+    });
+  }
+
+  /* ---------- respond ---------- */
+  function countComments() { return Object.keys(store.comments).filter(function (k) { return store.comments[k]; }).length; }
+  function updateBar() {
+    var bar = document.getElementById('bar'); if (!bar) return;
+    var left = openDecs.filter(function (d) { return store.picks[d.id] == null; }).length, c = countComments(), s = Object.keys(store.struck).filter(function (k) { return store.struck[k]; }).length;
+    bar.querySelector('.state').textContent = (openDecs.length ? (left ? left + ' of ' + openDecs.length + ' decision' + (openDecs.length > 1 ? 's' : '') + ' to answer' : 'all decisions answered · copy your response') : (decBlock ? 'no open decision' : 'comments only')) + (c ? ' · ' + c + ' comment' + (c > 1 ? 's' : '') : '') + (s ? ' · ' + s + ' struck' : '');
+  }
+  function responseMarkdown(lock) {
+    var out = ['# Re: ' + P.title, ''];
+    if (openDecs.length) {
+      out.push('## Decisions');
+      openDecs.forEach(function (d, n) {
+        var i = store.picks[d.id];
+        if (i == null) { out.push((n + 1) + '. [' + d.id + '] ' + strip(d.title) + ' → _not answered_'); return; }
+        var o = d.options[i];
+        out.push((n + 1) + '. [' + d.id + '] ' + strip(d.title) + ' → **' + strip(o.label) + '**' + (i === 0 ? '  _(the recommendation)_' : '  _(recommended was ' + strip(d.options[0].label) + ')_'));
+      });
+      out.push('');
+    }
+    var struck = Object.keys(store.struck).filter(function (k) { return store.struck[k]; });
+    if (struck.length) {
+      out.push('## Struck');
+      struck.forEach(function (k) { out.push('- ' + store.struck[k]); });
+      out.push('');
+    }
+    var cs = Object.keys(store.comments).filter(function (k) { return store.comments[k]; });
+    if (cs.length) {
+      out.push('## Comments');
+      cs.forEach(function (k) { var b = document.querySelector('[data-c="' + k.replace(/"/g, '\\"') + '"]'); out.push('- **' + (b ? b.getAttribute('data-label') : k) + '**'); store.comments[k].split('\n').forEach(function (l) { out.push('  > ' + l); }); });
+      out.push('');
+    }
+    var left = openDecs.filter(function (d) { return store.picks[d.id] == null; }).length;
+    if (!decBlock) return out.join('\n').replace(/\n+$/, '');
+    out.push('## Lock'); out.push(lock ? 'locked' : (openDecs.length ? (left ? 'not yet: ' + left + ' decision(s) not answered' : 'ready: all decisions answered; move them to the settled table and offer the lock') : 'not locked'));
+    return out.join('\n');
+  }
+  function openSheet(lock) {
+    var sheet = document.getElementById('sheet'); sheet.classList.add('show');
+    var ta = sheet.querySelector('textarea'); ta.value = responseMarkdown(lock); document.getElementById('copied').textContent = '';
+  }
+
+  /* ---------- page ---------- */
+  function render() {
+    // A host that wraps the page in its own document (the claude.ai Artifact tool) leaves the page's <style>,
+    // <title> and <meta> in its <body>; move them to <head> before the body is replaced, or the page loses its CSS.
+    document.body.querySelectorAll('style, title, meta').forEach(function (el) { document.head.appendChild(el); });
+    P = window.PLAN;
+    if (!P) { document.body.innerHTML = '<p style="padding:24px">No plan data: window.PLAN is missing.</p>'; return; }
+    init();
+    var h = '<div class="wrap"><h1>' + esc(P.title) + (P.status ? (openDecs.length ? '<a class="tag ' + esc(P.status.badge) + '" href="#decisions">' + esc(P.status.text) + '</a>' : tag(P.status.badge, P.status.text)) : '') + '</h1>';
+    if (P.opening) h += '<p class="opening">' + P.opening + '</p>';
+    if (P.examples && P.examples.length) h += '<div class="exstrip" role="note"><b>Examples on this page.</b> ' + (P.examplesNote || '') + P.examples.map(function (e) { return '<span class="exb"><b>' + esc(e.name) + '</b>' + e.text + '</span>'; }).join('') + '</div>';
+    h += '<nav class="toc" aria-label="Sections">' + P.blocks.map(function (b, i) { var id = b.id || b.kind + (b.kind === 'section' ? i : ''); var label = b.title && b.kind === 'section' ? b.title : (TOC_TITLES[b.kind] || b.title || b.kind); if (b.kind === 'decisions' && openDecs.length) label += ' · ' + openDecs.length + ' open'; return '<a href="#' + esc(id) + '">' + esc(label) + '</a>'; }).join('') + '</nav>';
+    h += P.blocks.map(renderBlock).join('');
+    h += '</div>';
+    h += '<div class="bar" id="bar"><span class="state"></span><button type="button" class="btn" id="respond">Respond</button>' + (openDecs.length || !decBlock ? '' : '<button type="button" class="btn pri" id="lock">Lock this design</button>') + '</div>';
+    h += '<div class="sheet" id="sheet"><div class="pane"><h2>Your response</h2><p class="sub">Copy this text and paste it in the chat. Your answers and struck rows are decisions; your comments are feedback.</p><textarea readonly aria-label="Your response, as text to paste in the chat"></textarea><div class="row"><button type="button" class="btn pri" id="copy">Copy response</button><button type="button" class="btn" id="close">Close</button><span class="sub" id="copied"></span></div></div></div>';
+    document.body.innerHTML = h;
+    renderMap();
+    bindComments(document); bindCalls(document); bindDecisions(document); bindGo(document);
+    document.getElementById('respond').onclick = function () { openSheet(false); };
+    var lockBtn = document.getElementById('lock'); if (lockBtn) lockBtn.onclick = function () { openSheet(true); };
+    document.getElementById('close').onclick = function () { document.getElementById('sheet').classList.remove('show'); };
+    document.getElementById('copy').onclick = function () {
+      var ta = document.querySelector('#sheet textarea'); ta.select();
+      var done = function () { document.getElementById('copied').textContent = 'copied'; };
+      if (navigator.clipboard) navigator.clipboard.writeText(ta.value).then(done, function () { document.execCommand('copy'); done(); }); else { document.execCommand('copy'); done(); }
+    };
+    updateBar();
+    var start = (location.hash || '').slice(1);
+    if (N[start] && start !== (mapBlock && mapBlock.root)) openDirect(start);
+    window.addEventListener('hashchange', function () { var id = (location.hash || '').slice(1); if (N[id] && id !== mapBlock.root) openDirect(id); else if (!id && current) goHome(); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render); else render();
+})();
+
+</script>
+</body></html>
