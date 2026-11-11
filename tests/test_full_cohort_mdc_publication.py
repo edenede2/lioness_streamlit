@@ -62,6 +62,8 @@ render_mdc(1918, rule, render_exportable_plot, module_set="full_cohort", network
         assert len(displayed) == 154 * 6 and displayed.differential_edge_rule.eq(rule).all()
     next(e for e in app.selectbox if e.label == "Test edge set").set_value("all")
     app.run()
+    next(e for e in app.radio if e.label == "Validation MDC view").set_value("Selected module")
+    app.run()
     next(e for e in app.selectbox if e.label == "Validation adjacency component").set_value("TS_DLPFC")
     next(e for e in app.checkbox if e.label == "Show validation AD/Control triangle heatmap").check()
     app.run()

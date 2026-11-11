@@ -4,6 +4,34 @@ The **Validation & replication** page reviews the Control-derived brain-module
 analysis in donors excluded from the complete-expression cohort. It is separate
 from Prediction and does not launch analyses when opened.
 
+## Incomplete-region MDC scatter plots
+
+Open **MDC**, select the Control-derived or full-cohort brain definition and
+**Incomplete-region validation donors**. The default **Validation MDC view** is
+now **MDC scatter plots**, containing:
+
+- One selected TS region versus one selected CT pair (default DLPFC versus
+  DLPFC–PCG). Each point is one module. Both selected blocks must be available;
+  these are not pooled three-region scores or matched-donor comparisons.
+- Selected-region MDC versus normalized Shannon entropy.
+- Selected-pair MDC versus normalized Shannon entropy.
+
+Raw/log2 scale, saved significance markers, selected-module highlighting and the
+ordinary publication exporter are retained. Hover includes actual component
+labels, retained edges and AD/Control sample sizes. Standard and Control-reference
+full-cohort methods remain separately routed; group MDC is not a donor-score
+reference comparison.
+
+**Minimum retained edges per MDC component** defaults to0 (unchanged catalog).
+Set10/50/100, for example, to remove low-edge-support components from plots,
+tables and displayed-data downloads. Filtering is component-specific and uses
+retained edges under the current mask, not original module size. A large ratio
+with enough edges is not automatically removed. The same control is available
+for original-cohort MDC, where excluded Total/TS/CT cells are flagged separately.
+This is display filtering, not a new test: stored MDC values and full-family
+q-values are never recomputed or overwritten. Direction is read from AD/Control
+and group means, not the historical q_loss/q_gain names.
+
 ## What the page establishes
 
 - **Technical checks:** fixed membership/cohort audit; sampled direct formula

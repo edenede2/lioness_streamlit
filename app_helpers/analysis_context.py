@@ -112,6 +112,7 @@ def preserve_control_widgets() -> None:
     for key in (
         *WIDGET_STATE_FIELDS.values(),
         "mdc_display_scale",
+        "mdc_minimum_edges",
         "association_plot_type",
     ):
         if key in st.session_state:

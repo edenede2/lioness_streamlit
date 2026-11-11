@@ -1839,10 +1839,17 @@ def render_mdc(context):
             "Some MDC modules lack module-composition entropy and will be omitted from "
             "the entropy relationship plots."
         )
+    from app_helpers.validation_mdc_plots import filter_wide_components, filter_retained_edges
+    minimum_edges = st.number_input("Minimum retained edges per MDC component", min_value=0,
+        value=0, step=1, key="mdc_minimum_edges",
+        help="0 preserves the existing display. Try 10, 50 or 100 to hide ratios based on very few edges. The filter is separate for Total, TS and CT and does not recalculate saved FDRs.")
+    mdc_view = filter_wide_components(mdc_view, minimum_edges)
+    if minimum_edges:
+        st.caption("MDC components below the retained-edge threshold are hidden independently (not set to zero). Saved FDRs and underlying results are unchanged; excluded scopes are flagged in the table/download.")
     for scope in ["total", "ts", "ct"]:
         mdc_view[f"significant_{scope}"] = mdc_view[f"directional_fdr_{scope}"].lt(
             mdc_threshold
-        )
+        ) & mdc_view[f"mdc_{scope}"].notna()
     mdc_view["any_significant"] = mdc_view[
         ["significant_total", "significant_ts", "significant_ct"]
     ].any(axis=1)
@@ -1958,6 +1965,7 @@ def render_mdc(context):
             },
             plot_id="main.selected_mdc_chart",
             metadata={
+                "minimum_retained_edges": int(minimum_edges),
                 "module_set": module_set,
                 "method": method,
                 "module": f"M{module}",
@@ -2117,6 +2125,7 @@ def render_mdc(context):
         },
         plot_id="main.mdc_overview",
         metadata={
+            "minimum_retained_edges": int(minimum_edges),
             "module_set": module_set,
             "method": method,
             "module": f"M{module}",
@@ -2194,6 +2203,7 @@ def render_mdc(context):
                 },
                 plot_id=f"main.mdc_entropy_figure.{entropy_scope}",
                 metadata={
+                    "minimum_retained_edges": int(minimum_edges),
                     "module_set": module_set,
                     "method": method,
                     "module": f"M{module}",
@@ -2203,9 +2213,10 @@ def render_mdc(context):
                 },
             )
 
-    displayed_mdc["minimum_directional_fdr"] = displayed_mdc[
-        ["directional_fdr_total", "directional_fdr_ts", "directional_fdr_ct"]
-    ].min(axis=1, skipna=True)
+    displayed_mdc["minimum_directional_fdr"] = pd.concat([
+        displayed_mdc[f"directional_fdr_{scope}"].where(displayed_mdc[f"mdc_{scope}"].notna())
+        for scope in ("total", "ts", "ct")
+    ],axis=1).min(axis=1,skipna=True)
     displayed_mdc["maximum_abs_log2_mdc"] = (
         displayed_mdc[["log2_mdc_total", "log2_mdc_ts", "log2_mdc_ct"]]
         .abs()
@@ -2250,6 +2261,7 @@ def render_mdc(context):
                 f"inference_unavailable_reason_{scope}",
                 f"mdc_stable_for_inference_{scope}",
                 f"mdc_stability_reason_{scope}",
+                f"display_excluded_{scope}",
             )
             if column in displayed_mdc.columns
         )
@@ -2352,6 +2364,7 @@ def render_mdc(context):
                 mdc_normalization_variant,
                 mdc_data_revision,
             ).copy()
+            resolved_mdc = filter_retained_edges(resolved_mdc, minimum_edges)
             resolved_components_available = resolved_mdc[
                 ["component", "component_label"]
             ].drop_duplicates()
@@ -2432,6 +2445,7 @@ def render_mdc(context):
                     config={"displaylogo": False},
                     plot_id="main.mdc_resolved_module_figure",
                     metadata={
+                        "minimum_retained_edges": int(minimum_edges),
                         "module_set": module_set,
                         "method": method,
                         "module": f"M{module}",
@@ -2454,6 +2468,7 @@ def render_mdc(context):
                     config={"displaylogo": False, "scrollZoom": True},
                     plot_id="main.mdc_resolved_heatmap_figure",
                     metadata={
+                        "minimum_retained_edges": int(minimum_edges),
                         "module_set": module_set,
                         "method": method,
                         "module": f"M{module}",
@@ -2533,6 +2548,7 @@ def render_mdc(context):
                 mdc_normalization_variant,
                 mdc_data_revision,
             ).copy()
+            pathway_rows = filter_retained_edges(pathway_rows, minimum_edges)
             component_preference = [
                 *[value for value in active_component_order if value.startswith("TS_")],
                 *[value for value in active_component_order if value.startswith("CT_")],

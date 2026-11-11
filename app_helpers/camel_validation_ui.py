@@ -121,28 +121,82 @@ def render_mdc(module,rule,render,*,module_set="control_derived",network_method=
     if frame.empty:
         st.info("Validation MDC permutations are not yet complete for this selection. Original-cohort MDC will not be substituted.")
         return
-    use_raw=st.radio("Validation MDC scale",["Raw MDC","log2 MDC"],horizontal=True)
+    original = frame
+    settings = st.columns(3)
+    with settings[0]:
+        use_raw=st.radio("Validation MDC scale",["Raw MDC","log2 MDC"],horizontal=True)
+    with settings[1]:
+        minimum = st.number_input("Minimum retained edges per MDC component", min_value=0,
+            value=0, step=1, key="mdc_minimum_edges",
+            help="0 keeps the original catalog. Try 10, 50 or 100 to hide ratios supported by very few retained edges. This is a display filter, not a new significance test.")
+    with settings[2]:
+        threshold = st.radio("Validation MDC significance threshold", [.05,.10], horizontal=True,
+            key="validation_mdc_threshold")
+    from app_helpers.validation_mdc_plots import filter_retained_edges, comparison_figure, entropy_figure
+    frame = filter_retained_edges(original, minimum)
+    st.caption(f"Showing {len(frame):,}/{len(original):,} module–component rows after the retained-edge filter. Saved MDC values and full-family FDRs are unchanged; no correction is recalculated after filtering.")
+    st.caption("Directional FDR is the historical two-null screen, in the direction selected by the observed AD/Control ratio; it is not an established joint-FDR guarantee. Biological direction comes from the ratio, not q_loss/q_gain column names.")
+    if frame.empty:
+        st.info("No MDC components pass this edge-count threshold. Lower it to restore the plots.")
+        return
     values="mdc" if use_raw=="Raw MDC" else "log2_mdc"
+    scale="raw" if use_raw=="Raw MDC" else "log2"
+    from app_helpers.data import MODULE_SET_LABELS, load_module_details
+    definition=MODULE_SET_LABELS.get(module_set,module_set)
+    metadata=dict(module_set=module_set, method=network_method, module=int(module),
+        cohort_scope="incomplete_region_validation", differential_edge_rule=rule,
+        scale=scale, minimum_retained_edges=int(minimum), significance_threshold=threshold)
+    def draw(figure, key, metadata=metadata):
+        figure.update_layout(meta={**dict(figure.layout.meta or {}), **metadata})
+        render(figure,key=key,metadata=metadata)
     chosen=frame.loc[frame.module.eq(module)]
-    fig=go.Figure(go.Bar(x=chosen.component_label,y=chosen[values],customdata=chosen[["n_ad","n_control","directional_fdr"]],
-        hovertemplate="%{x}<br>MDC=%{y:.4g}<br>AD n=%{customdata[0]}; Control n=%{customdata[1]}<br>FDR=%{customdata[2]:.3g}<extra></extra>"))
+    fig=go.Figure(go.Bar(x=chosen.component_label,y=chosen[values],customdata=chosen[["n_ad","n_control","directional_fdr","n_retained_edges"]],
+        hovertemplate="%{x}<br>MDC=%{y:.4g}<br>AD n=%{customdata[0]}; Control n=%{customdata[1]}<br>Saved FDR=%{customdata[2]:.3g}<br>Retained edges=%{customdata[3]:,}<extra></extra>"))
     fig.add_hline(y=1 if values=="mdc" else 0,line_dash="dash",line_color="black")
     fig.update_layout(template="plotly_white",yaxis_title=use_raw,title=f"Validation MDC · M{module}")
-    render(fig,key="camel_validation_mdc_bar")
-    view=st.radio("Validation MDC view",["Selected module","All-module component heatmap"],horizontal=True)
-    if view!="Selected module":
+    draw(fig,key="camel_validation_mdc_bar")
+    if chosen.empty:
+        st.info("The selected module has no components above the edge-count threshold. Other qualifying modules remain available below.")
+    view=st.radio("Validation MDC view",["Selected module","MDC scatter plots","All-module component heatmap"],
+        index=1,horizontal=True,key="validation_mdc_view")
+    if view=="All-module component heatmap":
         wide=frame.pivot(index="module",columns="component_label",values=values)
         sig=frame.pivot(index="module",columns="component_label",values="directional_fdr").reindex_like(wide)
         heat=go.Figure(go.Heatmap(z=wide.values,x=wide.columns,y=[f"M{m}" for m in wide.index],
             colorscale="Viridis" if values=="mdc" else "RdBu_r",zmid=None if values=="mdc" else 0,
-            text=np.where(sig.values<.05,"*",""),texttemplate="%{text}",colorbar=dict(title=use_raw)))
+            text=np.where(sig.values<threshold,"*",""),texttemplate="%{text}",colorbar=dict(title=use_raw)))
         heat.update_layout(template="plotly_white",height=950,title="Validation MDC by resolved component")
-        render(heat,key="camel_validation_mdc_heatmap")
-    else:
+        draw(heat,key="camel_validation_mdc_heatmap")
+    elif view=="MDC scatter plots":
+        available = list(original.component.drop_duplicates())
+        ts_options = [c for c in available if c.startswith("TS_")]
+        ct_options = [c for c in available if c.startswith("CT_")]
+        if not ts_options or not ct_options:
+            st.info("Both a within-region and a between-region component are required for this comparison.")
+        else:
+            a,b=st.columns(2)
+            ts=a.selectbox("MDC scatter TS tissue",ts_options,
+                index=ts_options.index("TS_DLPFC") if "TS_DLPFC" in ts_options else 0,
+                format_func=labels.get,key="validation_mdc_scatter_ts")
+            preferred=next((c for c in ct_options if "DLPFC" in c and "PCG" in c),ct_options[0])
+            ct=b.selectbox("MDC scatter CT pair",ct_options,index=ct_options.index(preferred),
+                format_func=labels.get,key="validation_mdc_scatter_ct")
+            st.caption("Each dot is one module. The comparison requires both selected components to pass the edge threshold. Component cohorts can differ; this is not a matched-donor test. No pooled three-region MDC is constructed.")
+            figure=comparison_figure(frame,ts,ct,labels,module,threshold,scale,definition)
+            draw(figure,key="camel_validation_mdc_scatter",metadata=dict(metadata,ts_component=ts,ct_component=ct))
+            details=load_module_details(module_set=module_set)
+            st.markdown("#### MDC and tissue-mixing entropy")
+            for column,component,scope in zip(st.columns(2),(ts,ct),("ts","ct")):
+                with column:
+                    figure=entropy_figure(frame,component,scope,labels,details,module,threshold,scale,definition)
+                    draw(figure,key="camel_validation_mdc_entropy_"+scope,
+                        metadata=dict(metadata,component=component))
+            st.caption("Entropy and MDC associations describe the displayed modules. OLS is a visual guide; the subtitle reports Spearman correlation across modules, not donors. Saved MDC FDRs keep their original families.")
+    elif not chosen.empty:
         component=st.selectbox("Validation adjacency component",chosen.component.unique(),format_func=labels.get)
         if st.checkbox("Show validation AD/Control triangle heatmap",value=False):
             selected=chosen.loc[chosen.component.eq(component)].iloc[0]
             if selected.n_retained_edges==0: st.info("This module/component/mask has no retained edges.")
-            else: render(adjacency_figure(module,component,rule,module_set=module_set,network_method=network_method),key="camel_validation_adjacency")
+            else: draw(adjacency_figure(module,component,rule,module_set=module_set,network_method=network_method),key="camel_validation_adjacency",metadata=dict(metadata,component=component))
     filterable_dataframe(frame,table_key="camel_validation_mdc_table",table_name="Validation MDC",hide_index=True)
     st.download_button("Download validation MDC",frame.to_csv(sep="\t",index=False).encode(),"camel_validation_mdc.tsv")
