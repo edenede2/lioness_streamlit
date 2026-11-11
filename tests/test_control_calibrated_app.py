@@ -99,6 +99,10 @@ def test_incomplete_scope_and_beta_change_do_not_reuse_results():
 def test_existing_analysis_views_accept_calibrated_source(view):
     app = app_for(view=view)
     assert not app.exception
+    if view in {"Module details", "KEGG enrichment"}:
+        assert any("shared historical" in item.value for item in app.caption)
+        assert app.get("plotly_chart") or app.dataframe
+        return
     assert any(
         "Control-calibrated connectivity" in item.value for item in app.subheader
     )
@@ -216,6 +220,69 @@ def smallest_module(family="full_cohort"):
     return min(jobs, key=lambda j: j["physical_nodes"])["module"]
 
 
+@pytest.mark.parametrize("beta", [1, 3])
+def test_calibrated_scatter_uses_separate_measures_and_historical_guides(beta):
+    from app_helpers.charts import DIAGNOSIS_COLORS
+    app = app_for("control_derived", beta=beta, module=747)
+    assert not app.exception
+    specs = [json.loads(plot.proto.spec) for plot in app.get("plotly_chart")]
+    assert [spec["layout"]["meta"]["metric_family"] for spec in specs] == ["gain", "loss"]
+    for spec in specs:
+        assert spec["layout"]["meta"]["components"] == ["CT", "TS"]
+        assert "Global cognition" in spec["layout"]["yaxis"]["title"]["text"]
+        points = [t for t in spec["data"] if t.get("mode") == "markers"]
+        assert points
+        assert all(t["marker"]["color"] == DIAGNOSIS_COLORS[t["name"]] for t in points)
+        assert any(t.get("mode") == "lines" and t["line"]["color"] == "#000000" for t in spec["data"])
+    app = app.checkbox(key="cc_plot_group_lines").uncheck().run()
+    app = app.radio(key="cc_plot_pooled_dash").set_value("solid").run()
+    assert not app.exception
+    for plot in app.get("plotly_chart"):
+        spec = json.loads(plot.proto.spec)
+        lines = [t for t in spec["data"] if t.get("mode") == "lines"]
+        assert len(lines) == 2
+        assert all(t["line"]["color"] == "#000000" and t["line"]["dash"] == "solid" for t in lines)
+        assert any(t.get("mode") == "markers" for t in spec["data"])
+
+
+def test_calibrated_distribution_views_keep_measures_separate():
+    app = app_for("control_derived", view="Feature distributions", module=747)
+    for view in ("Histogram", "Violin", "Raincloud", "ECDF"):
+        app = app.radio(key="cc_distribution_view").set_value(view).run()
+        assert not app.exception
+        specs = [json.loads(p.proto.spec) for p in app.get("plotly_chart")]
+        assert [p["layout"]["meta"]["metric_family"] for p in specs] == ["gain", "loss"]
+    app = app.selectbox(key="cc_distribution_group").set_value("clusters").run()
+    assert not app.exception
+    assert app.multiselect(key="cc_distribution_levels_clusters").value
+
+
+def test_grouped_module_only_fdr_matches_full_family_and_invalidates():
+    app = app_for("control_derived", module=747)
+    app = app.selectbox(key="cc_plot_grouping").set_value("clusters").run()
+    app = app.multiselect(key="cc_plot_levels_clusters").set_value([4]).run()
+    assert not app.exception
+    app = app.button(key="cc_plot_family_fdr").click().run()
+    assert not app.exception
+    _, full = app.session_state["cc_plot_family_statistics"]
+    from scipy.stats import false_discovery_control
+    for _, group in full.groupby(["metric_family", "component", "grouping_level", "method"], sort=False):
+        valid = group.p.notna()
+        assert group.module_family_n.eq(valid.sum()).all()
+        assert group.module_family_n.max() <= 186
+        np.testing.assert_allclose(group.loc[valid, "q_across_modules"], false_discovery_control(group.loc[valid, "p"]))
+    tables = [d.value for d in app.dataframe if "spearman_fdr_across_modules" in d.value]
+    assert len(tables) == 2
+    assert all(t.spearman_fdr_across_modules.notna().any() for t in tables)
+    before = [t.spearman_fdr_across_modules.to_numpy().copy() for t in tables]
+    app = app.checkbox(key="cc_plot_group_lines").uncheck().run()
+    for expected, table in zip(before, [d.value for d in app.dataframe if "spearman_fdr_across_modules" in d.value]):
+        np.testing.assert_array_equal(expected, table.spearman_fdr_across_modules)
+    app = app.selectbox(key="cc_scale").set_value("asinh").run()
+    assert not app.exception
+    assert all(d.value.spearman_fdr_across_modules.isna().all() for d in app.dataframe if "spearman_fdr_across_modules" in d.value)
+
+
 def test_edge_inspection_shows_calibration_and_real_denominator():
     app = app_for(view="Donor edge explorer", module=smallest_module())
     app = app.button(key="cc_inspect_edges").click().run()
@@ -286,7 +353,7 @@ def test_ordinal_categorical_override_is_a_new_kw_analysis():
     assert not app.exception
     _, result = app.session_state["cc_current_analysis"]
     assert result.method.eq("Kruskal-Wallis").all()
-    assert "q_search" in result and "q_scan" not in result
+    assert "q_across_modules" in result and "q_scan" not in result
 
 
 @pytest.mark.parametrize("resolved", [True, False])

@@ -42,7 +42,7 @@ def test_heatmap_keeps_all_module_rows_na_cells_and_pair_counts():
     np.testing.assert_allclose(np.asarray(fig.data[0].z)[:2], -0.25)
     assert np.isnan(np.asarray(fig.data[0].z)[2:]).all()
     np.testing.assert_array_equal(
-        np.asarray(fig.data[0].customdata)[:, 0], [23, 23, 0, 0]
+        np.asarray(fig.data[0].customdata)[:, 0, 0], [23, 23, 0, 0]
     )
     assert fig.layout.coloraxis.cmin == -1 and fig.layout.coloraxis.cmax == 1
     assert frame.q_scan.eq(0.4).all()

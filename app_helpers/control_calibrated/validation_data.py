@@ -113,8 +113,6 @@ def results(
         filters.append(("study_stratum", "in", list(strata)))
     if outcome:
         filters.append(("outcome", "=", outcome))
-    if modules:
-        filters.append(("module", "in", list(map(int, modules))))
     for cohort in cohorts:
         tables.append(read_table(f"results/{dataset}_{cohort}.parquet", filters))
     if not tables:
@@ -127,4 +125,17 @@ def results(
             else "within catalog model/cohort/study stratum; all canonical registered hypotheses, 8 endpoints, 4 metrics, both betas"
         )
     )
+    # Add the requested module-only family without altering sealed inference.
+    # Read all modules before selecting named examples; focused-only panels do
+    # not establish a complete-partition BH denominator.
+    from .association_fdr import add_module_fdr
+    full = result.loc[~result.model.eq("C_age_spline")]
+    focused = result.loc[result.model.eq("C_age_spline")].copy()
+    if not focused.empty:
+        focused["q_across_modules"] = float("nan")
+        focused["module_family_n"] = 0
+        focused["module_fdr_scope"] = "unavailable: focused panel, not the complete module partition"
+    result = pd.concat([add_module_fdr(full), focused], ignore_index=True)
+    if modules:
+        result = result.loc[result.module.isin(list(map(int, modules)))].copy()
     return result

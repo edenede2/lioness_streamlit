@@ -442,6 +442,7 @@ def baseline_associations(
     regional_tissue=None,
     root=ROOT,
     inference_version="auto",
+    minimum_n=3,
     **_,
 ):
     import pyarrow.parquet as pq
@@ -477,15 +478,7 @@ def baseline_associations(
             raise ScoreUnavailable(
                 "Regional association module IDs require their tissue namespace"
             )
-        filters.append(
-            (
-                "module_key",
-                "=",
-                f"{module_set}::{component_public(regional_tissue)}::M{module}",
-            )
-        )
     for col, value in [
-        ("module", module),
         ("metric_family", metric_family),
         ("outcome", phenotype),
         ("component", component_public(component) if component else None),
@@ -500,6 +493,18 @@ def baseline_associations(
                 "::" + component_public(regional_tissue) + "::", regex=False
             )
         ]
+    # Correct the complete fixed partition family BEFORE selecting a module.
+    # Preserve the immutable scan-wide q columns as historical alternatives.
+    from .association_fdr import from_baseline
+    saved_p = out.p.copy()
+    out.loc[out.n.lt(int(minimum_n)), "p"] = np.nan
+    out = from_baseline(out)
+    out["p"] = saved_p
+    out["module_fdr_minimum_n"] = int(minimum_n)
+    out["module_fdr_exclusion_reason"] = np.where(out.n.lt(int(minimum_n)),
+        f"n < {int(minimum_n)}; saved descriptive test retained, excluded from module BH", "")
+    if module is not None:
+        out = out.loc[out.module.eq(int(module))].copy()
     return out
 
 
@@ -527,7 +532,9 @@ def statistics(**kwargs):
     frame["component_label"] = frame.component
     frame["spearman_rho"] = np.where(frame.method.eq("Spearman"), frame.effect, np.nan)
     frame["spearman_p"] = np.where(frame.method.eq("Spearman"), frame.p, np.nan)
-    frame["spearman_fdr"] = np.where(frame.method.eq("Spearman"), frame.q_scan, np.nan)
+    frame["spearman_fdr"] = np.where(frame.method.eq("Spearman"), frame.q_across_modules, np.nan)
+    frame["spearman_fdr_across_modules"] = frame.spearman_fdr
+    frame["spearman_fdr_module_family_n"] = np.where(frame.method.eq("Spearman"), frame.module_family_n, 0)
     frame["pearson_r"] = np.nan
     frame["pearson_p"] = np.nan
     frame["pearson_fdr"] = np.nan
@@ -535,8 +542,9 @@ def statistics(**kwargs):
         frame.method.eq("Kruskal-Wallis"), frame.p, np.nan
     )
     frame["categorical_fdr"] = np.where(
-        frame.method.eq("Kruskal-Wallis"), frame.q_scan, np.nan
+        frame.method.eq("Kruskal-Wallis"), frame.q_across_modules, np.nan
     )
+    frame["categorical_fdr_across_modules"] = frame.categorical_fdr
     frame["epsilon_squared"] = np.where(
         frame.method.eq("Kruskal-Wallis"), frame.effect, np.nan
     )

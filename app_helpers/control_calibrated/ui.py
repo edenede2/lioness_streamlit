@@ -18,14 +18,13 @@ from .inputs import atomic_json, atomic_parquet, sha
 from .core import canonical_hash
 from .analysis import bh
 from . import hosted as H
+from .association_fdr import add_module_fdr
+from app_helpers.charts import DIAGNOSIS_COLORS
 
 COLORS = {
     "Gain / strengthening": "#167D9A",
     "Loss / weakening": "#C48028",
-    "Control": "#2878A1",
-    "MCI": "#D5A532",
-    "AD": "#C66D42",
-    "Unclassified": "#888888",
+    **DIAGNOSIS_COLORS,
 }
 
 
@@ -41,6 +40,8 @@ def table(frame, key, label="Results"):
             "n_tested",
             "effect",
             "p",
+            "q_across_modules",
+            "module_family_n",
             "q_scan",
             "q_GL_outcome",
             "q_search",
@@ -62,7 +63,14 @@ def table(frame, key, label="Results"):
     )
 
 
-def draw(figure, render, key, context, *, annotate=True):
+def draw(figure, render, key, context, *, annotate=True, preserve_layout=False):
+    if preserve_layout:
+        # Shared historical chart helpers already reserve title/KEGG/statistic
+        # and legend space. Do not overwrite that geometry with the old facet
+        # defaults or add a floating annotation over their statistics.
+        figure.update_layout(meta={**dict(figure.layout.meta or {}), **context})
+        render(figure, key=key, metadata=context)
+        return
     figure.update_layout(
         template="plotly_white",
         height=max(450, figure.layout.height or 450),
@@ -255,7 +263,7 @@ def descriptive_analysis(
                     g.assign(_group=0),
                     ["_group"],
                     category_column=outcome,
-                    min_group_n=5,
+                    min_group_n=max(5, minimum_n),
                 ).iloc[0]
                 rows.append(
                     dict(
@@ -291,7 +299,7 @@ def descriptive_analysis(
                 ).iloc[0]
                 prefix = method.lower()
                 permutation = None
-                if prefix == "spearman":
+                if prefix == "spearman" and r.eligible:
                     from .validation_inference import (
                         infer_group,
                         finite_numeric,
@@ -396,6 +404,7 @@ def full_partition_search(
     mask,
     tissue,
     outcomes=None,
+    minimum_n=3,
 ):
     outcomes = [outcome] if outcomes is None else list(outcomes)
     jobs = [
@@ -411,6 +420,7 @@ def full_partition_search(
         components=components,
         outcome=outcome,
         outcomes=outcomes,
+        minimum_n=int(minimum_n),
         numeric_inference="Exact tie-aware pairings where tractable, else fixed9999 Monte Carlo (+1), seed611104",
         donor_membership_sha256=canonical_hash(sorted(donors)),
         method=(
@@ -428,7 +438,7 @@ def full_partition_search(
     aid = canonical_hash(intent)
     path = ROOT / "associations/saved" / aid
     if path.with_suffix(".parquet").exists():
-        return pd.read_parquet(path.with_suffix(".parquet"))
+        return add_module_fdr(pd.read_parquet(path.with_suffix(".parquet")))
     atomic_json(path.with_suffix(".json"), intent)
     parts = []
     for j in jobs:
@@ -459,6 +469,7 @@ def full_partition_search(
                 frame,
                 dict(context, module=j["module"], search_parent=aid),
                 outcomes,
+                minimum_n=minimum_n,
             )
             result["module"] = j["module"]
             result["regional_tissue"] = j["regional_tissue"]
@@ -502,7 +513,7 @@ def full_partition_search(
     result["analysis_id"] = aid
     result["correction_scope"] = intent["correction"]
     atomic_parquet(path.with_suffix(".parquet"), result)
-    return result
+    return add_module_fdr(result)
 
 
 def correlation_heatmap_figure(
@@ -549,6 +560,8 @@ def correlation_heatmap_figure(
     counts = numeric.pivot(index="row", columns="outcome", values="n").reindex(
         index=rows, columns=outcomes
     )
+    q = numeric.pivot(index="row", columns="outcome", values="q_across_modules").reindex(index=rows, columns=outcomes) if "q_across_modules" in numeric else counts * np.nan
+    family_n = numeric.pivot(index="row", columns="outcome", values="module_family_n").reindex(index=rows, columns=outcomes) if "module_family_n" in numeric else counts * np.nan
     matrix = matrix.rename(columns=D.ASSOCIATION_OUTCOME_LABELS)
     figure = px.imshow(
         matrix,
@@ -560,8 +573,8 @@ def correlation_heatmap_figure(
         title=title,
     )
     figure.update_traces(
-        customdata=counts.to_numpy(),
-        hovertemplate="%{y}<br>%{x}<br>Spearman rho=%{z:.3f}<br>Paired donor N=%{customdata}<extra></extra>",
+        customdata=np.stack([counts.to_numpy(), q.to_numpy(), family_n.to_numpy()], axis=-1),
+        hovertemplate="%{y}<br>%{x}<br>Spearman rho=%{z:.3f}<br>Paired donor N=%{customdata[0]}<br>Module-set FDR=%{customdata[1]:.3g}<br>Tested modules=%{customdata[2]}<extra></extra>",
         hoverongaps=False,
     )
     figure.update_layout(height=max(450, 22 * len(matrix) + 220))
@@ -590,6 +603,7 @@ def correlation_heatmap_figure(
 def render_correlation_heatmaps(
     frame, context, estimator, scope, mask, jobs, baseline_compatible, render
 ):
+    minimum_n = st.selectbox("Minimum paired donors for association tests", [5, 10, 20], index=1, key="cc_heatmap_minimum_n")
     all_modules = (
         st.radio(
             "Correlation heatmap scope",
@@ -611,7 +625,7 @@ def render_correlation_heatmaps(
         return
     metrics, components = context["metric_families"], context["components"]
     heatmap_context = dict(
-        context, heatmap_scope="all_modules" if all_modules else "selected_module"
+        context, heatmap_scope="all_modules" if all_modules else "selected_module", minimum_n=minimum_n
     )
     if all_modules:
         heatmap_context.update(
@@ -632,9 +646,10 @@ def render_correlation_heatmaps(
                 module=None if all_modules else context["module"],
                 regional_tissue=context["regional_tissue"],
                 inference_version=context.get("baseline_inference_version", "auto"),
+                minimum_n=minimum_n,
             )
             st.caption(
-                "Frozen native, unmasked baseline. Saved q_scan and q_GL_outcome are preserved across module and outcome display filters."
+                "Module-only BH is separate for every measure, component, outcome and method. Saved q_scan/q_GL_outcome are retained as historical alternatives. Module/outcome display filters never change the correction family."
             )
         elif all_modules:
             search_id = canonical_hash(heatmap_context)
@@ -655,6 +670,7 @@ def render_correlation_heatmaps(
                         mask,
                         context["regional_tissue"],
                         outcomes=list(D.ASSOCIATION_OUTCOME_LABELS),
+                        minimum_n=minimum_n,
                     )
                 st.session_state["cc_partition_heatmap"] = (search_id, result)
             saved = st.session_state.get("cc_partition_heatmap")
@@ -665,15 +681,22 @@ def render_correlation_heatmaps(
                 return
             results = saved[1]
             st.caption(
-                "q_search covers all estimable modules, selected measures/components and registered outcomes in this saved search. Outcome display filters preserve that correction; baseline q_scan is not reused."
+                "q_across_modules corrects each measure/component/outcome separately across the complete partition. Archived q_search remains available but is not the module-only FDR."
             )
         else:
-            results = descriptive_analysis(
-                frame, context, list(D.ASSOCIATION_OUTCOME_LABELS)
-            )
-            st.caption(
-                "Heatmap recalculated for the selected donors, measures, mask and scale. Its selected-module q_search covers all registered outcomes and selected components; baseline q_scan is not reused."
-            )
+            search_context = dict(heatmap_context, module=None, minimum_n=minimum_n)
+            search_id = canonical_hash(search_context)
+            if st.button("Calculate full module families for this heatmap", key="cc_run_single_heatmap_fdr"):
+                with st.spinner("Reading one module at a time…"):
+                    result = full_partition_search(search_context, estimator, scope, metrics, components,
+                        context["outcome"], frame.sample_id.unique().tolist(), mask, context["regional_tissue"],
+                        outcomes=list(D.ASSOCIATION_OUTCOME_LABELS), minimum_n=minimum_n)
+                st.session_state["cc_single_heatmap_family"] = (search_id, result)
+            saved = st.session_state.get("cc_single_heatmap_family")
+            if not saved or saved[0] != search_id:
+                st.info("Calculate complete module families before displaying transformed/filtered association FDRs. No BH over just the displayed module is substituted.")
+                return
+            results = saved[1].loc[saved[1].module.eq(context["module"])].copy()
         results = results.loc[
             results.metric_family.isin(metrics)
             & results.component.isin(components)
@@ -730,7 +753,7 @@ def baseline_browser(
     inference_version="auto",
 ):
     panel = st.expander(
-        "Full-catalog baseline associations · frozen q_scan", expanded=False,
+        "Full-catalog baseline associations · module-only BH and archived scan FDR", expanded=False,
         key='cc_baseline_panel', on_change='rerun',
     )
     if not panel.open:
@@ -749,8 +772,13 @@ def baseline_browser(
             st.info(str(error))
             return
         st.caption(
-            "All independent targets, native units, unmasked edges. q_scan includes all registered partitions, all 20 outcomes, G/L/S/A and both betas in this dataset/cohort/allocation. q_GL_outcome corrects G/L jointly for this outcome and beta. Display filters retain these saved corrections."
+            "All independent targets, native units, unmasked edges. q_across_modules is the default, separately by component/measure/outcome/beta. Archived q_scan includes all registered partitions, outcomes, G/L/S/A and both betas; q_GL_outcome corrects G/L jointly. Display filters retain all complete-family corrections."
         )
+        q_column = st.selectbox("Baseline FDR shown for ranking",
+            ["q_across_modules", "q_scan", "q_GL_outcome"],
+            format_func=lambda v:{"q_across_modules":"Module-only BH (default)",
+                "q_scan":"Archived broad scan BH", "q_GL_outcome":"Archived joint Gain/Loss outcome BH"}[v],
+            key="cc_baseline_fdr")
         selected = st.radio(
             "Baseline display",
             ["Selected module", "All modules"],
@@ -765,7 +793,7 @@ def baseline_browser(
         if components:
             frame = frame[frame.component.isin(components)]
         table(
-            frame.sort_values("q_scan", na_position="last").head(int(top)),
+            frame.sort_values(q_column, na_position="last").head(int(top)),
             "cc_baseline",
             "Baseline associations",
         )
@@ -1153,7 +1181,7 @@ def render_view(
         default = (
             ["TS_" + A.component_legacy(regional_tissue)]
             if regional
-            else [v for v in ("TS", "CT") if v in mapping]
+            else [v for v in ("CT", "TS") if v in mapping]
             or available.component.tolist()
         )
         if "cc_components" in st.session_state and not set(
@@ -1191,6 +1219,16 @@ def render_view(
         components=components,
         donor_score_metadata_sha256=content_hash,
         baseline_inference_version=baseline_inference_version,
+        mask_spec=(mask["rule"], mask.get("fdr_scope", "global"), mask.get("threshold", 0.05)),
+        catalog_revision=H.ensure(ROOT / "manifest.json").stat().st_mtime_ns,
+    )
+    # Keep module/cohort/source identity when moving to another workspace. MDC
+    # remains its existing group-network catalog, never a donor-score average.
+    st.session_state["_last_exploration_context"] = dict(
+        module_set=family, module=module, estimator=estimator,
+        method="control_anchored", cohort_scope=scope, scale=scale,
+        selected_components=[A.component_legacy(c) for c in components],
+        resolution="Tissue resolved" if any(c.startswith(("TS_", "CT_")) for c in components) else "Aggregate CT / TS",
     )
     finite = np.isfinite(frame.metric_value)
     all_module_heatmap = (
@@ -1311,6 +1349,7 @@ def render_view(
         table(A.coverage(family), "cc_catalog_coverage", "Full catalog coverage")
         return
     if view in ("Statistics", "Module finder", "CT–TS screen"):
+        minimum_n = st.selectbox("Minimum paired donors for association tests", [5, 10, 20], index=1, key="cc_rank_minimum_n")
         try:
             if baseline_compatible:
                 results = A.baseline_associations(
@@ -1320,14 +1359,15 @@ def render_view(
                     phenotype=outcome,
                     regional_tissue=regional_tissue,
                     inference_version=baseline_inference_version,
+                    minimum_n=minimum_n,
                 )
                 results = results[
                     results.metric_family.isin(metrics)
                     & results.component.isin(components)
                 ]
-                q_column = "q_scan"
+                q_column = "q_across_modules"
                 st.caption(
-                    "Frozen native, unmasked baseline; q_scan includes both betas and the full scan, before these display filters."
+                    "Module-only BH for each fixed component, measure, outcome, beta and cohort, before display filtering. Archived q_scan retains the original broad-scan correction."
                 )
             else:
                 if not st.button(
@@ -1351,10 +1391,11 @@ def render_view(
                         frame.sample_id.unique().tolist(),
                         mask,
                         regional_tissue,
+                        minimum_n=minimum_n,
                     )
-                q_column = "q_search"
+                q_column = "q_across_modules"
                 st.caption(
-                    "q_search covers the complete selected partition/metric/component search before Top K. It is separate from baseline q_scan."
+                    "Module-only BH is calculated across the complete partition, separately by measure/component/outcome, before Top K. Historical q_search remains separately available."
                 )
             top = st.number_input("Top rows", 10, 10000, 100, key="cc_top_rows")
             table(
@@ -1399,28 +1440,9 @@ def render_view(
         )
         return
     elif view == "Feature distributions":
-        grouping = st.selectbox(
-            "Distribution grouping",
-            [v for v in D.ASSOCIATION_GROUP_LABELS if v in frame],
-            format_func=D.ASSOCIATION_GROUP_LABELS.get,
-            key="cc_distribution_group",
-        )
-        draw(
-            px.box(
-                good,
-                x=grouping,
-                y="metric_value",
-                color="measure",
-                facet_col="component_label",
-                points="outliers",
-                color_discrete_map=COLORS,
-                title=title,
-                labels={"metric_value": context["transform"] + " score units"},
-            ),
-            render,
-            "cc_distributions",
-            context,
-        )
+        from .presentation import render_distributions
+
+        good, grouping = render_distributions(good, context, render, draw)
         from app_helpers.distributions import calculate_pairwise_distribution_statistics
 
         levels = sorted(good[grouping].dropna().unique(), key=str)
@@ -1491,53 +1513,19 @@ def render_view(
                 for (component, measure), n in paired.items()
             )
         )
-        if interpretation == "categorical":
-            draw(
-                px.box(
-                    good,
-                    x=outcome,
-                    y="metric_value",
-                    color="measure",
-                    facet_col="component_label",
-                    color_discrete_map=COLORS,
-                    title=title,
-                    labels={"metric_value": context["transform"] + " score units"},
-                ),
-                render,
-                "cc_association_plot",
-                context,
-            )
-        else:
-            draw(
-                px.scatter(
-                    good,
-                    x=outcome,
-                    y="metric_value",
-                    color="measure",
-                    symbol="diagnosis_group",
-                    facet_col="component_label",
-                    hover_data=["sample_id", "diagnosis_group"],
-                    color_discrete_map=COLORS,
-                    title=title,
-                    labels={
-                        "metric_value": context["transform"] + " score units",
-                        outcome: D.ASSOCIATION_OUTCOME_LABELS[outcome],
-                    },
-                ),
-                render,
-                "cc_association_plot",
-                context,
-            )
-        method = (
-            st.radio(
-                "Descriptive association method",
-                ["Spearman", "Pearson", "Descriptive OLS"],
-                horizontal=True,
-                key="cc_analysis_method",
-            )
-            if interpretation != "categorical"
-            else "Kruskal-Wallis"
-        )
+        from .presentation import render_associations
+
+        baseline = None
+        if baseline_compatible:
+            try:
+                baseline = A.baseline_associations(
+                    module_set=family, estimator=estimator, cohort_scope=scope,
+                    module=None, phenotype=outcome, regional_tissue=regional_tissue,
+                    inference_version=baseline_inference_version,
+                )
+            except (A.ScoreUnavailable, OSError, ValueError):
+                pass  # The plot remains valid; no different q-family is substituted.
+        method = render_associations(frame, context, baseline, render, draw, table)
         covariates = []
         if interpretation == "categorical":
             st.caption(
@@ -1557,19 +1545,44 @@ def render_view(
             st.caption(
                 "Descriptive complete-case OLS with HC3 standard errors. Supplied cognitive/motor slopes keep their existing adjustment; extra covariates are included only when explicitly selected."
             )
+        plot_family = st.session_state.get("cc_current_plot_family")
         analysis_view_id = canonical_hash(
-            dict(context, method=method, covariates=covariates)
+            dict(context, method=method, covariates=covariates, grouped_family=plot_family)
         )
         if st.button(
             "Save and calculate this descriptive analysis", key="cc_calculate_analysis"
         ):
-            result = descriptive_analysis(frame, context, [outcome], method, covariates)
-            st.session_state["cc_current_analysis"] = (analysis_view_id, result)
+            if plot_family is None:
+                st.info("Select at least one group before calculating associations.")
+            else:
+                from .presentation import module_statistics
+                specification = dict(plot_family)
+                if method == "Descriptive OLS":
+                    specification.update(ols_covariates=tuple(covariates), use_baseline=False)
+                try:
+                    with st.spinner("Calculating complete module families for these groups…"):
+                        result = module_statistics(**specification)
+                except (A.ScoreUnavailable, OSError, ValueError) as error:
+                    st.info("Complete-family association unavailable; no partial BH substituted: " + str(error))
+                    return
+                result = result.loc[result.module.eq(module) & result.method.eq(method)].copy()
+                if method in ("Spearman", "Pearson"):
+                    result["effect"] = result["spearman_rho" if method == "Spearman" else "pearson_r"]
+                elif method == "Kruskal-Wallis":
+                    result["effect"] = result.epsilon_squared
+                result["analysis_id"] = analysis_view_id
+                result["correction_scope"] = result.module_fdr_scope
+                destination = ROOT / "associations/saved" / (analysis_view_id + "_module_only")
+                atomic_json(destination.with_suffix(".json"), dict(context, method=method,
+                    covariates=covariates, grouping_variable=plot_family["grouping"],
+                    grouping_levels=plot_family["levels"], correction="BH across valid modules only"))
+                atomic_parquet(destination.with_suffix(".parquet"), result)
+                st.session_state["cc_current_analysis"] = (analysis_view_id, result)
         saved = st.session_state.get("cc_current_analysis")
         if saved and saved[0] == analysis_view_id:
             table(saved[1], "cc_selected_analysis", "Saved descriptive association")
         st.caption(
-            "A changed donor set, transform, method or mask is a separate saved search. q_search covers its declared selected-module tests; it does not inherit baseline q_scan or cover choosing among saved searches."
+            "Saved associations use complete module-only BH families, separately by outcome, component, measure, donor group and method. Changed donors/scale/mask/grouping invalidate the saved display. Archived scan/search corrections remain separate; choosing among analyses is still exploratory."
         )
     baseline_browser(
         family,

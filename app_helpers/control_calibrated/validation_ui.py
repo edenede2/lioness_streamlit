@@ -40,6 +40,8 @@ def _table(frame, key, label):
             "ci_low",
             "ci_high",
             "p",
+            "q_across_modules",
+            "module_family_n",
             "q_scan",
             "q_GL_outcome",
             "q_focused",
@@ -103,6 +105,8 @@ def _plot(frame, key, render, source, label="Rank association"):
                 "beta",
                 "cohort",
                 "p",
+                "q_across_modules",
+                "module_family_n",
                 "q_scan",
                 "q_GL_outcome",
                 "q_focused",
@@ -306,7 +310,7 @@ def show(family, beta, render):
         mask="all",
         transform="native",
         role="independent_targets",
-        correction_scope="Within model / cohort / study stratum; catalog q_scan spans all registered canonical families, eight outcomes, four metrics and both betas",
+        correction_scope="Module-only BH within fixed model, cohort, study stratum, component, measure, outcome and beta. Archived q_scan and focused-family corrections are preserved separately.",
         interval="Study-stratified donor percentile bootstrap; rerank/refit; no edge resampling",
     )
     if panel == "Focused comparisons":

@@ -146,8 +146,11 @@ def build_controls(active_view, data_manifest):
             )
             from app_helpers.control_calibrated import registry as calibrated_registry
 
-            if active_view != "MDC" and calibrated_registry.ready(module_set):
+            score_independent = active_view in {"MDC", "Module details", "KEGG enrichment"}
+            if not score_independent and calibrated_registry.ready(module_set):
                 allowed_estimators += list(calibrated_registry.ESTIMATORS)
+            if score_independent:
+                st.caption("This view uses the shared historical module/enrichment or group-network MDC catalog. Donor-score beta1/beta3 does not redefine it; MDC uses the displayed group cohort, not the calibrated R/C target-only split.")
             if (
                 "network_estimator" in st.session_state
                 and st.session_state["network_estimator"] not in allowed_estimators
@@ -250,6 +253,13 @@ def build_controls(active_view, data_manifest):
             cohort_scope_options.append("maximum_component")
         if validation_source is not None and validation_source.available():
             cohort_scope_options.append(VALIDATION_SCOPE)
+        prior_scope = st.session_state.get("analysis_cohort_scope")
+        unavailable_mdc_scope = (
+            active_view == "MDC" and prior_scope == "maximum_component"
+            and prior_scope not in cohort_scope_options
+        )
+        if unavailable_mdc_scope:
+            cohort_scope_options.append(prior_scope)
         cohort_scope = _choice(
             st.radio,
             True,
@@ -263,6 +273,9 @@ def build_controls(active_view, data_manifest):
             help="Validation excludes the audited complete-expression discovery cohort. Each resolved component has its own donor set; missing regions are never imputed.",
             key="analysis_cohort_scope",
         )
+        if unavailable_mdc_scope and cohort_scope == prior_scope:
+            st.info("No group-network MDC catalog exists for the maximum-component calibrated cohort. Select a supported MDC cohort explicitly; complete-cohort results will not be substituted.")
+            st.stop()
         if cohort_scope == VALIDATION_SCOPE:
             validation_manifest = validation_source.manifest()
             st.info(

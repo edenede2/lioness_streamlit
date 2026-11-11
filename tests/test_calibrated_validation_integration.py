@@ -66,7 +66,16 @@ def test_actual_completed_catalog_exports_and_baseline_audit():
             "q_scan",
             "q_GL_outcome",
             "correction_scope",
+            "q_across_modules",
+            "module_family_n",
         } <= set(f.columns)
+        from scipy.stats import false_discovery_control
+        from app_helpers.control_calibrated.association_fdr import FAMILY_COLUMNS
+        for _, group in f.groupby([c for c in FAMILY_COLUMNS if c in f], dropna=False, sort=False):
+            valid = group.p.notna()
+            assert group.module_family_n.eq(valid.sum()).all()
+            if valid.any():
+                np.testing.assert_allclose(group.loc[valid, "q_across_modules"], false_discovery_control(group.loc[valid, "p"]))
     old = pd.read_parquet(
         RESEARCH_ROOT / "associations/brain_incomplete_region_validation.parquet"
     )

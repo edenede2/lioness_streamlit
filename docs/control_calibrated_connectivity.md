@@ -126,6 +126,50 @@ crosswalks.
 
 ## Association families
 
+### Historical-visualization compatibility update (2026-11-11)
+
+Associations now reuse the historical grouped-scatter and categorical chart
+helpers. Each measure (Gain, Loss, etc.) is a separate figure, with components
+in separate panels, diagnosis colors/shapes, component-specific statistics and
+OLS guides. Group-line visibility and the independent dashed/solid black pooled
+line follow the historical controls. Feature distributions reuse the same
+Histogram, Violin, Raincloud and ECDF helpers. The publication exporter is
+unchanged. MDC, module composition and KEGG remain their shared historical
+views; changing a donor-score beta does not create a new group-level MDC.
+
+The default association correction is **module-only BH**, holding partition
+(and tissue for independent regional partitions), beta/method, cohort, mask,
+normalization, transform, component, measure, outcome, donor filter, grouping
+variable/level and correlation method fixed. Pearson and Spearman are separate
+families. Missing, constant and undersized tests do not enter the denominator.
+FDR is calculated before module, Top-K or significance display filters. Tables
+report the actual tested-module count, not a hardcoded 154/186.
+The minimum paired/category N is configurable (5/10/20, default 10) in the
+ordinary association/heatmap/ranking views. Saved baseline p-values and effects
+remain inspectable below this threshold but are excluded from module-only BH,
+with an explicit exclusion reason. Adjusted validation retains its original
+N/residual-degree-of-freedom eligibility gate.
+
+The archived `q_scan`, `q_GL_outcome`, `q_search` and `q_comparison` columns are
+not overwritten or relabeled. Native pooled baseline rows retain their saved
+p-value/inference method and gain `q_across_modules`. Their broad scan q values
+remain inspectable in the explicitly historical baseline browser.
+Grouped/custom plots use the historical two-sided SciPy Pearson/Spearman tests;
+categorical outcomes use Kruskal–Wallis, never coded correlations. Use
+**Calculate module-set FDR for all displayed groups** for the complete matching
+grouped/custom family. Reads are serialized and only compact statistics are
+cached. Until that calculation finishes, those FDRs are unavailable rather than
+incorrectly corrected over the displayed module. A change of donors, mask,
+scale or grouping invalidates the family. No adjusted/partial validation test
+is substituted for an unadjusted plot correlation.
+
+This is a correction-scope choice, not a guarantee of significance. Historical
+scan-wide and focused validation inference retain their original definitions.
+Complete-catalog adjusted validation associations also gain module-only BH,
+separately by model and study stratum, before selecting named modules. Focused
+age-spline panels are not complete partitions: their module-only FDR stays
+unavailable and the original focused correction remains labeled as such.
+
 The baseline tests every structurally meaningful registered component and union,
 all independent targets, both betas and G/L/S/A, unmasked, in native units. It
 includes all 15 numeric/ordinal and 5 nominal outcomes from the authoritative app
@@ -140,7 +184,8 @@ amyloid/tangle square-root scales and adjusted slope provenance are preserved.
   mask/subgroup/model/transform context. This is outcome-specific.
 * **q_scan:** BH over the entire baseline dataset/cohort/allocation scan,
   including both betas, G/L/S/A, all 20 outcomes and their type-specific methods,
-  and all registered partitions. This is the broad browser's default correction.
+  and all registered partitions. It remains an archived broad-scan alternative,
+  not the default module-set association FDR.
 
 The shared B allocation is separate from beta/component artifact hashes. Planned
 structural tests, valid tests and exclusions are stored. Non-estimable p values
